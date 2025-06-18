@@ -10,7 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageButton; // Changed from Button
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -47,7 +47,7 @@ public class CameraActivity extends AppCompatActivity {
 
     // UI elements
     private PreviewView viewFinder;
-    private Button btnCapture, btnDone, btnUsePicture, btnTryAgain, btnSwitchCamera;
+    private ImageButton btnCapture, btnDone, btnUsePicture, btnTryAgain, btnSwitchCamera; // Changed from Button
     private ImageView ivCapturedImage;
     private LinearLayout llPostCapture;
 

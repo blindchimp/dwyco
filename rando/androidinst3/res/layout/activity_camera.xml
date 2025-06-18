@@ -32,38 +32,51 @@
 
 
     <!-- "Capture" Button -->
-    <Button
+    <ImageButton
         android:id="@+id/btn_capture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="Capture"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/button_background"
+        android:contentDescription="Capture"
+        android:padding="16dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/ic_menu_camera"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:tint="@android:color/white" />
 
     <!-- "Done" Button -->
-    <Button
+    <ImageButton
         android:id="@+id/btn_done"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:text="Done"
+        android:background="@drawable/button_background"
+        android:contentDescription="Done"
+        android:padding="8dp"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@android:color/white" />
 
     <!-- "Switch Camera" Button -->
-    <Button
+    <ImageButton
         android:id="@+id/btn_switch_camera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginTop="16dp"
         android:layout_marginStart="16dp"
-        android:text="Switch"
+        android:background="@drawable/button_background"
+        android:contentDescription="Switch Camera"
+        android:padding="8dp"
+        android:src="@android:drawable/ic_menu_rotate"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:tint="@android:color/white" />
 
 
     <!-- Container for "Use this Picture" and "Try Again" buttons -->
@@ -79,18 +92,27 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:gravity="center">
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_try_again"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="Try Again" />
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginEnd="32dp"
+            android:background="@drawable/button_background"
+            android:contentDescription="Try Again"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="@android:color/white" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_use_picture"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Use This Picture" />
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="32dp"
+            android:background="@drawable/button_background"
+            android:contentDescription="Use This Picture"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_save"
+            app:tint="@android:color/white" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

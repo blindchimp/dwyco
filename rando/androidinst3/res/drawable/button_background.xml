@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This drawable defines a circular shape for the button backgrounds. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <!-- Set the background color to a semi-transparent dark gray. -->
+    <!-- This ensures visibility against both light and dark backgrounds. -->
+    <solid
+        android:color="#80333333"/>
+
+</shape>
+
