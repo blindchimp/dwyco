@@ -47,7 +47,7 @@ public class CameraActivity extends AppCompatActivity {
 
     // UI elements
     private PreviewView viewFinder;
-    private Button btnCapture, btnDone, btnUsePicture, btnTryAgain;
+    private Button btnCapture, btnDone, btnUsePicture, btnTryAgain, btnSwitchCamera;
     private ImageView ivCapturedImage;
     private LinearLayout llPostCapture;
 
@@ -56,6 +56,7 @@ public class CameraActivity extends AppCompatActivity {
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
     private File outputDirectory;
+    private CameraSelector cameraSelector; // To keep track of the selected camera
 
 
     @Override
@@ -71,12 +72,15 @@ public class CameraActivity extends AppCompatActivity {
         btnTryAgain = findViewById(R.id.btn_try_again);
         ivCapturedImage = findViewById(R.id.iv_captured_image);
         llPostCapture = findViewById(R.id.ll_post_capture);
+        btnSwitchCamera = findViewById(R.id.btn_switch_camera);
 
 
         // Get the directory for storing captured images.
         outputDirectory = getOutputDirectory();
         // Create a new thread for camera operations.
         cameraExecutor = Executors.newSingleThreadExecutor();
+
+        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
         // Check for camera permissions.
         if (allPermissionsGranted()) {
@@ -90,8 +94,21 @@ public class CameraActivity extends AppCompatActivity {
         btnCapture.setOnClickListener(v -> takePhoto());
         btnDone.setOnClickListener(v -> finish());
         btnTryAgain.setOnClickListener(v -> restartCameraPreview());
+        btnSwitchCamera.setOnClickListener(v -> switchCamera());
         // UsePicture button listener is set after a photo is taken
     }
+
+    private void switchCamera() {
+        // Toggle between front and back cameras
+        if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+            cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
+        } else {
+            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+        }
+        // Restart the camera with the new selector
+        startCamera();
+    }
+
 
     /**
      * Checks if all required permissions have been granted.
@@ -126,7 +143,18 @@ public class CameraActivity extends AppCompatActivity {
                 imageCapture = new ImageCapture.Builder().build();
 
                 // Select the back camera as the default.
-                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+                // Check if the device has both front and back cameras and show/hide the switch button
+                try {
+                    if (cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) &&
+                        cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
+                        btnSwitchCamera.setVisibility(View.VISIBLE);
+                    } else {
+                        btnSwitchCamera.setVisibility(View.GONE);
+                    }
+                } catch (Exception e) {
+                    btnSwitchCamera.setVisibility(View.GONE);
+                }
+
 
                 // Unbind any existing use cases before rebinding.
                 cameraProvider.unbindAll();
@@ -172,6 +200,7 @@ public class CameraActivity extends AppCompatActivity {
                         ivCapturedImage.setVisibility(View.VISIBLE);
                         viewFinder.setVisibility(View.GONE);
                         btnCapture.setVisibility(View.GONE);
+                        btnSwitchCamera.setVisibility(View.GONE); // Hide switch button
                         llPostCapture.setVisibility(View.VISIBLE);
 
                         // Set up the "Use this Picture" button listener.
@@ -215,7 +244,8 @@ public class CameraActivity extends AppCompatActivity {
         File[] mediaDirs = getExternalMediaDirs();
         File mediaDir = null;
         if (mediaDirs != null && mediaDirs.length > 0) {
-            mediaDir = new File(mediaDirs[0], "PhooPics");
+            // Using a hardcoded folder name to avoid issues with missing R.string resources
+            mediaDir = new File(mediaDirs[0], "PhotoCaptures");
             mediaDir.mkdirs();
         }
         return mediaDir != null ? mediaDir : getFilesDir();
