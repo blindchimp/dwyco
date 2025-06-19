@@ -57,6 +57,7 @@ public class CameraActivity extends AppCompatActivity {
     private ExecutorService cameraExecutor;
     private File outputDirectory;
     private CameraSelector cameraSelector; // To keep track of the selected camera
+    private File currentPhotoFile; // To keep track of the file being viewed
 
 
     @Override
@@ -140,7 +141,9 @@ public class CameraActivity extends AppCompatActivity {
                 preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
                 // Set up the image capture use case.
-                imageCapture = new ImageCapture.Builder().build();
+                imageCapture = new ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                        .build();
 
                 // Select the back camera as the default.
                 // Check if the device has both front and back cameras and show/hide the switch button
@@ -191,6 +194,9 @@ public class CameraActivity extends AppCompatActivity {
                     @Override
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
                         // Get the URI of the saved image.
+                        currentPhotoFile = photoFile;
+
+                        // Get the URI of the saved image.
                         Uri savedUri = Uri.fromFile(photoFile);
                         String msg = "Photo capture succeeded: " + savedUri;
                         Log.d(TAG, msg);
@@ -205,6 +211,10 @@ public class CameraActivity extends AppCompatActivity {
 
                         // Set up the "Use this Picture" button listener.
                         btnUsePicture.setOnClickListener(v -> {
+                            // Return the URI of the saved image to the calling activity.
+                            // so it doesn't get deleted by onDestroy().
+                            currentPhotoFile = null;
+
                             // Return the URI of the saved image to the calling activity.
                             Intent resultIntent = new Intent();
                             resultIntent.putExtra("image_path", photoFile.getAbsolutePath());
@@ -224,6 +234,14 @@ public class CameraActivity extends AppCompatActivity {
      * Restarts the camera preview.
      */
     private void restartCameraPreview() {
+        // Make the viewfinder visible again
+        if (currentPhotoFile != null) {
+            if(currentPhotoFile.exists()) {
+                currentPhotoFile.delete();
+            }
+            currentPhotoFile = null;
+        }
+
         // Make the viewfinder visible again
         viewFinder.setVisibility(View.VISIBLE);
         // Hide the captured image and post-capture buttons
@@ -270,6 +288,14 @@ public class CameraActivity extends AppCompatActivity {
         super.onDestroy();
         // Shut down the camera executor.
         cameraExecutor.shutdown();
+
+        // If the activity is destroyed and we have a photo file that the user
+        // didn't explicitly save, delete it.
+        if (currentPhotoFile != null) {
+             if(currentPhotoFile.exists()) {
+                currentPhotoFile.delete();
+             }
+        }
     }
 }
 
