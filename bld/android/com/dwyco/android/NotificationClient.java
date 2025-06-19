@@ -689,7 +689,7 @@ public static void set_user_property(String name, String value) {
     }
 
     private static void catchLog(String log) {
-        Log.d("dwyco_notfication", log);
+        Log.d("dwyco_notification", log);
     }
 
 

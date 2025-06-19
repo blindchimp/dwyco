@@ -353,28 +353,28 @@ ApplicationWindow {
         }
     }
 
-    Loader {
-        id: cam
+    // Loader {
+    //     id: cam
 
-        property string next_state
-        property string ok_text: "Send"
-        //anchors.fill: parent
-        visible: false
-        active: visible
+    //     property string next_state
+    //     property string ok_text: "Send"
+    //     //anchors.fill: parent
+    //     visible: false
+    //     active: visible
 
-        onLoaded: {
-            item.state_on_close = cam.next_state
-            item.ok_pv_text = cam.ok_text
-        }
+    //     onLoaded: {
+    //         item.state_on_close = cam.next_state
+    //         item.ok_pv_text = cam.ok_text
+    //     }
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DeclarativeCamera.qml"
-                //vid_cam_preview.active = false
-            }
-        }
+    //     onVisibleChanged: {
+    //         if(visible) {
+    //             source = "qrc:/DeclarativeCamera.qml"
+    //             //vid_cam_preview.active = false
+    //         }
+    //     }
 
-    }
+    // }
 
     DSettings {
         id: settings_dialog
@@ -699,20 +699,11 @@ ApplicationWindow {
 
         }
 
-//        onImage_picked: {
-//            console.log("image " + fn)
-//            if(android_img_pick_hack === 1)
-//            {
-//                profile_update_dialog.android_img_filename = fn
-//                profile_update_dialog.android_hack = true
-//            }
-//            else if(android_img_pick_hack === 2)
-//            {
-//                chatbox.android_img_filename = fn
-//                chatbox.android_hack = true
+        onImage_picked: (fn)=> {
+                            console.log("image " + fn)
+                            simple_msg_list.snapshot(fn)
 
-//            }
-//        }
+                        }
 
 //        onAny_unviewedChanged: {
 //            if(any_unviewed)
