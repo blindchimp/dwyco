@@ -24,7 +24,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.8)
 find_package(Qt6  REQUIRED COMPONENTS Network)
-#find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+if(NOT ANDROID)
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
 # Get Qt version from the Qt6 config
@@ -142,7 +144,7 @@ set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
-    QT_ANDROID_TARGET_SDK_VERSION 34
+    QT_ANDROID_TARGET_SDK_VERSION 35
 
 )
 set_target_properties(rando PROPERTIES
