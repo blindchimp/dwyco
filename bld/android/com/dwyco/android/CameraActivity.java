@@ -165,6 +165,13 @@ public class CameraActivity extends AppCompatActivity {
                 // Bind the use cases to the camera.
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
 
+                // *** FIX: Bring buttons to the front to ensure they are clickable ***
+                // This prevents the PreviewView from intercepting touch events on older Android versions.
+                btnCapture.bringToFront();
+                btnDone.bringToFront();
+                btnSwitchCamera.bringToFront();
+
+
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
             }
@@ -208,6 +215,9 @@ public class CameraActivity extends AppCompatActivity {
                         btnCapture.setVisibility(View.GONE);
                         btnSwitchCamera.setVisibility(View.GONE); // Hide switch button
                         llPostCapture.setVisibility(View.VISIBLE);
+
+                        // Set up the "Use this Picture" button listener.
+                        llPostCapture.bringToFront();
 
                         // Set up the "Use this Picture" button listener.
                         btnUsePicture.setOnClickListener(v -> {
