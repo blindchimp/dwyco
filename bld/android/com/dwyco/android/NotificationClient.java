@@ -442,12 +442,23 @@ public static void set_user_property(String name, String value) {
         }
 
     }
+static final int REQUEST_OPEN_IMAGE = 1;
+static final int REQUEST_IMAGE_CAPTURE = 2;
+
+    // Add this method to your NotificationClient class
+public static void takePicture() {
+    if (m_instance == null) {
+        Log.e(TAG, "NotificationClient instance is null. Cannot start camera.");
+        return;
+    }
+    Intent intent = new Intent(m_instance, CameraActivity.class);
+    m_instance.startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
+}
 
     // stuff related to image picking
 
 
-    static final int REQUEST_OPEN_IMAGE = 1;
-
+    
 
     public static void openAnImage()
     {
@@ -475,6 +486,16 @@ public static void set_user_property(String name, String value) {
                     catchLog("result null");
                 }
 
+            }
+            else if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                if (data != null && data.hasExtra("image_path")) {
+                    String imagePath = data.getStringExtra("image_path");
+                    dwybg.dwyco_set_aux_string(imagePath);
+                    catchLog("Photo captured: " + imagePath);
+                } else {
+                    dwybg.dwyco_set_aux_string("");
+                    catchLog("Photo capture cancelled or failed.");
+                }
             }
         }
         else
