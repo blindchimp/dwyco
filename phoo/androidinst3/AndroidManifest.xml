@@ -48,6 +48,11 @@ android:fullBackupContent="@xml/backup_rules"
                 android:name="android.app.extract_android_style"
                 android:value="minimal" />
         </activity>
+	<activity
+            android:name="com.dwyco.android.CameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 <service android:name="com.dwyco.android.MyFirebaseMessagingService" android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
