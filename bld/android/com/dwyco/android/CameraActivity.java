@@ -411,9 +411,11 @@ public class CameraActivity extends AppCompatActivity {
     private void finishCameraActivity(@Nullable Uri imageUri) {
         Intent resultIntent = new Intent();
         if (imageUri != null) {
-            resultIntent.putExtra("image_path", imageUri.toString());
             // Optionally, add the URI as data if the calling activity expects it via getData()
-            resultIntent.setData(imageUri);
+            // For file:// URIs, getPath() directly provides the absolute path.
+            String imageAbsolutePath = imageUri.getPath();
+            resultIntent.putExtra("image_path", imageAbsolutePath);
+            Log.d(TAG, "Returning image absolute path: " + imageAbsolutePath);
             setResult(RESULT_OK, resultIntent);
         } else {
             setResult(RESULT_CANCELED, resultIntent);
