@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.300")
+set(RANDO_VERSION "4.301")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
 set(RANDO_VERSION_CODE 3000173)
 if (ANDROID)

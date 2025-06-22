@@ -37,12 +37,14 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.exifinterface.media.ExifInterface; // Import for ExifInterface
 
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -343,25 +345,22 @@ public class CameraActivity extends AppCompatActivity {
 
         try {
             // Decode the image from the URI
-            Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
-            if (bitmap != null) {
+            Bitmap originalBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
+            if (originalBitmap != null) {
                 // Rotate the bitmap if necessary (CameraX often captures in landscape even if device is portrait)
+                int rotationAngle = getRotationAngle(this, uri);
+                Log.d(TAG, "Image rotation angle from EXIF: " + rotationAngle);
                 // This is a common issue with CameraX and various devices.
-                // A more robust solution might involve ImageAnalysis use case to get correct orientation
-                // or checking EXIF data. For simplicity, we'll try a common rotation.
-                // Note: ImageProxy provides rotationDegrees that can be used directly with ImageCapture
-                // but if loading from URI, manual rotation might be needed depending on how it was saved.
-                // For CameraX's `takePicture(OutputFileOptions...)`, the orientation should usually be correct.
-                // However, if using `takePicture(ImageCapture.OnImageCapturedCallback)`, rotation needs to be handled manually.
-                // Let's assume for `OutputFileOptions` it's handled, but keep this in mind for debugging.
-                // If the image appears sideways, uncomment and adjust the rotation logic.
-                /*
+                Bitmap rotatedBitmap = originalBitmap;
+                if (rotationAngle != 0) {
                 Matrix matrix = new Matrix();
-                matrix.postRotate(90); // Example rotation for portrait
-                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-                */
+                    matrix.postRotate(rotationAngle);
+                    rotatedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0,
+                            originalBitmap.getWidth(), originalBitmap.getHeight(), matrix, true);
+                    originalBitmap.recycle(); // Recycle original bitmap if a new one is created
+                }
 
-                imageView.setImageBitmap(bitmap);
+                imageView.setImageBitmap(rotatedBitmap);
                 imageView.setVisibility(View.VISIBLE);
                 previewView.setVisibility(View.GONE);
 
@@ -468,6 +467,44 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, "Error checking camera count: " + e.getMessage());
             return false; // Assume single camera or error
         }
+    }
+
+    /**
+     * Reads the EXIF orientation tag from an image URI and returns the rotation angle in degrees.
+     *
+     * @param context The context.
+     * @param imageUri The URI of the image file.
+     * @return The rotation angle in degrees (0, 90, 180, 270), or 0 if no orientation tag is found or an error occurs.
+     */
+    private int getRotationAngle(Context context, Uri imageUri) {
+        int rotationAngle = 0;
+        try (InputStream inputStream = context.getContentResolver().openInputStream(imageUri)) {
+            if (inputStream != null) {
+                ExifInterface exifInterface = new ExifInterface(inputStream);
+                int orientation = exifInterface.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_NORMAL);
+
+                switch (orientation) {
+                    case ExifInterface.ORIENTATION_ROTATE_90:
+                        rotationAngle = 90;
+                        break;
+                    case ExifInterface.ORIENTATION_ROTATE_180:
+                        rotationAngle = 180;
+                        break;
+                    case ExifInterface.ORIENTATION_ROTATE_270:
+                        rotationAngle = 270;
+                        break;
+                    case ExifInterface.ORIENTATION_NORMAL:
+                    default:
+                        rotationAngle = 0;
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Error reading EXIF data for rotation: " + e.getMessage());
+        }
+        return rotationAngle;
     }
 }
 
