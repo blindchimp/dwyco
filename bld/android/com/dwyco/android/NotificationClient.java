@@ -103,7 +103,7 @@ public class NotificationClient extends QtActivity
     private PreviewView viewFinder;
     private Button captureButton, doneButton, switchCameraButton;
     private Button usePictureButton, tryAgainButton;
-    private ImageView-previewImageView;
+    private ImageView previewImageView;
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
     private File lastCapturedFile;
@@ -388,7 +388,7 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
         doneButton.setOnClickListener(v -> closeCameraView(null));
         switchCameraButton.setOnClickListener(v -> switchCamera());
         usePictureButton.setOnClickListener(v -> closeCameraView(lastCapturedFile));
-        tryAgainButton.setOnClickListener(v -> show viewfinder());
+        tryAgainButton.setOnClickListener(v -> showViewfinder());
 
         rootView.addView(cameraLayout);
 
