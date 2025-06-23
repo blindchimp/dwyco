@@ -15,6 +15,8 @@ import android.app.PendingIntent;
 import android.os.Bundle;
 import android.app.AlarmManager;
 import java.util.Calendar;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import android.content.SharedPreferences;
 
@@ -32,8 +34,15 @@ import android.content.ContentUris;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.os.Vibrator;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.Toast;
+
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -60,6 +69,19 @@ import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 
+import androidx.annotation.NonNull;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.lifecycle.LifecycleOwner;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 // note: use notificationcompat stuff for older androids
 
 public class NotificationClient extends QtActivity
@@ -73,12 +95,30 @@ public class NotificationClient extends QtActivity
     private static final int REQUEST_POST_NOTIFICATIONS = 1;
     private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
     private static SoundPoolPlayer soundPoolPlayer;
+    private static final int REQUEST_CAMERA_PERMISSION = 10;
+
+
+    // Camera-related UI and variables
+    private FrameLayout cameraLayout;
+    private PreviewView viewFinder;
+    private Button captureButton, doneButton, switchCameraButton;
+    private Button usePictureButton, tryAgainButton;
+    private ImageView-previewImageView;
+    private ImageCapture imageCapture;
+    private ExecutorService cameraExecutor;
+    private File lastCapturedFile;
+    private int currentCameraSelector = CameraSelector.LENS_FACING_BACK;
+
 
     public NotificationClient()
     {
         m_instance = this;
         prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
     }
+
+     // Native method to pass the result back to Qt
+    public static native void nativePictureTaken(String fileName);
+
 
     @Override
     public void onCreate(Bundle state) {
@@ -170,6 +210,16 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
             // Permission denied. Explain to the user that the feature is unavailable.
         }
     }
+     if (requestCode == REQUEST_CAMERA_PERMISSION) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Camera permission granted, start camera.
+            runOnUiThread(this::setupCameraUI);
+        } else {
+            // Camera permission denied.
+            Toast.makeText(this, "Camera permission is required to take pictures.", Toast.LENGTH_LONG).show();
+            nativePictureTaken(""); // Inform Qt that the operation was cancelled
+        }
+    }
 }
 
 
@@ -221,6 +271,268 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
         Notification not = m_builder.build();
         m_notificationManager.notify(1, not);
 
+    }
+
+     /**
+     * Entry point to start the camera view and picture taking process.
+     * This method can be called from your Qt/C++ code.
+     */
+    public static void takePicture() {
+        if (m_instance == null) {
+            Log.e(TAG, "NotificationClient instance is null. Cannot take picture.");
+            return;
+        }
+        m_instance.runOnUiThread(() -> {
+            if (ContextCompat.checkSelfPermission(m_instance, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                m_instance.setupCameraUI();
+            } else {
+                ActivityCompat.requestPermissions(m_instance, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+            }
+        });
+    }
+
+    private void setupCameraUI() {
+        if (cameraLayout != null) {
+            // Already initialized
+            return;
+        }
+
+        cameraExecutor = Executors.newSingleThreadExecutor();
+        ViewGroup rootView = (ViewGroup) getWindow().getDecorView().getRootView();
+
+        // Create the main layout
+        cameraLayout = new FrameLayout(this);
+        cameraLayout.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        cameraLayout.setBackgroundColor(0xFF000000); // Black background
+
+        // Create the PreviewView for the camera feed
+        viewFinder = new PreviewView(this);
+        viewFinder.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        cameraLayout.addView(viewFinder);
+
+        // Create the ImageView for showing the captured picture
+        previewImageView = new ImageView(this);
+        previewImageView.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        previewImageView.setVisibility(View.GONE);
+        previewImageView.setBackgroundColor(0xFF000000);
+        cameraLayout.addView(previewImageView);
+
+
+        // Create buttons
+        captureButton = new Button(this);
+        captureButton.setText("Capture");
+        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        captureParams.gravity = android.view.Gravity.BOTTOM | android.view.Gravity.CENTER_HORIZONTAL;
+        captureParams.bottomMargin = 50;
+        captureButton.setLayoutParams(captureParams);
+        cameraLayout.addView(captureButton);
+
+        doneButton = new Button(this);
+        doneButton.setText("Done");
+        FrameLayout.LayoutParams doneParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        doneParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        doneParams.topMargin = 20;
+        doneParams.rightMargin = 20;
+        doneButton.setLayoutParams(doneParams);
+        cameraLayout.addView(doneButton);
+
+        switchCameraButton = new Button(this);
+        switchCameraButton.setText("Switch");
+        FrameLayout.LayoutParams switchParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        switchParams.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        switchParams.topMargin = 20;
+        switchParams.leftMargin = 20;
+        switchCameraButton.setLayoutParams(switchParams);
+        cameraLayout.addView(switchCameraButton);
+
+        usePictureButton = new Button(this);
+        usePictureButton.setText("Use This Picture");
+        usePictureButton.setVisibility(View.GONE);
+        FrameLayout.LayoutParams usePictureParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        usePictureParams.gravity = android.view.Gravity.BOTTOM | android.view.Gravity.END;
+        usePictureParams.bottomMargin = 50;
+        usePictureParams.rightMargin = 20;
+        usePictureButton.setLayoutParams(usePictureParams);
+        cameraLayout.addView(usePictureButton);
+
+
+        tryAgainButton = new Button(this);
+        tryAgainButton.setText("Try Again");
+        tryAgainButton.setVisibility(View.GONE);
+        FrameLayout.LayoutParams tryAgainParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        tryAgainParams.gravity = android.view.Gravity.BOTTOM | android.view.Gravity.START;
+        tryAgainParams.bottomMargin = 50;
+        tryAgainParams.leftMargin = 20;
+        tryAgainButton.setLayoutParams(tryAgainParams);
+        cameraLayout.addView(tryAgainButton);
+
+
+        // Set click listeners
+        captureButton.setOnClickListener(v -> takePhoto());
+        doneButton.setOnClickListener(v -> closeCameraView(null));
+        switchCameraButton.setOnClickListener(v -> switchCamera());
+        usePictureButton.setOnClickListener(v -> closeCameraView(lastCapturedFile));
+        tryAgainButton.setOnClickListener(v -> show viewfinder());
+
+        rootView.addView(cameraLayout);
+
+        startCamera();
+    }
+
+     private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                bindCameraUseCases(cameraProvider);
+            } catch (Exception e) {
+                Log.e(TAG, "Error starting camera", e);
+                Toast.makeText(this, "Error starting camera.", Toast.LENGTH_SHORT).show();
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void bindCameraUseCases(ProcessCameraProvider cameraProvider) {
+        Preview preview = new Preview.Builder().build();
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(currentCameraSelector)
+                .build();
+        imageCapture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build();
+
+        preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+
+        try {
+            cameraProvider.unbindAll();
+            cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview, imageCapture);
+            
+            // Show/hide switch camera button
+            boolean hasFront = cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA);
+            boolean hasBack = cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA);
+            if (hasFront && hasBack) {
+                switchCameraButton.setVisibility(View.VISIBLE);
+            } else {
+                switchCameraButton.setVisibility(View.GONE);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Use case binding failed", e);
+        }
+    }
+
+
+     private void takePhoto() {
+        if (imageCapture == null) {
+            return;
+        }
+
+        String name = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis());
+        File photoFile = new File(getCacheDir(), name + ".jpg");
+
+        ImageCapture.OutputFileOptions outputOptions = new ImageCapture.OutputFileOptions.Builder(photoFile).build();
+
+        imageCapture.takePicture(
+                outputOptions,
+                ContextCompat.getMainExecutor(this),
+                new ImageCapture.OnImageSavedCallback() {
+                    @Override
+                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+                        lastCapturedFile = photoFile;
+                        Uri savedUri = outputFileResults.getSavedUri();
+                         if (savedUri == null) {
+                             savedUri = Uri.fromFile(photoFile);
+                         }
+                        Log.d(TAG, "Photo capture succeeded: " + savedUri);
+                        showPreview(savedUri);
+                    }
+
+                    @Override
+                    public void onError(@NonNull ImageCaptureException exception) {
+                        Log.e(TAG, "Photo capture failed: " + exception.getMessage(), exception);
+                    }
+                });
+    }
+
+      private void switchCamera() {
+        currentCameraSelector = (currentCameraSelector == CameraSelector.LENS_FACING_BACK)
+                ? CameraSelector.LENS_FACING_FRONT
+                : CameraSelector.LENS_FACING_BACK;
+        startCamera();
+    }
+
+    private void showPreview(Uri imageUri) {
+        viewFinder.setVisibility(View.GONE);
+        captureButton.setVisibility(View.GONE);
+        previewImageView.setVisibility(View.VISIBLE);
+        previewImageView.setImageURI(imageUri);
+
+        usePictureButton.setVisibility(View.VISIBLE);
+        tryAgainButton.setVisibility(View.VISIBLE);
+    }
+     
+    private void showViewfinder() {
+        if (lastCapturedFile != null) {
+            lastCapturedFile.delete();
+            lastCapturedFile = null;
+        }
+
+        previewImageView.setVisibility(View.GONE);
+        usePictureButton.setVisibility(View.GONE);
+        tryAgainButton.setVisibility(View.GONE);
+
+        viewFinder.setVisibility(View.VISIBLE);
+        captureButton.setVisibility(View.VISIBLE);
+    }
+      private void closeCameraView(File resultFile) {
+        if (cameraLayout != null) {
+            ViewGroup rootView = (ViewGroup) getWindow().getDecorView().getRootView();
+            rootView.removeView(cameraLayout);
+        }
+
+        if (cameraExecutor != null) {
+            cameraExecutor.shutdown();
+        }
+
+        String resultPath = "";
+        if (resultFile != null) {
+            resultPath = resultFile.getAbsolutePath();
+        } else {
+             if (lastCapturedFile != null) {
+                lastCapturedFile.delete();
+            }
+        }
+
+        // Cleanup references
+        cameraLayout = null;
+        viewFinder = null;
+        captureButton = null;
+        doneButton = null;
+        switchCameraButton = null;
+        usePictureButton = null;
+        tryAgainButton = null;
+        previewImageView = null;
+        imageCapture = null;
+        lastCapturedFile = null;
+
+        nativePictureTaken(resultPath);
     }
 
     public static void cancel()
@@ -745,3 +1057,4 @@ private class SoundPoolPlayer {
     }
 }
 }
+
