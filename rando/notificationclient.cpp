@@ -111,7 +111,7 @@ void NotificationClient::takePicture()
 {
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
-        "takePicture");
+        "openCamera");
 }
 
 void

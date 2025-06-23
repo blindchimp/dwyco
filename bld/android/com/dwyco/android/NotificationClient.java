@@ -59,6 +59,7 @@ import androidx.core.app.ActivityCompat;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import java.text.SimpleDateFormat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -72,6 +73,7 @@ public class NotificationClient extends QtActivity
     private static String TAG = "notification_client";
     private static final int REQUEST_POST_NOTIFICATIONS = 1;
     private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
+    
     private static SoundPoolPlayer soundPoolPlayer;
 
     public NotificationClient()
@@ -446,6 +448,60 @@ public static void set_user_property(String name, String value) {
 
 
     static final int REQUEST_OPEN_IMAGE = 1;
+    static final int REQUEST_CAMERA_CAPTURE = 2;
+private static Uri photoUri;
+
+public static void openCamera() {
+    m_instance.dispatchTakePhoto();
+}
+
+private void dispatchTakePhoto() {
+    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    
+    // Ensure that there's a camera activity to handle the intent
+    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+        // Create the File where the photo should go
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException ex) {
+            // Error occurred while creating the File
+            catchLog("Error creating image file: " + ex.getMessage());
+            dwybg.dwyco_set_aux_string("");
+            return;
+        }
+        
+        // Continue only if the File was successfully created
+        if (photoFile != null) {
+            photoUri = FileProvider.getUriForFile(this,
+                    DwycoApp.file_provider,
+                    photoFile);
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            startActivityForResult(takePictureIntent, REQUEST_CAMERA_CAPTURE);
+        }
+    } else {
+        catchLog("No camera app available");
+        dwybg.dwyco_set_aux_string("");
+    }
+}
+
+private File createImageFile() throws IOException {
+    // Create an image file name
+    String timeStamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", 
+                                                      java.util.Locale.getDefault()).format(new java.util.Date());
+    String imageFileName = "JPEG_" + timeStamp + "_";
+    File cacheDir = getCacheDir();
+    File image = File.createTempFile(
+        imageFileName,  /* prefix */
+        ".jpg",         /* suffix */
+        cacheDir        /* directory */
+    );
+    
+    return image;
+}
+
+
+
 
 
     public static void openAnImage()
@@ -474,7 +530,22 @@ public static void set_user_property(String name, String value) {
                     catchLog("result null");
                 }
 
+            } else if (requestCode == REQUEST_CAMERA_CAPTURE) {
+            // Handle camera capture result
+            if (photoUri != null) {
+                String filePath = FileUtils.getRealPath(getApplicationContext(), photoUri);
+                if (filePath != null) {
+                    dwybg.dwyco_set_aux_string(filePath);
+                    catchLog("camera result " + filePath);
+                } else {
+                    dwybg.dwyco_set_aux_string("");
+                    catchLog("camera result null");
+                }
+            } else {
+                dwybg.dwyco_set_aux_string("");
+                catchLog("camera photoUri null");
             }
+        }
         }
         else
         {
