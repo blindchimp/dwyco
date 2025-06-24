@@ -459,6 +459,7 @@ public static void set_user_property(String name, String value) {
 
     static final int REQUEST_OPEN_IMAGE = 1;
     static final int REQUEST_CAMERA_CAPTURE = 2;
+    private static final int REQUEST_CAMERA_PERMISSION = 3;
 private static Uri photoUri;
 
 public static void openCamera() {
@@ -466,6 +467,11 @@ public static void openCamera() {
 }
 
 private void dispatchTakePhoto() {
+    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        // Request camera permission
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+        return;
+    }
     Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
     
     // Ensure that there's a camera activity to handle the intent
