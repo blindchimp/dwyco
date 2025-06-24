@@ -487,6 +487,8 @@ private void dispatchTakePhoto() {
                     DwycoApp.file_provider,
                     photoFile);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(takePictureIntent, REQUEST_CAMERA_CAPTURE);
         }
     } else {
