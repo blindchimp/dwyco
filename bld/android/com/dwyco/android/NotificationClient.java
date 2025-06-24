@@ -77,6 +77,15 @@ public class NotificationClient extends QtActivity
     
     private static SoundPoolPlayer soundPoolPlayer;
 
+    // --- START OF CHANGES ---
+
+    // Member variable to store the path of the photo file.
+    // This removes the need to resolve the URI later.
+    private String mCurrentPhotoPath;
+
+    // --- END OF CHANGES ---
+
+
     public NotificationClient()
     {
         m_instance = this;
@@ -498,6 +507,10 @@ private File createImageFile() throws IOException {
         cacheDir        /* directory */
     );
     
+    // --- START OF CHANGES ---
+    // Save a file: path for use with ACTION_VIEW intents
+    mCurrentPhotoPath = image.getAbsolutePath();
+    // --- END OF CHANGES ---
     return image;
 }
 
@@ -533,19 +546,16 @@ private File createImageFile() throws IOException {
 
             } else if (requestCode == REQUEST_CAMERA_CAPTURE) {
             // Handle camera capture result
-            if (photoUri != null) {
-                String filePath = FileUtils.getRealPath(getApplicationContext(), photoUri);
-                if (filePath != null) {
-                    dwybg.dwyco_set_aux_string(filePath);
-                    catchLog("camera result " + filePath);
+                // For camera captures where we provided the file, we already know the path.
+                // Do NOT use FileUtils.getRealPath() here as it will crash.
+                if (mCurrentPhotoPath != null) {
+                    dwybg.dwyco_set_aux_string(mCurrentPhotoPath);
+                    catchLog("camera result " + mCurrentPhotoPath);
                 } else {
                     dwybg.dwyco_set_aux_string("");
-                    catchLog("camera result null");
+                    catchLog("camera result null because path was not saved");
                 }
-            } else {
-                dwybg.dwyco_set_aux_string("");
-                catchLog("camera photoUri null");
-            }
+                // --- END OF CHANGES ---
         }
         }
         else

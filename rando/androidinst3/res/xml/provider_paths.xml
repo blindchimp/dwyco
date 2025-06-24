@@ -3,5 +3,6 @@
 
     <!-- Share folder under internal file folder. The base folder is context.getFilesDir() -->
     <files-path name="shares" path="dwyco/rando/shares/" />
+    <cache-path name="camera_images" path="." />
 
 </paths>
