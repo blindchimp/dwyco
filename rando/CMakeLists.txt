@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.300")
+set(RANDO_VERSION "4.311")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000173)
+set(RANDO_VERSION_CODE 3000179)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -141,7 +141,7 @@ set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
-    QT_ANDROID_TARGET_SDK_VERSION 35
+    QT_ANDROID_TARGET_SDK_VERSION 34
 
 )
 set_target_properties(rando PROPERTIES
