@@ -699,12 +699,13 @@ scrolling in the listview or doesn't recognizing the swipe.
         width: cm(1.5)
         height: cm(1.5)
         onClicked: {
-            cam.next_state = "StopAndPop"
-            cam.ok_text = "Upload"
+            // cam.next_state = "StopAndPop"
+            // cam.ok_text = "Upload"
             if(Qt.platform.os == "android") {
                 notificationClient.log_event2("camclick", "regular")
+                notificationClient.takePicture()
             }
-            stack.push(cam)
+            //stack.push(cam)
         }
     }
 

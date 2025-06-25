@@ -1,5 +1,6 @@
 package com.dwyco.android;
 import com.dwyco.cdc32.dwybg;
+import com.dwyco.config.DwycoApp;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
