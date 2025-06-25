@@ -69,6 +69,7 @@ public slots:
     void set_user_property(QString name, QString value);
     void set_lastrun();
     void share_to_mediastore(QString filename);
+    void takePicture();
 
 private:
     QString m_notification;
