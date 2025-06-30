@@ -1,6 +1,6 @@
 
 if(NOT ANDROID)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto5 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto5)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto8 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto8)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/jenkins ${CMAKE_CURRENT_BINARY_DIR}/bld/jenkins)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/dwcls ${CMAKE_CURRENT_BINARY_DIR}/bld/dwcls)

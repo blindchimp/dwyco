@@ -488,6 +488,7 @@ MMChannel::check_sync_challenge_response(int subchan, sproto *p, const char *ev)
         p->user_info = vcnil;
         return sproto::next;
     }
+    GRTLOG("sync challenge fail want %s got %s", (const char *)to_hex(p->user_info), (const char *)to_hex(rvc));
     return sproto::fail;
 }
 

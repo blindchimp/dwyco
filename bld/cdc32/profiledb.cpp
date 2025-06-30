@@ -413,7 +413,7 @@ int
 verification_record_exists(vc uid)
 {
     vc huid = to_hex(uid);
-    vc ret = sql_simple("select 1 from pk_verified where uid = ?1");
+    vc ret = sql_simple("select 1 from pk_verified where uid = ?1", huid);
     if(ret.num_elems() == 0)
         return 0;
     return 1;
@@ -516,7 +516,7 @@ save_pk(vc uid, vc pk)
     Pk_memory_cache.del(uid);
     vc huid = to_hex(uid);
     GRTLOG("SAVE PK", 0, 0);
-    GRTLOGVC(prf);
+    GRTLOGVC(pk);
     if(!check_pk(pk))
         return 0;
     int n = pk.num_elems();
@@ -527,8 +527,7 @@ save_pk(vc uid, vc pk)
     }
 
     vc opk;
-    volatile int foo = 0;
-    if((foo = !load_pk(uid, opk)) ||
+    if(!load_pk(uid, opk) ||
             pk[PKC_STATIC_PUBLIC] != opk[PKC_STATIC_PUBLIC] ||
             pk[PKC_DWYCO_SIGNATURE] != opk[PKC_DWYCO_SIGNATURE] ||
             pk[PKC_ALT_STATIC_PUBLIC] != opk[PKC_ALT_STATIC_PUBLIC] ||

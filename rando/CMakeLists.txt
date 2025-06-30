@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.233")
+set(RANDO_VERSION "4.311")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000173)
+set(RANDO_VERSION_CODE 3000179)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -24,7 +24,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.8)
 find_package(Qt6  REQUIRED COMPONENTS Network)
+if(NOT ANDROID)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
 # Get Qt version from the Qt6 config
@@ -70,7 +72,6 @@ qt_add_resources(SRCS
 qt_add_executable(rando
    ${SRCS}
 )
-qt_add_ios_ffmpeg_libraries(rando)
 
 qt_add_qml_module(rando
     URI dwyco
@@ -82,12 +83,12 @@ qt_add_qml_module(rando
     QML_FILES
     main.qml
            ProfileDialog.qml
-           DeclarativeCamera.qml
-           PhotoPreview.qml
-           PhotoCaptureControls.qml
+
+
+
            CameraButton.qml
            MsgView.qml
-           PicPreview.qml
+
            SimpleToolbar.qml
 
            #MultiSelectToolbar.qml
@@ -153,7 +154,7 @@ set_target_properties(rando PROPERTIES
 set(BASELIBS
     cdc32
     vc
-    crypto5
+    crypto8
     dwcls
     kazlib
     pbm
@@ -179,7 +180,7 @@ if(ANDROID)
         ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
         Qt6::Quick
         Qt6::Network
-        Qt6::Multimedia
+#        Qt6::Multimedia
         Qt6::QuickControls2Material
         Qt6::Positioning
         Qt6::Location

@@ -9,7 +9,7 @@ include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
-    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto5
+    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto8
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../jenkins
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
@@ -70,6 +70,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 # out of the clangd reference calculations and stuff in the ide.
 # only use this if you really need the api tracing entries.
 #add_compile_definitions($<$<CONFIG:Debug>:DWYCO_TRACE>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
 
 if(${DWYCO_APP} STREQUAL "rando")
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS)

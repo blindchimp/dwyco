@@ -4,6 +4,7 @@
 
 package com.dwyco.android;
 import com.dwyco.cdc32.dwybg;
+import com.dwyco.config.DwycoApp;
 import org.qtproject.qt.android.bindings.QtActivity;
 import org.qtproject.qt.android.bindings.QtApplication;
 import android.app.Notification;
@@ -59,6 +60,7 @@ import androidx.core.app.ActivityCompat;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import java.text.SimpleDateFormat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -72,7 +74,17 @@ public class NotificationClient extends QtActivity
     private static String TAG = "notification_client";
     private static final int REQUEST_POST_NOTIFICATIONS = 1;
     private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
+    
     private static SoundPoolPlayer soundPoolPlayer;
+
+    // --- START OF CHANGES ---
+
+    // Member variable to store the path of the photo file.
+    // This removes the need to resolve the URI later.
+    private String mCurrentPhotoPath;
+
+    // --- END OF CHANGES ---
+
 
     public NotificationClient()
     {
@@ -446,6 +458,72 @@ public static void set_user_property(String name, String value) {
 
 
     static final int REQUEST_OPEN_IMAGE = 1;
+    static final int REQUEST_CAMERA_CAPTURE = 2;
+    private static final int REQUEST_CAMERA_PERMISSION = 3;
+private static Uri photoUri;
+
+public static void openCamera() {
+    m_instance.dispatchTakePhoto();
+}
+
+private void dispatchTakePhoto() {
+    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        // Request camera permission
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+        return;
+    }
+    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    
+    // Ensure that there's a camera activity to handle the intent
+    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+        // Create the File where the photo should go
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException ex) {
+            // Error occurred while creating the File
+            catchLog("Error creating image file: " + ex.getMessage());
+            dwybg.dwyco_set_aux_string("");
+            return;
+        }
+        
+        // Continue only if the File was successfully created
+        if (photoFile != null) {
+            photoUri = FileProvider.getUriForFile(this,
+                    DwycoApp.file_provider,
+                    photoFile);
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(takePictureIntent, REQUEST_CAMERA_CAPTURE);
+        }
+    } else {
+        catchLog("No camera app available");
+        dwybg.dwyco_set_aux_string("");
+    }
+}
+
+private File createImageFile() throws IOException {
+    // Create an image file name
+    String timeStamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", 
+                                                      java.util.Locale.getDefault()).format(new java.util.Date());
+    String imageFileName = "JPEG_" + timeStamp + "_";
+    File cacheDir = getCacheDir();
+    File image = File.createTempFile(
+        imageFileName,  /* prefix */
+        ".jpg",         /* suffix */
+        cacheDir        /* directory */
+    );
+    
+    // --- START OF CHANGES ---
+    // Save a file: path for use with ACTION_VIEW intents
+    mCurrentPhotoPath = image.getAbsolutePath();
+    // --- END OF CHANGES ---
+    return image;
+}
+
+
+
 
 
     public static void openAnImage()
@@ -474,7 +552,19 @@ public static void set_user_property(String name, String value) {
                     catchLog("result null");
                 }
 
-            }
+            } else if (requestCode == REQUEST_CAMERA_CAPTURE) {
+            // Handle camera capture result
+                // For camera captures where we provided the file, we already know the path.
+                // Do NOT use FileUtils.getRealPath() here as it will crash.
+                if (mCurrentPhotoPath != null) {
+                    dwybg.dwyco_set_aux_string(mCurrentPhotoPath);
+                    catchLog("camera result " + mCurrentPhotoPath);
+                } else {
+                    dwybg.dwyco_set_aux_string("");
+                    catchLog("camera result null because path was not saved");
+                }
+                // --- END OF CHANGES ---
+        }
         }
         else
         {
@@ -688,7 +778,7 @@ public static void set_user_property(String name, String value) {
     }
 
     private static void catchLog(String log) {
-        Log.d("dwyco_notfication", log);
+        Log.d("dwyco_notification", log);
     }
 
 

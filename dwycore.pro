@@ -7,7 +7,7 @@ bld/theora.1.2.x \
 bld/speex \
 bld/kazlib \
 bld/dwcls \
-bld/crypto5 \
+bld/crypto8 \
 bld/jenkins \
 bld/vc \
 bld/pbm \

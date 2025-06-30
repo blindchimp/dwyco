@@ -125,7 +125,7 @@ eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
 
         vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
 
-        SHA hash;
+        SHA1 hash;
         BufferedTransformation *bt = new HashFilter(hash);
         FileSource *file = new FileSource(newfn((const char *)mc->remote_filename).c_str(), true, bt);
         int n = bt->MaxRetrievable();

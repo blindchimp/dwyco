@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR phoo_cmake)
-set(PHOO_VERSION "4.228")
+set(PHOO_VERSION "4.400")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
 set(PHOO_VERSION_CODE 2000128)
 if (ANDROID)
@@ -236,7 +236,7 @@ set_target_properties(phoo PROPERTIES
 set(BASELIBS
     cdc32
     vc
-    crypto5
+    crypto8
     dwcls
     gsm
     kazlib

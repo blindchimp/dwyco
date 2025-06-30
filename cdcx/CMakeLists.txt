@@ -42,7 +42,7 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"4.235\"
+DWYCO_NICE_VERSION=\"4.300\"
 )
 include_directories(
 ./dllwin ../bld/qt6drv ../bld/dwcls .
@@ -114,7 +114,7 @@ qt_add_executable(CDC-X
 set(BASELIBS
     cdc32
     vc
-    crypto5
+    crypto8
     dwcls
     gsm
     kazlib
