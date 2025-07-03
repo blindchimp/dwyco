@@ -107,6 +107,13 @@ void NotificationClient::set_lastrun()
         "set_lastrun");
 }
 
+void NotificationClient::takePicture()
+{
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/android/NotificationClient",
+        "openCamera");
+}
+
 void
 NotificationClient::set_msg_count_url(QString s)
 {

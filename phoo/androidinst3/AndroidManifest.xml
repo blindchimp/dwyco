@@ -11,6 +11,11 @@
         android:largeScreens="true"
         android:normalScreens="true"
         android:smallScreens="true" />
+	    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
     <application
         android:name="org.qtproject.qt.android.bindings.QtApplication"
         android:hardwareAccelerated="true"
