@@ -1,0 +1,22 @@
+Thu Jul  3 11:39:09 AM MDT 2025
+
+Qt-6.8.2 seems to be working well enough to allow most of our releases to work. Qt-6.8.3 has a bug in android related to bringing apps back from the background that preclude using it.
+
+I'm branching master into a "Qt5 works here" branch in order to allow me to merge the qt-6.8-port branch into master and continue work using just Qt6.
+
+On Linux, I checked:
+
+phoo, cdcx, selfs, rando compile using the qmake files, and run. Qt5 might be having problems with accessing the webview stuff, since those pages in cdcx are blank (probably SSL related, you might be able to work around it if you need to.)
+
+On MacOS15:
+Qt5 is no longer supported in any meaningful way. So, the only things that will be released will be Qt6. iOS is still a mystery, but I don't release anything there anyways, so I'll deal with it later.
+
+On Windows: 
+Because of the doubts about the Qt6 video capture drivers, I have decided to use a hybrid installation. I will install CDX-X64 into a new folder, but point it to use the data in the previous cdc-x installation. That way, if the new software doesn't work, they can go back to using the previous version.
+
+This might require releasing an upgrade to cdc-x that is 32-bit, but has all the latest database changes and whatnot. Or being very careful about database updates and backing out to the old version.
+
+Android:
+I think I can remove QtMultimedia, at least temporarily, since the video part of it just doesn't work very well. This will allow me to release Qt6 versions of rando (already done) and Phoo.
+
+
