@@ -20,3 +20,5 @@ Android:
 I think I can remove QtMultimedia, at least temporarily, since the video part of it just doesn't work very well. This will allow me to release Qt6 versions of rando (already done) and Phoo.
 
 
+Helpers, etc.
+The qmake files seem to work fine with qt6, most of these things are not dependent on qt6 anyways.
