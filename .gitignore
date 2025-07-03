@@ -592,6 +592,13 @@ bld/android/com/dwyco/android/.vscode/
 CMakeLists.txt.user
 build/
 
+rando/androidinst3/src/com/dwyco/android/.vscode/
+
+bld/zlib/zconf.h.included
+.cache
+
+phoo/androidinst3/src/com/dwyco/android/.vscode/
+
 phoo/androidinst3/src/com/dwyco/android/.vscode/launch.json
 
 phoo/androidinst3/src/com/dwyco/android/DwycoProbe.java
@@ -609,4 +616,15 @@ phoo/androidinst3/src/com/dwyco/cdc32/dwybg.java
 phoo/androidinst3/src/com/dwyco/cdc32/dwybgJNI.java
 .aider*
 
+bld/android/com/dwyco/.vscode/
+
+rando/androidinst3/src/com/dwyco/.vscode/
+**/.qmlls.ini
+
+.idea/
+
+bld/android/android.iml
+
 rando/.cache/
+
+randobld/jni/crypto8

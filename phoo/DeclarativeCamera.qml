@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtMultimedia 5.12
-import QtQuick.Controls 2.12
+import QtQml
+import QtQuick
+import QtMultimedia
+import QtQuick.Controls
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and
@@ -41,7 +41,7 @@ Rectangle {
     anchors.fill: parent
 
     color: "black"
-    state: "PhotoCapture"
+    state: camera_permission.status !== Qt.PermissionStatus.Granted ? "Idle" : "PhotoCapture"
     
     Component.onCompleted: {
         cameraUI.snapshot.connect(stack.get(stack.depth - 2).snapshot)
@@ -62,7 +62,7 @@ Rectangle {
             name: "PhotoCapture"
             StateChangeScript {
                 script: {
-                    camera.captureMode = Camera.CaptureStillImage
+                    //camera.captureMode = Camera.CaptureStillImage
                     camera.start()
                 }
             }
@@ -99,48 +99,57 @@ Rectangle {
             }
         }
     ]
-    
+
+    MediaDevices {
+        id: devices
+    }
+
+    CaptureSession {
+        id: capture_session
+        imageCapture: ImageCapture {
+               id: img_cap
+            onImageCaptured: {
+                photoPreview.source = img_cap.preview
+                cameraUI.state = "PhotoPreview"
+                //console.log("orientation ", camera.orientation)
+                //console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                //camera.unlock()
+                //photoPreview.ok_vis = false
+                console.log("CAPTURED ", img_cap.preview)
+            }
+
+            onErrorOccurred: (req, error, message)=> {
+                console.log("cap failed ", message)
+                //camera.unlock()
+            }
+
+            onImageSaved: (req, path)=> {
+                              file_captured = path
+                              console.log("SAVED ", file_captured)
+                              //photoPreview.ok_vis = true
+                              photoPreview.source = core.from_local_file(file_captured)
+
+                          }
+        }
+        camera: camera
+        videoOutput: viewfinder
+    }
+
     Camera {
         id: camera
-        captureMode: Camera.CaptureStillImage
+        active: cameraUI.visible
+        //captureMode: Camera.CaptureStillImage
+        focusMode: Camera.FocusModeAuto
+        whiteBalanceMode: Camera.WhiteBalanceAuto
 
-        imageCapture {
+//        onLockStatusChanged: {
+//            console.log("lock status ", lockStatus)
+//            if(lockStatus == Camera.Locked) {
+//                camera.imageCapture.captureToLocation(core.tmp_dir)
 
-            onImageCaptured: {
-                photoPreview.source = preview
-                cameraUI.state = "PhotoPreview"
-                console.log("orientation ", camera.orientation)
-                console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
-                camera.unlock()
-                //photoPreview.ok_vis = false
-            }
+//            }
 
-            onCaptureFailed: {
-                console.log("cap failed ", message)
-                camera.unlock()
-            }
-
-            onImageSaved: {
-                file_captured = path
-                //photoPreview.ok_vis = true
-                
-            }
-        }
-
-        focus {
-            focusMode: CameraFocus.FocusAuto
-        }
-
-        imageProcessing.whiteBalanceMode: CameraImageProcessing.WhiteBalanceAuto
-
-        onLockStatusChanged: {
-            console.log("lock status ", lockStatus)
-            if(lockStatus == Camera.Locked) {
-                camera.imageCapture.captureToLocation(core.tmp_dir)
-
-            }
-
-        }
+//        }
 
 
     }
@@ -148,7 +157,7 @@ Rectangle {
     PhotoPreview {
         id : photoPreview
         anchors.fill : parent
-        onClosed: {
+        onClosed:(ok)=> {
             if(ok)
                 cameraUI.state = state_on_close //"PhotoCapture"
             else
@@ -165,8 +174,8 @@ Rectangle {
         visible: cameraUI.state == "PhotoCapture" || cameraUI.state == "VideoCapture"
 
         anchors.fill: parent
-        source: camera
-        autoOrientation: true
+        //source: camera
+        //autoOrientation: true
         
         PhotoCaptureControls {
             id: stillControls
@@ -178,7 +187,7 @@ Rectangle {
         BusyIndicator {
             id: busy1
 
-            running: {stillControls.visible && !camera.imageCapture.ready}
+            running: {stillControls.visible && !capture_session.imageCapture.readyForCapture}
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -194,9 +203,17 @@ Rectangle {
             color: "white"
         }
 
-        text: qsTr("(No camera devices available)")
+        text: {camera_permission.status !== Qt.PermissionStatus.Granted ? qsTr("Camera permission denied by Android") : qsTr("(No camera devices available)")}
         z: 6
-        visible: {QtMultimedia.availableCameras.length === 0}
+        visible: {camera_permission.status !== Qt.PermissionStatus.Granted || devices.videoInputs.length === 0}
+        Label {
+            anchors.centerIn: parent
+            anchors.margins: mm(3)
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: "(If the \"ask\" button doesn't work, go to Android settings to allow the camera permission.)"
+        }
+
         Button {
             anchors.left: parent.left
             anchors.bottom: parent.bottom
@@ -204,6 +221,22 @@ Rectangle {
             text: "Back"
             onClicked: {
                 stack.pop()
+            }
+        }
+        Button {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: mm(3)
+            text: "Ask permission"
+            visible: camera_permission.status !== Qt.PermissionStatus.Granted && devices.videoInputs.length !== 0
+            onClicked: {
+                camera_permission.request()
+                stack.pop()
+            }
+        }
+        onVisibleChanged: {
+            if(visible && devices.videoInputs.length !== 0) {
+                camera_permission.request()
             }
         }
 

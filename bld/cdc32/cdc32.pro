@@ -110,7 +110,7 @@ equals(DWYCO_APP, "rando") {
 SOURCES += uniq.cpp audwin.cc aqaud.cc
 } else {
 #DEFINES += USE_VFW
-DEFINES += VIDGRAB_HACKS
+#DEFINES += VIDGRAB_HACKS
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
 SOURCES += uniq.cpp aqaud.cc audwin.cc
 }

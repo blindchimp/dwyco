@@ -12,12 +12,13 @@
 #include <QScreen>
 #include <QSettings>
 #include <QHostInfo>
-#include <QQuickStyle>
+//#include <QQuickStyle>
 #include <QDebug>
 #include <QQmlFileSelector>
 #ifdef ANDROID
 #include "notificationclient.h"
-#include <QAndroidJniObject>
+#include <QJniObject>
+typedef QJniObject QAndroidJniObject;
 #endif
 
 QQmlApplicationEngine *TheEngine;
@@ -46,23 +47,23 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ANDROID
-    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    //QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 
     QGuiApplication app(argc, argv);
 
 #if defined(_WIN32)
-    QQuickStyle::setStyle("Fusion");
-    QQuickStyle::setFallbackStyle("Fusion");
+    //QQuickStyle::setStyle("Fusion");
+    //QQuickStyle::setFallbackStyle("Fusion");
 #else
-    QQuickStyle::setStyle("Material");
-    QQuickStyle::setFallbackStyle("Material");
+    //QQuickStyle::setStyle("Material");
+    //QQuickStyle::setFallbackStyle("Material");
 #endif
 
     //perm_setup(app);
 
-    qDebug() << QQuickStyle::availableStyles();
+    //qDebug() << QQuickStyle::availableStyles();
 
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
@@ -79,14 +80,17 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
-    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
-#if defined(FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
-    sel->setExtraSelectors(QStringList("vgqt"));
+    QQmlFileSelector *sel = new QQmlFileSelector(TheEngine);
+    QStringList sels;
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+    sels.append("vgqt");
 #endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
-    //sel->setExtraSelectors(QStringList("desktop"));
+    //sels.append("desktop");
 #endif
+    if(sels.count() > 0)
+        sel->setExtraSelectors(sels);
 
 
 #ifdef ANDROID
@@ -106,7 +110,7 @@ int main(int argc, char *argv[])
     dpi = screen->logicalDotsPerInch() * app.devicePixelRatio();
 #elif defined(Q_OS_ANDROID)
     QAndroidJniObject qtActivity =
-        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative",
+        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt/android/QtNative",
                 "activity", "()Landroid/app/Activity;");
     QAndroidJniObject resources = qtActivity.callObjectMethod("getResources",
                                   "()Landroid/content/res/Resources;");
@@ -125,7 +129,7 @@ int main(int argc, char *argv[])
 #else
     engine.rootContext()->setContextProperty("dwyco_debug", false);
 #endif
-
+    QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     return app.exec();

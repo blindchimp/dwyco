@@ -8,6 +8,7 @@
 typedef unsigned long HANDLE;
 typedef unsigned long HWND;
 typedef unsigned long DWORD;
+typedef void *DWORD_PTR;
 typedef unsigned int UINT;
 typedef HANDLE HWAVEOUT;
 

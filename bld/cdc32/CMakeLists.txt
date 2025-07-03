@@ -9,7 +9,7 @@ include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
-    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto5
+    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto8
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../jenkins
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
@@ -62,10 +62,15 @@ add_compile_definitions(
         DWYCO_USE_SQLITE
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
-        DWYCO_MUTEX_NAME=${DWYCO_APP}
-        DWYCO_TRACE
-        DW_RTLOG
+        DWYCO_MUTEX_NAME="${DWYCO_APP}"
 )
+
+add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
+# i forgot, adding this tracing stuff confuses the shit
+# out of the clangd reference calculations and stuff in the ide.
+# only use this if you really need the api tracing entries.
+#add_compile_definitions($<$<CONFIG:Debug>:DWYCO_TRACE>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
 
 if(${DWYCO_APP} STREQUAL "rando")
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS)
@@ -210,3 +215,12 @@ add_library(cdc32 OBJECT
 )
 
 target_compile_definitions(cdc32 PRIVATE CDC32_LIBRARY)
+# anything over -O1 causes the xcode 16.3 compiler to generate
+# code for the old DCT decoder that is broken. it might be
+# something in the old code, but i couldn't easily find the
+# problem. NOTE: this appears to be fixed by removing inlining
+# in packbits.* note: -fno-strict-aliasing did NOT fix the problem,
+# so inlining is the main suspect.
+if(APPLE)
+#target_compile_options(cdc32 PRIVATE $<$<CONFIG:Release>:-O3 -fno-strict-aliasing>)
+endif()

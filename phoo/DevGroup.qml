@@ -1,9 +1,9 @@
 
-import QtQuick 2.12
-import dwyco 1.0
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtQuick.Controls 2.12
+import QtQuick
+import dwyco
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtQuick.Controls
 Page {
 
     property bool show_failed
@@ -48,6 +48,7 @@ Page {
         Button {
             text: "Quit"
             onClicked: {
+                hard_close = true
                 Qt.quit()
             }
         }
@@ -157,7 +158,7 @@ Page {
             Layout.fillWidth: true
         }
 
-        Switch {
+        SwitchDelegate {
             id: join_button
             text: qsTr("Enable to link this device (requires restart)")
             onClicked: {
@@ -169,9 +170,9 @@ Page {
             enabled: up_and_running && group_pw.text_input.length >= 3 && group_name.text_input.length >= 4
             Layout.fillWidth: true
         }
-        Switch {
+        SwitchDelegate {
             id: unjoin_button
-            text: qsTr("Disable to UNLINK this device (requires restart)")
+            text: qsTr("Click to UNLINK this device... (requires restart)")
             onClicked: {
                 confirm_leave.visible = true
 //                if(core.start_gj2("", "") === 1) {
@@ -182,14 +183,13 @@ Page {
             checked: true
             visible: group_active
             Layout.fillWidth: true
-            MessageDialog {
+            MessageYN {
                 id: confirm_leave
                 title: "Leave group"
-                icon: StandardIcon.Question
                 text: "Leave the group and stop syncing?"
                 informativeText: "No messages are deleted from this action."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+
+                onYesClicked: {
                     if(core.start_gj2("", "") === 1) {
                         waiting_for_leave_ack = true
                         //Qt.quit()
@@ -197,7 +197,7 @@ Page {
 
                     close()
                 }
-                onNo: {
+                onNoClicked: {
                     unjoin_button.checked = true
                     close()
                 }
@@ -223,7 +223,7 @@ Page {
             visible: group_active
         }
 
-        RadioButton {
+        RadioDelegate {
             text: "Recent (recommended)"
             checked: core.eager_pull === 2
             onClicked: {
@@ -235,7 +235,7 @@ Page {
 
 
         }
-        RadioButton {
+        RadioDelegate {
             text: "Lazy (only when viewed)"
             checked: core.eager_pull === 0
             onClicked: {
@@ -245,7 +245,7 @@ Page {
             Layout.fillWidth: true
 
         }
-        RadioButton {
+        RadioDelegate {
             text: "Everything (server mode)"
             checked: core.eager_pull === 1
             onClicked: {

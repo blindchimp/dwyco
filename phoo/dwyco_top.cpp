@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 #ifdef ANDROID
-#include <QtAndroid>
+//#include <QtAndroid>
 #endif
 #include "dlli.h"
 #include <stdlib.h>
@@ -51,7 +51,7 @@
 #include "audi_qt.h"
 void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
-#include "androidperms.h"
+//#include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 #include "v4lcapexp.h"
@@ -80,7 +80,7 @@ void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
 
 
-#if defined(MACOSX) && !defined(DWYCO_IOS)
+#if defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
 #include <QtMacExtras>
 #endif
 
@@ -170,7 +170,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not sure, maybe i don't need this in qt6 any more?
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 void
@@ -1259,25 +1260,25 @@ setup_locations()
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
     QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 #else
-    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst2/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
-    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst3/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst3/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
+    QFile::copy(":androidinst3/assets/license.txt", userdir + "license.txt");
     QFile::remove(userdir + "no_img.png");
-    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
-    QFile::copy(":androidinst2/assets/online.wav", userdir + "online.wav");
-    QFile::copy(":androidinst2/assets/relaxed-call.wav", userdir + "relaxed-call.wav");
-    QFile::copy(":androidinst2/assets/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
-    QFile::copy(":androidinst2/assets/relaxed-online.wav", userdir + "relaxed-online.wav");
-    QFile::copy(":androidinst2/assets/relaxed-zap.wav", userdir + "relaxed-zap.wav");
+    QFile::copy(":androidinst3/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst3/assets/online.wav", userdir + "online.wav");
+    QFile::copy(":androidinst3/assets/relaxed-call.wav", userdir + "relaxed-call.wav");
+    QFile::copy(":androidinst3/assets/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
+    QFile::copy(":androidinst3/assets/relaxed-online.wav", userdir + "relaxed-online.wav");
+    QFile::copy(":androidinst3/assets/relaxed-zap.wav", userdir + "relaxed-zap.wav");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst3/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
-    QFile::copy(":androidinst2/assets/space-call.wav", userdir + "space-call.wav");
-    QFile::copy(":androidinst2/assets/space-incoming.wav", userdir + "space-incoming.wav");
-    QFile::copy(":androidinst2/assets/space-online.wav", userdir + "space-online.wav");
-    QFile::copy(":androidinst2/assets/space-zap.wav", userdir + "space-zap.wav");
-    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
-    QFile::copy(":androidinst2/assets/zap.wav", userdir + "zap.wav");
+    QFile::copy(":androidinst3/assets/space-call.wav", userdir + "space-call.wav");
+    QFile::copy(":androidinst3/assets/space-incoming.wav", userdir + "space-incoming.wav");
+    QFile::copy(":androidinst3/assets/space-online.wav", userdir + "space-online.wav");
+    QFile::copy(":androidinst3/assets/space-zap.wav", userdir + "space-zap.wav");
+    QFile::copy(":androidinst3/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst3/assets/zap.wav", userdir + "zap.wav");
 #ifdef _WIN32
     // kluge for windows, we copy the notify-send.exe thing into the
     // data directory so the background processor can execute it.
@@ -1386,15 +1387,16 @@ dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
 {
     unsigned char **img = (unsigned char **)vimg;
 
-    QImage qi(cols, rows, QImage::Format_RGB888);
+    QImage qi(cols, rows, QImage::Format_BGR888);
 
-#ifdef DWYCO_FORCE_DESKTOP_VGQT
+#if 1 && defined(DWYCO_FORCE_DESKTOP_VGQT)
     for(int r = 0; r < rows; ++r)
     {
         unsigned char *sli = img[r];
         uchar *sl = qi.scanLine(r);
         memcpy(sl, sli, 3 * cols);
     }
+    qi.mirror(false, true);
 #else
     for(int r = 0; r < rows; ++r)
     {
@@ -1596,7 +1598,7 @@ load_cam_model()
 
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if 0 && defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;
 #else
@@ -1897,7 +1899,7 @@ DwycoCore::init()
 
 #endif
 
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) //|| defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
         vgqt_new,
         vgqt_del,
@@ -1908,11 +1910,15 @@ DwycoCore::init()
         vgqt_stop,
         vgqt_get_data,
         vgqt_free_data,
-        0, 0, 0, 0, 0, 0, 0, 0
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device,
+        0, 0, 0, 0
 
     );
 
-#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT) && defined(DWYCO_VIdEO)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -2155,7 +2161,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#if  defined(MACOSX) && !defined(DWYCO_IOS)
+#if  defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -2167,15 +2173,9 @@ DwycoCore::set_badge_number(int i)
 int
 DwycoCore::load_contacts()
 {
-#ifdef ANDROID
-    if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
-    {
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));
-        if(m.value("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
-        {
-            return 0;
-        }
-    }
+#if ANDROID
+    // note: we're assuming the UI does the platform specific permissions
+    // check for access to contacts
     notificationClient->load_contacts();
     return 1;
 #else
@@ -3479,10 +3479,17 @@ dwyco_register_qml(QQmlContext *root)
 {
     setup_locations();
     TheRootCtx = root;
-    qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
-    qmlRegisterType<msgproxy_model>("dwyco", 1, 0, "DwycoMsgList");
-    qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
-    qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
+    // the registration of these things is done via QML_ELEMENT
+    // macros in qt6. note, i think some of these might be better
+    // defined as just context properties (as below). maybe
+    // the msglist_model might make sense as a type, since multiple
+    // objects in that case might be useful.
+
+    //qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
+    //qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
+    //qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
+    //qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
+
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
@@ -3529,8 +3536,8 @@ dwyco_register_qml(QQmlContext *root)
     root->setContextProperty("JoinLogModel", jlm);
 
 //#ifdef ANDROID
-    AndroidPerms *a = new AndroidPerms;
-    root->setContextProperty("AndroidPerms", a);
+    //AndroidPerms *a = new AndroidPerms;
+    //root->setContextProperty("AndroidPerms", a);
 //#endif
 
 }

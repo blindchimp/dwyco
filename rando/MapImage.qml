@@ -1,18 +1,23 @@
 
-import QtQuick 2.6
-import QtQuick.Controls 2.2
-import QtLocation 5.12
-import QtPositioning 5.12
+import QtQuick
+import QtQuick.Controls.Material
+import QtLocation
+import QtPositioning
 
 Page {
+    id: randomap
     //property real lat: 59.91 //39.739200
     //property real lon: 10.75 //-104.984700
 
     property real lat: 39.739200
     property real lon: -104.984700
     property string placename: ""
-    property alias zoom: mapz.zoomLevel
-    property alias center: mapz.center
+    property int zoom
+    property var center
+
+    function reset_zoom(z) {
+        mapz.reset_zoom(z)
+    }
 
     //anchors.fill: parent
     Plugin {
@@ -25,23 +30,32 @@ Page {
         PluginParameter { name: "osm.mapping.custom.host"; value: "http://a.tile.openstreetmap.org/" }
     }
 
-    Map {
+    MapView {
         id: mapz
         anchors.fill: parent
-        plugin: mapPlugin
-        center: QtPositioning.coordinate(lat, lon)
-        gesture.acceptedGestures: MapGestureArea.PanGesture|MapGestureArea.PinchGesture|MapGestureArea.FlickGesture
-        zoomLevel: default_map_zoom
-        onZoomLevelChanged: {
+        map.plugin: mapPlugin
+        map.center: QtPositioning.coordinate(lat, lon)
+
+        // i guess this binding is undone by whatever is going on in the mapview gesture processing
+        // so you need to call the reset_zoom thing to programmatically change the zoom.
+        map.zoomLevel: randomap.zoom
+        function reset_zoom(z) {
+            map.zoomLevel = z
+        }
+
+        map.onZoomLevelChanged: (zoomLevel) => {
             console.log("ZOOM ", zoomLevel)
         }
-        onCenterChanged: {
+        map.onCenterChanged: (center) => {
             console.log("center ", center)
             loc_circle.center = QtPositioning.coordinate(lat, lon)
         }
 
         // see note above regarding failing https stuff
-        activeMapType: supportedMapTypes[supportedMapTypes.length - 1]
+        map.activeMapType: map.supportedMapTypes[map.supportedMapTypes.length - 1]
+        Component.onCompleted: {
+            map.addMapItem(loc_circle)
+        }
 
         MapCircle {
             id: loc_circle
@@ -49,6 +63,60 @@ Page {
             color: "red"
             border.width: 3
             opacity: .5
+        }
+    }
+
+    PinchArea {
+        id: pincher
+        anchors.fill: parent
+        pinch.dragAxis: Pinch.XAndYAxis
+
+        // this works, but zooms too fast
+        //property real start_zoom_level
+
+        // onPinchStarted: {
+        //     console.log("start pinch", mapz.map.zoomLevel)
+        //     start_zoom_level = mapz.map.zoomLevel
+        // }
+
+        // onPinchUpdated: {
+        //     console.log("pinch ", pinch.scale)
+        //     var p
+        //     p = pinch.scale
+        //     mapz.map.zoomLevel = start_zoom_level * p
+        // }
+
+        property real oldZoom
+        function calcZoomDelta(zoom, percent) {
+            return zoom + Math.log(percent)/Math.log(2)
+        }
+
+        onPinchStarted: {
+            oldZoom = mapz.map.zoomLevel
+        }
+
+        onPinchUpdated: (pinch) => {
+            mapz.map.zoomLevel = calcZoomDelta(oldZoom, pinch.scale)
+        }
+
+        onPinchFinished: (pinch) => {
+            mapz.map.zoomLevel = calcZoomDelta(oldZoom, pinch.scale)
+        }
+
+        MouseArea {
+            id: dragArea
+            hoverEnabled: true
+            anchors.fill: parent
+            //drag.target: mapz
+            scrollGestureEnabled: false
+
+            // onPressed: {
+            //     dragging = true
+
+            // }
+            onClicked: {
+                stack.pop()
+            }
         }
     }
 

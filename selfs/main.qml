@@ -6,15 +6,16 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Window 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtMultimedia 5.12
+//import QtQml
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtMultimedia
 import dwyco 1.0
+//import Qt.labs.platform as Mumble
 
 ApplicationWindow {
     property real contentScaleFactor: screenDpi / 160
@@ -119,9 +120,11 @@ ApplicationWindow {
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
-
+    MediaDevices {
+         id: media_devices
+     }
     property bool is_camera_available
-    is_camera_available: camListModel.count > 2 || QtMultimedia.availableCameras.length > 0
+    is_camera_available: camListModel.count > 2 || media_devices.length > 0
 
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
@@ -164,7 +167,7 @@ ApplicationWindow {
 
     }
     property int close_bounce: 0
-    onClosing: {
+    onClosing: (close)=> {
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
@@ -341,7 +344,7 @@ ApplicationWindow {
         visible: false
         enabled: false
 
-        onUid_selected: {
+        onUid_selected: (uid, action) => {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
 
@@ -911,7 +914,7 @@ ApplicationWindow {
             exit()
         }
 
-        onServer_login: {
+        onServer_login: (msg, what)=> {
            
             console.log(msg)
             console.log(what)
@@ -948,7 +951,7 @@ ApplicationWindow {
             sound_recv.play()
         }
 
-        onSys_msg_idx_updated: {
+        onSys_msg_idx_updated: (uid)=> {
             console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
@@ -957,12 +960,12 @@ ApplicationWindow {
             }
         }
 
-        onMsg_send_status: {
+        onMsg_send_status: (status, recipient, pers_id)=> {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
-            if(status == DwycoCore.MSG_SEND_SUCCESS) {
+            if(status === DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid == recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
+                if(themsglist.uid === recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
@@ -970,16 +973,16 @@ ApplicationWindow {
             }
         }
 
-        onMsg_progress: {
+        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
             console.log(pers_id, msg, percent_done)
             //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onProfile_update: {
+        onProfile_update: (success)=> {
             top_dispatch.profile_updated(success)
         }
 
-        onQt_app_state_change: {
+        onQt_app_state_change: (app_state)=> {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
@@ -996,7 +999,7 @@ ApplicationWindow {
             qt_application_state = app_state
         }
 
-        onImage_picked: {
+        onImage_picked: (fn) => {
             console.log("image " + fn)
             if(android_img_pick_hack === 1)
             {

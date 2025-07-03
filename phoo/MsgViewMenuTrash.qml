@@ -1,8 +1,8 @@
-import QtQuick 2.12
-import QtQml 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import dwyco 1.0
+import QtQuick
+import QtQml
+import QtQuick.Controls
+import QtQuick.Layouts
+import dwyco
 
 Menu {
     x: parent.width - width

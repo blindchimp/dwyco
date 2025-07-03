@@ -4,7 +4,9 @@
 
 package com.dwyco.android;
 import com.dwyco.cdc32.dwybg;
-import org.qtproject.qt5.android.bindings.QtActivity;
+import com.dwyco.config.DwycoApp;
+import org.qtproject.qt.android.bindings.QtActivity;
+import org.qtproject.qt.android.bindings.QtApplication;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.NotificationChannel;
@@ -50,6 +52,15 @@ import java.io.File;
 import androidx.work.*;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+//import androidx.activity.*;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import java.text.SimpleDateFormat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -61,6 +72,19 @@ public class NotificationClient extends QtActivity
     public static int allow_notification = 1;
     private static FirebaseAnalytics mFirebaseAnalytics;
     private static String TAG = "notification_client";
+    private static final int REQUEST_POST_NOTIFICATIONS = 1;
+    private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
+    
+    private static SoundPoolPlayer soundPoolPlayer;
+
+    // --- START OF CHANGES ---
+
+    // Member variable to store the path of the photo file.
+    // This removes the need to resolve the URI later.
+    private String mCurrentPhotoPath;
+
+    // --- END OF CHANGES ---
+
 
     public NotificationClient()
     {
@@ -100,7 +124,66 @@ public class NotificationClient extends QtActivity
 
             }
 
+        // after a shitshow trying to get this working with the stupid-complicated
+        // new api, an AI informed me that using the old-school simpler method was
+        // doable. I'm not sure i need all the imports and other garbage i added
+        // above while i was fiddling with using the new method. 
+        // the only down side i see with this is that android will ask for
+        // notification permissions twice before starting to ignore the request.
+        // which is fine. otherwise i would have to save some state in the handler
+        // below. not worth the troubles.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQUEST_POST_NOTIFICATIONS);
+            }
+        }
+
+        // mostly AI generated, gemini 2.0. mods to fix
+        // prompt: give me some android java code that will request the correct storage permission for writing an image to the Downloads directory on an android phone.
+        // do not give me code for storing an image. i just want code for requesting the correct permission.
+        // Android 10 (API 29) or higher: Assume MediaStore or other scoped storage mechanism is used.
+            // No need to request WRITE_EXTERNAL_STORAGE permission if correctly using MediaStore.
+            // **IMPORTANT**: Adjust this logic based on your actual MediaStore implementation.  It's possible you STILL need the permission,
+            // particularly if interacting with files outside the scope of the MediaStore.
+        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        // Check if we have write permission
+        int permission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_EXTERNAL_STORAGE_PERMISSION
+            );
+        }
     }
+
+    	if(!DwycoApp.is_rando)
+           soundPoolPlayer = new SoundPoolPlayer(this);
+    }
+
+
+@Override
+public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode == REQUEST_POST_NOTIFICATIONS) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Permission granted
+        } else {
+            // Permission denied
+        }
+    }
+    if (requestCode == REQUEST_EXTERNAL_STORAGE_PERMISSION) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Permission granted.  Proceed with writing to external storage.
+        } else {
+            // Permission denied. Explain to the user that the feature is unavailable.
+        }
+    }
+}
+
 
     @Override
     protected void onResume() {
@@ -171,6 +254,12 @@ public class NotificationClient extends QtActivity
         {
             catchLog("vibrate exception " + e);
         }
+    }
+
+    public static void beep()
+    {
+	    if(soundPoolPlayer != null)
+		soundPoolPlayer.playAlertSound();
     }
 
     public static void set_msg_count_url(String s) {
@@ -369,6 +458,72 @@ public static void set_user_property(String name, String value) {
 
 
     static final int REQUEST_OPEN_IMAGE = 1;
+    static final int REQUEST_CAMERA_CAPTURE = 2;
+    private static final int REQUEST_CAMERA_PERMISSION = 3;
+private static Uri photoUri;
+
+public static void openCamera() {
+    m_instance.dispatchTakePhoto();
+}
+
+private void dispatchTakePhoto() {
+    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        // Request camera permission
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+        return;
+    }
+    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    
+    // Ensure that there's a camera activity to handle the intent
+    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+        // Create the File where the photo should go
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException ex) {
+            // Error occurred while creating the File
+            catchLog("Error creating image file: " + ex.getMessage());
+            dwybg.dwyco_set_aux_string("");
+            return;
+        }
+        
+        // Continue only if the File was successfully created
+        if (photoFile != null) {
+            photoUri = FileProvider.getUriForFile(this,
+                    DwycoApp.file_provider,
+                    photoFile);
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(takePictureIntent, REQUEST_CAMERA_CAPTURE);
+        }
+    } else {
+        catchLog("No camera app available");
+        dwybg.dwyco_set_aux_string("");
+    }
+}
+
+private File createImageFile() throws IOException {
+    // Create an image file name
+    String timeStamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", 
+                                                      java.util.Locale.getDefault()).format(new java.util.Date());
+    String imageFileName = "JPEG_" + timeStamp + "_";
+    File cacheDir = getCacheDir();
+    File image = File.createTempFile(
+        imageFileName,  /* prefix */
+        ".jpg",         /* suffix */
+        cacheDir        /* directory */
+    );
+    
+    // --- START OF CHANGES ---
+    // Save a file: path for use with ACTION_VIEW intents
+    mCurrentPhotoPath = image.getAbsolutePath();
+    // --- END OF CHANGES ---
+    return image;
+}
+
+
+
 
 
     public static void openAnImage()
@@ -397,7 +552,19 @@ public static void set_user_property(String name, String value) {
                     catchLog("result null");
                 }
 
-            }
+            } else if (requestCode == REQUEST_CAMERA_CAPTURE) {
+            // Handle camera capture result
+                // For camera captures where we provided the file, we already know the path.
+                // Do NOT use FileUtils.getRealPath() here as it will crash.
+                if (mCurrentPhotoPath != null) {
+                    dwybg.dwyco_set_aux_string(mCurrentPhotoPath);
+                    catchLog("camera result " + mCurrentPhotoPath);
+                } else {
+                    dwybg.dwyco_set_aux_string("");
+                    catchLog("camera result null because path was not saved");
+                }
+                // --- END OF CHANGES ---
+        }
         }
         else
         {
@@ -611,9 +778,60 @@ public static void set_user_property(String name, String value) {
     }
 
     private static void catchLog(String log) {
-        Log.d("dwyco_notfication", log);
+        Log.d("dwyco_notification", log);
     }
 
+
+
+private class SoundPoolPlayer {
+
+    private static final String TAG = "SoundPoolPlayer";
+    private SoundPool soundPool;
+    private int soundId;
+    private Context context;
+
+    public SoundPoolPlayer(Context context) {
+        this.context = context;
+
+        // Use AudioAttributes for modern Android versions
+        AudioAttributes attributes = new AudioAttributes.Builder()
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+        .build();
+
+        soundPool = new SoundPool.Builder()
+        .setAudioAttributes(attributes)
+        .build();
+
+        // Load the sound
+        soundId = soundPool.load(context, DwycoApp.alert_resource(), 1);
+
+        // Check if the sound loaded successfully.  This is important!
+        soundPool.setOnLoadCompleteListener(new
+        SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId,
+                                       int status) {
+                if (status != 0) {
+                    Log.e(TAG, "Error loading sound: status = " + status);
+                }
+            }
+        });
+    }
+
+    public void playAlertSound() {
+        if (soundId != 0) { // Ensure the sound is loaded before playing
+            soundPool.play(soundId, 1.0f, 1.0f, 0, 0, 1.0f);
+        } else {
+            Log.w(TAG, "Sound not loaded yet.  Cannot play.");
+        }
+    }
+
+    public void release() {
+        if (soundPool != null) {
+            soundPool.release();
+            soundPool = null;
+        }
+    }
 }
-
-
+}

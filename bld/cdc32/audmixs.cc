@@ -71,7 +71,7 @@ AudioMixSend::~AudioMixSend()
 }
 
 void
-AudioMixSend::callback(HWAVEOUT hwo, UINT msg, DWORD p1, DWORD p2)
+AudioMixSend::callback(HWAVEOUT hwo, UINT msg, DWORD_PTR p1, DWORD_PTR p2)
 {
     oopanic("mixsend callback?");
 }

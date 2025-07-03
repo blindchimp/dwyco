@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import dwyco 1.0
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick
+import dwyco
+import QtQuick.Controls
+import QtQuick.Layouts
 
 Rectangle {
     id: popupid
@@ -71,7 +71,7 @@ Rectangle {
 
         Button {
             id: gotit_forever
-            text: "Got it, and don't show again"
+            text: "Got it, and don't ask again"
             visible: {inhibit_key.length > 0}
             onClicked: {
                 core.set_local_setting(inhibit_key, "1")

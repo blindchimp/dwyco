@@ -1,9 +1,9 @@
 echo on
 
-set PATH=c:\qt\5.15.2\msvc2019\bin;%PATH%
+set PATH=c:\qt\6.8.2\msvc2022_64\bin;%PATH%
 
-cd "\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
-call vcvarsall x86
+cd "\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
+call vcvarsall x64
 cd \users\dwight\dwyco
 echo on
 

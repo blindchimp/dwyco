@@ -14,7 +14,6 @@
 #include <QIODevice>
 #include <QMap>
 #include <QVariant>
-#include <stdio.h>
 #include <stdlib.h>
 #include "ssmap.h"
 #include "pfx.h"

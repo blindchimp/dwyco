@@ -6,12 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import dwyco 1.0
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtQuick.Controls 2.12
+import QtQml
+import QtQuick
+import dwyco
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtQuick.Controls
+//import Qt.labs.platform as Mumble
 
 Page {
     id: convlist_top
@@ -39,7 +40,7 @@ Page {
             Menu {
                 id: optionsMenu
                 x: parent.width - width
-                transformOrigin: Menu.TopRight
+                //transformOrigin: Menu.TopRight
                 MenuItem {
                     text: "Unfavorite"
                     onTriggered: {
@@ -69,20 +70,18 @@ Page {
                     onTriggered: {
                         confirm_delete.visible = true
                     }
-                    MessageDialog {
+                    MessageYN {
                         id: confirm_delete
                         title: "Block user and delete messages?"
-                        icon: StandardIcon.Question
                         text: "Delete ALL messages from selected users?"
                         informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
-                        standardButtons: StandardButton.Yes | StandardButton.No
-                        onYes: {
+                        onYesClicked: {
                             ConvListModel.block_all_selected()
                             ConvListModel.obliterate_all_selected()
                             multiselect_mode = false
                             close()
                         }
-                        onNo: {
+                        onNoClicked: {
                             close()
                         }
                     }
@@ -503,7 +502,7 @@ Page {
            MouseArea {
                anchors.fill: parent
                acceptedButtons: Qt.LeftButton|Qt.RightButton
-               onClicked: {
+               onClicked: (mouse)=> {
                    console.log("click")
                    console.log(index)
                    gridView1.currentIndex = index

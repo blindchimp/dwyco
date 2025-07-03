@@ -88,7 +88,7 @@ msglist_model::data ( const QModelIndex & index, int role ) const
         if(type_out != DWYCO_TYPE_INT)
             return QVariant();
         //return QVariant(QString(out));
-        QDateTime q(QDateTime::fromTime_t(atol(out)));
+        QDateTime q(QDateTime::fromSecsSinceEpoch(atol(out)));
         return QVariant(q);
     }
     else if(role == Qt::ForegroundRole)

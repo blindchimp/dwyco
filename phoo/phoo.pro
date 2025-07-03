@@ -1,5 +1,5 @@
 TEMPLATE = app
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
 
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 
@@ -13,7 +13,11 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
+greaterThan(QT_MAJOR_VERSION, 5) {
+VER="4.213"
+} else {
 VER="3.213"
+}
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
@@ -30,25 +34,31 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
-#QT += statemachine
+QT += statemachine
 #QT += testlib
 #DEFINES += DWYCO_MODEL_TEST
 # someday, linux static build? fuck me
 #QTPLUGIN.platforms = qminimal qeglfs
 #CONFIG += static
 
-android: QT += androidextras
-macx-clang: QT += macextras
 
-linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
+!equals(QT_MAJOR_VERSION, 6) {
+android: QT += androidextras
+macx-clang|macx-g++: QT += macextras
+INCLUDEPATH += $${PWD}/../bld/qtdrv
+} else {
+INCLUDEPATH += $${PWD}/../bld/qt6drv
+}
+
+QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
-macx-clang {
+macx-clang|macx-g++ {
 QMAKE_INFO_PLIST=Info.plist.mac
 #CONFIG -= app_bundle
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE
@@ -101,7 +111,7 @@ QT += concurrent
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
 linux-* {
 DEFINES += LINUX
@@ -140,7 +150,7 @@ $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 -lv4l2 \
 -ldl
 
@@ -164,7 +174,7 @@ $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 }
 
@@ -206,7 +216,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
-macx-clang {
+macx-clang|macx-g++ {
 DEFINES += MACOSX MAC_CLIENT
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
@@ -235,7 +245,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 $${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
@@ -259,7 +269,7 @@ $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 
 }
@@ -289,7 +299,7 @@ $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -310,7 +320,7 @@ $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 }
 
 android-* {
@@ -320,7 +330,7 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv_$${QT_ARCH}.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qt6drv/libqt6drv_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -411,14 +421,11 @@ $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
 $${D}/jhead/$${S}/jhead.lib \
 $${D}/uv/$${S}/uv.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib \
 $${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
 $${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
-$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 
-#delayimp.lib $${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
-#QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
-#QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/$${S}/cdc32.lib \
@@ -437,13 +444,8 @@ $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
 $${D}/jhead/$${S}/jhead.lib \
 $${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
-$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
-
-#\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
-#\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \
-#\\mk\\depot\\dwycore\\bld\\speex\\win32\\vs2008\\Debug\\libspeex.lib \
-#\\mk\\depot\\dwycore\\bld\\speex\\win32\\vs2008\\libspeexdsp\\Debug\\libspeexdsp.lib \
-#\\mk\\depot\\dwycore\\bld\\ogg\\win32\\vs2003\\libogg\\Debug\\libogg.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib
 
 }
 
@@ -487,24 +489,24 @@ HEADERS += \
     syncmodel.h
 
 DISTFILES += \
-    androidinst2/google-services.json \
-    androidinst2/src/com/dwyco/cdc32/dwybg.java \
-    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst2/src/com/dwyco/phoo/app.java \
-    androidinst2/src/com/dwyco/android/DwycoProbe.java \
-    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst2/src/com/dwyco/android/NotificationClient.java \
-    androidinst2/src/com/dwyco/android/SocketLock.java \
-    androidinst2/src/com/dwyco/android/FileUtils.java \
-    androidinst2/src/com/dwyco/phoo/DwycoApp.java \
-    androidinst2/AndroidManifest.xml \
-    androidinst2/build.gradle \
-    androidinst2/gradle.properties \
-    androidinst2/gradle/wrapper/gradle-wrapper.jar \
-    androidinst2/gradle/wrapper/gradle-wrapper.properties \
-    androidinst2/gradlew \
-    androidinst2/gradlew.bat \
-    androidinst2/res/values/libs.xml \
-    androidinst2/res/xml/provider_paths.xml
+    androidinst3/google-services.json \
+    androidinst3/src/com/dwyco/cdc32/dwybg.java \
+    androidinst3/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst3/src/com/dwyco/phoo/app.java \
+    androidinst3/src/com/dwyco/android/DwycoProbe.java \
+    androidinst3/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst3/src/com/dwyco/android/NotificationClient.java \
+    androidinst3/src/com/dwyco/android/SocketLock.java \
+    androidinst3/src/com/dwyco/android/FileUtils.java \
+    androidinst3/src/com/dwyco/phoo/DwycoApp.java \
+    androidinst3/AndroidManifest.xml \
+    androidinst3/build.gradle \
+    androidinst3/gradle.properties \
+    androidinst3/gradle/wrapper/gradle-wrapper.jar \
+    androidinst3/gradle/wrapper/gradle-wrapper.properties \
+    androidinst3/gradlew \
+    androidinst3/gradlew.bat \
+    androidinst3/res/values/libs.xml \
+    androidinst3/res/xml/provider_paths.xml
 
 android: include(/home/dwight/Android/Sdk/android_openssl/openssl.pri)

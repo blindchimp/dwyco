@@ -100,7 +100,7 @@ gen_date(DWYCO_SAVED_MSG_LIST l, int row)
         return "before 1999";
     seconds = atol(val);
 
-    QDateTime qt = QDateTime::fromTime_t(seconds);
+    QDateTime qt = QDateTime::fromSecsSinceEpoch(seconds);
     QString t = qt.toString("M/yyyy");
     return t;
 

@@ -659,6 +659,12 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 // mutual exclusion between different clients using
 // the same data directories.
 #ifndef DWYCO_AUTOUPDATE_MUTEX_NAME
+// NOTE: do not stringify "app", as the preprocessor will not
+// substitute the macro from the at the callsite.
+// instead, make sure your macro argument is "appname"
+#if defined(_Windows) && !defined(DWYCO_MUTEX_NAME)
+#define DWYCO_MUTEX_NAME "cdcx"
+#endif
 #define DWYCO_AUTOUPDATE_MUTEX_NAME(app) "dwyco " app " mutex2"
 #endif
 
@@ -951,9 +957,9 @@ void DWYCOEXPORT dwyco_estimate_bandwidth2(int *out_bw, int *in_bw);
 
 void DWYCOEXPORT dwyco_gen_pass(const char *pw, int len_pw, char **salt_in_out, int *len_salt_in_out, char **hash_out, int *len_hash_out);
 
-void DWYCOEXPORT dwyco_free(char *p);
-void DWYCOEXPORT dwyco_free_array(char *p);
-void DWYCOEXPORT dwyco_free_image(char *p, int rows);
+void DWYCOEXPORT dwyco_free(char *p_elide);
+void DWYCOEXPORT dwyco_free_array(char *p_elide);
+void DWYCOEXPORT dwyco_free_image(char *p_elide, int rows);
 void DWYCOEXPORT dwyco_finish_startup();
 int DWYCOEXPORT dwyco_get_create_new_account();
 void DWYCOEXPORT dwyco_set_local_auth(int a);

@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQml
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 // note: this page doesn't update its contents dynamically.
 // it loads a static page from the server and displays it.
@@ -19,7 +19,7 @@ import QtQuick.Layouts 1.12
 // can update its contents piecemeal
 Page {
     id: simpdir_top
-    anchors.fill: parent
+    //anchors.fill: parent
 
     signal uid_selected(string uid, string action)
 
@@ -82,7 +82,7 @@ Page {
                 id: drow33
                 spacing: 5
                 anchors.fill: parent
-                CircularImage {
+                CircularImage2 {
                     id: preview
                     source: {has_preview ?
                                  (!censor_it ?
@@ -130,7 +130,7 @@ Page {
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton|Qt.RightButton
-                onClicked: {
+                onClicked: (mouse)=> {
                     console.log("simpdir click ")
                     console.log(index)
                     listView1.currentIndex = index
@@ -183,7 +183,7 @@ Page {
                 GradientStop { position: 1.0; color: primary_dark}
             }
 
-            CircularImage {
+            CircularImage2 {
                 id: preview
                 source: {has_preview ?
                              (!censor_it ?
@@ -233,7 +233,7 @@ Page {
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton|Qt.RightButton
-                onClicked: {
+                onClicked: (mouse)=> {
                     console.log("simpdir click ")
                     console.log(index)
                     gridView1.currentIndex = index

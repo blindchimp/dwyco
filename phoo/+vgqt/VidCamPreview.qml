@@ -6,12 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import dwyco 1.0
-import QtQuick.Layouts 1.3
-import QtMultimedia 5.12
+import QtQml
+import QtQuick
+import QtQuick.Controls
+import dwyco
+import QtQuick.Layouts
+import QtMultimedia
+import ".."
 
 Page {
     property bool dragging
@@ -48,7 +49,7 @@ Page {
 
     Connections {
         target: core
-        onCamera_change: {
+        function onCamera_change(cam_on) {
             if(visible) {
                 if(cam_on === 1 && core.vid_dev_idx === 2) {
                     preview_cam.start()
@@ -65,37 +66,37 @@ Page {
         }
     }
 
-    Camera {
-        id: preview_cam
-        objectName: "qrCameraQML"
-        viewfinder {
-            //resolution: Qt.size(640, 480)
-            //maximumFrameRate: 10
-        }
-        position: Camera.FrontFace
-        captureMode: Camera.captureVideo
-        onCameraStateChanged: {
-            //if(state === Camera.ActiveState) {
-                var res = preview_cam.supportedViewfinderResolutions();
-                console.log("RESOLUTIONS ")
-            for(var i = 0; i < res.length; i++) {
-                console.log(res[i].width)
-                console.log(res[i].height)
-            }
-            //}
-        }
-        onCameraStatusChanged: {
-            //if(state === Camera.ActiveState) {
-                var res = preview_cam.supportedViewfinderResolutions();
-                console.log("RESOLUTIONS ")
-            for(var i = 0; i < res.length; i++) {
-                console.log(res[i].width)
-                console.log(res[i].height)
-            }
+    // Camera {
+    //     id: preview_cam
+    //     objectName: "qrCameraQML"
+    //     viewfinder {
+    //         //resolution: Qt.size(640, 480)
+    //         //maximumFrameRate: 10
+    //     }
+    //     position: Camera.FrontFace
+    //     captureMode: Camera.captureVideo
+    //     onCameraStateChanged: {
+    //         //if(state === Camera.ActiveState) {
+    //             var res = preview_cam.supportedViewfinderResolutions();
+    //             console.log("RESOLUTIONS ")
+    //         for(var i = 0; i < res.length; i++) {
+    //             console.log(res[i].width)
+    //             console.log(res[i].height)
+    //         }
+    //         //}
+    //     }
+    //     onCameraStatusChanged: {
+    //         //if(state === Camera.ActiveState) {
+    //             var res = preview_cam.supportedViewfinderResolutions();
+    //             console.log("RESOLUTIONS ")
+    //         for(var i = 0; i < res.length; i++) {
+    //             console.log(res[i].width)
+    //             console.log(res[i].height)
+    //         }
 
-            //}
-        }
-    }
+    //         //}
+    //     }
+    // }
 //    VideoOutput {
 //        id: pview
 //        width: cm(1)
@@ -167,14 +168,14 @@ Page {
             clip: true
             spacing: 5
         }
-        VideoOutput {
-            id: pview
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            source: preview_cam
-            autoOrientation: true
-            visible: true
-        }
+        // VideoOutput {
+        //     id: pview
+        //     Layout.fillHeight: true
+        //     Layout.fillWidth: true
+        //     source: preview_cam
+        //     autoOrientation: true
+        //     visible: true
+        // }
 
         Rectangle {
             Layout.fillWidth: true
@@ -194,7 +195,7 @@ Page {
                 }
                 Connections {
                     target: core
-                    onVideo_capture_preview: {
+                    function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path
                     }

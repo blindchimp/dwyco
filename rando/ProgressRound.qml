@@ -2,9 +2,9 @@
 // this was found on stackoverflow, but written for qtquick
 // controls 1. this is just updated for qtquick.controls 2
 //
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Controls.Material
+import Qt5Compat.GraphicalEffects
 
 ProgressBar
 {
@@ -60,7 +60,7 @@ ProgressBar
          style: Text.Outline
          styleColor: "black"
 
-         text: control.indeterminate ? "" : (control.visualPosition * 100).toFixed() + "%"
+         text: control.indeterminate ? "..." : (control.visualPosition * 100).toFixed() + "%"
       }
    }
 }

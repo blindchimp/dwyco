@@ -3,8 +3,14 @@ cmake_minimum_required(VERSION 3.14)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../${DWYCO_CONFDIR}/conf.cmake)
 
 project(miniupnpc LANGUAGES C)
-add_compile_options( -fno-common)
+if(UNIX AND LINUX)
+add_compile_options( -fPIC -Wall -W -Wstrict-prototypes -fno-common )
 add_compile_definitions( MINIUPNPC_SET_SOCKET_TIMEOUT MINIUPNPC_GET_SRC_ADDR _BSD_SOURCE _DEFAULT_SOURCE _XOPEN_SOURCE=600)
+endif()
+
+if(WIN32)
+add_compile_definitions(MINIUPNP_STATICLIB)
+endif()
 
 
 add_library(miniupnpc STATIC

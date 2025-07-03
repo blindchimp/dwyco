@@ -10,7 +10,7 @@
 #include <QDialog>
 #include <QSettings>
 #include <QtNetwork/QHostInfo>
-#include <QDesktopWidget>
+#include <QScreen>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QProcess>
@@ -51,7 +51,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(MAC_CLIENT) || defined(LINUX)
+#if defined(MAC_CLIENT) || defined(LINUX) || defined(_Windows)
 #include "vgqt.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
@@ -224,7 +224,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not needed anymore in qt6
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 
@@ -287,7 +288,7 @@ int main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-#if defined(LINUX) && !defined(MAC_CLIENT)
+#if /*defined(LINUX) &&*/ !defined(MAC_CLIENT)
     // this is mainly for appimage-type installation. the read-only stuff
     // it in the appimage, and the rest of the user data will be in
     // documents/dwyco/cdc-x.
@@ -340,7 +341,7 @@ int main(int argc, char *argv[])
     //syspath = "/home/dwight/cdcx/";
 #endif
 
-#ifdef WIN32
+#if 0 &&  WIN32
 // still expecting to start in the directory where all our data is
     QString userdir("./");
     QString syspath("./");
@@ -491,8 +492,11 @@ int main(int argc, char *argv[])
             AvoidSSL = 1;
     }
 
-    QDesktopWidget *desktop = QApplication::desktop();
-    MainScreenRect = desktop->availableGeometry(desktop->primaryScreen());
+    //QDesktopWidget *desktop = QApplication::desktop();
+    //MainScreenRect = desktop->availableGeometry(desktop->primaryScreen());
+
+    QScreen *screen = QGuiApplication::primaryScreen();
+    MainScreenRect = screen->availableGeometry();
 
 
     //Q_INIT_RESOURCE(icons);

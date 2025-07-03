@@ -307,7 +307,7 @@ vclh_base64_encode(vc s)
 		Base64Encoder bt;
 		bt.Put((const byte *)(const char *)s, s.len());
 		bt.MessageEnd();
-		unsigned long len = bt.MaxRetrievable();
+        auto len = bt.MaxRetrievable();
 		byte *tb = new byte[len];
 		bt.Get(tb, len);
 		vc ret(VC_BSTRING, (const char *)tb, len);
@@ -343,7 +343,7 @@ vclh_base64_decode(vc s)
 		Base64Decoder bt;
 		bt.Put((const byte *)(const char *)s, s.len());
 		bt.MessageEnd();
-		unsigned long len = bt.MaxRetrievable();
+        auto len = bt.MaxRetrievable();
 		byte *tb = new byte[len];
 		bt.Get(tb, len);
 		vc ret(VC_BSTRING, (const char *)tb, len);
@@ -741,10 +741,10 @@ bf_filter(vc v, BufferedTransformation *f)
 {
 	f->Put((const byte *)(const char *)v, v.len());
 	f->MessageEnd();
-	unsigned long m = f->MaxRetrievable();
+    auto m = f->MaxRetrievable();
 	byte *b = new byte[m];
 	f->Get(b, m);
-	vc ret(VC_BSTRING, (char *)b, (long)m);
+    vc ret(VC_BSTRING, (const char *)b, m);
 	delete [] b;
 	return ret;
 }

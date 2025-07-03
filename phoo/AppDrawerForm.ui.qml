@@ -6,9 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 Pane {
     //width: 400
@@ -70,7 +70,7 @@ Pane {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    CircularImage {
+                    CircularImage2 {
                         id: circularImage
                         Layout.maximumHeight: 32
                         Layout.maximumWidth: 32
@@ -139,7 +139,7 @@ Pane {
             Layout.fillWidth: true
         }
 
-        Switch {
+        SwitchDelegate {
             id: quiet_switch
             text: qsTr("Quiet")
             bottomPadding: ctrl_pad
@@ -148,7 +148,7 @@ Pane {
             Layout.fillWidth: true
         }
 
-        Switch {
+        SwitchDelegate {
             id: invisible_switch
             text: qsTr("Invisible")
             bottomPadding: ctrl_pad

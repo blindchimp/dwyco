@@ -15,13 +15,12 @@
 #include <QJsonObject>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
-#include "pfx.h"
 #include "dwycolist2.h"
 #include "qloc.h"
 
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
-extern QMap<QByteArray,QLoc> Hash_to_loc;
+extern QMultiMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
 extern QMap<QByteArray, long> Hash_to_max_lc;
 void cdcxpanic(const char *);
@@ -82,7 +81,7 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
                     QList<QLoc> ql = Hash_to_loc.values(hh);
                     if(!ql.contains(loca))
                     {
-                        Hash_to_loc.insertMulti(hh, loca);
+                        Hash_to_loc.insert(hh, loca);
                     }
                     long v = Hash_to_max_lc.value(hh, 0);
                     if(lc > v)

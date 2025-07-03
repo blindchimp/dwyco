@@ -11,16 +11,12 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include "geospray.h"
-#include "dlli.h"
-#include "dwyco_new_msg.h"
-#include "getinfo.h"
-#include "dwycolist2.h"
 #include "qloc.h"
 
 void hack_unread_count();
 
 GeoSprayListModel *TheGeoSprayListModel;
-extern QMap<QByteArray, QLoc> Hash_to_loc;
+extern QMultiMap<QByteArray, QLoc> Hash_to_loc;
 
 int
 GeoSent::load_external_state(const QLoc& ql)

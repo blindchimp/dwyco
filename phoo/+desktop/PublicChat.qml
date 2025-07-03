@@ -6,16 +6,16 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.3
-import QtQml.Models 2.12
-import dwyco 1.0
+import QtQml
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQml.Models
+import dwyco
 
 Page {
     id: pchat
-    anchors.fill: parent
+    //anchors.fill: parent
     property alias model: listView1.model
     property int connect_server: 0
     
@@ -221,15 +221,15 @@ Page {
         anchors.bottom: parent.bottom
         //anchors.bottomMargin: 0
         placeholderText: qsTr("Type...")
-        height: Math.max(implicitHeight * 1.3, contentHeight)
+        //height: Math.max(implicitHeight * 1.3, contentHeight)
         wrapMode: TextInput.WordWrap
-        background: Rectangle {
-                    radius: 2
-                    anchors.fill: parent
-                    border.color: "#333"
-                    border.width: 1
-                    color: "lawngreen"
-                }
+        // background: Rectangle {
+        //             radius: 2
+        //             anchors.fill: parent
+        //             border.color: "#333"
+        //             border.width: 1
+        //             color: "lawngreen"
+        //         }
             
         onLengthChanged: {
             //core.uid_keyboard_input(to_uid)

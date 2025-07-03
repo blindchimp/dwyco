@@ -6,12 +6,14 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQml 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
-import dwyco 1.0
+import QtQuick
+import QtQml
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
+import dwyco
+//import Qt.labs.platform as Mumble
+import QtCore
 
 
 Page {
@@ -158,8 +160,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
@@ -454,21 +455,20 @@ Page {
                             onTriggered: {
                                 confirm_trash.visible = true
                             }
-                            MessageDialog {
+                            MessageYN {
                                 id: confirm_trash
-                                title: "Trash all messages?"
-                                icon: StandardIcon.Question
-                                text: "Trash ALL messages from this user?"
+                                title: "Trash all msgs?"
+                                text: "Trash ALL (including HIDDEN) msgs from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                
+                                onYesClicked: {
                                     themsglist.set_all_selected()
                                     themsglist.trash_all_selected()
                                     themsglist.invalidate_model_filter()
+                                    themsglist.reload_model()
                                     close()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }
@@ -515,8 +515,8 @@ Page {
     background: Rectangle {
         color: primary_dark
         gradient: Gradient {
-            GradientStop { position: 0.0; color: primary_light }
-            GradientStop { position: 1.0; color: primary_dark}
+            GradientStop { position: 1.0; color: primary_light }
+            GradientStop { position: 0.0; color: primary_dark}
         }
     }
     
@@ -613,12 +613,12 @@ Page {
         sourceComponent: FileDialog {
 
             title: "Pick a picture"
-            folder: shortcuts.pictures
+            currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
             onAccepted: {
-                console.log("PICK ", fileUrl)
-                console.log("PICKU ", Qt.resolvedUrl(fileUrl))
+                console.log("PICK ", selectedFile)
+                console.log("PICKU ", Qt.resolvedUrl(selectedFile))
                 //img_preview.source = fileUrl
-                chat_pic_preview.source = fileUrl
+                chat_pic_preview.source = selectedFile
                 chat_pic_preview.ok_vis = true
                 stack.push(chat_pic_preview)
             }
@@ -629,7 +629,7 @@ Page {
 
     PicPreview {
         id: chat_pic_preview
-        onClosed: {
+        onClosed: (ok) => {
             if(ok) {
                 url_to_send = source
                 core.simple_send_url(to_uid, "", url_to_send)
@@ -648,6 +648,7 @@ Page {
     }
 
     RowLayout {
+        id: listview_layout
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -763,7 +764,7 @@ Page {
 
             Image {
                 id: deco2
-                visible: IS_QD
+                visible: IS_QD === 1
                 source: decoration
                 anchors.left: ditem.left
                 anchors.top: ditem.top
@@ -819,7 +820,7 @@ Page {
                 height: 16
                 anchors.top: ditem.top
                 anchors.left: is_forwarded.right
-                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                visible: {IS_QD === 0 && (HAS_VIDEO === 1 && HAS_SHORT_VIDEO === 0)}
                 z: 3
                 color: primary_light
                 radius: width / 2
@@ -855,7 +856,7 @@ Page {
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : 0
                     //Layout.maximumHeight: listView1.height / 2
-                    Layout.preferredHeight: prov_img_height
+                    Layout.preferredHeight: chatbox_page.prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
 
                     fillMode: Image.PreserveAspectFit
@@ -897,7 +898,7 @@ Page {
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    width: implicitWidth
+                    //width: implicitWidth
                     horizontalAlignment: { (SENT === 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
@@ -905,7 +906,7 @@ Page {
                     font: applicationWindow1.font
                     color: primary_text
                     clip: true
-                    onLinkActivated: {
+                    onLinkActivated: (link)=> {
                         console.log(link + " link activated")
                         Qt.openUrlExternally(link)
                     }
@@ -1030,13 +1031,13 @@ Page {
         wrapMode: TextInput.WordWrap
         height: implicitHeight // Math.max(implicitHeight * 2, contentHeight)
         
-        background: Rectangle {
-            radius: 10
-            anchors.fill: parent
-            border.color: "#333"
-            border.width: 1
-            color: icons
-        }
+        // background: Rectangle {
+        //     radius: 10
+        //     anchors.fill: parent
+        //     border.color: "#333"
+        //     border.width: 1
+        //     color: icons
+        // }
 
         onLengthChanged: {
             core.uid_keyboard_input(to_uid)
@@ -1091,7 +1092,7 @@ Page {
         }
     }
 
-    Button {
+    TipButton {
         property int but_width
         property int but_height
         id: toolButton1
@@ -1104,12 +1105,13 @@ Page {
         anchors.bottomMargin: 1
         //anchors.verticalCenter: textField1.verticalCenter
         
-        enabled: {textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0}
+        enabled: {textField1.inputMethodComposing || textField1.length > 0}
         
         background: Rectangle {
             id: bg
             color: accent
             radius: 20
+            //radius: toolButton1.radius
             // this is weird, setting size is supposed to be unnecessary...
             // qt5.10 didn't have a problem with the previous code that was here.
             anchors.fill: toolButton1
@@ -1118,17 +1120,24 @@ Page {
             anchors.centerIn: bg
             source: mi("ic_send_black_24dp.png")
             opacity: toolButton1.enabled ? 1.0 : 0.3
+            //scale: 2
         }
         
+        //icon.source: mi("ic_send_black_24dp.png")
+        //icon.width: width
+        //icon.height: height
+        //radius: width / 2
+        //icon.color: accent
 
-        text: "send"
+        //text: "send"
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
             core.simple_send(to_uid, core.strip_html(textField1.text))
             core.start_control(to_uid)
             themsglist.reload_model()
-            textField1.text = ""
+            //textField1.text = ""
+            textField1.clear()
             listView1.positionViewAtBeginning()
         }
         Component.onCompleted: {
@@ -1142,8 +1151,10 @@ Page {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
-        anchors.bottom: toolButton1.top
-        anchors.right: toolButton1.right
+        anchors.bottom: listview_layout.bottom
+        anchors.bottomMargin: mm(2)
+        anchors.right: listview_layout.right
+        anchors.rightMargin: conv_sidebar.width
 
         background: Rectangle {
             id: gtb_bg
@@ -1180,8 +1191,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: !toolButton1.enabled && core.has_audio_input
-        visible: !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
         z: 5
         background: Rectangle {
             id: bg2
@@ -1230,7 +1241,8 @@ Page {
         onVisibleChanged: {
             if(visible) {
                 value = 0
-                sound_alert.play()
+                //sound_alert.play()
+                beep()
             }
         }
         z: 5

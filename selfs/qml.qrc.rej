@@ -1,0 +1,16 @@
+***************
+*** 60,65 ****
+          <file>Migrate.qml</file>
+          <file>Reindex.qml</file>
+          <file>RestoreAutoBackup.qml</file>
+          <file>SimpleTrashBrowse.qml</file>
+          <file>PulseLoader.qml</file>
+      </qresource>
+--- 60,66 ----
+          <file>Migrate.qml</file>
+          <file>Reindex.qml</file>
+          <file>RestoreAutoBackup.qml</file>
++         <file>MessageYN.qml</file>
+          <file>SimpleTrashBrowse.qml</file>
+          <file>PulseLoader.qml</file>
+      </qresource>

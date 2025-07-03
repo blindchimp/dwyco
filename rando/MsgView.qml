@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import dwyco 1.0
+import QtQuick
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import dwyco
 
 Page {
     id: msgviewer
@@ -63,12 +63,12 @@ Page {
             fav = core.has_tag_message(mid, "_fav")
             hid = core.has_tag_message(mid, "_hid")
         }
-        function onMsg_tag_change_global(changed_mid, huid) {
-            if(changed_mid != mid)
-                return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
-        }
+//        function onMsg_tag_change_global(changed_mid, huid) {
+//            if(changed_mid != mid)
+//                return
+//            fav = core.has_tag_message(mid, "_fav")
+//            hid = core.has_tag_message(mid, "_hid")
+//        }
     }
 
     Component {
@@ -171,10 +171,10 @@ Page {
                 onClicked: {
                     // supposedly you don't need storage permissions to add to
                     // image collections via mediastore on newer android versions
-                    if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
-                        if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
-                            return
-                    }
+                    // if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
+                    //     if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
+                    //         return
+                    // }
 
                     var export_name = core.export_attachment(mid)
                     if(export_name.length > 0) {

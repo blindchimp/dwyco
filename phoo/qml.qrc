@@ -24,7 +24,7 @@
         <file>PINChangeDialog.qml</file>
         <file>PicPreview.qml</file>
         <file>SimpleToolbar.qml</file>
-        <file>CircularImage.qml</file>
+        <file>CircularImage2.qml</file>
         <file>CQRes.qml</file>
         <file>ConvToolButton.qml</file>
         <file>MultiSelectToolbar.qml</file>
@@ -59,6 +59,7 @@
         <file>SendMulti.qml</file>
         <file>Reindex.qml</file>
         <file>RestoreAutoBackup.qml</file>
+        <file>MessageYN.qml</file>
         <file>SimpleTrashBrowse.qml</file>
         <file>PulseLoader.qml</file>
         <file>MsgViewMenu.qml</file>

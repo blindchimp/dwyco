@@ -6,11 +6,10 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.2
-import QtPositioning 5.12
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls.Material
+import QtPositioning
 
 Page {
     id: msglist
@@ -42,7 +41,7 @@ Page {
                 storage_warning = 1
             else
                 storage_warning = 0
-            AndroidPerms.load()
+            //AndroidPerms.load()
             if(storage_warning === 1) {
                 warn.visible = true
             }
@@ -51,11 +50,11 @@ Page {
 
     header: Column {
         width: parent.width
-        MultiSelectToolbar {
-            id: multi_toolbar
-            visible: multiselect_mode
-            //extras: extras_button
-        }
+        // MultiSelectToolbar {
+        //     id: multi_toolbar
+        //     visible: multiselect_mode
+        //     //extras: extras_button
+        // }
         ToolBar {
             id: regular_toolbar
             background: Rectangle {
@@ -227,23 +226,26 @@ Page {
     Component {
         id: msg_delegate
 
-        CircularImage {
+        CircularImage2 {
             id: img
             property bool click_to_fetch
+
             click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
-            x: items_margin
-            //y: mm(10)
-            width: listview.width - 2 * items_margin
+
+            anchors.margins: items_margin
+            anchors.left: ListView.view.contentItem.left
+            anchors.right: ListView.view.contentItem.right
+
             height: {
-                if(click_to_fetch)
+                if(IS_UNFETCHED || click_to_fetch)
                     return width
                 return (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
             }
-            visible: click_to_fetch || IS_ACTIVE || IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
+            visible: click_to_fetch || IS_UNFETCHED || IS_ACTIVE || IS_QD === 1 || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
             source: {
                 click_to_fetch ? mi("ic_cloud_download_black_24dp.png") :
-                (PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : "")
+                (PREVIEW_FILENAME !== "" ? core.from_local_file(PREVIEW_FILENAME) : "")
             }
 
             fillMode: click_to_fetch ? Image.Pad : Image.PreserveAspectCrop
@@ -305,25 +307,32 @@ Page {
                 }
             }
 
-            Image {
+            RoundButton {
                 id: failed_review
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
-                source: mi("ic_not_interested_black_24dp.png")
-
-                z: 10
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        if(fail_review_msg.state == "moveIn")
-                            fail_review_msg.state = "moveOut"
-                        else
-                            fail_review_msg.state = "moveIn"
-                        core.hash_clear_tag(ASSOC_HASH, "unviewed")
-                    }
+                visible: IS_QD === 0 && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
+                icon.source: mi("ic_not_interested_black_24dp.png")
+                onClicked: {
+                    if(fail_review_msg.state == "moveIn")
+                        fail_review_msg.state = "moveOut"
+                    else
+                        fail_review_msg.state = "moveIn"
+                    core.hash_clear_tag(ASSOC_HASH, "unviewed")
                 }
+                z: 10
+                // MouseArea {
+                //     anchors.fill: parent
+                //     preventStealing: true
+                //     onClicked: {
+                //         if(fail_review_msg.state == "moveIn")
+                //             fail_review_msg.state = "moveOut"
+                //         else
+                //             fail_review_msg.state = "moveIn"
+                //         core.hash_clear_tag(ASSOC_HASH, "unviewed")
+                //     }
+                // }
 
                 SequentialAnimation {
                     running: IS_UNSEEN === 1
@@ -387,9 +396,9 @@ Page {
 
 
 
-            Image {
+            RoundButton {
                 id: has_geo_info
-                source: {
+                icon.source: {
 
                     themsglist.uid === the_man ?
                                 ((core.geo_count_from_hash(ASSOC_HASH) > 1) ? mi("ic_open_in_new_black_24dp.png") : mi("ic_language_black_24dp.png"))
@@ -399,8 +408,10 @@ Page {
                 anchors.left: img.left
                 anchors.margins: mm(.5)
                 visible: location.text.length > 0
-                MouseArea {
-                    anchors.fill: parent
+                z: 10
+                // MouseArea {
+                //     anchors.fill: parent
+                //     preventStealing: true
                     onClicked: {
                         if(core.geo_count_from_hash(ASSOC_HASH) > 1) {
                         geolist.hash = ASSOC_HASH
@@ -415,7 +426,8 @@ Page {
                                 mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = default_map_zoom
+                                //mapimage.zoom = default_map_zoom
+                                mapimage.reset_zoom(default_map_zoom)
                                 stack.push(mapimage)
                             }
                             else
@@ -432,7 +444,8 @@ Page {
                                 mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = default_map_zoom
+                                //mapimage.zoom = default_map_zoom
+                                mapimage.reset_zoom(default_map_zoom)
                                 stack.push(mapimage)
 
                             }
@@ -448,7 +461,7 @@ Page {
 
                         core.hash_clear_tag(ASSOC_HASH, "unviewed")
                     }
-                }
+                //}
                 SequentialAnimation {
                     running: IS_UNSEEN === 1
                     loops: Animation.Infinite
@@ -496,6 +509,7 @@ Page {
                         {
                             console.log(e)
                             console.log(mid)
+				console.log(MSG_TEXT)
                         }
                         return ""
                     } else {
@@ -535,7 +549,7 @@ Page {
             }
             Image {
                 id: deco2
-                visible: IS_QD
+                visible: IS_QD === 1
                 source: mi("ic_cloud_upload_black_24dp.png")
                 anchors.left: img.left
                 anchors.top: img.top
@@ -550,7 +564,7 @@ Page {
                     anchors.left: parent.left
                     Connections {
                         target: core
-                        onMsg_progress : {
+                        function onMsg_progress(pers_id, recipient, msg, percent_done) {
                             console.log("PB ", pers_id, msg, percent_done, model.mid)
                             if(pers_id === model.mid) {
                                 pb.value = percent_done
@@ -565,13 +579,15 @@ Page {
                 //anchors.fill: img
                 //width: img.width
                 anchors.margins: mm(1)
-                sourceComponent: ProgressRound {
+                sourceComponent: CircularProgressBar {
                     id: pbar
                     //width: pbar_loader.width
                     visible: model.IS_ACTIVE
-                    value: ATTACHMENT_PERCENT
-                    indeterminate: {ATTACHMENT_PERCENT < 0.0}
-                    to: 100.0
+                    //visible: true
+                    //value: .4
+                    value: {ATTACHMENT_PERCENT < 0.0 ? 0 : ATTACHMENT_PERCENT / 100.0}
+                    //indeterminate: {ATTACHMENT_PERCENT < 0.0}
+                    //to: 100.0
                     z: 4
 //                    background: Rectangle {
 //                        color: "green"
@@ -647,7 +663,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         visible: {model.uid === the_man && listview.count === 0}
         font.bold: true
         anchors.fill: parent
-        background: parent.background
+        //background: parent.background
 
     ColumnLayout {
         anchors.fill: parent
@@ -683,12 +699,13 @@ scrolling in the listview or doesn't recognizing the swipe.
         width: cm(1.5)
         height: cm(1.5)
         onClicked: {
-            cam.next_state = "StopAndPop"
-            cam.ok_text = "Upload"
+            // cam.next_state = "StopAndPop"
+            // cam.ok_text = "Upload"
             if(Qt.platform.os == "android") {
                 notificationClient.log_event2("camclick", "regular")
+                notificationClient.takePicture()
             }
-            stack.push(cam)
+            //stack.push(cam)
         }
     }
 
@@ -778,6 +795,8 @@ scrolling in the listview or doesn't recognizing the swipe.
             i = themsglist.find_first_unseen()
             if(i >= 0)
                 listview.positionViewAtIndex(i, ListView.Beginning)
+            else
+                core.reset_unviewed_msgs(the_man)
         }
         ToolTip.text: "Skip to next unseen"
 

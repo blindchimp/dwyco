@@ -10,21 +10,30 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlComponent>
-#include <QtQml>
+//#include <QtQml>
 #include <QUrl>
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
 #include <QImage>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
+#include <QTcpServer>
+#include <QNetworkReply>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QSettings>
 #ifdef ANDROID
-#include <QtAndroid>
+//#include <QtAndroid>
 #endif
-#include "androidperms.h"
+//#include "androidperms.h"
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-#include "msglistmodel.h"
+#include "msgrawmodel.h"
+#include "msgproxymodel.h"
 #include "pfx.h"
 #include "ssmap.h"
 //#include "dwycoimageprovider.h"
@@ -70,7 +79,7 @@
 #include "geospray.h"
 
 
-#if defined(MACOSX)  && !defined(DWYCO_IOS)
+#if defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
 #include <QtMacExtras>
 #endif
 
@@ -109,7 +118,7 @@ extern int HasCamHardware;
 
 int DwycoCore::Android_migrate;
 
-QMap<QByteArray, QLoc> Hash_to_loc;
+QMultiMap<QByteArray, QLoc> Hash_to_loc;
 QMap<QByteArray,QByteArray> Hash_to_review;
 QMap<QByteArray, long> Hash_to_max_lc;
 
@@ -157,7 +166,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not sure, maybe i don't need this in qt6 any more?
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 
@@ -1182,14 +1192,15 @@ setup_locations()
         QFile::copy("assets:/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
+    QFile::copy("assets:/qtquickcontrols2.conf", userdir + "qtquickcontrols2.conf");
 #else
-    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
-    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst3/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst3/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst3/assets/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst3/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
-    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst3/assets/v21.ver", userdir + "v21.ver");
 #endif
     dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
@@ -1302,15 +1313,16 @@ dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
 {
     unsigned char **img = (unsigned char **)vimg;
 
-    QImage qi(cols, rows, QImage::Format_RGB888);
+    QImage qi(cols, rows, QImage::Format_BGR888);
 
-#ifdef DWYCO_FORCE_DESKTOP_VGQT
+#if 1 && defined(DWYCO_FORCE_DESKTOP_VGQT)
     for(int r = 0; r < rows; ++r)
     {
         unsigned char *sli = img[r];
         uchar *sl = qi.scanLine(r);
         memcpy(sl, sli, 3 * cols);
     }
+    qi.mirror(false, true);
 #else
     for(int r = 0; r < rows; ++r)
     {
@@ -1760,7 +1772,7 @@ DwycoCore::init()
 
 #endif
 
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) //|| defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
         vgqt_new,
         vgqt_del,
@@ -1775,7 +1787,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT) && defined(DWYCO_VIdEO)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -1932,7 +1944,7 @@ DwycoCore::init()
                                     QList<QLoc> ql = Hash_to_loc.values(hh);
                                     if(!ql.contains(loca))
                                     {
-                                        Hash_to_loc.insertMulti(hh, loca);
+                                        Hash_to_loc.insert(hh, loca);
                                     }
                                     long v = Hash_to_max_lc.value(hh, 0);
                                     if(lc > v)
@@ -2018,7 +2030,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#if defined(MACOSX)  && !defined(DWYCO_IOS)
+#if  defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -2031,7 +2043,7 @@ DwycoCore::set_badge_number(int i)
 int
 DwycoCore::load_contacts()
 {
-#ifdef ANDROID
+#if 0 && ANDROID
     if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
     {
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));
@@ -3167,7 +3179,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     char buf[4096];
     int len = df.read(buf, sizeof(buf));
     QCryptographicHash ch(QCryptographicHash::Sha1);
-    ch.addData(buf, len);
+    QByteArrayView b(buf, len);
+    ch.addData(b);
 
     QByteArray res = ch.result();
     res = res.toHex();
@@ -3249,7 +3262,7 @@ DwycoCore::export_attachment(QString mid)
     if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
         return "";
     QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
-    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    quint16 csum = qChecksum(QByteArrayView(scary_fn));
     // look for file extension
     int dot = scary_fn.lastIndexOf('.');
     if(dot != -1)
@@ -3291,7 +3304,8 @@ DwycoCore::export_attachment(QString mid)
     if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
         return "";
     QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
-    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    QByteArrayView b(scary_fn);
+    quint16 csum = qChecksum(b);
     // look for file extension
     int dot = scary_fn.lastIndexOf('.');
     if(dot != -1)
@@ -3337,8 +3351,8 @@ dwyco_register_qml(QQmlContext *root)
 {
     setup_locations();
     TheRootCtx = root;
-    qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
-    qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
+    //qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
+    //qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
     //qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
    // qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
@@ -3374,7 +3388,95 @@ dwyco_register_qml(QQmlContext *root)
     //QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     //root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
 
-    AndroidPerms *a = new AndroidPerms;
-    root->setContextProperty("AndroidPerms", a);
+    //AndroidPerms *a = new AndroidPerms;
+    //root->setContextProperty("AndroidPerms", a);
 
 }
+
+#ifdef DWYCO_DEBUG
+int
+DwycoCore::send_debug(const QString& uid)
+{
+    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
+    //dwyco::exit_netlog();
+    {
+    QByteArray filename = add_pfx(User_pfx, "msgs.sql");
+
+    char *rs;
+    dwyco_random_string2(&rs, 2);
+    QByteArray rsb(rs, 2);
+    dwyco_free_array(rs);
+    rsb = rsb.toHex();
+
+    QByteArray target = add_pfx(Tmp_pfx, QByteArray("msgs") + rsb + ".sql");
+
+    QFile::remove(target);
+    if(!QFile::copy(filename, target))
+    {
+        //dwyco::init_netlog();
+        return 0;
+    }
+    //dwyco::init_netlog();
+
+    QByteArray target_native = QDir::toNativeSeparators(target).toLatin1();
+    int compid = dwyco_make_file_zap_composition(target_native.constData(), target_native.length());
+    if(compid == 0)
+    {
+        QFile::remove(target);
+        return 0;
+    }
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        "msgs", 4, 0, 0,
+                        0, 0)
+      )
+
+    {
+        dwyco_delete_zap_composition(compid);
+        QFile::remove(target);
+        return 0;
+    }
+    QFile::remove(target);
+    }
+    {
+    QByteArray filename = add_pfx(User_pfx, "tags.sql");
+
+    char *rs;
+    dwyco_random_string2(&rs, 2);
+    QByteArray rsb(rs, 2);
+    dwyco_free_array(rs);
+    rsb = rsb.toHex();
+
+    QByteArray target = add_pfx(Tmp_pfx, QByteArray("tags") + rsb + ".sql");
+
+    QFile::remove(target);
+    if(!QFile::copy(filename, target))
+    {
+        //dwyco::init_netlog();
+        return 0;
+    }
+    //dwyco::init_netlog();
+
+    QByteArray target_native = QDir::toNativeSeparators(target).toLatin1();
+    int compid = dwyco_make_file_zap_composition(target_native.constData(), target_native.length());
+    if(compid == 0)
+    {
+        QFile::remove(target);
+        return 0;
+    }
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        "tags", 4, 0, 0,
+                        0, 0)
+      )
+
+    {
+        dwyco_delete_zap_composition(compid);
+        QFile::remove(target);
+        return 0;
+    }
+    QFile::remove(target);
+    }
+
+    return 1;
+
+}
+#endif

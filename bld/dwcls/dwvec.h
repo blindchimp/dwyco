@@ -75,7 +75,7 @@
 #undef DWVEC_NO_INDEX_CHECK
 #else
 #define DWVEC_INLINES
-#define DWVEC_NO_INDEX_CHECK
+#undef DWVEC_NO_INDEX_CHECK
 #endif
 #include <stdlib.h>
 #include "dwiter.h"

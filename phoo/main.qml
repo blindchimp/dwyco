@@ -6,15 +6,17 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Window 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtMultimedia 5.12
-import dwyco 1.0
+//import QtQml
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtMultimedia
+import QtCore
+import dwyco
+//import Qt.labs.platform as Mumble
 
 ApplicationWindow {
     property real contentScaleFactor: screenDpi / 160
@@ -75,7 +77,7 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
-    //font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
     font.weight: Font.Bold
     
     property color primary : "#673AB7"
@@ -124,6 +126,7 @@ ApplicationWindow {
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
     property int qt_application_state: 0
     property bool is_mobile
+    property bool hard_close: false
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
     // let's be serious, ca 2024 there is no practical choice regarding distribution
@@ -137,6 +140,15 @@ ApplicationWindow {
         return ""
     }
 
+    function beep() {
+        if(dwy_quiet)
+            return
+        if(Qt.platform.os == "android") {
+            notificationClient.beep()
+        } else {
+            sound_recv.play()
+        }
+    }
 
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
@@ -188,7 +200,12 @@ ApplicationWindow {
 
     }
     property int close_bounce: 0
-    onClosing: {
+    onClosing: (close) => {
+                   if(hard_close) {
+                       close.accepted = true
+                       return
+                   }
+
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
@@ -222,8 +239,45 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        AndroidPerms.request_sync("android.permission.CAMERA")
-        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+        if(camera_permission.status !== Qt.PermissionStatus.Granted) {
+            console.log("CAMERA DENIED")
+            camera_permission.request()
+        } else {
+            console.log("CAMERA ALLOWED")
+        }
+        if(microphone_permission.status !== Qt.PermissionStatus.Granted) {
+            console.log("MIC DENIED")
+            microphone_permission.request()
+        } else {
+            console.log("MIC ALLOWED")
+        }
+
+        //AndroidPerms.request_sync("android.permission.CAMERA")
+        //AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+    }
+
+    CameraPermission {
+        id: camera_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Camera now granted")
+            } else {
+                console.log("Camera denied again")
+            }
+
+        }
+    }
+
+    MicrophonePermission {
+        id: microphone_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Mic now granted")
+            } else {
+                console.log("Mic denied again")
+            }
+
+        }
     }
 
 
@@ -340,21 +394,20 @@ ApplicationWindow {
             onTriggered: {
                 confirm_block_delete.visible = true
             }
-            MessageDialog {
+            MessageYN {
                 id: confirm_block_delete
                 title: "Block and delete?"
-                icon: StandardIcon.Question
+                //icon: StandardIcon.Question
                 text: "Delete ALL messages from user and BLOCK them?"
                 informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+                onYesClicked: {
                     core.set_ignore(chatbox.to_uid, 1)
                     core.delete_user(chatbox.to_uid)
                     themsglist.reload_model()
                     stack.pop()
 
                 }
-                onNo: {
+                onNoClicked: {
                     stack.pop()
                 }
             }
@@ -376,7 +429,7 @@ ApplicationWindow {
         visible: false
         enabled: false
 
-        onUid_selected: {
+        onUid_selected: (uid, action) => {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
 
@@ -458,12 +511,12 @@ ApplicationWindow {
     DevGroup {
         id: device_group
         visible: false
-        onQuitnowChanged: {
-            if(quitnow === true)
-            {
-                stack.push(device_group)
-            }
-        }
+        // onQuitnowChanged: {
+        //     if(quitnow === true)
+        //     {
+        //         stack.push(device_group)
+        //     }
+        // }
     }
 
     ConvList {
@@ -743,7 +796,7 @@ ApplicationWindow {
 
         z: 10
         exit_button.onClicked: {
-            expire_immediate = true
+            applicationWindow1.expire_immediate = true
             Qt.quit()
         }
         Component.onCompleted: {
@@ -817,22 +870,22 @@ ApplicationWindow {
     }
   
 
-    SoundEffect {
-        id: sound_sent
-        source: "qrc:/androidinst2/assets/space-zap.wav"
-    }
+    // SoundEffect {
+    //     id: sound_sent
+    //     source: "qrc:/androidinst3/assets/space-zap.wav"
+    // }
     SoundEffect {
         id: sound_recv
-        source: "qrc:/androidinst2/assets/space-zap.wav"
+        source: "qrc:/androidinst3/assets/space-zap.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
-    SoundEffect {
-        id: sound_alert
-        source: "qrc:/androidinst2/assets/space-incoming.wav"
-        volume: {dwy_quiet ? 0.0 : 1.0}
-        muted: dwy_quiet
-    }
+    // SoundEffect {
+    //     id: sound_alert
+    //     source: "qrc:/androidinst3/assets/space-incoming.wav"
+    //     volume: {dwy_quiet ? 0.0 : 1.0}
+    //     muted: dwy_quiet
+    // }
 
     
     StackView {
@@ -956,7 +1009,7 @@ ApplicationWindow {
             exit()
         }
 
-        onServer_login: {
+        onServer_login: (msg, what)=> {
            
             console.log(msg)
             console.log(what)
@@ -974,24 +1027,27 @@ ApplicationWindow {
             //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
         }
 
-        onNew_msg: {
+        onNew_msg: (from_uid, txt, mid)=> {
             console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
             if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
                 // do this, or display a "go to bottom" icon
-//                if(chatbox.listview.atYEnd) {
-//                    chatbox.listview.positionViewAtBeginning()
-//                }
+              //  if(chatbox.listview.atYEnd) {
+              //      chatbox.listview.positionViewAtBeginning()
+              //  }
                 console.log("RELOAD nm")
                 //themsglist.reload_model()
             }
             //notificationClient.notification = "New messages"
-            sound_recv.play()
+
+              beep()
+
+
         }
 
-        onSys_msg_idx_updated: {
+        onSys_msg_idx_updated: (uid)=> {
             console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
@@ -1000,12 +1056,12 @@ ApplicationWindow {
             }
         }
 
-        onMsg_send_status: {
+        onMsg_send_status: (status, recipient, pers_id)=> {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
-            if(status == DwycoCore.MSG_SEND_SUCCESS) {
+            if(status === DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid == recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
+                if(themsglist.uid === recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
@@ -1013,16 +1069,16 @@ ApplicationWindow {
             }
         }
 
-        onMsg_progress: {
+        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
             console.log(pers_id, msg, percent_done)
             //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onProfile_update: {
+        onProfile_update: (success)=> {
             top_dispatch.profile_updated(success)
         }
 
-        onQt_app_state_change: {
+        onQt_app_state_change: (app_state)=> {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
@@ -1038,7 +1094,7 @@ ApplicationWindow {
             qt_application_state = app_state
         }
 
-        onImage_picked: {
+        onImage_picked: (fn) => {
             console.log("image " + fn)
             if(android_img_pick_hack === 1)
             {
@@ -1053,14 +1109,14 @@ ApplicationWindow {
             }
         }
 
-        onAny_unviewedChanged: {
+        onAny_unviewedChanged: (any_unviewed) => {
             if(any_unviewed)
                 set_badge_number(1)
             else
                 set_badge_number(0)
         }
 
-        onClient_nameChanged: {
+        onClient_nameChanged: (client_name) => {
             core.update_dwyco_client_name(core.client_name)
         }
     }
@@ -1075,6 +1131,34 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         z: 5
+    }
+
+    Rectangle {
+        id: force_quit
+        visible: device_group.quitnow
+        anchors.fill: parent
+        color: "orange"
+        z: 10
+        RowLayout {
+            id: quit_page
+            anchors.fill: parent
+            anchors.margins: mm(2)
+
+            spacing: mm(3)
+            Button {
+                text: "Quit"
+                onClicked: {
+                    expire_immediate = true
+                    hard_close = true
+                    Qt.quit()
+                }
+            }
+            Label {
+                text: "Success! " + device_group.provisional_group + " active. Click QUIT"
+                Layout.fillWidth: true
+            }
+
+        }
     }
 
 

@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import dwyco 1.0
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import dwyco
 
 Rectangle {
     anchors.fill: parent
@@ -93,6 +93,7 @@ Rectangle {
                 core.set_local_setting("reindex1", "")
                 //core.set_local_setting("restore-prompt", "1")
                 core.exit()
+                hard_close = true
                 Qt.quit()
             }
             Layout.fillWidth: true

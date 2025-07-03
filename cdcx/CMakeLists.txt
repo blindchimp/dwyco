@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.19)
 
-project(cdcx VERSION 0.1 LANGUAGES CXX)
+project(CDC-X VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR cdcx_cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -11,17 +11,22 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(Qt5 REQUIRED COMPONENTS Core)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS WebEngine)
-#find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui WebEngineWidgets)
+find_package(QT NAMES Qt6)
+find_package(Qt6 REQUIRED COMPONENTS
+    Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets
+    Widgets Network Multimedia WebEngineCore WebEngineWidgets)
+
+# NOTE! this cmake file needs a redo!
+# we'll never be building a qt5 version using cmake
+qt_standard_project_setup(REQUIRES 6.8)
+
+# Get Qt version from the Qt6 config
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Define a preprocessor macro with the Qt version
+add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
+
 
 add_compile_definitions(
 UNICODE
@@ -33,13 +38,14 @@ WHATBOX=BrowseBox
 #NO_BUILDTIME
 CDCX_WEBKIT
 DWYCO_QT5
+DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"3.107\"
+DWYCO_NICE_VERSION=\"4.300\"
 )
 include_directories(
-./dllwin ../bld/qtdrv .
+./dllwin ../bld/qt6drv ../bld/dwcls .
 )
 
 set(PROJECT_SOURCES
@@ -90,97 +96,67 @@ if(APPLE)
     list(APPEND PROJECT_SOURCES mactards.mm)
 endif()
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(cdcx
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-    )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET cdcx APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-        add_library(cdcx SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(cdcx
-            ${PROJECT_SOURCES}
-
-        )
-    add_dependencies(cdcx cdc32)
-    endif()
+if(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE "greenguy.icns")
+set(app_icon "${CMAKE_CURRENT_SOURCE_DIR}/greenguy.icns")
+set_source_files_properties(${app_icon} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
 endif()
+
+
+qt_add_executable(CDC-X
+    MACOSX_BUNDLE ${app_icon}
+    MANUAL_FINALIZATION
+    ${PROJECT_SOURCES}
+)
+
+set(BASELIBS
+    cdc32
+    vc
+    crypto8
+    dwcls
+    gsm
+    kazlib
+    ppm
+    pgm
+    pbm
+    theora.1.2.x
+    speex
+    vorbis112
+    ogg
+    jenkins
+    qt6drv
+    uv
+    miniupnpc
+    Qt6::Widgets
+Qt6::Network
+Qt6::Multimedia
+Qt6::WebEngineCore
+    Qt6::WebEngineWidgets
+    Qt6::StateMachine
+
+)
+
 set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
 if(UNIX AND NOT APPLE)
-target_link_libraries(cdcx PRIVATE
-    ${D}/cdc32/libcdc32.a
-    ${D}/vc/libvc.a
-    ${D}/crypto5/libcrypto5.a
-    ${D}/dwcls/libdwcls.a
-    ${D}/gsm/libgsm.a
-    ${D}/kazlib/libkazlib.a
-    ${D}/ppm/libppm.a
-    ${D}/pgm/libpgm.a
-    ${D}/pbm/libpbm.a
-    ${D}/zlib/libz.a
-    ${D}/theora.1.2.x/libtheora.1.2.x.a
-    ${D}/speex/libspeex.a
-    ${D}/vorbis112/libvorbis112.a
-    ${D}/ogg/libogg.a
-    ${D}/jenkins/libjenkins.a
-    ${D}/qtdrv/libqtdrv.a
-    ${D}/uv/libuv.a
-    ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
-    ${D}/v4lcap/libv4lcap.a
+target_link_libraries(CDC-X PRIVATE
+    ${BASELIBS}
+    v4lcap
     -lv4l2
     -ldl
     -pthread
-
-    Qt${QT_VERSION_MAJOR}::Widgets
-Qt${QT_VERSION_MAJOR}::Network
-Qt${QT_VERSION_MAJOR}::Multimedia
-Qt5::WebEngineCore
-    Qt5::WebEngineWidgets
-
 )
 elseif(APPLE)
     add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
     find_library(CF CoreFoundation)
     find_library(COCOA Cocoa)
-    target_link_libraries(cdcx PRIVATE
-        ${D}/cdc32/libcdc32.a
-        ${D}/vc/libvc.a
-        ${D}/crypto5/libcrypto5.a
-        ${D}/dwcls/libdwcls.a
-        ${D}/gsm/libgsm.a
-        ${D}/kazlib/libkazlib.a
-        ${D}/ppm/libppm.a
-        ${D}/pgm/libpgm.a
-        ${D}/pbm/libpbm.a
-        ${D}/zlib/libz.a
-        ${D}/theora.1.2.x/libtheora.1.2.x.a
-        ${D}/speex/libspeex.a
-        ${D}/vorbis112/libvorbis112.a
-        ${D}/ogg/libogg.a
-        ${D}/jenkins/libjenkins.a
-        ${D}/qtdrv/libqtdrv.a
-        ${D}/uv/libuv.a
-        ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
+    target_link_libraries(CDC-X PRIVATE
+	${BASELIBS}
         -ldl
         -pthread
         ${CF}
         ${COCOA}
-
-        Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Network
-    Qt${QT_VERSION_MAJOR}::Multimedia
-    Qt5::WebEngineCore
-        Qt5::WebEngineWidgets
-
     )
 elseif(WIN32)
 
@@ -191,42 +167,19 @@ add_compile_definitions(CDCCORE_STATIC)
 add_compile_definitions(CDCX_NO_SSL)
 
 target_link_libraries(
-	cdcx PRIVATE
-${D}/cdc32/cdc32.lib 
-${D}/vc/vc.lib 
-${D}/crypto5/crypto5.lib 
-${D}/dwcls/dwcls.lib 
-${D}/gsm/gsm.lib 
-${D}/kazlib/kazlib.lib 
-${D}/ppm/ppm.lib 
-${D}/pgm/pgm.lib 
-${D}/pbm/pbm.lib 
-${D}/zlib/zlibstaticd.lib
-${D}/jenkins/jenkins.lib 
-${D}/vorbis112/vorbis112.lib
-${D}/theora.1.2.x/theora.1.2.x.lib 
-${D}/speex/speex.lib 
-${D}/ogg/ogg.lib 
-${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.lib
-${CMAKE_CURRENT_SOURCE_DIR}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib 
-winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib # binmode.obj
-Qt${QT_VERSION_MAJOR}::Widgets
-Qt${QT_VERSION_MAJOR}::Network
-Qt${QT_VERSION_MAJOR}::Multimedia
-Qt5::WebEngineCore
-Qt5::WebEngineWidgets
+    CDC-X PRIVATE
+    ${BASELIBS}
+    winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib  psapi.lib # binmode.obj
 )
-target_link_options(cdcx PRIVATE binmode.obj)
+target_link_options(CDC-X PRIVATE binmode.obj)
 
 endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER dwyco.cdc-x)
-endif()
-set_target_properties(cdcx PROPERTIES
+set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER dwyco.cdc-x)
+set_target_properties(CDC-X PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -236,12 +189,30 @@ set_target_properties(cdcx PROPERTIES
 )
 
 include(GNUInstallDirs)
-install(TARGETS cdcx
+install(TARGETS CDC-X
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+if(NOT APPLE)
+install(
+    DIRECTORY deploy/ DESTINATION bin
+)
+endif()
+
+# Generate the deployment script for the target
+qt_generate_deploy_app_script(
+    TARGET CDC-X
+    OUTPUT_SCRIPT deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+    #NO_TRANSLATIONS
+
+)
+
+# Call the deployment script on "cmake --install".
+install(SCRIPT ${deploy_script})
+
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(cdcx)
+    qt_finalize_executable(CDC-X)
 endif()

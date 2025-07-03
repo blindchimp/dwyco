@@ -6,14 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQml 2.2
-import QtQuick.Window 2.2
-import QtQuick.Controls 2.2
-import QtQuick.Controls.Material 2.2
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
-import dwyco 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+//import QtQuick.Dialogs
+import QtCore
+import dwyco
 
 ApplicationWindow {
     property real contentScaleFactor: screenDpi / 160
@@ -138,6 +137,7 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: false
     property bool is_mobile
+    property bool hard_close: false
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
@@ -159,8 +159,52 @@ ApplicationWindow {
     //height: Screen.height
     title: qsTr("Dwyco Rando")
 
+    MessageYN {
+        id: confirm_delete2
+        title: "Delete Non-favorites?"
+        //icon: StandardIcon.Question
+        text: "Delete Non-favorite pictures?"
+        informativeText: "This KEEPS FAVORITE pictures"
+        //standardButtons: StandardButton.Yes | StandardButton.No
+        onYesClicked: {
+            var i
+            var u
+            for(i = 0; i < ConvListModel.count; i++) {
+                u = ConvListModel.get(i).uid
+                core.clear_messages_unfav(u)
+            }
+
+            close()
+        }
+        onNoClicked: {
+            close()
+        }
+    }
+
+    MessageYN {
+        id: confirm_delete
+        title: "Delete all"
+        //icon: StandardIcon.Question
+        text: "Delete ALL pictures?"
+        informativeText: "This REMOVES FAVORITE pictures too."
+        //standardButtons: StandardButton.Yes | StandardButton.No
+        onYesClicked: {
+            ConvListModel.set_all_selected(true)
+            ConvListModel.delete_all_selected()
+            close()
+        }
+        onNoClicked: {
+            close()
+        }
+    }
+
     property int close_bounce: 0
-    onClosing: {
+    onClosing: (close) => {
+                   if(hard_close) {
+                       close.accepted = true
+                       return
+                   }
+
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
@@ -194,8 +238,34 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        AndroidPerms.request_sync("android.permission.CAMERA")
-        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+        // this is a bit of a kluge: we used to ask for permission
+        // on startup. but android won't let us q-up multiple permission
+        // requests at the same time. so we know we only need post_notifications
+        // first, then camera when the user uses the camera button. which should
+        // be an ok solution for now (maybe if they fiddle the permissions
+        // directly, it could get into a weird situation, but that is unlikely.)
+
+        // if(camera_permission.status != Qt.PermissionStatus.Granted) {
+        //     console.log("CAMERA DENIED")
+        //     camera_permission.request()
+        // } else {
+        //     console.log("CAMERA ALLOWED")
+        // }
+
+        // AndroidPerms.request_sync("android.permission.CAMERA")
+        // AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+    }
+
+    CameraPermission {
+        id: camera_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Camera now granted")
+            } else {
+                console.log("Camera denied again")
+            }
+
+        }
     }
 
 
@@ -277,34 +347,34 @@ ApplicationWindow {
         visible: false
         enabled: false
 
-        onUid_selected: {
+        onUid_selected: (uid, action) => {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
         }
     }
 
-    Loader {
-        id: cam
+    // Loader {
+    //     id: cam
 
-        property string next_state
-        property string ok_text: "Send"
-        //anchors.fill: parent
-        visible: false
-        active: visible
+    //     property string next_state
+    //     property string ok_text: "Send"
+    //     //anchors.fill: parent
+    //     visible: false
+    //     active: visible
 
-        onLoaded: {
-            item.state_on_close = cam.next_state
-            item.ok_pv_text = cam.ok_text
-        }
+    //     onLoaded: {
+    //         item.state_on_close = cam.next_state
+    //         item.ok_pv_text = cam.ok_text
+    //     }
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DeclarativeCamera.qml"
-                //vid_cam_preview.active = false
-            }
-        }
+    //     onVisibleChanged: {
+    //         if(visible) {
+    //             source = "qrc:/DeclarativeCamera.qml"
+    //             //vid_cam_preview.active = false
+    //         }
+    //     }
 
-    }
+    // }
 
     DSettings {
         id: settings_dialog
@@ -537,7 +607,7 @@ ApplicationWindow {
 //            Qt.quit()
 //        }
 
-        onServer_login: {
+        onServer_login: (msg, what)=> {
            
             console.log(msg)
             console.log(what)
@@ -554,7 +624,7 @@ ApplicationWindow {
             }
         }
 
-        onNew_msg: {
+        onNew_msg: (from_uid, txt, mid) => {
             console.log(from_uid)
             console.log(txt)
             console.log(mid)
@@ -573,7 +643,7 @@ ApplicationWindow {
 
         }
 
-        onSys_msg_idx_updated: {
+        onSys_msg_idx_updated: (uid, prepend) => {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
@@ -590,7 +660,7 @@ ApplicationWindow {
             }
         }
 
-        onMsg_send_status: {
+        onMsg_send_status: (pers_id, status, recipient) => {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
@@ -603,16 +673,16 @@ ApplicationWindow {
             }
         }
 
-        onMsg_progress: {
+        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
             console.log(pers_id, msg, percent_done)
             //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onProfile_update: {
+        onProfile_update: (success)=> {
             top_dispatch.profile_updated(success)
         }
 
-        onQt_app_state_change: {
+        onQt_app_state_change: (app_state)=> {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
@@ -629,20 +699,11 @@ ApplicationWindow {
 
         }
 
-//        onImage_picked: {
-//            console.log("image " + fn)
-//            if(android_img_pick_hack === 1)
-//            {
-//                profile_update_dialog.android_img_filename = fn
-//                profile_update_dialog.android_hack = true
-//            }
-//            else if(android_img_pick_hack === 2)
-//            {
-//                chatbox.android_img_filename = fn
-//                chatbox.android_hack = true
+        onImage_picked: (fn)=> {
+                            console.log("image " + fn)
+                            simple_msg_list.snapshot(fn)
 
-//            }
-//        }
+                        }
 
 //        onAny_unviewedChanged: {
 //            if(any_unviewed)
@@ -651,6 +712,9 @@ ApplicationWindow {
 //                set_badge_number(0)
 //        }
 
+        onClient_nameChanged: (client_name) => {
+            core.update_dwyco_client_name(core.client_name)
+        }
     }
 
     Rectangle {

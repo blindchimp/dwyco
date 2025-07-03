@@ -6,11 +6,11 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
+import QtQml
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
 
 Page {
     property alias model: grid.model
@@ -73,9 +73,23 @@ Page {
                 MenuItem {
                     text: "Delete forever"
                     onTriggered: {
-                        model.obliterate_all_selected()
-                        //model.tag_all_selected("_hid")
-                        multiselect_mode = false
+                        confirm_delete.visible = true
+                    }
+                    MessageYN {
+                        id: confirm_delete
+                        title: "Delete selected msgs?"
+                        text: "Delete selected msgs on ALL devices?"
+                        informativeText: "No UNDO"
+
+                        onYesClicked: {
+                            model.obliterate_all_selected()
+                            //model.tag_all_selected("_hid")
+                            multiselect_mode = false
+                            close()
+                        }
+                        onNoClicked: {
+                            close()
+                        }
                     }
                 }
             }
@@ -178,8 +192,22 @@ Page {
                         MenuItem {
                             text: "Empty Trash"
                             onTriggered: {
-                                model.set_all_selected()
-                                model.obliterate_all_selected()
+                                confirm_empty.visible = true
+                            }
+                            MessageYN {
+                                id: confirm_empty
+                                title: "Empty trash?"
+                                text: "Delete ALL trash on ALL devices?"
+                                informativeText: "No UNDO"
+
+                                onYesClicked: {
+                                    model.set_all_selected()
+                                    model.obliterate_all_selected()
+                                    close()
+                                }
+                                onNoClicked: {
+                                    close()
+                                }
                             }
                         }
 
@@ -308,6 +336,7 @@ Page {
 
             Text {
                 function gentext(msg) {
+                    return msg
                     return "<html>" + msg + "</html>"
                 }
 
@@ -316,7 +345,7 @@ Page {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 //anchors.top: preview.visible ? undefined : parent.top
-                height: preview.visible ? parent.height : implicitHeight
+                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
                 wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
@@ -325,6 +354,7 @@ Page {
                 color: amber_light
                 style: Text.Outline
                 styleColor: "black"
+                padding: 3
 
                 clip: true
             }

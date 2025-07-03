@@ -708,8 +708,11 @@ void simple_public::chat_event(int cmd,int id, QByteArray uid, QString name, QVa
             QList<QVariant> br = data.toList();
             time_t unblock_time = br[1].toInt();
             QString reason = br[4].toString();
-            QDateTime ubt = QDateTime::fromTime_t(unblock_time);
-            QString msg = QString("Block is in effect until %1<br>Reason: %2").arg(ubt.toString(Qt::SystemLocaleDate)).arg(reason);
+            QDateTime ubt = QDateTime::fromSecsSinceEpoch(unblock_time);
+            QString msg = QString("Block is in effect until %1<br>Reason: %2")
+                              .arg(
+                                  QLocale::system().toString(ubt, QLocale::ShortFormat))
+                              .arg(reason);
 
             append_msg_to_textedit(msg, ui->text_display, "");
         }

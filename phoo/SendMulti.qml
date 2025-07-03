@@ -6,11 +6,11 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import dwyco 1.0
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
+import QtQml
+import QtQuick
+import dwyco
+import QtQuick.Layouts
+import QtQuick.Controls
 
 Page {
     id: send_multi_page
@@ -46,7 +46,7 @@ Page {
                 spacing: mm(1)
                 anchors.fill: parent
 
-                CircularImage {
+                CircularImage2 {
                     id: ppic
                     //width: dp(80)
                     //height: dp(60)

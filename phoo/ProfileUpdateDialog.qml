@@ -6,13 +6,14 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import dwyco 1.0
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-//import Qt.labs.platform 1.1 as NL
+import QtQml
+import QtQuick
+import QtQuick.Controls
+import dwyco
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtCore
+//import Qt.labs.platform as Mumble
 
 Page {
     id: rectangle1
@@ -161,12 +162,12 @@ Page {
         active: visible
         sourceComponent: FileDialog {
                 title: "Pick a picture"
-                folder: shortcuts.pictures
+                currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
                 onAccepted: {
-                    console.log(fileUrl)
-                    console.log(Qt.resolvedUrl(fileUrl))
+                    console.log(selectedFile)
+                    console.log(Qt.resolvedUrl(selectedFile))
                     //img_preview.source = fileUrl
-                    prof_pic_preview.source = fileUrl
+                    prof_pic_preview.source = selectedFile
                     prof_pic_preview.ok_vis = true
                     prof_pic_preview.ok_text = "Ok"
                     stack.push(prof_pic_preview, {"ok_text":"Use"})
@@ -259,7 +260,8 @@ Page {
     ColumnLayout {
         id: column
         anchors.fill: parent
-        spacing: 3
+        anchors.topMargin: 5
+        spacing: 6
 
         TextFieldX {
             id: handle

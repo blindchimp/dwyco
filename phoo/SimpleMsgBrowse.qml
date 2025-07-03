@@ -6,11 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
+import QtQml
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
+//import Qt.labs.platform 1.0 as Mumble
 
 Page {
     id: simple_msg_browse
@@ -175,7 +176,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
@@ -285,21 +286,21 @@ Page {
                             onTriggered: {
                                 confirm_trash.visible = true
                             }
-                            MessageDialog {
+                            MessageYN {
                                 id: confirm_trash
                                 title: "Trash all messages?"
-                                icon: StandardIcon.Question
-                                text: "Trash ALL messages from this user?"
+                                
+                                text: "Trash ALL messages from user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                
+                                onYesClicked: {
                                     themsglist.set_all_selected()
                                     themsglist.trash_all_selected()
                                     themsglist.invalidate_model_filter()
+                                    themsglist.reload_model()
                                     close()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }
@@ -486,6 +487,7 @@ Page {
 
             Text {
                 function gentext(msg) {
+                    return msg
                     return "<html>" + msg + "</html>"
                 }
 
@@ -494,7 +496,7 @@ Page {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 //anchors.top: preview.visible ? undefined : parent.top
-                height: preview.visible ? parent.height : implicitHeight
+                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
                 wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
@@ -503,6 +505,7 @@ Page {
                 color: amber_light
                 style: Text.Outline
                 styleColor: "black"
+                padding: 3
 
                 clip: true
             }

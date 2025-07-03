@@ -6,11 +6,11 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import dwyco 1.0
+import QtQml
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import dwyco
 
 Page {
     id: msgviewer
@@ -66,20 +66,20 @@ Page {
         target: core
         function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id === msgviewer.ui_id) {
-                view_source = img_path
+                msgviewer.view_source = img_path
             }
         }
         function onMid_tag_changed(changed_mid) {
-            if(changed_mid != mid)
+            if(changed_mid != msgviewer.mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = core.has_tag_message(msgviewer.mid, "_fav")
+            hid = core.has_tag_message(msgviewer.mid, "_hid")
         }
         function onMsg_tag_change_global(changed_mid, huid) {
-            if(changed_mid != mid)
+            if(changed_mid != msgviewer.mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = core.has_tag_message(msgviewer.mid, "_fav")
+            hid = core.has_tag_message(msgviewer.mid, "_hid")
         }
         function onQt_app_state_change(app_state) {
             if(app_state === 0) {
@@ -87,9 +87,9 @@ Page {
 
             }
             if(app_state !== 0) {
-                if(view_id !== -1) {
-                core.stop_zap_view(view_id)
-                core.delete_zap_view(view_id)
+                if(msgviewer.view_id !== -1) {
+                core.stop_zap_view(msgviewer.view_id)
+                core.delete_zap_view(msgviewer.view_id)
                 }
             }
         }
@@ -196,10 +196,10 @@ Page {
                 onClicked: {
                     // supposedly you don't need storage permissions to add to
                     // image collections via mediastore on newer android versions
-                    if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
-                        if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
-                            return
-                    }
+                    // if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
+                    //     if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
+                    //         return
+                    // }
 
                     var export_name = core.export_attachment(mid)
                     if(export_name.length > 0) {

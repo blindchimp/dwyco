@@ -6,11 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import dwyco 1.0
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
+import QtQuick
+import dwyco
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Dialogs
+//import Qt.labs.platform
 
 ToolBar {
     property Component extras
@@ -87,14 +88,14 @@ ToolBar {
                 // remove whatever is selected
                 confirm_delete.visible = true
             }
-            MessageDialog {
+            MessageYN {
                 id: confirm_delete
-                title: "Bulk Trash"
-                icon: StandardIcon.Question
+                title: "Bulk Trash?"
+                
                 text: "Trash ALL messages from selected users?"
-                informativeText: "This KEEPS FAVORITES, but TRASHES HIDDEN messages."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+                informativeText: "This KEEPS FAVORITE, but TRASHES HIDDEN message."
+
+                onYesClicked: {
                     if(is_trash) {
                         model.obliterate_all_selected()
                     } else {
@@ -108,7 +109,7 @@ ToolBar {
                     multiselect_mode = false
                     close()
                 }
-                onNo: {
+                onNoClicked: {
                     close()
                 }
             }

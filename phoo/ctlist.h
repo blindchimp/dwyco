@@ -10,6 +10,7 @@
 #define CTLIST_H
 
 #include <QObject>
+#include <QQmlEngine>
 #include "QSortFilterProxyModel"
 #include "QQmlObjectListModel.h"
 #include "QQmlVarPropertyHelpers.h"
@@ -34,6 +35,7 @@ public:
 class SimpleContactModel : public QQmlObjectListModel<SimpleContact>
 {
     Q_OBJECT
+    QML_NAMED_ELEMENT(DwycoSimpleContactModel)
     QML_READONLY_VAR_PROPERTY(int, selected_count)
 
 public:

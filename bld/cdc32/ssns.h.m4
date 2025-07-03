@@ -417,6 +417,13 @@ divert[]dnl
 // Author:  Brian Allen Vanderburg II
 // Purpose: A simple signals and slots implemnetation
 // ---------------------------------------------------------------------
+// WARNING: i suspect this implementation has problems if a set of
+// signals are being emitted to multiple slots, and one of the slot
+// invocations results in target objects being deleted, or the signals
+// are disconnected from subsequent objects in the list of receivers.
+// if this might be a problem, using a "deleteLater" pattern for
+// objects that have slots might work. i need to look at this a little more
+// closely. maybe do something radical like create a test suite.
 
 // Configuration support
 #define SSNS_NO_THREADS //- No support for multiple threads, ansi/iso c++

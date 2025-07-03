@@ -6,10 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls.Material 2.12
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls.Material
 
 Pane {
 
@@ -60,7 +59,7 @@ Pane {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
 
-                    CircularImage {
+                    CircularImage2 {
                         id: circularImage
 
                         Layout.maximumHeight: 32
@@ -93,7 +92,7 @@ Pane {
                 }
             }
         }
-        Switch {
+        SwitchDelegate {
             id: freebies_switch
             text: qsTr("Free pics")
             //            bottomPadding: ctrl_pad

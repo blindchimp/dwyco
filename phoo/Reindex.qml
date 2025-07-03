@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 Rectangle {
 
@@ -60,6 +60,7 @@ Rectangle {
             Layout.fillWidth: true
             onClicked: {
                 core.set_local_setting("reindex1", "1")
+                hard_close = true
                 Qt.quit()
             }
             visible: reindex_done
@@ -69,21 +70,21 @@ Rectangle {
             //Layout.horizontalCenter: true
             Layout.fillWidth: true
             onClicked: {
+                hard_close = true
                 Qt.quit()
             }
             visible: busy.running
         }
 
+        BusyIndicator {
+            id: busy
+            running: reindex_in_progress && !reindex_done
+            Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
+        }
         Item {
             Layout.fillHeight: true
         }
 
-    }
-    BusyIndicator {
-        id: busy
-        running: reindex_in_progress && !reindex_done
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
     }
 
 }

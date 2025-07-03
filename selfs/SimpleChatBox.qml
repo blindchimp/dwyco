@@ -6,12 +6,14 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQml 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
-import dwyco 1.0
+import QtQuick
+import QtQml
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
+import dwyco
+//import Qt.labs.platform as Mumble
+import QtCore
 
 
 Page {
@@ -445,21 +447,20 @@ Page {
                             onTriggered: {
                                 confirm_trash.visible = true
                             }
-                            MessageDialog {
+                            MessageYN {
                                 id: confirm_trash
-                                title: "Trash all messages?"
-                                icon: StandardIcon.Question
-                                text: "Trash ALL messages from this user?"
+                                title: "Trash all msgs?"
+                                text: "Trash ALL (including HIDDEN) msgs from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                
+                                onYesClicked: {
                                     themsglist.set_all_selected()
                                     themsglist.trash_all_selected()
                                     themsglist.invalidate_model_filter()
+                                    themsglist.reload_model()
                                     close()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }
@@ -601,12 +602,12 @@ Page {
         sourceComponent: FileDialog {
 
             title: "Pick a picture"
-            folder: shortcuts.pictures
+            currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
             onAccepted: {
-                console.log("PICK ", fileUrl)
-                console.log("PICKU ", Qt.resolvedUrl(fileUrl))
+                console.log("PICK ", selectedFile)
+                console.log("PICKU ", Qt.resolvedUrl(selectedFile))
                 //img_preview.source = fileUrl
-                chat_pic_preview.source = fileUrl
+                chat_pic_preview.source = selectedFile
                 chat_pic_preview.ok_vis = true
                 stack.push(chat_pic_preview)
             }

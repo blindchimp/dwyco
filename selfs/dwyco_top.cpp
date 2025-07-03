@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 #ifdef ANDROID
-#include <QtAndroid>
+//#include <QtAndroid>
 #endif
 #include "dlli.h"
 #include <stdlib.h>
@@ -53,7 +53,7 @@ void android_log_stuff(const char *str, const char *s1, int s2);
 #include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
-#include "v4lcapexp.h"
+//#include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
@@ -79,7 +79,7 @@ void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
 
 
-#if defined(MACOSX) && !defined(DWYCO_IOS)
+#if defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
 #include <QtMacExtras>
 #endif
 
@@ -169,7 +169,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not sure, maybe i don't need this in qt6 any more?
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 void
@@ -1115,7 +1116,7 @@ DwycoCore::directory_swap()
 }
 #endif
 
-#ifdef ANDROID
+#if 0 && ANDROID
 static
 QStandardPaths::StandardLocation
 determine_android_migration()
@@ -1396,15 +1397,16 @@ dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
 {
     unsigned char **img = (unsigned char **)vimg;
 
-    QImage qi(cols, rows, QImage::Format_RGB888);
+    QImage qi(cols, rows, QImage::Format_BGR888);
 
-#ifdef DWYCO_FORCE_DESKTOP_VGQT
+#if 1 && defined(DWYCO_FORCE_DESKTOP_VGQT)
     for(int r = 0; r < rows; ++r)
     {
         unsigned char *sli = img[r];
         uchar *sl = qi.scanLine(r);
         memcpy(sl, sli, 3 * cols);
     }
+    qi.mirror(false, true);
 #else
     for(int r = 0; r < rows; ++r)
     {
@@ -1967,7 +1969,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT) && defined(DWYCO_VIdEO)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -2211,7 +2213,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#if  defined(MACOSX) && !defined(DWYCO_IOS)
+#if  defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -2223,7 +2225,7 @@ DwycoCore::set_badge_number(int i)
 int
 DwycoCore::load_contacts()
 {
-#ifdef ANDROID
+#if 0 && ANDROID
     if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
     {
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));

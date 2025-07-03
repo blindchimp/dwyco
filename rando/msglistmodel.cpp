@@ -21,6 +21,9 @@
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
 #include "qloc.h"
+#ifdef DWYCO_MODEL_TEST
+#include <QAbstractItemModelTester>
+#endif
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -47,7 +50,7 @@ static QMap<QByteArray, int> Mid_to_percent;
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
 
-extern QMap<QByteArray,QLoc> Hash_to_loc;
+extern QMultiMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
 extern QMap<QByteArray,long> Hash_to_max_lc;
 
@@ -83,6 +86,7 @@ enum {
     ASSOC_HASH,
     SENT_TO_LAT,
     SENT_TO_LON,
+    IS_UNFETCHED
 };
 
 
@@ -164,7 +168,8 @@ att_file_hash(const QByteArray& mid, QByteArray& hash_out)
     if(!dwyco_copy_out_file_zap_buf2(mid.constData(), &buf, &len, 4096))
         return 0;
     QCryptographicHash ch(QCryptographicHash::Sha1);
-    ch.addData(buf, len);
+    QByteArrayView b(buf, len);
+    ch.addData(b);
 
     QByteArray res = ch.result();
     Mid_to_hash.insert(mid, res);
@@ -181,7 +186,7 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
     Mid_to_percent.insert(bmid, percent_done);
     int midi = mid_to_index(bmid);
     QModelIndex mi = index(midi, 0);
-    dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
+    emit dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
 
 // note: despite this being a member function, it is called for any message
@@ -259,8 +264,10 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
-    roles.append(DIRECT);
-    dataChanged(mi, mi, roles);
+    roles.append(PREVIEW_FILENAME);
+    //roles.append(DIRECT);
+    emit dataChanged(mi, mi, roles);
+    mlm->invalidateFilter();
 }
 
 
@@ -274,9 +281,12 @@ msglist_model::msglist_model(QObject *p) :
     filter_show_hidden = 1;
     special_sort = false;
     msglist_raw *m = new msglist_raw(p);
-    setDynamicSortFilter(false);
+    setDynamicSortFilter(true);
     setSourceModel(m);
     mlm = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_model::~msglist_model()
@@ -586,7 +596,7 @@ msglist_model::find_first_unseen()
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
-    return true;
+    //return true;
     QAbstractItemModel *alm = sourceModel();
 
 #if 0
@@ -596,6 +606,25 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     if(hl.length() == 0)
         return false;
 #endif
+    QModelIndex mi = alm->index(source_row, 0);
+    QVariant is_unfetched = alm->data(mi, IS_UNFETCHED);
+    if(is_unfetched.toBool())
+        return true;
+    QVariant is_file = alm->data(mi, IS_FILE);
+    if(is_file.toInt() == 1)
+        return true;
+    QVariant is_active = alm->data(mi, IS_ACTIVE);
+    if(is_active.toBool())
+        return true;
+    QVariant is_qd = alm->data(mi, IS_QD);
+    if(is_qd.toInt() == 1)
+        return true;
+
+    QVariant fetch_state = alm->data(mi, FETCH_STATE);
+    if(fetch_state.toString() == "manual")
+        return true;
+    return false;
+
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
@@ -658,6 +687,9 @@ msglist_raw::msglist_raw(QObject *p)
     count_inbox_msgs = 0;
     count_msg_idx = 0;
     count_qd_msgs = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_raw::~msglist_raw()
@@ -958,6 +990,7 @@ msglist_raw::roleNames() const
     rn(ASSOC_HASH);
     rn(SENT_TO_LAT);
     rn(SENT_TO_LON);
+    rn(IS_UNFETCHED);
 #undef rn
     return roles;
 }
@@ -1045,6 +1078,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case IS_FAVORITE:
     case IS_HIDDEN:
     case IS_UNSEEN:
+    case IS_FILE:
         return 0;
 
     case IS_FORWARDED:
@@ -1060,6 +1094,8 @@ msglist_raw::qd_data ( int r, int role ) const
         return -1.0;
     case FETCH_STATE:
         return QString("none");
+    case IS_UNFETCHED:
+        return false;
 
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
@@ -1107,6 +1143,7 @@ auto_fetch(QByteArray mid)
         if(fetch_id != 0)
         {
             Fetching.append(mid);
+            mlm->invalidate();
             return 1;
         }
     }
@@ -1246,6 +1283,7 @@ msglist_raw::inbox_data (int r, int role ) const
     case IS_HIDDEN:
     case IS_FORWARDED:
     case IS_UNSEEN:
+    case IS_FILE:
         return 0;
 
     case LOGICAL_CLOCK:
@@ -1255,7 +1293,8 @@ msglist_raw::inbox_data (int r, int role ) const
         if(!Mid_to_percent.contains(mid))
             return -1.0;
         return (double)Mid_to_percent.value(mid);
-
+    case IS_UNFETCHED:
+        return true;
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
 
@@ -1531,6 +1570,10 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     else if(role == LOGICAL_CLOCK)
     {
         return (qlonglong)m.get_long(r, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+    }
+    else if(role == IS_UNFETCHED)
+    {
+        return false;
     }
     }
     catch(...)

@@ -33,8 +33,9 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 
-#include <QtAndroidExtras/QAndroidJniObject>
-#include <QtAndroidExtras>
+#include <QJniObject>
+//#include <QtAndroidExtras>
+typedef QJniObject QAndroidJniObject;
 
 void android_log_stuff(const char *str, const char *s1, int s2);
 
@@ -213,6 +214,7 @@ NotificationClient::load_contacts()
 int
 NotificationClient::open_image()
 {
+#if 0
     QtAndroid::PermissionResultMap m;
 
     if(QtAndroid::checkPermission("android.permission.READ_MEDIA_IMAGES") == QtAndroid::PermissionResult::Granted)
@@ -232,6 +234,7 @@ NotificationClient::open_image()
     {
         return 0;
     }
+#endif
 
 ok:;
     QAndroidJniObject::callStaticMethod<void>(

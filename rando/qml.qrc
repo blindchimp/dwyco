@@ -11,8 +11,6 @@
         <file>MsgView.qml</file>
         <file>PicPreview.qml</file>
         <file>SimpleToolbar.qml</file>
-        <file>CircularImage.qml</file>
-        <file>MultiSelectToolbar.qml</file>
         <file>About.qml</file>
         <file>DSettings.qml</file>
         <file>AppDrawer.qml</file>
@@ -24,12 +22,14 @@
         <file>SimpleMsgList.qml</file>
         <file>MsgReport.qml</file>
         <file>Warning.qml</file>
-        <file>ProgressRound.qml</file>
         <file>Help.qml</file>
         <file>MapImage.qml</file>
         <file>GeoListView.qml</file>
         <file>Reindex.qml</file>
         <file>RestoreAutoBackup.qml</file>
+        <file>MessageYN.qml</file>
+        <file>CircularImage2.qml</file>
+        <file>CircularProgressBar.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

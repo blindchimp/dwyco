@@ -24,7 +24,7 @@
 #include "dwyco_top.h"
 
 #if defined(LINUX) && !(defined(ANDROID) || defined(MACOSX))
-#define LINUX_EMOJI_CRASH_HACK
+#undef LINUX_EMOJI_CRASH_HACK
 #endif
 
 class DwycoCore;

@@ -17,7 +17,8 @@
 #include <QQmlFileSelector>
 #ifdef ANDROID
 #include "notificationclient.h"
-#include <QAndroidJniObject>
+#include <QJniObject>
+typedef QJniObject QAndroidJniObject;
 #endif
 
 QQmlApplicationEngine *TheEngine;
@@ -81,7 +82,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
-    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
+    QQmlFileSelector *sel = new QQmlFileSelector(TheEngine);
     QStringList sels;
 
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
     dpi = screen->logicalDotsPerInch() * app.devicePixelRatio();
 #elif defined(Q_OS_ANDROID)
     QAndroidJniObject qtActivity =
-        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative",
+        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt/android/QtNative",
                 "activity", "()Landroid/app/Activity;");
     QAndroidJniObject resources = qtActivity.callObjectMethod("getResources",
                                   "()Landroid/content/res/Resources;");

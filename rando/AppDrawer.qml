@@ -6,63 +6,23 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Controls.Material
 
 AppDrawerForm {
 
     signal close()
 
     delete_all.onClicked: {
-        confirm_delete.visible = true
+        confirm_delete.open()
         close()
 
-    }
-    MessageDialog {
-        id: confirm_delete
-        title: "Delete all"
-        icon: StandardIcon.Question
-        text: "Delete ALL pictures?"
-        informativeText: "This REMOVES FAVORITE pictures too."
-        standardButtons: StandardButton.Yes | StandardButton.No
-        onYes: {
-            ConvListModel.set_all_selected(true)
-            ConvListModel.delete_all_selected()
-            close()
-        }
-        onNo: {
-            close()
-        }
     }
 
     clear_nonfav.onClicked: {
-        confirm_delete2.visible = true
+        confirm_delete2.open()
         close()
     }
-
-    MessageDialog {
-        id: confirm_delete2
-        title: "Delete Non-favorites?"
-        icon: StandardIcon.Question
-        text: "Delete Non-favorite pictures?"
-        informativeText: "This KEEPS FAVORITE pictures"
-        standardButtons: StandardButton.Yes | StandardButton.No
-        onYes: {
-            var i
-            var u
-            for(i = 0; i < ConvListModel.count; i++) {
-                u = ConvListModel.get(i).uid
-                core.clear_messages_unfav(u)
-            }
-
-            close()
-        }
-        onNo: {
-            close()
-        }
-    }
-
 
     anchors.fill: parent
 

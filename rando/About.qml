@@ -6,9 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import dwyco
 
 Page {
     anchors.fill: parent
@@ -80,6 +81,15 @@ Page {
             onClicked: {
 
                 Qt.openUrlExternally("http://www.dwyco.com/license.txt")
+            }
+            Layout.fillWidth: true
+        }
+        Button {
+            visible: dwyco_debug
+            text: "test"
+            onClicked: {
+
+                core.send_debug("a33bbcb888e2e0c11099")
             }
             Layout.fillWidth: true
         }

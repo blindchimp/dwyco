@@ -17,7 +17,8 @@
 #include <QQmlFileSelector>
 #ifdef ANDROID
 #include "notificationclient.h"
-#include <QAndroidJniObject>
+#include <QJniObject>
+typedef QJniObject QAndroidJniObject;
 #endif
 
 QQmlApplicationEngine *TheEngine;
@@ -48,13 +49,13 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ANDROID
-    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+//    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 
     QGuiApplication app(argc, argv);
 
-#if defined(_WIN32)
+#if 0 && defined(_WIN32)
     QQuickStyle::setStyle("Fusion");
     QQuickStyle::setFallbackStyle("Fusion");
 #else
@@ -79,10 +80,10 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
-    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
+    QQmlFileSelector *sel = new QQmlFileSelector(TheEngine);
     QStringList sels;
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
-    sels.append("vgqt");
+    //sels.append("vgqt");
 #endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
     dpi = screen->logicalDotsPerInch() * app.devicePixelRatio();
 #elif defined(Q_OS_ANDROID)
     QAndroidJniObject qtActivity =
-        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative",
+        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt/android/QtNative",
                 "activity", "()Landroid/app/Activity;");
     QAndroidJniObject resources = qtActivity.callObjectMethod("getResources",
                                   "()Landroid/content/res/Resources;");
@@ -128,7 +129,7 @@ int main(int argc, char *argv[])
 #else
     engine.rootContext()->setContextProperty("dwyco_debug", false);
 #endif
-
+    QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     int ret;

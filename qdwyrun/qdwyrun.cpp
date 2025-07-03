@@ -21,8 +21,8 @@
 
 #include <QFileInfo>
 #include <QProcess>
-#include <QDesktopWidget>
 #include <QApplication>
+#include <QScreen>
 #include <stdio.h>
 #include "qdwyrun.h"
 #include "ui_qdwyrun.h"
@@ -91,8 +91,8 @@ void qdwyrun::centerWidget(QWidget *w, bool useSizeHint)
     else
         size = w->size();
 
-    QDesktopWidget *d = QApplication::desktop();
-    QRect r = d->screenGeometry();
+    QScreen *d = QApplication::primaryScreen();
+    QRect r = d->geometry();
     int ws = r.width();   // returns screen width
     int h = r.height();  // returns screen height
     int mw = size.width();

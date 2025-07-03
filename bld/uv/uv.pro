@@ -10,7 +10,7 @@ DEFINES += _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64
 QMAKE_CFLAGS_WARN_ON += -Wno-unused-parameter
 }
 
-macx-clang|macx-ios-clang {
+macx-* {
 DEFINES += _DARWIN_USE_64_BIT_INODE=1
 }
 
@@ -92,7 +92,7 @@ SOURCES += \
             src/unix/linux-syscalls.h
 }
 
-macx-clang|macx-ios-clang {
+macx-* {
 SOURCES += \
             src/unix/darwin.c \
             src/unix/fsevents.c \

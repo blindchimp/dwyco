@@ -6,11 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import dwyco 1.0
+import QtQml
+import QtQuick
+import QtCore
+import QtQuick.Controls
+import QtQuick.Layouts
+import dwyco
 
 Page {
     id: cqres_top
@@ -61,6 +62,28 @@ Page {
         id: cq_res_model
     }
 
+    // there is an odd corner-case that may qualify as a qt6.8 bug here...
+    // if a user goes to the settings menu and denies access to contacts,
+    // it appears that android kills the app and on restart, we request
+    // the permission. that is fine. now, the user backgrounds the app and
+    // goes to settings and allows the permission. android apparently does NOT
+    // exit the app, and so now the status is stuck at "denied" in the app,
+    // but the actual permission is "granted". the permission request
+    // returns immediately (maybe checking succeeded or something) and the
+    // status is not updated. so our UI is stuck seeing "denied". the
+    // status property is "read-only" so we can't update it manually.
+    ContactsPermission {
+        id: contacts_permission
+        onStatusChanged: {
+            if(status === Qt.PermissionStatus.Granted) {
+                console.log("contacts now granted")
+            } else {
+                console.log("contacts denied again")
+            }
+
+        }
+    }
+
     ColumnLayout {
         id: help_column
         visible: {cq_res_model.count === 0}
@@ -80,46 +103,58 @@ Page {
             id: single_email
             placeholder_text: "Enter Email to search for"
             inputMethodHints: Qt.ImhEmailCharactersOnly
-            visible: !is_mobile
+            visible: true //!is_mobile
+        }
+        Button {
+            Layout.alignment: Qt.AlignCenter
+            text: "Search for email"
+            onClicked: {
+                core.delete_cq_results()
+
+                user_model.set_model_to_single_email(single_email.text_input)
+                user_model.send_query()
+                query_in_progress = 1
+                query_succeeded = 0
+                core.set_local_setting("cq-in-progress", "1")
+                core.set_local_setting("cq-succeeded", "0")
+                no_contacts = false
+            }
+
+            enabled: query_in_progress === 0
+
         }
 
         Button {
             Layout.alignment: Qt.AlignCenter
-            text: is_mobile ? "Send Email Contacts Securely" : "Search for email"
+            text: contacts_permission.status !== Qt.PermissionStatus.Granted ? "Click to allow contact list" : "Send Email Contacts Securely"
+            visible: is_mobile
             onClicked: {
                 core.delete_cq_results()
-                if(is_mobile)
-                {
-                    if(core.load_contacts() === 0) {
-                        // permission denied
-                        return;
-                    }
 
-                    user_model.load_users_to_model()
-                    if(user_model.count > 0) {
-                        user_model.send_query()
-                        query_in_progress = 1
-                        query_succeeded = 0
-                        core.set_local_setting("cq-in-progress", "1")
-                        core.set_local_setting("cq-succeeded", "0")
-                        no_contacts = false
-                    } else {
-                        query_in_progress = 0
-                        query_succeeded = 0
-                        core.set_local_setting("cq-in-progress", "0")
-                        core.set_local_setting("cq-succeeded", "0")
-                        no_contacts = true
-                    }
+                if(contacts_permission.status !== Qt.PermissionStatus.Granted) {
+                    contacts_permission.request()
+                    return
                 }
-                else
-                {
-                    user_model.set_model_to_single_email(single_email.text_input)
+
+                if(core.load_contacts() === 0) {
+                    // permission denied
+                    return
+                }
+
+                user_model.load_users_to_model()
+                if(user_model.count > 0) {
                     user_model.send_query()
                     query_in_progress = 1
                     query_succeeded = 0
                     core.set_local_setting("cq-in-progress", "1")
                     core.set_local_setting("cq-succeeded", "0")
                     no_contacts = false
+                } else {
+                    query_in_progress = 0
+                    query_succeeded = 0
+                    core.set_local_setting("cq-in-progress", "0")
+                    core.set_local_setting("cq-succeeded", "0")
+                    no_contacts = true
                 }
             }
             enabled: query_in_progress === 0
@@ -208,6 +243,10 @@ Page {
                         cq_res_model.load_from_cq_file()
                         if(is_mobile)
                         {
+                            if(contacts_permission.status !== Qt.PermissionStatus.Granted) {
+                                contacts_permission.request()
+                                return
+                            }
                             if(core.load_contacts() === 0) {
                                 return
                             }
@@ -266,7 +305,7 @@ Page {
                 spacing: mm(1)
                 anchors.fill: parent
 
-                CircularImage {
+                CircularImage2 {
                     id: preview
                     source: {core.uid_profile_regular(uid) ? core.uid_to_profile_preview(uid) : ""}
                     fillMode: Image.PreserveAspectCrop

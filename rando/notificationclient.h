@@ -63,11 +63,13 @@ public slots:
     void load_contacts();
     int open_image();
     void vibrate(long ms);
+    void beep();
     void log_event();
     void log_event2(QString name, QString method);
     void set_user_property(QString name, QString value);
     void set_lastrun();
     void share_to_mediastore(QString filename);
+    void takePicture();
 
 private:
     QString m_notification;

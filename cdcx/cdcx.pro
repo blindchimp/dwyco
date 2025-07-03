@@ -11,9 +11,9 @@ TARGET = CDC-X
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += UNICODE
 greaterThan(QT_MAJOR_VERSION, 5) {
-DEFINES += DWYCO_NICE_VERSION=\\\"4.212\\\"
+DEFINES += DWYCO_NICE_VERSION=\\\"4.226\\\"
 } else {
-DEFINES += DWYCO_NICE_VERSION=\\\"3.212\\\"
+DEFINES += DWYCO_NICE_VERSION=\\\"3.226\\\"
 }
 DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
 
@@ -33,7 +33,7 @@ INCLUDEPATH += . ../bld/dwcls
 #QMAKE_EXTRA_TARGETS += dateincr
 #PRE_TARGETDEPS += dateincr
 
-QT +=  core network webenginewidgets
+QT +=  core network statemachine webenginewidgets
 QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
@@ -56,6 +56,7 @@ DEFINES += WHATBOX=BrowseBox
 DEFINES += CDCX_WEBKIT
 DEFINES += DWYCO_QT5
 DEFINES += toAscii=toLatin1
+greaterThan(QT_MAJOR_VERSION, 5): DEFINES += DWYCO_QT6
 #DEFINES += NO_DWYCO_AUDIO
 #DEFINES += LEAK_CLEANUP
 HEADERS += mainwin.h tfhex.h dwyco_new_msg.h evret.h about.h composer.h autoupdate.h msgtohtml.h player.h ssmap.h  config.h snd.h croom.h pw.h login.h qwiz.h userwid.h cspw.h qval.h dirmisc.h iglist.h ct.h userlob.h  \
@@ -124,7 +125,7 @@ SOURCES += main.cpp tfhex.cpp mainwin.cpp dwyco_new_msg.cpp evret.cpp dvp.cc abo
 
 
 linux-* {
-INCLUDEPATH += ./dllwin ../bld/qtdrv
+INCLUDEPATH += ./dllwin ../bld/qt6drv
 
 D = $${OUT_PWD}/../bld
 
@@ -143,7 +144,7 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/v4lcap/libv4lcap.a \
@@ -167,8 +168,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
-$${D}/v4lcap/libv4lcap.a
+$${D}/qt6drv/libqt6drv.a
 
 
 #-lesd \
@@ -187,7 +187,7 @@ win32 {
 
 DEFINES += MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
 
-INCLUDEPATH += dllwin
+INCLUDEPATH += dllwin ../bld/qt6drv
 # use this for linking to dynamic cdcdll
 #LIBS +=  \\Users\\dwight\\deploy-cdcx\\cdcdll8.lib winmm.lib user32.lib kernel32.lib
 
@@ -224,8 +224,10 @@ $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
 $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
 $${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
-$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+
+#$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/$${S}/cdc32.lib \
@@ -242,6 +244,7 @@ $${D}/vorbis112/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
 $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib \
 $${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\cdc32\\win32\\vs2008\\Debug\\cdcdll.lib \
@@ -263,7 +266,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-INCLUDEPATH += ../bld/qtdrv
+INCLUDEPATH += ../bld/qt6drv
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -282,7 +285,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 -Wl,-framework,CoreFoundation \
 -Wl,-framework,Cocoa
 
@@ -303,7 +306,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address

@@ -5,7 +5,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
-VER="2.91"
+VER="4.212"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
@@ -14,8 +14,8 @@ QT += core qml multimedia network
 QT += quickcontrols2
 QT += location positioning
 
-android: QT += androidextras
-macx-clang: QT += macextras
+#android: QT += androidextras
+#macx-clang: QT += macextras
 CONFIG += c++11
 
 DEFINES += DWYCO_APP_DEBUG
@@ -32,7 +32,7 @@ QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
-DEFINES += DWYCO_RELEASE
+#DEFINES += DWYCO_RELEASE
 ICON=rando.icns
 RC_FILE=rando.rc
 
@@ -49,9 +49,8 @@ SOURCES += main.cpp \
     getinfo.cpp \
     qlimitedbuffer.cpp \
     resizeimage.cpp \
-    androidperms.cpp
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
 linux-* {
 DEFINES += LINUX
@@ -283,25 +282,24 @@ HEADERS += \
     convmodel.h \
     getinfo.h \
     qlimitedbuffer.h \
-    resizeimage.h \
-    androidperms.h
+    resizeimage.h
 
 DISTFILES += \
-    androidinst2/google-services.json \
-    androidinst2/src/com/dwyco/cdc32/dwybg.java \
-    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst2/src/com/dwyco/rando/app.java \
-    androidinst2/src/com/dwyco/android/DwycoProbe.java \
-    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst2/src/com/dwyco/android/NotificationClient.java \
-    androidinst2/src/com/dwyco/android/SocketLock.java \
-    androidinst2/src/com/dwyco/rando/DwycoApp.java \
-    androidinst2/AndroidManifest.xml \
-    androidinst2/build.gradle \
-    androidinst2/gradle.properties \
-    androidinst2/gradle/wrapper/gradle-wrapper.jar \
-    androidinst2/gradle/wrapper/gradle-wrapper.properties \
-    androidinst2/gradlew \
-    androidinst2/gradlew.bat \
-    androidinst2/res/values/libs.xml \
-    androidinst2/res/xml/provider_paths.xml
+    androidinst3/google-services.json \
+    androidinst3/src/com/dwyco/cdc32/dwybg.java \
+    androidinst3/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst3/src/com/dwyco/rando/app.java \
+    androidinst3/src/com/dwyco/android/DwycoProbe.java \
+    androidinst3/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst3/src/com/dwyco/android/NotificationClient.java \
+    androidinst3/src/com/dwyco/android/SocketLock.java \
+    androidinst3/src/com/dwyco/rando/DwycoApp.java \
+    androidinst3/AndroidManifest.xml \
+    androidinst3/build.gradle \
+    androidinst3/gradle.properties \
+    androidinst3/gradle/wrapper/gradle-wrapper.jar \
+    androidinst3/gradle/wrapper/gradle-wrapper.properties \
+    androidinst3/gradlew \
+    androidinst3/gradlew.bat \
+    androidinst3/res/values/libs.xml \
+    androidinst3/res/xml/provider_paths.xml

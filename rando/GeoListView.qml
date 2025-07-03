@@ -1,6 +1,6 @@
-import QtQuick 2.6
-import QtQuick.Controls 2.12
-import QtPositioning 5.12
+import QtQuick
+import QtQuick.Controls.Material
+import QtPositioning
 
 Page {
     id: geolist
@@ -26,7 +26,8 @@ Page {
     Component {
         id: geodel
         ItemDelegate {
-            width: parent.width
+            anchors.left: ListView.view.contentItem.left
+            anchors.right: ListView.view.contentItem.right
             text: model.display
             display: AbstractButton.TextBesideIcon
             icon.source: model.lat.length === 0 ? mi("ic_not_interested_black_24dp.png") : mi("ic_language_black_24dp.png")
@@ -36,7 +37,8 @@ Page {
                     mapimage.lon = parseFloat(model.lon)
                     mapimage.center = QtPositioning.coordinate(parseFloat(model.lat), parseFloat(model.lon))
                     mapimage.placename = model.display
-                    mapimage.zoom = default_map_zoom
+                    //mapimage.zoom = default_map_zoom
+                    mapimage.reset_zoom(default_map_zoom)
                     stack.push(mapimage)
                 }
             }
