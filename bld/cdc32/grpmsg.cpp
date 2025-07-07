@@ -312,7 +312,7 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group, int inhibit_encry
     m->no_forward = 1;
     m->dont_save_sent = 1;
     m->send_buttonClick();
-    // NOTE: we inhibit the default PK encryption here in order to
+    // NOTE: we allow inhibit the use of the default PK encryption here in order to
     // improve the chances that someone will be able to get the join
     // message and respond to the requests. the problem is that we may not
     // have a group key, especially early on before a client has a chance
@@ -643,7 +643,7 @@ recv_gj1(vc from, vc msg, vc password)
         vc nonce = m[0];
         vc alt_name = m[1];
 
-        // if the requested group isn't the one were current in, do not continue
+        // if the requested group isn't the one were currently in, do not continue
         if(Current_alternate->alt_name() != alt_name)
             return 0;
 

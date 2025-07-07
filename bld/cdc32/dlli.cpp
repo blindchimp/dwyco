@@ -6958,7 +6958,14 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         // note: if this all works, the key is already in the
         // db, we just have to activate it as our "current_alternate"
         // and update the settings. we save the signature, it might
-        // be useful for validating profiles or something
+        // be useful for validating profiles or something.
+        // note: this is the case where we generated the provisional
+        // key, and the server agreed to sign it. ideally we should
+        // probably make the update of the signature with the
+        // alt_name update an atomic operation. i don't think it is
+        // going to be a huge problem, so i'm going to leave it until
+        // i can get some kind of general solution to the "sqlite multi
+        // database transaction update" problem i have now.
         DH_alternate::insert_sig(dha->alt_name(), sig);
         set_settings_value("group/alt_name", dha->alt_name());
         //set_settings_value("group/join_key", dha->password);
