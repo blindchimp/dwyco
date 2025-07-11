@@ -28,6 +28,7 @@ android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/a33backup_rules"
         android:allowBackup="true"
         android:fullBackupOnly="false"
+	android:theme="@style/Theme.phoo"
 	android:icon="@drawable/icon" >
         <activity
             android:name="com.dwyco.android.NotificationClient"
@@ -77,7 +78,4 @@ android:fullBackupContent="@xml/backup_rules"
 <uses-permission android:name="android.permission.CAMERA"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-<uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-<uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
-<uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
 </manifest>
