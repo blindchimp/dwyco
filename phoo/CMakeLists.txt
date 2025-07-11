@@ -138,9 +138,9 @@ qt_add_qml_module(phoo
         ProfileDialog.qml
         ProfileView.qml
         ProfileUpdateDialog.qml
-        DeclarativeCamera.qml
-        PhotoPreview.qml
-        PhotoCaptureControls.qml
+        #DeclarativeCamera.qml
+        #PhotoPreview.qml
+        #PhotoCaptureControls.qml
         CameraButton.qml
         MsgView.qml
         PublicChat.qml
@@ -176,7 +176,7 @@ qt_add_qml_module(phoo
         CallButtonLink.qml
         TipButton.qml
         +vgqt/VidCamPreview.qml
-        SimpleGroupChat.qml
+        #SimpleGroupChat.qml
         SimpleTagMsgBrowse.qml
         GridToggle.qml
         +desktop/GridToggle.qml

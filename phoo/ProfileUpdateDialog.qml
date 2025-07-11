@@ -93,9 +93,12 @@ Page {
                         source: mi("ic_add_a_photo_black_24dp.png")
                     }
                     checkable: false
-                    visible: !cam.visible
+                    visible: true /*!cam.visible*/
                     onClicked: {
-                            stack.push(cam, {"next_state" : "StopAndPop", "ok_text" : "Use"})
+                            //stack.push(cam, {"next_state" : "StopAndPop", "ok_text" : "Use"})
+                            if(Qt.platform.os === "android") {
+                                notificationClient.takePicture()
+                            }
                     }
 
                 }
@@ -106,7 +109,7 @@ Page {
                         source: mi("ic_attachment_black_24dp.png")
                     }
                     checkable: false
-                    visible: !cam.visible
+                    visible: true /*!cam.visible*/
                     onClicked: {
                         if(Qt.platform.os == "android") {
                             // ugh, what a hack
