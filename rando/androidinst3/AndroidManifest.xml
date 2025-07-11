@@ -27,6 +27,7 @@ android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/a33backup_rules"
         android:allowBackup="false"
         android:fullBackupOnly="false"
+	android:theme="@style/Theme.rando"
         android:icon="@drawable/icon" >
         <activity
             android:name="com.dwyco.android.NotificationClient"

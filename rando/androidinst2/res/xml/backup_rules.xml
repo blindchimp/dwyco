@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<full-backup-content>
- <include domain="file" path="dwyco/rando/aback.sql"/>
-</full-backup-content>
-
