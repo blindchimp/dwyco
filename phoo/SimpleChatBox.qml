@@ -1087,6 +1087,8 @@ Page {
             onClicked: {
                //stack.push(cam, {"next_state" : "PhotoCapture"})
                 if(Qt.platform.os === "android") {
+                    applicationWindow1.android_img_pick_hack = 0
+                    applicationWindow1.android_img_pick_hack = 2
                     notificationClient.takePicture()
                 }
             }

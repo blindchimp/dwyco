@@ -96,7 +96,9 @@ Page {
                     visible: true /*!cam.visible*/
                     onClicked: {
                             //stack.push(cam, {"next_state" : "StopAndPop", "ok_text" : "Use"})
-                            if(Qt.platform.os === "android") {
+                        applicationWindow1.android_img_pick_hack = 0
+                        applicationWindow1.android_img_pick_hack = 1
+                        if(Qt.platform.os === "android") {
                                 notificationClient.takePicture()
                             }
                     }
