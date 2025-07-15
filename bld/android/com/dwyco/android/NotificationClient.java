@@ -61,6 +61,9 @@ import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import java.text.SimpleDateFormat;
+import java.util.List;
+import android.content.pm.ResolveInfo;
+
 
 // note: use notificationcompat stuff for older androids
 
@@ -493,8 +496,22 @@ private void dispatchTakePhoto() {
                     DwycoApp.file_provider,
                     photoFile);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-            takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+	    // --- START OF RECOMMENDED CHANGES ---
+
+            // 1. Get all apps that can handle the camera intent
+            List<ResolveInfo> resolvedIntentActivities = getPackageManager()
+                    .queryIntentActivities(takePictureIntent, PackageManager.MATCH_DEFAULT_ONLY);
+
+            // 2. Grant permission to each of those apps
+            for (ResolveInfo resolvedIntentInfo : resolvedIntentActivities) {
+                String packageName = resolvedIntentInfo.activityInfo.packageName;
+                grantUriPermission(packageName, photoUri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+
+            // --- END OF RECOMMENDED CHANGES ---
+            //takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+//takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(takePictureIntent, REQUEST_CAMERA_CAPTURE);
         }
     } else {
