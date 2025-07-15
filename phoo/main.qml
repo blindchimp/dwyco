@@ -1095,14 +1095,16 @@ ApplicationWindow {
         }
 
         onImage_picked: (fn) => {
-            console.log("image " + fn)
-            if(android_img_pick_hack === 1)
+            console.log("image ", fn, " pick_hack ", applicationWindow1.android_img_pick_hack)
+            if(applicationWindow1.android_img_pick_hack === 1)
             {
+                                console.log("profile hack")
                 profile_update_dialog.android_img_filename = fn
                 profile_update_dialog.android_hack = true
             }
-            else if(android_img_pick_hack === 2)
+            else if(applicationWindow1.android_img_pick_hack === 2)
             {
+                                console.log("camera hack")
                 chatbox.android_img_filename = fn
                 chatbox.android_hack = true
 

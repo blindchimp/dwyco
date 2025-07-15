@@ -111,10 +111,10 @@ Page {
                     checkable: false
                     visible: true /*!cam.visible*/
                     onClicked: {
-                        if(Qt.platform.os == "android") {
+                        if(Qt.platform.os === "android") {
                             // ugh, what a hack
-                            android_img_pick_hack = 0
-                            android_img_pick_hack = 1
+                            applicationWindow1.android_img_pick_hack = 0
+                            applicationWindow1.android_img_pick_hack = 1
                             if(notificationClient.open_image() === 0) {
                                 failed_msg.text = "Android blocked access to images."
                                 animateOpacity.start()
