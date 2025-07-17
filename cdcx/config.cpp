@@ -19,12 +19,15 @@
 #include "mainwin.h"
 #include "simple_public.h"
 #include "tfhex.h"
+#include "cdcsync.h"
+
 extern DwOString My_uid;
 
 configform *TheConfigForm;
 extern int Display_archived_users;
 extern int User_count;
 extern int Inhibit_powerclean;
+extern QStandardItemModel *SyncModel;
 
 void cdcxpanic(char *);
 
@@ -622,5 +625,13 @@ configform::showEvent(QShowEvent *ev)
 
     ui.sync_enable->setText("Enable device linking (" + QString::number(percent) + "% synced, " + QString::number(c) + "/" + QString::number(n) + " active)");
 
+}
+
+
+void configform::on_pushButton_clicked()
+{
+    if(!SyncModel)
+        return;
+    refreshModel(SyncModel);
 }
 

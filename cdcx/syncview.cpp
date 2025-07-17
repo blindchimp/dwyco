@@ -2,16 +2,16 @@
 #include "ui_syncview.h"
 
 #include "cdcsync.h"
-static QStandardItemModel *model;
+QStandardItemModel *SyncModel;
 
 syncview::syncview(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::syncview)
 {
     ui->setupUi(this);
-    if(!model)
-        model = init_syncmodel();
-    ui->listView->setModel(model);
+    if(!SyncModel)
+        SyncModel = init_syncmodel();
+    ui->tableView->setModel(SyncModel);
 }
 
 syncview::~syncview()
