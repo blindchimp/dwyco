@@ -1,4 +1,6 @@
 #include <QStandardItemModel>
+#include "dwycolist2.h"
+
 // scaffold provided by gemini pro 2.5 ca 7/2025 from prompt:
 /*
 assume you have access to an api with the following c++ function calls:
@@ -13,8 +15,7 @@ name can be one of "UID", "IP", "PERCENT".
 using qt6 widgets, create a QStandardItemModel object that uses the given api to expose each row to a view. the names mentioned above should be columns in the QStandardItem objects that are created in the model. also, create a function that refreshes the model without deleting the model, since the model will be set into a QListView.
 
 */
-int dwyco_get_num_item_rows();
-QString dwyco_get_item(int row, const char* name);
+
 
 QStandardItemModel *
 init_syncmodel()
@@ -23,7 +24,7 @@ init_syncmodel()
     auto *apiModel = new QStandardItemModel(0, 3, 0);
 
     // Set the column headers
-    apiModel->setHorizontalHeaderLabels({"UID", "IP", "PERCENT"});
+    apiModel->setHorizontalHeaderLabels({"UID", "IP", "STAT"});
     return apiModel;
 }
 
@@ -46,16 +47,22 @@ void refreshModel(QStandardItemModel *model) {
 
     // Clear only the data rows, leaving the header configuration intact.
     model->removeRows(0, model->rowCount());
+    DWYCO_SYNC_MODEL sm;
+    if(!dwyco_get_sync_model(&sm))
+        return;
+
+    simple_scoped qsm(sm);
 
     // Get the total number of items from the API.
-    const int numRows = dwyco_get_num_item_rows();
+    const int numRows = qsm.rows();
 
     // Create a QStandardItem for each column in each row.
     for (int i = 0; i < numRows; ++i) {
         // Fetch data for each column from the API
-        QStandardItem *uidItem = new QStandardItem(dwyco_get_item(i, "UID"));
-        QStandardItem *ipItem = new QStandardItem(dwyco_get_item(i, "IP"));
-        QStandardItem *percentItem = new QStandardItem(dwyco_get_item(i, "PERCENT"));
+        QStandardItem *uidItem = new QStandardItem(qsm.get<QByteArray>(i, DWYCO_SM_UID));
+        QStandardItem *ipItem = new QStandardItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
+        //QStandardItem *percentItem = new QStandardItem(QByteArray::number(qsm.get_long(i, DWYCO_SM_PERCENT_SYNCED)));
+        QStandardItem *percentItem = new QStandardItem((qsm.get<QByteArray>(i, DWYCO_SM_STATUS)));
 
         // Items in a row should not be editable by default.
         uidItem->setEditable(false);
