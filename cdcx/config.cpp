@@ -308,9 +308,15 @@ configform::load()
     ui.disable_backups->setChecked(val);
 
     if(ui.CDC_group__alt_name->text().length() == 0)
+    {
         ui.sync_enable->setChecked(false);
+        ui.CDC_group__alt_name->setReadOnly(false);
+    }
     else
+    {
         ui.sync_enable->setChecked(true);
+        ui.CDC_group__alt_name->setReadOnly(true);
+    }
 
 }
 
@@ -403,7 +409,7 @@ void configform::on_reset_backup_button_clicked()
     QMessageBox msgBox(QMessageBox::Information, "Backup redo",
                        "Your backup has been reset. "
                        "A new backup will be created the next time you exit CDC-X (unless you have "
-                       "disabled backups.)",
+                       "disabled backups.) WARNING: this does NOT delete the backups in your Documents folder. You must do that manually.",
                        QMessageBox::Ok, this);
     msgBox.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     msgBox.exec();
