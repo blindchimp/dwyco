@@ -911,6 +911,7 @@ int main(int argc, char *argv[])
     }
     dwyco_exit();
     exit_sound();
+    setting_get("disable_bg", d);
     if(!d)
     {
         QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport), User_pfx);
