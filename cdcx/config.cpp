@@ -50,6 +50,7 @@ configform::configform(QDialog *parent)
     ui.label_10->hide();
     ui.untrash->hide();
     ui.empty_trash->hide();
+    ui.sync_table->setHorizontalHeaderLabels({"UID", "IP", "STAT"});
 
     TheConfigForm = this;
     // mainwinform may not exist yet
@@ -621,6 +622,37 @@ configform::showEvent(QShowEvent *ev)
     }
 
     ui.sync_enable->setText("Enable device linking (" + QString::number(percent) + "% synced, " + QString::number(c) + "/" + QString::number(n) + " active)");
+
+}
+
+
+
+void configform::on_sync_refresh_button_clicked()
+{
+    auto st = ui.sync_table;
+
+    st->clear();
+
+    DWYCO_SYNC_MODEL sm;
+    if(!dwyco_get_sync_model(&sm))
+        return;
+
+    simple_scoped qsm(sm);
+
+    // Get the total number of items from the API.
+    int numRows = qsm.rows();
+    st->setRowCount(numRows);
+
+    // Create a QStandardItem for each column in each row.
+    for (int i = 0; i < numRows; ++i) {
+        // Fetch data for each column from the API
+        auto w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
+        st->setItem(i, 0, w);
+        w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
+        st->setItem(i, 1, w);
+        w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_STATUS));
+        st->setItem(i, 2, w);
+    }
 
 }
 
