@@ -109,9 +109,6 @@ qt_add_executable(CDC-X
     MACOSX_BUNDLE ${app_icon}
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
-    cdcsync.cpp
-    cdcsync.h
-    syncview.h syncview.cpp syncview.ui
 )
 
 set(BASELIBS

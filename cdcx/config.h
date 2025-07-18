@@ -48,8 +48,6 @@ private slots:
 
     void on_show_password_clicked(bool checked);
 
-    void on_pushButton_clicked();
-
 signals:
     void content_filter_event(int);
     void pals_only(int);

@@ -13,218 +13,206 @@
   <property name="windowTitle">
    <string>Advanced Setup</string>
   </property>
-  <widget class="QDialogButtonBox" name="buttonBox">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>494</y>
-     <width>166</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Orientation::Horizontal</enum>
-   </property>
-   <property name="standardButtons">
-    <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
-   </property>
-  </widget>
-  <widget class="QTabWidget" name="tabWidget">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>9</y>
-     <width>486</width>
-     <height>519</height>
-    </rect>
-   </property>
-   <property name="currentIndex">
-    <number>1</number>
-   </property>
-   <widget class="QWidget" name="tab_6">
-    <attribute name="title">
-     <string>Account</string>
-    </attribute>
-    <layout class="QGridLayout" name="gridLayout_4">
-     <item row="9" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="1" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="tab_6">
+      <attribute name="title">
+       <string>Account</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="9" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QLabel" name="label_22">
-           <property name="text">
-            <string>Device</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QLabel" name="label_22">
+             <property name="text">
+              <string>Device</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_23">
+             <property name="text">
+              <string>Password</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
-          <widget class="QLabel" name="label_23">
-           <property name="text">
-            <string>Password</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QLineEdit" name="CDC_group__alt_name">
-           <property name="inputMethodHints">
-            <set>Qt::InputMethodHint::ImhLatinOnly|Qt::InputMethodHint::ImhNoAutoUppercase|Qt::InputMethodHint::ImhNoPredictiveText</set>
-           </property>
-           <property name="placeholderText">
-            <string>eg. dave45</string>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="CDC_group__join_key">
-           <property name="echoMode">
-            <enum>QLineEdit::EchoMode::Password</enum>
-           </property>
-           <property name="placeholderText">
-            <string>eg. notpassword123</string>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QLineEdit" name="CDC_group__alt_name">
+             <property name="inputMethodHints">
+              <set>Qt::InputMethodHint::ImhLatinOnly|Qt::InputMethodHint::ImhNoAutoUppercase|Qt::InputMethodHint::ImhNoPredictiveText</set>
+             </property>
+             <property name="placeholderText">
+              <string>eg. dave45</string>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="CDC_group__join_key">
+             <property name="echoMode">
+              <enum>QLineEdit::EchoMode::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>eg. notpassword123</string>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
-      </layout>
-     </item>
-     <item row="0" column="1">
-      <spacer name="horizontalSpacer_5">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="6" column="0">
-      <widget class="QPushButton" name="reset_backup_button">
-       <property name="toolTip">
-        <string>Creates a new full backup next time you quit the app</string>
-       </property>
-       <property name="text">
-        <string>Delete and Redo Backup</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QLabel" name="label_13">
+       <item row="0" column="1">
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="6" column="0">
+        <widget class="QPushButton" name="reset_backup_button">
+         <property name="toolTip">
+          <string>Creates a new full backup next time you quit the app</string>
+         </property>
          <property name="text">
-          <string>UID:</string>
+          <string>Delete and Redo Backup</string>
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QLineEdit" name="uid">
-         <property name="readOnly">
+       <item row="0" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_13">
+           <property name="text">
+            <string>UID:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="uid">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_20">
+         <property name="text">
+          <string>Backups are created automatically.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QCheckBox" name="disable_backups">
+         <property name="text">
+          <string>Disable Automatic Backups</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="untrash">
+         <property name="text">
+          <string>PushButton</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_21">
+         <property name="text">
+          <string>They are copied to your Documents folder.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QCheckBox" name="sync_enable">
+         <property name="text">
+          <string>Enable device linking</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_24">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://www.dwyco.net/general-5&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;What is Device Linking?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="openExternalLinks">
           <bool>true</bool>
          </property>
+         <property name="textInteractionFlags">
+          <set>Qt::TextInteractionFlag::LinksAccessibleByKeyboard|Qt::TextInteractionFlag::LinksAccessibleByMouse</set>
+         </property>
         </widget>
        </item>
-      </layout>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_20">
-       <property name="text">
-        <string>Backups are created automatically.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QCheckBox" name="disable_backups">
-       <property name="text">
-        <string>Disable Automatic Backups</string>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="0">
-      <spacer name="verticalSpacer">
-       <property name="orientation">
-        <enum>Qt::Orientation::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="1" column="0">
-      <widget class="QPushButton" name="untrash">
-       <property name="text">
-        <string>PushButton</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_21">
-       <property name="text">
-        <string>They are copied to your Documents folder.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="0">
-      <widget class="QCheckBox" name="sync_enable">
-       <property name="text">
-        <string>Enable device linking</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_24">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://www.dwyco.net/general-5&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;What is Device Linking?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="openExternalLinks">
-        <bool>true</bool>
-       </property>
-       <property name="textInteractionFlags">
-        <set>Qt::TextInteractionFlag::LinksAccessibleByKeyboard|Qt::TextInteractionFlag::LinksAccessibleByMouse</set>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QPushButton" name="empty_trash">
-       <property name="text">
-        <string>Empty trash</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0">
-      <widget class="QPushButton" name="restore_button">
-       <property name="text">
-        <string>Restore from backup...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="0">
-      <widget class="QCheckBox" name="show_password">
-       <property name="text">
-        <string>Show password</string>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="0">
-      <widget class="QLabel" name="label_25">
-       <property name="text">
-        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+       <item row="2" column="0">
+        <widget class="QPushButton" name="empty_trash">
+         <property name="text">
+          <string>Empty trash</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QPushButton" name="restore_button">
+         <property name="text">
+          <string>Restore from backup...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QCheckBox" name="show_password">
+         <property name="text">
+          <string>Show password</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QLabel" name="label_25">
+         <property name="text">
+          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 hr { height: 1px; border-width: 0; }
@@ -232,37 +220,161 @@ li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Fira Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If you care about your privacy:&lt;br&gt;the password should &lt;br /&gt;use 8 or more characters with&lt;br /&gt;some special characters too.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="synctab">
-    <attribute name="title">
-     <string>Sync</string>
-    </attribute>
-    <layout class="QGridLayout" name="gridLayout_2">
-     <item row="0" column="0">
-      <widget class="syncview" name="syncwid" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Refresh</string>
          </property>
         </widget>
        </item>
-       <item>
-        <spacer name="verticalSpacer_6">
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_5">
+      <attribute name="title">
+       <string>Privacy</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="chat_dont_display_video">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Don't display video profiles in public chat</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <spacer name="horizontalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="chat_show_all">
+         <property name="text">
+          <string>Show all profiles in public chat
+(warning: selecting this shows unreviewed content.)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="profiles_no_auto_load">
+         <property name="text">
+          <string>Don't load profiles/directory on entry to public chat</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_19">
+         <property name="text">
+          <string>Picture size in chat boxes:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QComboBox" name="picsize_combobox">
+         <item>
+          <property name="text">
+           <string>No pics</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Small</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Large</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QCheckBox" name="CDC_zap__no_forward_default">
+         <property name="text">
+          <string>Make all zaps &quot;no forward&quot;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QCheckBox" name="CDC_zap__always_accept">
+         <property name="text">
+          <string>Automatically accept direct zaps</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QCheckBox" name="CDC_zap__use_old_timing">
+         <property name="toolTip">
+          <string>Check this if videos you record go too fast when you play them back.</string>
+         </property>
+         <property name="whatsThis">
+          <string>This is a bug workaround for old video capture drivers that don't provide the right timing information when recording video. Check this box if your videos play back too fast or don't play back at all.</string>
+         </property>
+         <property name="text">
+          <string>The zaps I record go too fast or not at all.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QCheckBox" name="CDC_zap__save_sent">
+         <property name="toolTip">
+          <string>Tells CDC-X to save  the zaps you send as well as the zaps you receive.</string>
+         </property>
+         <property name="whatsThis">
+          <string>CDC-X saves the zaps you send in the inbox associated with the recipient. Use the msg browser to view both sent and received msgs to/from a user.</string>
+         </property>
+         <property name="text">
+          <string>Save messages you send</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <layout class="QHBoxLayout" name="_3">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QCheckBox" name="CDC_call_acceptance__require_pw">
+           <property name="text">
+            <string>Require this password for
+callers to connect:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="CDC_call_acceptance__pw"/>
+         </item>
+        </layout>
+       </item>
+       <item row="10" column="0">
+        <widget class="QCheckBox" name="CDC_call_acceptance__auto_accept">
+         <property name="text">
+          <string>Accept live video without asking.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QCheckBox" name="mute_alerts">
+         <property name="text">
+          <string>Turn off all audible alerts</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QCheckBox" name="pals_only">
+         <property name="text">
+          <string>Only accept Calls from Pals</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
          </property>
@@ -275,772 +387,601 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </spacer>
        </item>
       </layout>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="tab_5">
-    <attribute name="title">
-     <string>Privacy</string>
-    </attribute>
-    <layout class="QGridLayout" name="gridLayout_3">
-     <item row="0" column="0">
-      <widget class="QCheckBox" name="chat_dont_display_video">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>Don't display video profiles in public chat</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <spacer name="horizontalSpacer_6">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="1" column="0">
-      <widget class="QCheckBox" name="chat_show_all">
-       <property name="text">
-        <string>Show all profiles in public chat
-(warning: selecting this shows unreviewed content.)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QCheckBox" name="profiles_no_auto_load">
-       <property name="text">
-        <string>Don't load profiles/directory on entry to public chat</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_19">
-       <property name="text">
-        <string>Picture size in chat boxes:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QComboBox" name="picsize_combobox">
-       <item>
-        <property name="text">
-         <string>No pics</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Small</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Large</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QCheckBox" name="CDC_zap__no_forward_default">
-       <property name="text">
-        <string>Make all zaps &quot;no forward&quot;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <widget class="QCheckBox" name="CDC_zap__always_accept">
-       <property name="text">
-        <string>Automatically accept direct zaps</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0">
-      <widget class="QCheckBox" name="CDC_zap__use_old_timing">
-       <property name="toolTip">
-        <string>Check this if videos you record go too fast when you play them back.</string>
-       </property>
-       <property name="whatsThis">
-        <string>This is a bug workaround for old video capture drivers that don't provide the right timing information when recording video. Check this box if your videos play back too fast or don't play back at all.</string>
-       </property>
-       <property name="text">
-        <string>The zaps I record go too fast or not at all.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QCheckBox" name="CDC_zap__save_sent">
-       <property name="toolTip">
-        <string>Tells CDC-X to save  the zaps you send as well as the zaps you receive.</string>
-       </property>
-       <property name="whatsThis">
-        <string>CDC-X saves the zaps you send in the inbox associated with the recipient. Use the msg browser to view both sent and received msgs to/from a user.</string>
-       </property>
-       <property name="text">
-        <string>Save messages you send</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <layout class="QHBoxLayout" name="_3">
-       <property name="spacing">
-        <number>6</number>
-       </property>
-       <item>
-        <widget class="QCheckBox" name="CDC_call_acceptance__require_pw">
-         <property name="text">
-          <string>Require this password for
-callers to connect:</string>
+     </widget>
+     <widget class="QWidget" name="tab_3">
+      <attribute name="title">
+       <string>Streaming Limits</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_8">
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Network speed (kilobits per second)</string>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="CDC_call_acceptance__pw"/>
-       </item>
-      </layout>
-     </item>
-     <item row="10" column="0">
-      <widget class="QCheckBox" name="CDC_call_acceptance__auto_accept">
-       <property name="text">
-        <string>Accept live video without asking.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="0">
-      <widget class="QCheckBox" name="mute_alerts">
-       <property name="text">
-        <string>Turn off all audible alerts</string>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="0">
-      <widget class="QCheckBox" name="pals_only">
-       <property name="text">
-        <string>Only accept Calls from Pals</string>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="0">
-      <spacer name="verticalSpacer_4">
-       <property name="orientation">
-        <enum>Qt::Orientation::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="tab_3">
-    <attribute name="title">
-     <string>Streaming Limits</string>
-    </attribute>
-    <layout class="QGridLayout" name="gridLayout_8">
-     <item row="0" column="0">
-      <widget class="QGroupBox" name="groupBox_3">
-       <property name="title">
-        <string>Network speed (kilobits per second)</string>
-       </property>
-       <layout class="QGridLayout" name="_4">
-        <item row="0" column="0">
-         <layout class="QHBoxLayout" name="_5">
-          <item>
-           <layout class="QVBoxLayout" name="_6">
+         <layout class="QGridLayout" name="_4">
+          <item row="0" column="0">
+           <layout class="QHBoxLayout" name="_5">
             <item>
-             <widget class="QLabel" name="label_14">
-              <property name="text">
-               <string>Upload</string>
-              </property>
-              <property name="buddy">
-               <cstring>upload_speed</cstring>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="_6">
+              <item>
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>Upload</string>
+                </property>
+                <property name="buddy">
+                 <cstring>upload_speed</cstring>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_15">
+                <property name="text">
+                 <string>Download</string>
+                </property>
+                <property name="buddy">
+                 <cstring>download_speed</cstring>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
-             <widget class="QLabel" name="label_15">
-              <property name="text">
-               <string>Download</string>
-              </property>
-              <property name="buddy">
-               <cstring>download_speed</cstring>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="_7">
+              <item>
+               <widget class="QLineEdit" name="upload_speed"/>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="download_speed">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </item>
-          <item>
-           <layout class="QVBoxLayout" name="_7">
-            <item>
-             <widget class="QLineEdit" name="upload_speed"/>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="download_speed">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-           </layout>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="run_bw_test_button">
+            <property name="text">
+             <string>Run Speed Estimation Test</string>
+            </property>
+           </widget>
           </item>
          </layout>
-        </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="run_bw_test_button">
-          <property name="text">
-           <string>Run Speed Estimation Test</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <layout class="QGridLayout">
-       <item row="0" column="1">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Send</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
-         </property>
         </widget>
        </item>
-       <item row="0" column="3">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Recv</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
-         </property>
-        </widget>
+       <item row="2" column="0">
+        <layout class="QGridLayout">
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Send</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Recv</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Video</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="CDC_call_acceptance__max_video">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Max number of video streams CDC-X will send.</string>
+           </property>
+           <property name="whatsThis">
+            <string>Max number of video streams CDC-X will send. Once this number is reached, all calls requesting video will be rejected automatically. 0 is a special value: video send requests are ignored, and not rejected. The resulting connection will not send video.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <spacer>
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Policy::Maximum</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLineEdit" name="CDC_call_acceptance__max_video_recv">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Max number of incoming video streams CDC-X will allow.</string>
+           </property>
+           <property name="whatsThis">
+            <string>Max number of video streams CDC-X will receive. Once this number is reached, all calls wanting to send you video will be rejected automatically. 0 is a special value: video receive requests are ignored, and not rejected. The resulting connection will not receive video.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <spacer>
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Policy::Maximum</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>Audio</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="CDC_call_acceptance__max_audio">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="2">
+          <spacer>
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Policy::Maximum</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="3" column="3">
+          <widget class="QLineEdit" name="CDC_call_acceptance__max_audio_recv">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="label_8">
+        <widget class="QLabel" name="label_10">
          <property name="text">
-          <string>Video</string>
+          <string>Max # Streams</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="CDC_call_acceptance__max_video">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>40</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>Max number of video streams CDC-X will send.</string>
-         </property>
-         <property name="whatsThis">
-          <string>Max number of video streams CDC-X will send. Once this number is reached, all calls requesting video will be rejected automatically. 0 is a special value: video send requests are ignored, and not rejected. The resulting connection will not send video.</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <spacer>
+        <spacer name="horizontalSpacer_3">
          <property name="orientation">
           <enum>Qt::Orientation::Horizontal</enum>
          </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Maximum</enum>
-         </property>
          <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="3">
-        <widget class="QLineEdit" name="CDC_call_acceptance__max_video_recv">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
           <size>
            <width>40</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>Max number of incoming video streams CDC-X will allow.</string>
-         </property>
-         <property name="whatsThis">
-          <string>Max number of video streams CDC-X will receive. Once this number is reached, all calls wanting to send you video will be rejected automatically. 0 is a special value: video receive requests are ignored, and not rejected. The resulting connection will not receive video.</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <spacer>
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Maximum</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
            <height>20</height>
           </size>
          </property>
         </spacer>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Audio</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="CDC_call_acceptance__max_audio">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>40</width>
-           <height>16777215</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <spacer>
+        <spacer name="verticalSpacer_3">
          <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Maximum</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_4">
+      <attribute name="title">
+       <string>Audio</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_7">
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="disable_audio_calls">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Disable Audio in Calls</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <layout class="QVBoxLayout">
+         <item>
+          <widget class="QGroupBox" name="groupBox">
+           <property name="title">
+            <string>Microphone</string>
+           </property>
+           <layout class="QVBoxLayout">
+            <item>
+             <widget class="QCheckBox" name="agc">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Automatic Gain Control</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="denoise">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Noise Reduction</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout">
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Audio Output Buffer Time</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="audio_delay">
+             <property name="suffix">
+              <string> seconds</string>
+             </property>
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <double>10.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+             <property name="value">
+              <double>2.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="1">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
            <height>20</height>
           </size>
          </property>
         </spacer>
        </item>
-       <item row="3" column="3">
-        <widget class="QLineEdit" name="CDC_call_acceptance__max_audio_recv">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+       <item row="2" column="0">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
-         <property name="maximumSize">
+         <property name="sizeHint" stdset="0">
           <size>
-           <width>40</width>
-           <height>16777215</height>
+           <width>20</width>
+           <height>40</height>
           </size>
          </property>
-        </widget>
+        </spacer>
        </item>
       </layout>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_10">
-       <property name="text">
-        <string>Max # Streams</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="3" column="0">
-      <spacer name="verticalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Orientation::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="tab_4">
-    <attribute name="title">
-     <string>Audio</string>
-    </attribute>
-    <layout class="QGridLayout" name="gridLayout_7">
-     <item row="1" column="0">
-      <widget class="QCheckBox" name="disable_audio_calls">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Disable Audio in Calls</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <layout class="QVBoxLayout">
-       <item>
-        <widget class="QGroupBox" name="groupBox">
-         <property name="title">
-          <string>Microphone</string>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Network</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="2" column="1">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
-         <layout class="QVBoxLayout">
-          <item>
-           <widget class="QCheckBox" name="agc">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Automatic Gain Control</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="denoise">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Noise Reduction</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>Local Listening Ports</string>
+         </property>
         </widget>
        </item>
-       <item>
-        <layout class="QVBoxLayout">
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Note: changing any of the ports requires you to quit and restart CDC-X.</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QLabel" name="label_12">
+          <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Audio Output Buffer Time</string>
+            <string>Router port2</string>
+           </property>
+           <property name="buddy">
+            <cstring>CDC_net__nat_secondary_port</cstring>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="audio_delay">
-           <property name="suffix">
-            <string> seconds</string>
+          <widget class="QLineEdit" name="CDC_net__nat_secondary_port">
+           <property name="enabled">
+            <bool>false</bool>
            </property>
-           <property name="decimals">
-            <number>1</number>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>forwarded to TCP2</string>
            </property>
-           <property name="maximum">
-            <double>10.000000000000000</double>
+           <property name="buddy">
+            <cstring>secondary_port</cstring>
            </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="secondary_port">
+           <property name="enabled">
+            <bool>false</bool>
            </property>
-           <property name="value">
-            <double>2.000000000000000</double>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
         </layout>
        </item>
-      </layout>
-     </item>
-     <item row="0" column="1">
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="2" column="0">
-      <spacer name="verticalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Orientation::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="tab_2">
-    <attribute name="title">
-     <string>Network</string>
-    </attribute>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="2" column="1">
-      <spacer name="horizontalSpacer_4">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_18">
-       <property name="text">
-        <string>Local Listening Ports</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_5">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Note: changing any of the ports requires you to quit and restart CDC-X.</string>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <widget class="QLabel" name="label_3">
+       <item row="4" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Router port1</string>
+           </property>
+           <property name="buddy">
+            <cstring>CDC_net__nat_primary_port</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="CDC_net__nat_primary_port">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>forwarded to TCP1</string>
+           </property>
+           <property name="buddy">
+            <cstring>primary_port</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="primary_port">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_16">
+           <property name="text">
+            <string>TCP1</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+           </property>
+           <property name="buddy">
+            <cstring>CDC_net__primary_port</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="CDC_net__primary_port">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_17">
+           <property name="text">
+            <string>TCP2</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+           </property>
+           <property name="buddy">
+            <cstring>CDC_net__secondary_port</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="CDC_net__secondary_port">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>UDP1</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+           </property>
+           <property name="buddy">
+            <cstring>not_usedcdc_net__pal_port</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="not_usedcdc_net__pal_port">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>50</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="CDC_net__advertise_nat_ports">
          <property name="text">
-          <string>Router port2</string>
-         </property>
-         <property name="buddy">
-          <cstring>CDC_net__nat_secondary_port</cstring>
+          <string>Check this box if you have set up your router
+to forward outside ports to this machine.</string>
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QLineEdit" name="CDC_net__nat_secondary_port">
-         <property name="enabled">
-          <bool>false</bool>
+       <item row="6" column="0">
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>forwarded to TCP2</string>
-         </property>
-         <property name="buddy">
-          <cstring>secondary_port</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="secondary_port">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="4" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Router port1</string>
-         </property>
-         <property name="buddy">
-          <cstring>CDC_net__nat_primary_port</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="CDC_net__nat_primary_port">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>forwarded to TCP1</string>
-         </property>
-         <property name="buddy">
-          <cstring>primary_port</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="primary_port">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="1" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QLabel" name="label_16">
-         <property name="text">
-          <string>TCP1</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-         <property name="buddy">
-          <cstring>CDC_net__primary_port</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="CDC_net__primary_port">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_17">
-         <property name="text">
-          <string>TCP2</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-         <property name="buddy">
-          <cstring>CDC_net__secondary_port</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="CDC_net__secondary_port">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>UDP1</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-         <property name="buddy">
-          <cstring>not_usedcdc_net__pal_port</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="not_usedcdc_net__pal_port">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
+         <property name="sizeHint" stdset="0">
           <size>
-           <width>50</width>
-           <height>16777215</height>
+           <width>20</width>
+           <height>40</height>
           </size>
          </property>
-        </widget>
+        </spacer>
        </item>
       </layout>
-     </item>
-     <item row="3" column="0">
-      <widget class="QCheckBox" name="CDC_net__advertise_nat_ports">
-       <property name="text">
-        <string>Check this box if you have set up your router
-to forward outside ports to this machine.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <spacer name="verticalSpacer_5">
-       <property name="orientation">
-        <enum>Qt::Orientation::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </widget>
-  </widget>
+     </widget>
+    </widget>
+   </item>
+  </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>syncview</class>
-   <extends>QWidget</extends>
-   <header>syncview.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <tabstops>
   <tabstop>chat_dont_display_video</tabstop>
   <tabstop>chat_show_all</tabstop>
