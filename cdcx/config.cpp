@@ -305,7 +305,21 @@ configform::load()
 
     if(ui.CDC_group__alt_name->text().length() == 0)
     {
-        ui.sync_enable->setChecked(false);
+        DWYCO_LIST gs;
+        if(dwyco_get_group_status(&gs))
+        {
+
+            simple_scoped qgs(gs);
+            if(qgs.get_long(DWYCO_GS_VALID) != 1)
+            {
+                if(qgs.get_long(DWYCO_GS_IN_PROGRESS) == 1)
+                    ui.sync_enable->setChecked(true);
+
+            }
+            else
+                ui.sync_enable->setChecked(false);
+        }
+
         ui.CDC_group__alt_name->setReadOnly(false);
     }
     else
@@ -600,7 +614,12 @@ configform::showEvent(QShowEvent *ev)
         return;
     simple_scoped qgs(gs);
     if(qgs.get_long(DWYCO_GS_VALID) != 1)
+    {
+        if(qgs.get_long(DWYCO_GS_IN_PROGRESS) == 0)
+            return;
+        ui.sync_enable->setText("Enable device linking (Working...)");
         return;
+    }
     long percent = qgs.get_long(DWYCO_GS_PERCENT_SYNCED);
 
     DWYCO_LIST status;
