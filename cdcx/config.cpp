@@ -631,7 +631,7 @@ void configform::on_sync_refresh_button_clicked()
 {
     auto st = ui.sync_table;
 
-    st->clear();
+    st->clearContents();
 
     DWYCO_SYNC_MODEL sm;
     if(!dwyco_get_sync_model(&sm))
@@ -644,13 +644,35 @@ void configform::on_sync_refresh_button_clicked()
     st->setRowCount(numRows);
 
     // Create a QStandardItem for each column in each row.
-    for (int i = 0; i < numRows; ++i) {
+    for (int i = 0; i < numRows; ++i)
+    {
         // Fetch data for each column from the API
         auto w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
         st->setItem(i, 0, w);
         w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
         st->setItem(i, 1, w);
-        w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_STATUS));
+        auto stat = qsm.get<QByteArray>(i, DWYCO_SM_STATUS);
+
+        w = new QTableWidgetItem();
+        if(stat.at(0) == 'o')
+            w->setText("->");
+        else
+            w->setText("<-");
+
+        if(stat.at(1) == 'a') {
+            w->setBackground(QBrush(Qt::green));
+            bool p = qsm.is_nil(i, DWYCO_SM_PROXY);
+            if(!p)
+                w->setBackground(QBrush(Qt::cyan));
+
+        }
+        else if(stat.at(1) == 'i') {
+             w->setBackground(QBrush(Qt::yellow));
+        }
+        else if(stat.at(1) == 'd') {
+            w->setBackground(QBrush(Qt::white));
+        }
+
         st->setItem(i, 2, w);
     }
 
