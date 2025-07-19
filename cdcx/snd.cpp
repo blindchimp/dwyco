@@ -10,6 +10,7 @@
 #include "dlli.h"
 #include "ssmap.h"
 #include "ct.h"
+#include "pfx.h"
 
 #if defined(WIN32)
 #include <windows.h>
@@ -39,7 +40,7 @@ play_sound_plat(const char *fn)
 {
     if(!Sound)
         return;
-    Sound->setSource(QUrl::fromLocalFile(fn));
+    Sound->setSource(QUrl::fromLocalFile(add_pfx(Sys_pfx, fn)));
     Sound->play();
 }
 
