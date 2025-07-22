@@ -50,6 +50,7 @@ configform::configform(QDialog *parent)
     ui.label_10->hide();
     ui.untrash->hide();
     ui.empty_trash->hide();
+    ui.sync_table->setHorizontalHeaderLabels({"UID", "IP", "STAT"});
 
     TheConfigForm = this;
     // mainwinform may not exist yet
@@ -151,6 +152,7 @@ configform::accept()
     }
 
     setting_put("disable_backups", ui.disable_backups->isChecked());
+    setting_put("disable_bg", ui.inhibit_bg_checkbox->isChecked());
 
     settings_save();
 }
@@ -307,10 +309,37 @@ configform::load()
     }
     ui.disable_backups->setChecked(val);
 
+    if(!setting_get("disable_bg", val))
+    {
+        setting_put("disable_bg", 0);
+        val = 0;
+    }
+    ui.inhibit_bg_checkbox->setChecked(val);
+
     if(ui.CDC_group__alt_name->text().length() == 0)
-        ui.sync_enable->setChecked(false);
+    {
+        DWYCO_LIST gs;
+        if(dwyco_get_group_status(&gs))
+        {
+
+            simple_scoped qgs(gs);
+            if(qgs.get_long(DWYCO_GS_VALID) != 1)
+            {
+                if(qgs.get_long(DWYCO_GS_IN_PROGRESS) == 1)
+                    ui.sync_enable->setChecked(true);
+
+            }
+            else
+                ui.sync_enable->setChecked(false);
+        }
+
+        ui.CDC_group__alt_name->setReadOnly(false);
+    }
     else
+    {
         ui.sync_enable->setChecked(true);
+        ui.CDC_group__alt_name->setReadOnly(true);
+    }
 
 }
 
@@ -403,7 +432,7 @@ void configform::on_reset_backup_button_clicked()
     QMessageBox msgBox(QMessageBox::Information, "Backup redo",
                        "Your backup has been reset. "
                        "A new backup will be created the next time you exit CDC-X (unless you have "
-                       "disabled backups.)",
+                       "disabled backups.) WARNING: this does NOT delete the backups in your Documents folder. You must do that manually.",
                        QMessageBox::Ok, this);
     msgBox.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     msgBox.exec();
@@ -598,7 +627,12 @@ configform::showEvent(QShowEvent *ev)
         return;
     simple_scoped qgs(gs);
     if(qgs.get_long(DWYCO_GS_VALID) != 1)
+    {
+        if(qgs.get_long(DWYCO_GS_IN_PROGRESS) == 0)
+            return;
+        ui.sync_enable->setText("Enable device linking (Working...)");
         return;
+    }
     long percent = qgs.get_long(DWYCO_GS_PERCENT_SYNCED);
 
     DWYCO_LIST status;
@@ -615,6 +649,59 @@ configform::showEvent(QShowEvent *ev)
     }
 
     ui.sync_enable->setText("Enable device linking (" + QString::number(percent) + "% synced, " + QString::number(c) + "/" + QString::number(n) + " active)");
+
+}
+
+
+
+void configform::on_sync_refresh_button_clicked()
+{
+    auto st = ui.sync_table;
+
+    st->clearContents();
+
+    DWYCO_SYNC_MODEL sm;
+    if(!dwyco_get_sync_model(&sm))
+        return;
+
+    simple_scoped qsm(sm);
+
+    // Get the total number of items from the API.
+    int numRows = qsm.rows();
+    st->setRowCount(numRows);
+
+    // Create a QStandardItem for each column in each row.
+    for (int i = 0; i < numRows; ++i)
+    {
+        // Fetch data for each column from the API
+        auto w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
+        st->setItem(i, 0, w);
+        w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
+        st->setItem(i, 1, w);
+        auto stat = qsm.get<QByteArray>(i, DWYCO_SM_STATUS);
+
+        w = new QTableWidgetItem();
+        if(stat.at(0) == 'o')
+            w->setText("->");
+        else
+            w->setText("<-");
+
+        if(stat.at(1) == 'a') {
+            w->setBackground(QBrush(Qt::green));
+            bool p = qsm.is_nil(i, DWYCO_SM_PROXY);
+            if(!p)
+                w->setBackground(QBrush(Qt::cyan));
+
+        }
+        else if(stat.at(1) == 'i') {
+             w->setBackground(QBrush(Qt::yellow));
+        }
+        else if(stat.at(1) == 'd') {
+            w->setBackground(QBrush(Qt::white));
+        }
+
+        st->setItem(i, 2, w);
+    }
 
 }
 
