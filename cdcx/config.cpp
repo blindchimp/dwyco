@@ -149,6 +149,7 @@ configform::accept()
     }
 
     setting_put("disable_backups", ui.disable_backups->isChecked());
+    setting_put("disable_bg", ui.inhibit_bg_checkbox->isChecked());
 
     settings_save();
 }
@@ -302,6 +303,13 @@ configform::load()
         val = 0;
     }
     ui.disable_backups->setChecked(val);
+
+    if(!setting_get("disable_bg", val))
+    {
+        setting_put("disable_bg", 0);
+        val = 0;
+    }
+    ui.inhibit_bg_checkbox->setChecked(val);
 
     if(ui.CDC_group__alt_name->text().length() == 0)
     {
