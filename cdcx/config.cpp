@@ -669,9 +669,11 @@ void configform::on_sync_refresh_button_clicked()
     for (int i = 0; i < numRows; ++i)
     {
         // Fetch data for each column from the API
-        auto w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
+        QString s(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
+        auto w = new QTableWidgetItem(s);
         st->setItem(i, 0, w);
-        w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
+        s = qsm.get<QByteArray>(i, DWYCO_SM_IP);
+        w = new QTableWidgetItem(s);
         st->setItem(i, 1, w);
         auto stat = qsm.get<QByteArray>(i, DWYCO_SM_STATUS);
 
