@@ -878,10 +878,10 @@ int main(int argc, char *argv[])
 
     autoupdateform *autoup = new autoupdateform;
 
-    mainwin.show();
+
     QSettings settings;
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
-
+    mainwin.show();
     setup_emergency_servers();
 
     int i = app.exec();
