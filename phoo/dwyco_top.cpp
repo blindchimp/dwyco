@@ -1564,10 +1564,11 @@ DwycoCore::select_vid_dev(int i)
 
     if(i == 0)
     {
-        TheDwycoCore->emit camera_change(0);
+        emit TheDwycoCore->camera_change(0);
         write_vid_setting(0);
         return;
     }
+#ifdef VIDEO_FILE_TESTING
     if(i == 1)
     {
         dwyco_set_setting("video_input/no_video", "0");
@@ -1583,6 +1584,16 @@ DwycoCore::select_vid_dev(int i)
         //dwyco_set_setting("video_input/vfw", "1");
         //dwyco_set_setting("video_input/raw", "0");
     }
+#else
+    if(i > 0)
+    {
+        dwyco_start_vfw(i - 1, 0, 0);
+        dwyco_set_setting("video_input/no_video", "0");
+        dwyco_set_setting("video_input/source", "camera");
+        //dwyco_set_setting("video_input/vfw", "1");
+        //dwyco_set_setting("video_input/raw", "0");
+    }
+#endif
     write_vid_setting(i);
     block_enable_video_capture_preview(1);
     HasCamera = 1;
@@ -1597,7 +1608,9 @@ load_cam_model()
     setting_get("video device", vid_dev);
 
     CamListModel->append("(Select this to disable video)");
+#ifdef VIDEO_FILE_TESTING
     CamListModel->append("(Files)");
+#endif
 #if 0 && defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;

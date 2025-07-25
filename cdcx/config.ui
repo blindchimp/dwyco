@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>528</width>
-    <height>543</height>
+    <height>558</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -964,7 +964,7 @@ to forward outside ports to this machine.</string>
        <item row="7" column="0">
         <widget class="QCheckBox" name="inhibit_bg_checkbox">
          <property name="text">
-          <string>Dont' run in the background after CDC-X is exited.</string>
+          <string>Don't run in the background after CDC-X is exited.</string>
          </property>
         </widget>
        </item>
