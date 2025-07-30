@@ -1508,6 +1508,7 @@ dwyco_emergency(int what, int must_exit, const char *msg)
 {
     if(what == DWYCO_EMERGENCY_GENERAL_PANIC)
         ::abort();
+    exit(0);
 
 }
 

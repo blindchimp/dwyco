@@ -112,6 +112,17 @@ dwyco_db_login_result(const char *str, int what)
         exit(1);
 }
 
+static
+void
+DWYCOCALLCONV
+dwyco_emergency(int what, int must_exit, const char *msg)
+{
+    if(what == DWYCO_EMERGENCY_GENERAL_PANIC)
+        ::abort();
+    exit(0);
+
+}
+
 quint32 Sent_age;
 QByteArray My_uid;
 QStringList Ann_names;
@@ -834,6 +845,7 @@ main(int argc, char *argv[])
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
     dwyco_set_initial_invis(0);
+    dwyco_set_emergency_callback(dwyco_emergency);
     dwyco_init();
 
     dwyco_set_setting("net/listen", "0");
