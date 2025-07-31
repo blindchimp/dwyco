@@ -1,5 +1,5 @@
 sudo apt install qt5-qmake
-sudo apt install g++/clang
+sudo apt install g++
 sudo apt install qml-module-qtqml-models2
 sudo apt install qml-module-qtqml
 sudo apt install qml-module-qtquick-controls2
