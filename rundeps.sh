@@ -1,0 +1,9 @@
+qml-module-qtqml-models2
+qml-module-qtqml
+qml-module-qtquick-controls2
+qml-module-qtqml-statemachine
+qml-module-qtmultimedia
+qml-module-qtquick-dialogs
+qml-module-qt-labs-qmlmodels
+qml-module-qtquick-layouts
+qml-module-qtgraphicaleffects
