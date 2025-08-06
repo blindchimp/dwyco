@@ -30,6 +30,17 @@ dwyco_db_login_result(const char *str, int what)
         exit(1);
 }
 
+static
+void
+DWYCOCALLCONV
+dwyco_emergency(int what, int must_exit, const char *msg)
+{
+    if(what == DWYCO_EMERGENCY_GENERAL_PANIC)
+        ::abort();
+    exit(0);
+
+}
+
 struct simple_scoped
 {
     DWYCO_LIST value;
@@ -58,6 +69,7 @@ main(int argc, char *argv[])
     const char *desc = argv[2];
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
+    dwyco_set_emergency_callback(dwyco_emergency);
 
     dwyco_init();
 

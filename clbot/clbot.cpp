@@ -57,6 +57,16 @@ dwyco_db_login_result(const char *str, int what)
     else
         exit(1);
 }
+static
+void
+DWYCOCALLCONV
+dwyco_emergency(int what, int must_exit, const char *msg)
+{
+    if(what == DWYCO_EMERGENCY_GENERAL_PANIC)
+        ::abort();
+    exit(0);
+
+}
 
 static int
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
@@ -169,6 +179,7 @@ main(int argc, char *argv[])
     dwyco_set_login_result_callback(dwyco_db_login_result);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status_callback);
     //dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
+    dwyco_set_emergency_callback(dwyco_emergency);
 
     dwyco_init();
 
