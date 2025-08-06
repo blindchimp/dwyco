@@ -123,10 +123,14 @@ struct QckDone
     // just change it to a member name, since this is used
     // mainly for finding and canceling operations, so we
     // are looking for "X request destined for callback with context vp"
-    int operator==(const QckDone& m) const {
-        return callback == m.callback &&
-               type == m.type &&
-               vp == m.vp;
+    int same_request(const QckDone& q2) const {
+        return callback == q2.callback &&
+               type == q2.type &&
+               vp == q2.vp;
+    }
+
+    int operator==(const QckDone& other) const {
+        return same_request(other);
     }
 
     void done(vc v) const {

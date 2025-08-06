@@ -215,7 +215,7 @@ dirth_simulate_error_response(const QckDone& q)
     const QckDone *wp;
     dwlista_foreach_peek(wp, Waitq)
     {
-        if(*wp == q)
+        if(q.same_request(*wp))
         {
             GRTLOG("simul err %s", (char *)wp->type, 0);
             vc resp(VC_VECTOR);
