@@ -1494,8 +1494,15 @@ dwyco_emergency(int what, int must_exit, const char *msg)
 {
     if(what == DWYCO_EMERGENCY_GENERAL_PANIC)
         ::abort();
-    exit(0);
-
+    if(TheDwycoCore)
+    {
+        TheDwycoCore->update_emergency_exit(what);
+        emit TheDwycoCore->emergency_exit_signal(what, must_exit, msg);
+    }
+    else
+    {
+        exit(0);
+    }
 }
 
 //static

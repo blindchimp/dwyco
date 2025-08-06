@@ -2182,7 +2182,9 @@ dwyco_service_channels(int *spin_out)
             }
             else
             {
+#if 0
                 ::MessageBox(0, "db servers changed location, must quit now.", "quit", MB_OK);
+#endif
                 dwyco_exit();
                 exit(0);
             }

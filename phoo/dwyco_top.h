@@ -63,6 +63,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready)
     QML_READONLY_VAR_PROPERTY(QString, qt_version_string)
 
+    QML_READONLY_VAR_PROPERTY(int, emergency_exit)
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -92,6 +94,7 @@ public:
         m_desktop_update_ready = false;
         m_total_users = 0;
         m_qt_version_string = QT_VERSION_STRING;
+        m_emergency_exit = 0;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -411,6 +414,8 @@ signals:
     void msg_tag_change_global(const QByteArray& mid, const QString& huid);
 
     void join_result(QString gname, int result);
+
+    void emergency_exit_signal(int what, int must_exit, QString msg);
 
 private:
 
