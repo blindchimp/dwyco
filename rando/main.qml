@@ -733,6 +733,33 @@ ApplicationWindow {
 //        id: migrate_page
 //        visible: false
 //    }
+    Rectangle {
+        id: emergency_quit
+        visible: core.emergency_exit !== 0
+        anchors.fill: parent
+        color: "yellow"
+        z: 10
+        RowLayout {
+
+            anchors.fill: parent
+            anchors.margins: mm(2)
+
+            spacing: mm(3)
+            Button {
+                text: "Quit"
+                onClicked: {
+                    expire_immediate = true
+                    hard_close = true
+                    Qt.quit()
+                }
+            }
+            Label {
+                text: "Message servers changed, Click QUIT and then restart."
+                Layout.fillWidth: true
+            }
+
+        }
+    }
 
 
     onServer_account_createdChanged: {
