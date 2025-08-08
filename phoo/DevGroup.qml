@@ -67,9 +67,9 @@ Page {
         visible: !quitnow
         Label {
             id: helpme
-            text: "<a href=\"https://www.dwyco.net/general-5\">What is device linking?</a>"
+            text: "<a href=\"https://www.dwyco.net/general-5\" style=\"color: #0000FF;\">What is device linking?</a>"
             textFormat: Text.RichText
-            onLinkActivated: {
+            onLinkActivated: (link) => {
                 Qt.openUrlExternally(link)
             }
         }

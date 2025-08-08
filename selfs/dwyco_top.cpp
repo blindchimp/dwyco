@@ -2022,6 +2022,7 @@ DwycoCore::init()
 
     if(!dwyco_init())
         ::abort();
+    setup_emergency_servers();
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "1");
@@ -2163,8 +2164,6 @@ DwycoCore::init()
     }
 
     update_android_backup_available(dwyco_get_android_backup_state());
-    setup_emergency_servers();
-
 }
 
 void
