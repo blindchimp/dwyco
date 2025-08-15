@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 
-project(crypto5 LANGUAGES CXX)
+project(crypto8 LANGUAGES CXX)
 
-#set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(NDEBUG CRYTPOPP_DISABLE_ASM)
 
