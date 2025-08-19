@@ -104,11 +104,17 @@ set_source_files_properties(${app_icon} PROPERTIES
 )
 endif()
 
+if(WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/mumble.rc")
+endif()
+
 
 qt_add_executable(CDC-X
     MACOSX_BUNDLE ${app_icon}
+
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
+    ${APP_ICON_RESOURCE_WINDOWS}
 )
 
 set(BASELIBS

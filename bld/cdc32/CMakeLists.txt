@@ -42,8 +42,6 @@ if(MSVC)
         #VIDGRAB_HACKS
         UWB_SAMPLING  UWB_SAMPLE_RATE=44100
     )
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mtcap)
-
 endif()
 
 if(APPLE AND NOT UNIX)
