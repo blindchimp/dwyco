@@ -79,7 +79,7 @@ off_t Total_recv;
 off_t Session_recv;
 int Recv_to_null;
 
-#define MAXFILESIZE (100 * 1024 * 1024)
+#define MAXFILESIZE (300 * 1024 * 1024)
 
 static int
 backout(vc *)
