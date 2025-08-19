@@ -1,7 +1,0 @@
-//
-// Prefix header for all source files of the 'macdrv' target in the 'macdrv' project.
-//
-
-#ifdef __OBJC__
-    #import <Cocoa/Cocoa.h>
-#endif
