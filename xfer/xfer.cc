@@ -860,6 +860,7 @@ main(int argc, char **argv)
     }
     else if(strcmp(argv[2], "psend3") == 0)
     {
+        Send = 1;
         Loose_file = 1;
         Req_enc = 1;
         send_main(s);
