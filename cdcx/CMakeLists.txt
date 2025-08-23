@@ -25,7 +25,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Define a preprocessor macro with the Qt version
-add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
+add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 
 
 add_compile_definitions(
