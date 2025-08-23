@@ -20,7 +20,7 @@ cd %SHADOW_NAME%
 set QTVERS=6.8.2
 set QTFLAVOR=msvc2022_64
 
-c:/Qt/%QTVERS%/%QTFLAVOR%/bin/qt-cmake -D QT_QMAKE_EXECUTABLE="%D%/Qt/%QTVERS%/%QTFLAVOR%/bin/qmake" -D CMAKE_BUILD_TYPE=Release -S %D%/dwyco/cdcx -B %D%/build-cdcx -G Ninja
+c:/Qt/%QTVERS%/%QTFLAVOR%/bin/qt-cmake -D QT_QMAKE_EXECUTABLE="\Qt\%QTVERS%\%QTFLAVOR%\bin\qmake" -D CMAKE_BUILD_TYPE=Release -S %D%/dwyco/cdcx -B %D%/build-cdcx -G Ninja
 
 cd %D%/build-cdcx
 \Qt\Tools\Ninja\ninja
