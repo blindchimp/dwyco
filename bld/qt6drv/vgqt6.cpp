@@ -445,7 +445,9 @@ get_format(QCameraDevice dev, int cols, int rows, QCameraFormat& format_out)
         qDebug() << dev.videoFormats() << "\n";
         auto cf = find_closest(dev.videoFormats(), cols, rows);
         format_out = cf;
-        desc = dev.description().toLatin1();
+        //note: avoid situations where camera may have names
+        //that include unicode names or whatever (like korean names).
+        desc = "Camera"; //dev.description().toLatin1();
         if(cf.isNull())
         {
             desc = "unavailable";
@@ -467,7 +469,10 @@ vgqt_get_video_devices()
         QByteArray desc;
         QCameraFormat format;
         QCameraDevice dev = Cams[i / 3];
+        QByteArray camnum = QByteArray::number((i / 3) + 1);
         desc = get_format(dev, 640, 480, format);
+        desc += " #";
+        desc += camnum;
         desc += " (Normal)";
         r[i] = new char [desc.length() + 1];
         strcpy(r[i], desc.constData());
@@ -475,6 +480,8 @@ vgqt_get_video_devices()
         qDebug() << desc << " " << format << "\n";
 
         desc = get_format(dev, 320, 240, format);
+        desc += " #";
+        desc += camnum;
         desc += " (Small)";
         r[i + 1] = new char [desc.length() + 1];
         strcpy(r[i + 1], desc.constData());
@@ -482,6 +489,8 @@ vgqt_get_video_devices()
          qDebug() << desc << " " << format << "\n";
 
         desc = get_format(dev, 1280, 960, format);
+        desc += " #";
+        desc += camnum;
         desc += " (Large)";
         r[i + 2] = new char [desc.length() + 1];
         strcpy(r[i + 2], desc.constData());
