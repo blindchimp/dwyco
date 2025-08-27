@@ -42,7 +42,7 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"4.313\"
+DWYCO_NICE_VERSION=\"4.314\"
 )
 include_directories(
 ./dllwin ../bld/qt6drv ../bld/dwcls .
