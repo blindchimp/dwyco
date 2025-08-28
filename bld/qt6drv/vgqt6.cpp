@@ -960,16 +960,21 @@ conv_data(vframe ivf)
             // we'll need to update the converter to add a "line_length" or something if
             // we ever run into one of those.
             VidConvert cvt;
-            cvt.set_format(fmt);
-            cvt.swap_uv = 0;
-            cvt.set_upside_down(flipped);
+            cvt.set_style(fmt|AQ_COLOR);
+            cvt.swap_uv = swap;
+            cvt.set_upside_down(!flipped);
             int ccols = vf.width();
             int crows = vf.height();
             void *y;
             void *cb;
             void *cr;
             int fmt_out;
-            void *r = cvt.convert_data(vf.bits(0), vf.bytesPerLine(0) * vf.height(), ccols, crows, y, cb, cr, fmt_out, 0);
+            int total_size = 0;
+            for(int i = 0; i < vf.planeCount(); ++i)
+            {
+                total_size += vf.mappedBytes(i);
+            }
+            void *r = cvt.convert_data(vf.bits(0), total_size, ccols, crows, y, cb, cr, fmt_out, 0);
             f.planes[0] = (gray **)r;
             f.planes[1] = (gray **)cb;
             f.planes[2] = (gray **)cr;
