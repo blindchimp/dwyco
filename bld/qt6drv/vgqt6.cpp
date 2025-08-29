@@ -109,6 +109,8 @@ static QList<QCameraDevice> Cams;
 static QList<QCameraFormat> CFormats;
 static int Cur_idx = -1;
 QDebug operator<<(QDebug dbg, const QCameraFormat &type);
+int VGQT_swap_rb;
+int VGQT_flip;
 
 struct finished
 {
@@ -923,7 +925,7 @@ conv_data(vframe ivf)
             unsigned char *c = (unsigned char *)vf.bits(0);
             gray **g = pgm_allocarray(cols, rows);
             memcpy(&g[0][0], c, cols * rows);
-            if(flipped)
+            if(flipped ^ VGQT_flip)
                 flip_in_place(g, cols, rows);
             //c += cols * rows;
             f.planes[0] = g;
@@ -931,7 +933,7 @@ conv_data(vframe ivf)
             c = vf.bits(1);
             g = pgm_allocarray(cols / 2, rows / 2);
             memcpy(&g[0][0], c, (cols * rows) / 4);
-            if(flipped)
+            if(flipped ^ VGQT_flip)
                 flip_in_place(g, cols / 2, rows / 2);
             f.planes[1] = g;
             //c += (cols * rows) / 4;
@@ -939,11 +941,11 @@ conv_data(vframe ivf)
             c = vf.bits(2);
             g = pgm_allocarray(cols / 2, rows / 2);
             memcpy(&g[0][0], c, (cols * rows) / 4);
-            if(flipped)
+            if(flipped ^ VGQT_flip)
                 flip_in_place(g, cols / 2, rows / 2);
             f.planes[2] = g;
 
-            if(swap)
+            if(swap ^ VGQT_swap_rb)
             {
                 gray **tmp = f.planes[1];
                 f.planes[1] = f.planes[2];
@@ -961,8 +963,8 @@ conv_data(vframe ivf)
             // we ever run into one of those.
             VidConvert cvt;
             cvt.set_style(fmt|AQ_COLOR);
-            cvt.swap_uv = swap;
-            cvt.set_upside_down(!flipped);
+            cvt.swap_uv = swap ^ VGQT_swap_rb;
+            cvt.set_upside_down(!flipped ^ VGQT_flip);
             int ccols = vf.width();
             int crows = vf.height();
             void *y;
@@ -984,7 +986,7 @@ conv_data(vframe ivf)
             return f;
         }
 
-#endif
+#else
 
         unsigned char *c = (unsigned char *)vf.bits(0);
 #define SSCOLS (640)
@@ -1078,7 +1080,7 @@ conv_data(vframe ivf)
         vf.unmap();
         vf = QVideoFrame();
         return f;
-
+#endif
     oopanic("aqvfw get no data");
     // not reached
     return finished();

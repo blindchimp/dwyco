@@ -11,6 +11,21 @@
 
 extern DwycoVidGetDataCallback dwyco_vidacq_get_data;
 extern DwycoVVCallback dwyco_vidacq_free_data;
+extern int VGQT_swap_rb;
+extern int VGQT_flip;
+
+void
+ExtAcquireAndroid::set_swap_rb(int s)
+{
+    VGQT_swap_rb = s;
+}
+
+void
+ExtAcquireAndroid::set_flip(int s)
+{
+    VGQT_flip = s;
+}
+
 
 void *
 ExtAcquireAndroid::get_data(int& c, int& r, void*& y, void*& cb, void *& cr,

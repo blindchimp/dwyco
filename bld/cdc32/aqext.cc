@@ -66,6 +66,12 @@ ExtAcquire::set_swap_rb(int s)
 #endif
 }
 
+void
+ExtAcquire::set_flip(int s)
+{
+    vidconv.set_upside_down(s);
+}
+
 int
 ExtAcquire::generates_events()
 {

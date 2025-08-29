@@ -34,6 +34,8 @@ VidAcquire *TheAq;
 int ExternalVideoAcquisition;
 
 static int Bound_setting;
+
+static
 void
 rb_tweaked(vc name, vc val)
 {
@@ -42,6 +44,18 @@ rb_tweaked(vc name, vc val)
         ExtAcquire *ea = dynamic_cast<ExtAcquire *>(TheAq);
         if(ea)
             ea->set_swap_rb((int)val);
+    }
+}
+
+static
+void
+flip_tweaked(vc name, vc val)
+{
+    if(TheAq)
+    {
+        ExtAcquire *ea = dynamic_cast<ExtAcquire *>(TheAq);
+        if(ea)
+            ea->set_flip((int)val);
     }
 }
 
@@ -109,6 +123,7 @@ initaq(int mbox, DwString& fail_reason)
     if(!Bound_setting)
     {
         bind_sql_setting("video_format/swap_rb", rb_tweaked);
+        bind_sql_setting("video_format/flip", flip_tweaked);
         Bound_setting = 1;
     }
 #ifndef DWYCO_NO_VIDEO_FROM_PPM

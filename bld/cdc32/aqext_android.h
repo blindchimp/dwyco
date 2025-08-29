@@ -20,6 +20,9 @@ public:
                    int& = VidAcquire::dummy2,
                    unsigned long& = VidAcquire::dummy3,
                    int no_convert = 0);
+
+    virtual void set_swap_rb(int);
+    virtual void set_flip(int);
 };
 
 #endif
