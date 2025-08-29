@@ -392,3 +392,9 @@ void VidSel::on_face_is_blue_clicked(bool checked)
 {
     dwyco_set_setting("video_format/swap_rb", checked ? "1" : "0");
 }
+
+void VidSel::on_flip_clicked(bool checked)
+{
+    dwyco_set_setting("video_format/flip", checked ? "1" : "0");
+}
+
