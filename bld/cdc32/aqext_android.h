@@ -14,6 +14,8 @@
 class ExtAcquireAndroid : public ExtAcquire
 {
 public:
+    int init(int frame_rate);
+
     void *get_data(int& cols, int& rows, void*& = VidAcquire::dummy,
                    void*&  = VidAcquire::dummy,
                    void*&  = VidAcquire::dummy,

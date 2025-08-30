@@ -136,6 +136,14 @@ VidSel::init()
             ui->face_is_blue->setChecked(srb);
         }
     }
+    if(dwyco_get_setting("video_format/flip", &val, &len, &type))
+    {
+        if(type == DWYCO_TYPE_INT)
+        {
+            int srb = atol(val);
+            ui->flip->setChecked(srb);
+        }
+    }
 
     //note: setchecked can cause the signal to be emitted above,
     // and the list to be loaded.
