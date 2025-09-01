@@ -987,6 +987,16 @@ conv_data(vframe ivf)
         }
 
 #else
+        if(fmt != AQ_NV21)
+        {
+            // just to avoid crashing
+            f.planes[0] = pgm_allocarray(f.c, f.r);
+            f.planes[1] = pgm_allocarray(f.c / 2, f.r / 2);
+            f.planes[2] = pgm_allocarray(f.c / 2, f.r / 2);
+            vf.unmap();
+            vf = QVideoFrame();
+            return f;
+        }
 
         unsigned char *c = (unsigned char *)vf.bits(0);
 #define SSCOLS (640)
