@@ -7,13 +7,14 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-// note: this is a proof of concept driver that uses qt5 qtmultimedia
+// note: this is a proof of concept driver that uses qt6 qtmultimedia
 // to capture frames. as usual, there are a lot of gotchas:
+// updated for cs 2025:
 //
-// * in a qwidgets app, this is your *only* option for MacOS. there is
-//      no "native" driver for MacOS. This driver *might* work on other
-//      platforms, but the native drivers for windows and linux work much
-//      better. USE_QML_CAMERA must be undefined. on MacOS,
+// * in a qwidgets app, this is your *only* option for MacOS and Windows. there is
+//      no "native" driver for MacOS or Windows. This driver *might* work on other
+//      platforms, but the native drivers for linux work much
+//      better. USE_QML_CAMERA must be undefined. on MacOS and Windows,
 //      DWYCO_FORCE_DESKTOP_VGQT must be defined. otherwise leave it undefined
 //      to use the native drivers.
 //
