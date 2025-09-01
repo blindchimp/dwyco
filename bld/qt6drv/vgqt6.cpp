@@ -75,7 +75,7 @@
 //#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
 #include "stb_image_resize.h"
-#undef TEST_THREAD
+#define TEST_THREAD
 #ifdef TEST_THREAD
 #include <pthread.h>
 #endif
@@ -192,29 +192,183 @@ stop_all_conversions()
     next_icb = 0;
 }
 
+static
+void
+new_video_frame(const QVideoFrame& frm)
+{
+    //qDebug() << frm.pixelFormat() << "\n";
+    Raw_frame.frm = frm;
+#ifdef __WIN32__
+    Raw_frame.captime = timeGetTime();
+#else
+    struct timeval tm;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    tm.tv_sec = ts.tv_sec;
+    tm.tv_usec = ts.tv_nsec / 1000;
+    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+#endif
+}
+
+
 #ifdef TEST_THREAD
 static void
 add_frame(QVideoFrame frm)
 {
     QMutexLocker ml(&mutex);
 
-    if(next_buf == (next_ibuf + 1) % NB_BUFFER)
-    {
-        // drop it for now, maybe something more complicated
-        // like overwriting next frame would look better
-        // in some cases, but not worth it at this point.
-        return;
-    }
-    struct timeval tm;
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    tm.tv_sec = ts.tv_sec;
-    tm.tv_usec = ts.tv_nsec / 1000;
-
-    vbufs[next_ibuf] = frm;
-    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
-    next_ibuf = (next_ibuf + 1) % NB_BUFFER;
+    new_video_frame(frm);
 }
+
+// Define video format enum
+typedef enum {
+    YUV420P, // YUV12
+    UYVY,
+    YUYV,
+    NV21,
+    NV12
+} VideoFormat;
+
+// Function to create a test frame
+static void
+create_test_frame(unsigned char *frame, int cols, int rows,  VideoFormat format, int frame_number)
+{
+    int i, j;
+    int y, u, v;
+    int pixel_index;
+
+    // Time-varying component:  Use frame_number to modulate colors
+    int time_factor = frame_number / 30; // Adjust divisor for speed of change
+
+    switch (format) {
+        case YUV420P: { // YUV12
+            // Y plane
+            for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j++) {
+                    y = (int)((i + j + time_factor * 50) % 256);
+                    frame[i * cols + j] = (unsigned char)y;
+                }
+            }
+
+            // U and V planes (subsampled)
+            int u_width = cols / 2;
+            int u_height = rows / 2;
+            int v_width = cols / 2;
+            int v_height = rows / 2;
+
+            int y_offset = rows * cols;
+            int u_offset = y_offset + u_width * u_height;
+
+            for (i = 0; i < u_height; i++) {
+                for (j = 0; j < u_width; j++) {
+                    u = (int)((i * 2 + j * 2 + time_factor * 30) % 256);
+                    frame[y_offset + i * u_width + j] = (unsigned char)u;
+                }
+            }
+
+            for (i = 0; i < v_height; i++) {
+                for (j = 0; j < v_width; j++) {
+                    v = (int)((i * 2 + j * 2 + time_factor * 40) % 256);
+                    frame[u_offset + i * v_width + j] = (unsigned char)v;
+                }
+            }
+            break;
+        }
+
+        case UYVY: {
+            for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j += 2) {
+                    y = (int)((i + j + time_factor * 50) % 256);
+                    u = (int)((i + j + time_factor * 30) % 256);
+                    //y = (int)((i + j + 1 + time_factor * 50) % 256);
+                    v = (int)((i + j + 1 + time_factor * 40) % 256);
+
+                    frame[i * cols + j] = (unsigned char)y;
+                    frame[i * cols + j + 1] = (unsigned char)u;
+                    frame[i * cols + j + 2] = (unsigned char)y;
+                    frame[i * cols + j + 3] = (unsigned char)v;
+                }
+            }
+            break;
+        }
+
+        case YUYV: {
+            for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j += 2) {
+                    y = (int)((i + j + time_factor * 50) % 256);
+                    u = (int)((i + j + time_factor * 30) % 256);
+                    //y = (int)((i + j + 1 + time_factor * 50) % 256);
+                    v = (int)((i + j + 1 + time_factor * 40) % 256);
+
+                    frame[i * cols + j] = (unsigned char)y;
+                    frame[i * cols + j + 1] = (unsigned char)u;
+                    frame[i * cols + j + 2] = (unsigned char)y;
+                    frame[i * cols + j + 3] = (unsigned char)v;
+                }
+            }
+            break;
+        }
+
+        case NV21: {
+            // Y plane
+            for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j++) {
+                    frame[i * cols + j] = (unsigned char)((i + j + time_factor * 50) % 256);
+                }
+            }
+
+            // UV plane (interleaved)
+            int uv_width = cols / 2;
+            int uv_height = rows / 2;
+            int y_offset = rows * cols;
+
+            for (i = 0; i < uv_height; i++) {
+                for (j = 0; j < uv_width; j++) {
+                    u = (int)((i * 2 + j * 2 + time_factor * 30) % 256);
+                    v = (int)((i * 2 + j * 2 + time_factor * 40) % 256);
+                    frame[y_offset + i * uv_width + j] = (unsigned char)((v << 8) | u);
+                }
+            }
+            break;
+        }
+
+        case NV12: {
+            // Y plane
+            for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j++) {
+                    frame[i * cols + j] = (unsigned char)((i + j + time_factor * 50) % 256);
+                }
+            }
+
+            // UV plane (separate U and V)
+            int u_width = cols / 2;
+            int u_height = rows / 2;
+            int v_width = cols / 2;
+            int v_height = rows / 2;
+
+            int y_offset = rows * cols;
+            int u_offset = y_offset + u_width * u_height;
+
+            for (i = 0; i < u_height; i++) {
+                for (j = 0; j < u_width; j++) {
+                    frame[y_offset + i * u_width + j] = (unsigned char)((i * 2 + j * 2 + time_factor * 30) % 256);
+                }
+            }
+
+            for (i = 0; i < v_height; i++) {
+                for (j = 0; j < v_width; j++) {
+                    frame[u_offset + i * v_width + j] = (unsigned char)((i * 2 + j * 2 + time_factor * 40) % 256);
+                }
+            }
+            break;
+        }
+
+        default:
+            printf("Unsupported video format\n");
+            break;
+    }
+}
+
 
 static void *
 test_thread(void *)
@@ -225,15 +379,18 @@ test_thread(void *)
     {
         if(stop_thread)
             return 0;
-        QVideoFrame f(320*240+2*(160 * 120), QSize(320, 240), 320, QVideoFrame::Format_NV21);
-        f.map(QAbstractVideoBuffer::ReadWrite);
-        uchar *bits = f.bits();
+        QVideoFrame f(QVideoFrameFormat(QSize(320, 240), QVideoFrameFormat::Format_NV21));
+        f.map(QVideoFrame::ReadWrite);
+        uchar *bits = f.bits(0);
+#if 0
         memset(bits, t, 320 * 240);
         memset(bits + 320*60, 0, 120);
         memset(bits + 320*61, 0, 120);
         memset(bits + 320*62, 255, 120);
         memset(bits + 320*63, 255, 120);
         memset(bits + 320*240, 0, 2 * 160 * 120);
+#endif
+        create_test_frame(bits, 320, 240, VideoFormat::NV21, t);
         ++t;
         f.unmap();
         add_frame(f);
@@ -674,23 +831,6 @@ config_viewfinder(QCamera::State state)
 }
 #endif
 
-static
-void
-new_video_frame(const QVideoFrame& frm)
-{
-    //qDebug() << frm.pixelFormat() << "\n";
-    Raw_frame.frm = frm;
-#ifdef __WIN32__
-    Raw_frame.captime = timeGetTime();
-#else
-    struct timeval tm;
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    tm.tv_sec = ts.tv_sec;
-    tm.tv_usec = ts.tv_nsec / 1000;
-    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
-#endif
-}
 int
 DWYCOEXPORT
 vgqt_init(void *aqext, int frame_rate)
