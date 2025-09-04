@@ -28,6 +28,5 @@ KeyboardAcquire *init_msgaq_private(int mbox, int& chatbox_id, const char *capti
 extern VidAcquire *TheAq;
 extern KeyboardAcquire *TheMsgAq;
 extern int Chatbox_id;
-extern int ExternalVideoAcquisition;
 
 #endif

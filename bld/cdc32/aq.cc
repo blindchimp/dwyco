@@ -31,8 +31,6 @@ int Chatbox_id = -1;
 
 VidAcquire *TheAq;
 
-int ExternalVideoAcquisition;
-
 static int Bound_setting;
 
 static
@@ -138,10 +136,7 @@ initaq(int mbox, DwString& fail_reason)
     else
 #endif
     {
-        if(ExternalVideoAcquisition)
-        {
             return init_external_video(mbox);
-        }
     }
     return 0;
 }

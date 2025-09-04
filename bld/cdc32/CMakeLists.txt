@@ -39,7 +39,6 @@ if(MSVC)
     add_compile_definitions(
         # don't use the "internal" vidgrab stuff anymore, it must be
         # done externally in the vgqt capture driver
-        #VIDGRAB_HACKS
         UWB_SAMPLING  UWB_SAMPLE_RATE=44100
     )
 endif()
