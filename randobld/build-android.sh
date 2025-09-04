@@ -11,10 +11,10 @@
 # we don't put build-aab.sh here since it contains private keys.
 
 #/home/dwight/android682_arm64-v8a/bin/qt-cmake -S /home/dwight/git/dwyco/rando -B /tmp/r -GNinja
-/home/dwight/syncdev/qta682/android682_x86_64/bin/qt-cmake -S /home/dwight/git/dwyco/rando -B /tmp/r -GNinja \
+$HOME/syncdev/qta682/android682_x86_64/bin/qt-cmake -S $HOME/git/dwyco/rando -B /tmp/r -GNinja \
 -DQT_ANDROID_BUILD_ALL_ABIS=TRUE \
--DQT_PATH_ANDROID_ABI_arm64-v8a="/home/dwight/syncdev/qta682/android682_arm64_v8a" \
--DQT_PATH_ANDROID_ABI_x86_64="/home/dwight/syncdev/qta682/android682_x86_64" \
--DQT_PATH_ANDROID_ABI_armeabi-v7a="/home/dwight/syncdev/qta682/android682_armv7" \
--DQT_PATH_ANDROID_ABI_x86="/home/dwight/syncdev/qta682/android682_x86" \
+-DQT_PATH_ANDROID_ABI_arm64-v8a="$HOME/syncdev/qta682/android682_arm64_v8a" \
+-DQT_PATH_ANDROID_ABI_x86_64="$HOME/syncdev/qta682/android682_x86_64" \
+-DQT_PATH_ANDROID_ABI_armeabi-v7a="$HOME/syncdev/qta682/android682_armv7" \
+-DQT_PATH_ANDROID_ABI_x86="$HOME/syncdev/qta682/android682_x86" \
 -DQT_ANDROID_SIGN_AAB=TRUE 

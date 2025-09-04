@@ -9,7 +9,7 @@ if [[ "x$NDK" == "x" ]]; then
 	#NDK=~/Library/Android/sdk/ndk/21.3.6528147/
 	#NDK=~/Library/Android/sdk/ndk/25.1.8937393/
 	#NDK=~/Library/Android/sdk/ndk/26.1.10909125/
-	NDK=~/Android/Sdk/ndk/28.2.13676358
+	NDK=~/Library/Android/sdk/ndk/28.2.13676358/
 	else
 	#NDK=~/Android/Sdk/ndk/21.3.6528147
 	#NDK=~/Android/Sdk/ndk/25.1.8937393

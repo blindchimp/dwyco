@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
 set(DWYCO_CONFDIR rando_cmake)
 set(RANDO_VERSION "4.315")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
@@ -11,6 +16,7 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
 include_directories(
+	${CMAKE_CURRENT_SOURCE_DIR}
     .
     ../bld/dwcls
     ../bld/qt-qml-models
