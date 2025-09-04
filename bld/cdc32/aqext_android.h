@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -27,4 +27,5 @@ public:
     virtual void set_flip(int);
 };
 
+#endif
 #endif

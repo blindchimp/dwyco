@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -15,8 +15,8 @@ using namespace dwyco;
 
 extern DwycoVidGetDataCallback dwyco_vidacq_get_data;
 extern DwycoVVCallback dwyco_vidacq_free_data;
-//extern int VGQT_swap_rb;
-//extern int VGQT_flip;
+extern int VGQT_swap_rb;
+extern int VGQT_flip;
 
 int
 ExtAcquireAndroid::init(int frame_rate)
@@ -41,13 +41,13 @@ ExtAcquireAndroid::init(int frame_rate)
 void
 ExtAcquireAndroid::set_swap_rb(int s)
 {
-    //VGQT_swap_rb = s;
+    VGQT_swap_rb = s;
 }
 
 void
 ExtAcquireAndroid::set_flip(int s)
 {
-    //VGQT_flip = s;
+    VGQT_flip = s;
 }
 
 
@@ -86,3 +86,4 @@ ExtAcquireAndroid::get_data(int& c, int& r, void*& y, void*& cb, void *& cr,
 
 }
 
+#endif

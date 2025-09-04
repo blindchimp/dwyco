@@ -93,6 +93,7 @@ init_raw_files(int mbox, DwString& fail_reason)
 int
 init_external_video(int mbox)
 {
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     ExtAcquireAndroid *a = new ExtAcquireAndroid;
 #else
@@ -112,6 +113,9 @@ init_external_video(int mbox)
     }
     TheAq = a;
     return 1;
+#else
+    return 0;
+#endif
 }
 
 int

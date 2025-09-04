@@ -72,6 +72,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
 
 if(${DWYCO_APP} STREQUAL "rando")
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS)
+    add_compile_definitions(DWYCO_NO_ACQ_VIDEO_MEDIA)
 else()
     add_compile_definitions(MINIUPNP_STATICLIB)
 endif()

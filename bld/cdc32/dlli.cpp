@@ -8880,6 +8880,7 @@ DWYCOEXPORT
 void
 dwyco_set_external_video_capture_callbacks( DwycoVVCallback nw, DwycoVVCallback del, DwycoIVICallback init, DwycoIVCallback has_data, DwycoVVCallback need, DwycoVVCallback pass, DwycoVVCallback stop, DwycoVidGetDataCallback get_data, DwycoVVCallback free_data, DwycoCACallback get_vid_devices, DwycoFCACallback free_vid_list, DwycoVICallback set_vid_device, DwycoVCallback stop_vid_device, DwycoVCallback show_source_dialog, DwycoVVCallback hw_preview_on, DwycoVCallback hw_preview_off, DwycoVVCallback set_app_data)
 {
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
     dwyco_vidacq_new = nw;
     dwyco_vidacq_delete = del;
     dwyco_vidacq_init = init;
@@ -8898,6 +8899,7 @@ dwyco_set_external_video_capture_callbacks( DwycoVVCallback nw, DwycoVVCallback 
     dwyco_vidacq_hw_preview_on = hw_preview_on;
     dwyco_vidacq_hw_preview_off = hw_preview_off;
     dwyco_vidacq_set_app_data = set_app_data;
+#endif
 
 
 }
