@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -8,9 +8,48 @@
 */
 #include "aqext_android.h"
 #include "dlli.h"
+#include "vc.h"
+#include "ezset.h"
+
+using namespace dwyco;
 
 extern DwycoVidGetDataCallback dwyco_vidacq_get_data;
 extern DwycoVVCallback dwyco_vidacq_free_data;
+extern int VGQT_swap_rb;
+extern int VGQT_flip;
+
+int
+ExtAcquireAndroid::init(int frame_rate)
+{
+    int ret = ExtAcquire::init(frame_rate);
+
+    vc srb = get_settings_value("video_format/swap_rb");
+    if(srb.type() != VC_INT)
+        set_swap_rb(0);
+    else
+        set_swap_rb((int)srb);
+
+    srb = get_settings_value("video_format/flip");
+    if(srb.type() != VC_INT)
+        set_flip(0);
+    else
+        set_flip((int)srb);
+
+    return ret;
+}
+
+void
+ExtAcquireAndroid::set_swap_rb(int s)
+{
+    VGQT_swap_rb = s;
+}
+
+void
+ExtAcquireAndroid::set_flip(int s)
+{
+    VGQT_flip = s;
+}
+
 
 void *
 ExtAcquireAndroid::get_data(int& c, int& r, void*& y, void*& cb, void *& cr,
@@ -47,3 +86,4 @@ ExtAcquireAndroid::get_data(int& c, int& r, void*& y, void*& cb, void *& cr,
 
 }
 
+#endif

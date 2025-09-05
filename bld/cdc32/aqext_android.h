@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -14,12 +14,18 @@
 class ExtAcquireAndroid : public ExtAcquire
 {
 public:
+    int init(int frame_rate);
+
     void *get_data(int& cols, int& rows, void*& = VidAcquire::dummy,
                    void*&  = VidAcquire::dummy,
                    void*&  = VidAcquire::dummy,
                    int& = VidAcquire::dummy2,
                    unsigned long& = VidAcquire::dummy3,
                    int no_convert = 0);
+
+    virtual void set_swap_rb(int);
+    virtual void set_flip(int);
 };
 
+#endif
 #endif

@@ -24,6 +24,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QSettings>
+#include <QTcpSocket>
+#include <QCryptographicHash>
 #ifdef ANDROID
 //#include <QtAndroid>
 #endif

@@ -56,4 +56,12 @@ Menu {
 
         }
     }
+
+    MenuItem {
+        text: "Review"
+        visible: core.this_uid === applicationWindow1.the_man
+        onTriggered: {
+            stack.push(msg_review)
+        }
+    }
 }

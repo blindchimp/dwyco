@@ -341,10 +341,6 @@ using namespace CryptoPP;
 #include "imgmisc.h"
 #include "ser.h"
 
-#ifdef VIDGRAB_HACKS
-#include "vgexp.h"
-#endif
-
 #ifdef LINUX
 #include <signal.h>
 #include <sys/types.h>
@@ -1451,7 +1447,6 @@ dwyco_set_client_version(const char *str, int len_str)
 // event handling loop)
 // this starts up the networking stuff too
 static HANDLE DLL_mutex;
-extern int ExternalVideoAcquisition;
 extern int ExternalAudioAcquisition;
 extern int ExternalAudioOutput;
 DWYCOEXPORT
@@ -1544,41 +1539,6 @@ dwyco_init()
     //power_clean_safe();
 #endif
     TheAutoUpdate = new TAutoUpdate;
-    // note: this must be zero before the set_external call
-    // otherwise you will call into an uninitialized vgcap dll
-    ExternalVideoAcquisition = 0;
-
-    // in windows, we do this here mainly to avoid having to
-    // export this low level stuff into the client, which may not
-    // be C/C++
-#ifdef __WIN32__
-    dwyco_set_external_video(0);
-#ifndef DWYCO_POWERBROWSE
-#ifndef DWYCO_NO_VIDEO_CAPTURE
-#ifdef VIDGRAB_HACKS
-    dwyco_set_external_video_capture_callbacks(
-        vgnew,
-        vgdel,
-        vginit,
-        vghas_data,
-        vgneed,
-        vgpass,
-        vgstop,
-        vgget_data,
-        vgfree_data,
-        vgget_video_devices,
-        vgfree_video_devices,
-        vgset_video_device,
-        vgstop_video_device,
-        vgshow_source_dialog,
-        vgpreview_on,
-        vgpreview_off,
-        vg_set_appdata
-    );
-#endif
-#endif
-#endif
-#endif
 
     ExternalAudioAcquisition = 0;
     ExternalAudioOutput = 0;
@@ -1587,7 +1547,6 @@ dwyco_init()
         KKG = gm;
     // note: for linux and macos, force external
 #if defined(LINUX) || defined(MACOSX) || defined(ANDROID) || defined(DWYCO_IOS)
-    ExternalVideoAcquisition = 1;
     ExternalAudioAcquisition = 1;
     ExternalAudioOutput = 1;
 #endif
@@ -8624,13 +8583,6 @@ dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 // the device selection, start/stop the device, source adjustment dialogs,
 // hardware previewing.
 //
-// in windows,
-//		* compile with VIDGRAB_HACKS (this
-//		causes the DLL to setup the vg stuff internally.)
-//		* you can switch between regular VFW (the default)
-//		and "external" video acquisition (which encapsulates the
-//		VidGrab library, which does DirectX 9 capture.)
-//
 // in linux and macos, there is obviously no VFW.
 // if the client needs video capture, it must provide a video capture implementation.
 // it sets the implemention using the "set_external_video_capture" functions.
@@ -8650,14 +8602,6 @@ dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 // windows must use mtcapxe.dll (32bit) and built-in audio for qt5. qt6 is all 64-bit so we'll have to change
 //  to qt6 vgqt. built-in audio will probably still work ok in 64bits.
 
-#ifndef DWYCO_NO_VIDEO_CAPTURE
-#ifdef __WIN32__
-// NOTE: this interface is WINDOWS SPECIFIC
-#ifdef VIDGRAB_HACKS
-#include "vgexp.h"
-#endif
-#endif
-#endif
 
 // video device control
 DwycoCACallback dwyco_vidacq_get_vid_devices;
@@ -8673,8 +8617,6 @@ DWYCOEXPORT
 DWYCO_LIST
 dwyco_get_vfw_drivers()
 {
-    if(ExternalVideoAcquisition)
-    {
         char **d = 0;
         if(dwyco_vidacq_get_vid_devices)
             d = (*dwyco_vidacq_get_vid_devices)();
@@ -8698,7 +8640,6 @@ dwyco_get_vfw_drivers()
         if(dwyco_vidacq_free_vid_list)
             (*dwyco_vidacq_free_vid_list)(tmp);
         return dwyco_list_from_vc(v);
-    }
 
     return 0;
 }
@@ -8707,21 +8648,15 @@ DWYCOEXPORT
 int
 dwyco_start_vfw(int idx, void *main_hwnd, void *client_hwnd)
 {
-    if(ExternalVideoAcquisition)
-    {
         if(dwyco_vidacq_set_vid_device)
             (*dwyco_vidacq_set_vid_device)(idx);
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
 int
 dwyco_shutdown_vfw()
 {
-    if(ExternalVideoAcquisition)
-    {
         // this is a problem, don't stop the device unless it has
         // been initialized... really need something reasonable
         // in this area (either make stop_video innocuous if it hasn't
@@ -8733,21 +8668,15 @@ dwyco_shutdown_vfw()
                 (*dwyco_vidacq_stop_vid_device)();
         }
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
 int
 dwyco_change_driver(int new_idx)
 {
-    if(ExternalVideoAcquisition)
-    {
         if(dwyco_vidacq_set_vid_device)
             (*dwyco_vidacq_set_vid_device)(new_idx);
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
@@ -8761,52 +8690,36 @@ DWYCOEXPORT
 int
 dwyco_preview_on(void *display_window)
 {
-    if(ExternalVideoAcquisition)
-    {
         if(dwyco_vidacq_hw_preview_on)
             (*dwyco_vidacq_hw_preview_on)(display_window);
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
 int
 dwyco_preview_off()
 {
-    if(ExternalVideoAcquisition)
-    {
         if(dwyco_vidacq_hw_preview_off)
             (*dwyco_vidacq_hw_preview_off)();
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
 int
 dwyco_vfw_format()
 {
-    if(ExternalVideoAcquisition)
-    {
         // for testing, no need to change format
         // since it is setup automatically.
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
 int
 dwyco_vfw_source()
 {
-    if(ExternalVideoAcquisition)
-    {
         if(dwyco_vidacq_show_source_dialog)
             (*dwyco_vidacq_show_source_dialog)();
         return 1;
-    }
-    return 0;
 }
 
 DWYCOEXPORT
@@ -8819,7 +8732,6 @@ dwyco_set_external_video(int v)
         if(dwyco_vidacq_set_app_data)
             (*dwyco_vidacq_set_app_data)(0);
     }
-    ExternalVideoAcquisition = v;
     return 1;
 }
 
@@ -8880,6 +8792,7 @@ DWYCOEXPORT
 void
 dwyco_set_external_video_capture_callbacks( DwycoVVCallback nw, DwycoVVCallback del, DwycoIVICallback init, DwycoIVCallback has_data, DwycoVVCallback need, DwycoVVCallback pass, DwycoVVCallback stop, DwycoVidGetDataCallback get_data, DwycoVVCallback free_data, DwycoCACallback get_vid_devices, DwycoFCACallback free_vid_list, DwycoVICallback set_vid_device, DwycoVCallback stop_vid_device, DwycoVCallback show_source_dialog, DwycoVVCallback hw_preview_on, DwycoVCallback hw_preview_off, DwycoVVCallback set_app_data)
 {
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
     dwyco_vidacq_new = nw;
     dwyco_vidacq_delete = del;
     dwyco_vidacq_init = init;
@@ -8898,6 +8811,7 @@ dwyco_set_external_video_capture_callbacks( DwycoVVCallback nw, DwycoVVCallback 
     dwyco_vidacq_hw_preview_on = hw_preview_on;
     dwyco_vidacq_hw_preview_off = hw_preview_off;
     dwyco_vidacq_set_app_data = set_app_data;
+#endif
 
 
 }

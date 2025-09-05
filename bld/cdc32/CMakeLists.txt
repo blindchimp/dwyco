@@ -39,11 +39,8 @@ if(MSVC)
     add_compile_definitions(
         # don't use the "internal" vidgrab stuff anymore, it must be
         # done externally in the vgqt capture driver
-        #VIDGRAB_HACKS
         UWB_SAMPLING  UWB_SAMPLE_RATE=44100
     )
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mtcap)
-
 endif()
 
 if(APPLE AND NOT UNIX)
@@ -74,6 +71,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
 
 if(${DWYCO_APP} STREQUAL "rando")
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS)
+    add_compile_definitions(DWYCO_NO_ACQ_VIDEO_MEDIA)
 else()
     add_compile_definitions(MINIUPNP_STATICLIB)
 endif()

@@ -8,6 +8,7 @@
 */
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include "player.h"
 #include "dlli.h"
 #include "composer.h"
@@ -216,7 +217,9 @@ player::do_file_save()
 
     QFileDialog fd;
     fd.setOption(QFileDialog::DontUseNativeDialog);
-    fd.setDirectory(dt);
+    QString docs = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if(!docs.isEmpty())
+        fd.setDirectory(docs);
     fd.selectFile(tfn);
     fd.setFileMode(QFileDialog::AnyFile);
     if(fd.exec() == QDialog::Rejected)

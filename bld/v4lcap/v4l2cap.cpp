@@ -134,7 +134,7 @@ probe_v4l(const char *dev, int cols, int rows, DwString& name_out, int& cap_form
         fmt.fmt.pix.field = V4L2_FIELD_ANY;
         ret = ioctl (fd, VIDIOC_S_FMT, &fmt);
         if (ret < 0) {
-            fprintf (stderr, " format %s unavailable\n", nice_names[i]);
+            fprintf (stderr, " format %s (%d, %d) unavailable\n", nice_names[i], cols, rows);
             continue;
         }
         if ((fmt.fmt.pix.width != cols) ||
@@ -143,6 +143,7 @@ probe_v4l(const char *dev, int cols, int rows, DwString& name_out, int& cap_form
                      nice_names[i], cols, rows, fmt.fmt.pix.width, fmt.fmt.pix.height);
             continue;
         }
+        fprintf(stderr, "got fmt %s (%d, %d)\n", nice_names[i], cols, rows);
         break;
     }
     if(i == FMTS)

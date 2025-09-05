@@ -31,9 +31,9 @@ int Chatbox_id = -1;
 
 VidAcquire *TheAq;
 
-int ExternalVideoAcquisition;
-
 static int Bound_setting;
+
+static
 void
 rb_tweaked(vc name, vc val)
 {
@@ -42,6 +42,18 @@ rb_tweaked(vc name, vc val)
         ExtAcquire *ea = dynamic_cast<ExtAcquire *>(TheAq);
         if(ea)
             ea->set_swap_rb((int)val);
+    }
+}
+
+static
+void
+flip_tweaked(vc name, vc val)
+{
+    if(TheAq)
+    {
+        ExtAcquire *ea = dynamic_cast<ExtAcquire *>(TheAq);
+        if(ea)
+            ea->set_flip((int)val);
     }
 }
 
@@ -79,6 +91,7 @@ init_raw_files(int mbox, DwString& fail_reason)
 int
 init_external_video(int mbox)
 {
+#ifndef DWYCO_NO_ACQ_VIDEO_MEDIA
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     ExtAcquireAndroid *a = new ExtAcquireAndroid;
 #else
@@ -98,6 +111,9 @@ init_external_video(int mbox)
     }
     TheAq = a;
     return 1;
+#else
+    return 0;
+#endif
 }
 
 int
@@ -109,6 +125,7 @@ initaq(int mbox, DwString& fail_reason)
     if(!Bound_setting)
     {
         bind_sql_setting("video_format/swap_rb", rb_tweaked);
+        bind_sql_setting("video_format/flip", flip_tweaked);
         Bound_setting = 1;
     }
 #ifndef DWYCO_NO_VIDEO_FROM_PPM
@@ -119,10 +136,7 @@ initaq(int mbox, DwString& fail_reason)
     else
 #endif
     {
-        if(ExternalVideoAcquisition)
-        {
             return init_external_video(mbox);
-        }
     }
     return 0;
 }

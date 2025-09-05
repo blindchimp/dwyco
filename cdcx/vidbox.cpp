@@ -14,6 +14,7 @@ extern VidSel *DevSelectBox;
 extern int Public_chat_video_pause;
 extern int HasCamera;
 extern QImage Last_preview_image;
+extern int AvoidCamera;
 
 
 vidbox::vidbox(QWidget *parent) :
@@ -130,6 +131,27 @@ void vidbox::on_actionVideo_options_triggered()
 void
 vidbox::on_vid_toggle_clicked(bool a)
 {
+    // this hack is for situations where you have
+    // a camera that is crashing the program.
+    // in some cases, you can have multiple cameras,
+    // the first one that is auto-selected will cause the
+    // program to crash. if you start in No Cam mode,
+    // the autoselect behavior is avoided, allowing you to
+    // select another camera that might work.
+    if(AvoidCamera && DevSelectBox)
+    {
+        if(a)
+        {
+            DevSelectBox->show();
+            DevSelectBox->raise();
+        }
+        else
+        {
+            DevSelectBox->hide();
+            DevSelectBox->toggle_device(a);
+        }
+        return;
+    }
     if(DevSelectBox)
         DevSelectBox->toggle_device(a);
     dwyco_field_debug("vid-toggle", 1);

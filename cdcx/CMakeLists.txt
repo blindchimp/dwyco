@@ -25,7 +25,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Define a preprocessor macro with the Qt version
-add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
+add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 
 
 add_compile_definitions(
@@ -42,7 +42,7 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"4.312\"
+DWYCO_NICE_VERSION=\"4.316\"
 )
 include_directories(
 ./dllwin ../bld/qt6drv ../bld/dwcls .
@@ -104,11 +104,17 @@ set_source_files_properties(${app_icon} PROPERTIES
 )
 endif()
 
+if(WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/mumble.rc")
+endif()
+
 
 qt_add_executable(CDC-X
     MACOSX_BUNDLE ${app_icon}
+
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
+    ${APP_ICON_RESOURCE_WINDOWS}
 )
 
 set(BASELIBS

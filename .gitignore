@@ -629,3 +629,4 @@ bld/android/android.iml
 rando/.cache/
 
 randobld/jni/crypto8
+CMakeLists.txt.user

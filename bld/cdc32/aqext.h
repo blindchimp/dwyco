@@ -35,7 +35,8 @@ public:
                    unsigned long& = VidAcquire::dummy3,
                    int no_convert = 0);
 
-    void set_swap_rb(int);
+    virtual void set_swap_rb(int);
+    virtual void set_flip(int);
 private:
     VidConvert vidconv;
 };

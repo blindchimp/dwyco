@@ -81,8 +81,8 @@ ApplicationWindow {
     font.weight: Font.Bold
     
     property color primary : "#673AB7"
-    property color primary_dark : "#512DA8"
-    property color primary_light : "#D1C4E9"
+    property color primary_dark : core.this_uid === the_man ? "#512D18" : "#512DA8"
+    property color primary_light : core.this_uid === the_man ? "#D1CA39" : "#D1C4E9"
     property color accent : "#009688"
     property color primary_text : "#212121"
     property color secondary_text : "#727272"

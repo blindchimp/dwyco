@@ -46,6 +46,8 @@ private slots:
     void on_use_vfw_stateChanged(int);
 #endif
     void display_preview(int ui_id, QImage img);
+    void on_flip_clicked(bool checked);
+
 signals:
     void camera_change(int);
 

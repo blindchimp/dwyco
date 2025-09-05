@@ -19,7 +19,7 @@
      <property name="spacing">
       <number>6</number>
      </property>
-     <property name="margin">
+     <property name="margin" stdset="0">
       <number>0</number>
      </property>
      <item>
@@ -27,7 +27,7 @@
        <property name="spacing">
         <number>6</number>
        </property>
-       <property name="margin">
+       <property name="margin" stdset="0">
         <number>0</number>
        </property>
        <item>
@@ -60,7 +60,7 @@
        <property name="spacing">
         <number>6</number>
        </property>
-       <property name="margin">
+       <property name="margin" stdset="0">
         <number>0</number>
        </property>
        <item>
@@ -81,7 +81,14 @@
           <bool>false</bool>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="flip">
+         <property name="text">
+          <string>Flip video</string>
          </property>
         </widget>
        </item>
@@ -97,7 +104,7 @@
          <property name="spacing">
           <number>6</number>
          </property>
-         <property name="margin">
+         <property name="margin" stdset="0">
           <number>0</number>
          </property>
          <item>

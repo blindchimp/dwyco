@@ -79,7 +79,7 @@ off_t Total_recv;
 off_t Session_recv;
 int Recv_to_null;
 
-#define MAXFILESIZE (100 * 1024 * 1024)
+#define MAXFILESIZE (300 * 1024 * 1024)
 
 static int
 backout(vc *)
@@ -420,7 +420,10 @@ recv_crypto(vc sock)
 {
     vc sf_material;
     if(!recv_vc(sock, sf_material))
+    {
+        dolog("didn't get sf material");
         return 0;
+    }
 
     setup_session_key(sf_material);
     return 1;
@@ -477,10 +480,15 @@ recv_get_request(vc sock)
     // may just trigger more retries. best bet is to just return and "end"
     // indicator normally and assume the signature will fail, causing the
     // client to reset from the beginning
+    char a[4096];
     if(fs < 0 || fs > MAXFILESIZE ||
             Start_offset < 0)
+    {
+        sprintf(a, "file size bogus size %ld off %ld", fs, Start_offset);
+        dolog(a);
         return 0;
-    char a[4096];
+    }
+
     if(Start_offset > fs)
     {
         sprintf(a, "using size %d instead of %ld", (int)Filesize, Start_offset);
@@ -860,6 +868,7 @@ main(int argc, char **argv)
     }
     else if(strcmp(argv[2], "psend3") == 0)
     {
+        Send = 1;
         Loose_file = 1;
         Req_enc = 1;
         send_main(s);
