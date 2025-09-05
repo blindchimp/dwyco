@@ -1637,9 +1637,23 @@ sql_insert_record(vc entry, vc assoc_uid)
 
 static
 void
-sql_delete_mid(vc mid)
+sql_delete_mid(const vc& mid)
 {
-    sql_simple("delete from msg_idx where mid = ?1", mid);
+    // note: if it isn't in the msg_idx, but it is not downloaded here
+    // we still might find it in gi. but deleting it from the msg_idx
+    // will trigger the updates needed.
+    sql_start_transaction();
+    vc res = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
+    if(res.num_elems() == 0)
+    {
+        // still might find it in gi, so try that
+        res = sql_simple("delete from gi where mid = ?1 returning 1", mid);
+        if(res.num_elems() > 0)
+        {
+            sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
+        }
+    }
+    sql_commit_transaction();
 }
 
 long

@@ -3123,17 +3123,28 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
     s += t;
     DwString s2 = s;
     s += ".bod";
-
-    vc msg;
-    if(load_info(msg, s.c_str(), 1))
+    // note change: previously if we couldn't find the message in the
+    // fs, we didn't unindex it. delete now means "unindex it, and remove it
+    // from the fs too. this avoids situations where "deleting" an entry in
+    // a model that can't be found would quietly ignore the delete and the
+    // thing was effectively undeletable.
+    if(!inhibit_indexing)
     {
-        if(!inhibit_indexing)
+        try
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
             sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
+    }
+    vc msg;
+    if(load_info(msg, s.c_str(), 1))
+    {
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s.c_str());
@@ -3142,13 +3153,6 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
     s2 += ".snt";
     if(load_info(msg, s2.c_str(), 1))
     {
-        if(!inhibit_indexing)
-        {
-            sql_start_transaction();
-            remove_msg_idx(uid, msg_id);
-            sql_remove_all_tags_mid(msg_id);
-            sql_commit_transaction();
-        }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
