@@ -264,8 +264,24 @@ MsgBrowseDock::cur_change(const QModelIndex& idx, const QModelIndex& prev)
     // terminated, so just to be sure, do this
     DwOString zmid(mid, 0, len_mid);
     DWYCO_SAVED_MSG_LIST sm;
-    if(!dwyco_get_saved_message(&sm, uid.c_str(), uid.length(), zmid.c_str()))
+    switch(dwyco_get_saved_message3(&sm, zmid.c_str()))
+    {
+    case DWYCO_GSM_ERROR:
+        ui->label->hide();
+        ui->textBrowser->setText("(failed)");
         return;
+    case DWYCO_GSM_TRANSIENT_FAIL:
+    case DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE:
+        ui->label->hide();
+        ui->textBrowser->setText("(finding msg...)");
+        return;
+    case DWYCO_GSM_PULL_IN_PROGRESS:
+        ui->label->hide();
+        ui->textBrowser->setText("(fetching...)");
+        return;
+    default:
+        ;
+    }
     DWYCO_LIST bt = dwyco_get_body_text(sm);
     DwOString txt;
     if(dwyco_get_attr(bt, 0, DWYCO_NO_COLUMN, txt))
