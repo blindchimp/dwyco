@@ -52,6 +52,8 @@ using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
 ssns::signal1<vc> Qmsg_update;
 
+// the argument should be the number of the "uid" in the arg list for the query.
+// so, if the uid is the second arg (ie, ?2), argnum should be 2.
 #define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
 class QMsgSql : public SimpleSql
@@ -131,11 +133,13 @@ QMsgSql::init_schema_fav()
         const vc& res = sql_simple("pragma mt.user_version");
         if((int)res[0][0] == 2)
             throw 0;
+#ifdef DWYCO_DBG_SCHEMA
         if((int)res[0][0] != 0)
         {
             // note: remove and rebuild old databases during debugging
             oopanic("old tags found");
         }
+#endif
         sql_simple("create table if not exists mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("create table if not exists mt.gmt("
                    "mid text not null, "
@@ -210,19 +214,24 @@ QMsgSql::init_schema(const DwString& schema_name)
                 // upgraded during debugging.remove this once
                 // experiments are merged.
                 const vc& res = sql_simple("pragma user_version");
-                if((int)res[0][0] == 6)
+                // note: from 6 to 7 were just index changes, so going to 7 then back to 6
+                // should be ok, except i forgot to comment out the debugging stuff below, so
+                // it will crash, oops.
+                if((int)res[0][0] == 7)
                 {
                     throw 0;
                 }
+#ifdef DWYCO_DBG_SCHEMA
                 if((int)res[0][0] != 0)
                 {
                     // note: remove and rebuild old databases during debugging
 
                     oopanic("old database found");
                 }
+#endif
             }
 
-            sql_simple("create table schema_sections(name primary key not null, val)");
+            sql_simple("create table if not exists schema_sections(name primary key not null, val)");
 
             // WARNING: the order and number of the fields in this table
             // is the same as the #defines for the msg index in
@@ -251,8 +260,10 @@ QMsgSql::init_schema(const DwString& schema_name)
             // NOTE: these indexes need to be dropped
             // if we have a query that is based on global "has_attachment", a partial
             // index might be more useful.
-            sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
-            sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
+            // sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
+            // sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
+            sql_simple("drop index if exists sent_idx");
+            sql_simple("drop index if exists att_idx");
 
             sql_simple("create table if not exists dir_meta(dirname text collate nocase primary key not null, time integer default 0)");
 
@@ -290,10 +301,12 @@ QMsgSql::init_schema(const DwString& schema_name)
             // if we have a query that is based on global "has_attachment", a partial
             // index might be more useful.
             // likewise for from_group
-            sql_simple("create index if not exists gisent_idx on gi(is_sent)");
-            sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
-            sql_simple("create index if not exists gifrom_group on gi(from_group)");
-
+            // sql_simple("create index if not exists gisent_idx on gi(is_sent)");
+            // sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
+            // sql_simple("create index if not exists gifrom_group on gi(from_group)");
+            sql_simple("drop index if exists gisent_idx");
+            sql_simple("drop index if exists giatt_idx");
+            sql_simple("drop index if exists gifrom_group");
 
             sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
             sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
@@ -309,7 +322,7 @@ QMsgSql::init_schema(const DwString& schema_name)
             // a simple map for presentation purposes that can be derived without talking to a server
             sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
             sql_simple("create index if not exists gmidx on group_map(gid)");
-            sql_simple("pragma user_version = 6");
+            sql_simple("pragma user_version = 7");
             sql_commit_transaction();
         }
         catch(...)

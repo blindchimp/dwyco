@@ -343,7 +343,7 @@ MMChannel::process_with_response(vc v)
 {
     vc mtp = v[0];
     vc cmd = mtp[0];
-    vc serial = mtp[1];
+    //vc serial = mtp[1];
 
     if(cmd == vc("msg"))
     {
