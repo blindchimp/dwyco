@@ -15,6 +15,9 @@
 
 #include "dwvec.h"
 #include <string.h>
+#ifdef DWYCO_VC_CONV
+class vc;
+#endif
 
 class DwString : private DwVec<char>
 {
@@ -23,6 +26,9 @@ public:
     DwString(const char *);
     DwString(const char *, int start, int len);
     DwString(const char *, int len);
+#ifdef DWYCO_VC_CONV
+    DwString(const vc&);
+#endif
     enum {npos = -1};
 
     const char *c_str() const;

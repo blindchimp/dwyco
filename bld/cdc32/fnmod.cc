@@ -220,6 +220,7 @@ newfn(const DwString& fn)
     return nfn;
 }
 
+#if 0
 DwString
 newfn(const char *fn)
 {
@@ -233,6 +234,7 @@ newfn(const char *fn)
         oopanic("bogus filename2");
     return nfn;
 }
+#endif
 
 // for cases where we want to force the location of
 // the file

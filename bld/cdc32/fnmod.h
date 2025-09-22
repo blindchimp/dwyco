@@ -14,7 +14,7 @@
 namespace dwyco {
 int filename_modify(const DwString& fn, DwString& fn_out);
 DwString newfn(const DwString& fn);
-DwString newfn(const char *);
+//DwString newfn(const char *);
 DwString newfn_userpfx(const char *);
 DwString prepend_pfx(const char *subdir, const char *fn);
 
