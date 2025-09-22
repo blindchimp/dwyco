@@ -28,6 +28,7 @@ public:
     DwString(const char *, int len);
 #ifdef DWYCO_VC_CONV
     DwString(const vc&);
+    DwString& operator+=(const vc&);
 #endif
     enum {npos = -1};
 

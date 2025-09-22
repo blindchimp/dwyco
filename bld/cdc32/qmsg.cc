@@ -4327,16 +4327,16 @@ append_forwarded_text(DwString& s, const vc& body)
         handle = uid_to_handle(from, &cant_resolve);
 //        if(cant_resolve)
 //            handle = " ";
-        s += (const char *)handle;
+        s += handle;
         if(cant_resolve)
         {
             fetch_info(from);
             s += " (";
-            s += (const char *)uid_to_short_text(from);
+            s += uid_to_short_text(from);
             s += ")";
         }
         s += "\r\n";
-        s += (const char *)body[QM_BODY_NEW_TEXT];
+        s += body[QM_BODY_NEW_TEXT];
         return;
     }
     s += "from ";
@@ -4344,16 +4344,16 @@ append_forwarded_text(DwString& s, const vc& body)
     handle = uid_to_handle(from, &cant_resolve);
 //    if(cant_resolve)
 //        handle = " ";
-    s += (const char *)handle;
+    s += handle;
     if(cant_resolve)
     {
         fetch_info(from);
         s += " (";
-        s += (const char *)uid_to_short_text(from);
+        s += uid_to_short_text(from);
         s += ")";
     }
     s += "\r\n";
-    s += (const char *)body[QM_BODY_NEW_TEXT];
+    s += body[QM_BODY_NEW_TEXT];
     s += "\r\n---\r\n";
     append_forwarded_text(s, body[QM_BODY_FORWARDED_BODY]);
 }

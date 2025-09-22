@@ -25,6 +25,17 @@ DwString::DwString(const vc& v)
     memcpy(&(*this)[0], (const char *)v, v.len());
     (*this)[v.len()] = 0;
 }
+DwString&
+DwString::operator+=(const vc& s)
+{
+    int l = s.len();
+    int old_count = count;
+    set_size(count + l);
+    char *eos = &(*this)[old_count - 1];
+    memcpy(eos, (const char *)s, l);
+    (*this)[count - 1] = 0;
+    return *this;
+}
 #endif
 
 DwString&

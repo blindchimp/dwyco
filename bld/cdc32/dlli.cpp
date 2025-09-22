@@ -5052,7 +5052,7 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
         nb = strip_chain(body);
         DwString s;
         append_forwarded_text(s, nb);
-        text = s.c_str();
+        text = vc(VC_BSTRING, s.c_str(), s.length());
         body = nb;
     }
 
@@ -5069,7 +5069,7 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
         m->filehash = gen_hash(na);
         m->user_filename = body[QM_BODY_FILE_ATTACHMENT];
     }
-    m->msg_text = (const char *)text;
+    m->msg_text = text;
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_forward_zap: ret %d", m->vp.cookie, 0);
@@ -5234,7 +5234,7 @@ dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
     }
 #endif
 
-    if(!CopyFile(newfn((const char *)attachment).c_str(), dst_filename, 0))
+    if(!CopyFile(newfn(attachment).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
         // file in the first place, and it might be unwritable but
@@ -5292,7 +5292,7 @@ dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
     }
 #endif
 
-    s2 += (const char *)attachment;
+    s2 += attachment;
 
     if(!CopyFile(newfn(s2).c_str(), dst_filename, 0))
     {
