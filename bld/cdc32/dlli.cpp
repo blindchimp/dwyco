@@ -4963,17 +4963,17 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     vc attachment;
     vc from;
 
-    vc u;
+    vc assoc_uid;
 
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    vc summary = find_cur_msg(id);
+    vc mid(VC_BSTRING, msg_id, strlen(msg_id));
+    vc summary = find_cur_msg(mid);
     if(!summary.is_nil())
     {
         GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
         return 0;
     }
 
-    body = direct_to_body(id, u);
+    body = direct_to_body(mid, assoc_uid);
     if(body.is_nil())
     {
         GRTLOG("make_forward_zap: cant find id %s", msg_id, 0);
@@ -4988,14 +4988,14 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     {
         DwString s;
         append_forwarded_text(s, body);
-        text = s.c_str();
+        text = vc(VC_BSTRING, s.c_str(), s.length());
     }
 
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
     else
-        s2 = (const char *)to_hex(u);
+        s2 = (const char *)to_hex(assoc_uid);
 
     DwString na((const char *)to_hex(gen_id()));
 
