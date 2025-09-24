@@ -15,6 +15,6 @@ dwhist2.cc \
 uricodec.cpp \
 dwcls_timer.cpp
 
-INCLUDEPATH = ../kazlib
+INCLUDEPATH = ../kazlib ../vc
 
 
