@@ -277,11 +277,11 @@ dwbasename(const char *name)
 }
 
 int
-is_msg_fn(vc fn)
+is_msg_fn(const vc& fn)
 {
     if(fn.len() != 24)
         return 0;
-    DwString a((const char *)fn);
+    DwString a(fn);
     a.to_lower();
     if(a.find_first_not_of("abcdef0123456789") != 20)
         return 0;
@@ -323,7 +323,7 @@ is_attachment(const vc& fn)
 {
     if(fn.len() != 24)
         return 0;
-    DwString a((const char *)fn);
+    DwString a(fn);
     a.to_lower();
     if(a.find_first_not_of("abcdef0123456789") != 20)
         return 0;
