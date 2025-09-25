@@ -7668,7 +7668,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     // 8: attachment loc
     // 9: special type
 
-    vc msg = m[1][1];
+    const vc msg = m[1][1];
 
     if(msg.is_nil())
     {
@@ -7682,15 +7682,20 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     }
 
     q->body = msg;
-    vc from = msg[QQM_BODY_FROM];
-
-    if(msg[QQM_BODY_ATTACHMENT].is_nil())
+    const vc from = msg[QQM_BODY_FROM];
+    const vc att = msg[QQM_BODY_ATTACHMENT];
+    if(att.is_nil())
     {
 
         add_server_response_to_direct_list(q, msg);
         delete q;
         return;
     }
+
+    // if we already have a message indexed with that attachment, it
+    // is probably a dup, so just reject it outright. this tries to
+    // work around a bug where messages send both directly and via
+    // the server end up referencing the same attachment.
 
     if(msg[QQM_BODY_ATTACHMENT_LOCATION].type() != VC_VECTOR)
     {
@@ -7743,7 +7748,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         port = port + vc(1);
         port = port + vc(DWYCO_SEND_FILE_PORT_OFFSET);
     }
-    if(!(mc = fetch_attachment(msg[QQM_BODY_ATTACHMENT], eo_xfer, m[1], 0, q->vp,
+    if(!(mc = fetch_attachment(att, eo_xfer, m[1], 0, q->vp,
                                set_status, 0, q->vp, ip, port)))
     {
         if(q->msg_download_callback)

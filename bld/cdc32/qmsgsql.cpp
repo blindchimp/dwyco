@@ -217,7 +217,7 @@ QMsgSql::init_schema(const DwString& schema_name)
                 // note: from 6 to 7 were just index changes, so going to 7 then back to 6
                 // should be ok, except i forgot to comment out the debugging stuff below, so
                 // it will crash, oops.
-                if((int)res[0][0] == 7)
+                if((int)res[0][0] == 8)
                 {
                     throw 0;
                 }
@@ -322,7 +322,9 @@ QMsgSql::init_schema(const DwString& schema_name)
             // a simple map for presentation purposes that can be derived without talking to a server
             sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
             sql_simple("create index if not exists gmidx on group_map(gid)");
-            sql_simple("pragma user_version = 7");
+
+            sql_simple("create table if not exists mid_att(mid text not null primary key, att text not null)");
+            sql_simple("pragma user_version = 8");
             sql_commit_transaction();
         }
         catch(...)
@@ -1596,7 +1598,7 @@ exit_qmsg_sql()
 
 static
 void
-sql_insert_record(vc entry, vc assoc_uid)
+sql_insert_record(const vc& entry, const vc& assoc_uid, const vc& att)
 {
     VCArglist a;
 	// +1 because of the sql statement
@@ -1646,6 +1648,10 @@ sql_insert_record(vc entry, vc assoc_uid)
         a[QM_IDX_FROM_GROUP + 1] = to_hex(entry[QM_IDX_FROM_GROUP]);
 
     sql_bulk_query(&a);
+    if(!att.is_nil())
+    {
+        sql_simple("insert into mid_att (mid, att) values(?1, ?2)", a[2], att);
+    }
 }
 
 static
@@ -1666,6 +1672,7 @@ sql_delete_mid(const vc& mid)
             sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
         }
     }
+    sql_simple("delete from mid_att where mid = ?1", mid);
     sql_commit_transaction();
 }
 
@@ -2237,7 +2244,7 @@ sql_count_index(vc uid)
 
 static
 vc
-index_from_body(vc recipient, vc body)
+index_from_body(const vc& recipient,  vc body, vc& att)
 {
     vc uid;
     if(recipient.is_nil())
@@ -2261,6 +2268,7 @@ index_from_body(vc recipient, vc body)
     nentry[QM_IDX_IS_FILE] = body[QM_BODY_FILE_ATTACHMENT].is_nil() ? vcnil : vctrue;
     nentry[QM_IDX_SPECIAL_TYPE] = body[QM_BODY_SPECIAL_TYPE].type() == VC_VECTOR ? body[QM_BODY_SPECIAL_TYPE][0] : vcnil;
     nentry[QM_IDX_HAS_ATTACHMENT] = body[QM_BODY_ATTACHMENT].is_nil() ? vcnil : vctrue;
+    att = body[QM_BODY_ATTACHMENT];
     nentry[QM_IDX_FROM_GROUP] = body[QM_BODY_FROM_GROUP];
     vc lc = body[QM_BODY_LOGICAL_CLOCK];
     // older messages won't have logical clock, so just fall back on the
@@ -2331,7 +2339,9 @@ create_date_index(vc uid)
                 vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
                 if(res.num_elems() > 0)
                     continue;
-                sql_insert_record(index_from_body(uid, info), uid);
+                vc att;
+                vc nentry = index_from_body(uid, info, att);
+                sql_insert_record(nentry, uid, att);
             }
         }
 
@@ -2355,7 +2365,9 @@ create_date_index(vc uid)
                 vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
                 if(res.num_elems() > 0)
                     continue;
-                sql_insert_record(index_from_body(uid, info), uid);
+                vc att;
+                vc nentry = index_from_body(uid, info, att);
+                sql_insert_record(nentry, uid, att);
             }
         }
         sql_simple("delete from msg_idx where assoc_uid = ?1 and mid not in (select * from found_mid)", huid);
@@ -2570,7 +2582,8 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     GRTLOGVC(date);
     GRTLOGVC(logical_clock);
 
-    vc nentry = index_from_body(recip, body);
+    vc att;
+    vc nentry = index_from_body(recip, body, att);
     GRTLOGVC(nentry);
     int ret = 0;
     try
@@ -2583,7 +2596,7 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
         // somehow. the reason this bug went for so long was probably
         // because it was masked by the "rescan" triggers being updated.
         vc res = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", to_hex(uid));
-        sql_insert_record(nentry, uid);
+        sql_insert_record(nentry, uid, att);
         if(res.num_elems() == 0)
         {
             se_emit(SE_USER_ADD, uid);

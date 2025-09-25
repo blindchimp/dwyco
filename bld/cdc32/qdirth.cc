@@ -609,6 +609,7 @@ dirth_send_ack_get(vc uid, vc mid, QckDone d)
     m[QFROM] = uid;
     m[2] = mid;
     dirth_send(m, d);
+    sql_add_tag(mid, "_ack");
 }
 
 // NOTE: contrast to ack_get: ack_get2 is "don't return this

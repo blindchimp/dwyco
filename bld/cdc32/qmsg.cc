@@ -2199,6 +2199,12 @@ query_done(vc m, void *, vc, ValidPtr)
         // this is a hack, for sure... really need to have some consistent way of
         // assiging lc's for each path thru the system. maybe the server even
         // needs to have its own lc
+
+        // BUG: here is where we can get confused since we re-wrote the mid
+        // locally in a call to "store_direct". the mid in the server does not
+        // match the local one anymore, so we really need to get this squared away.
+        // this is almost certainly the cause of the problem "double-delivery" with
+        // the same attachments
         vc mid = v[QM_ID];
         // if we have already fetched the message and it is local, just
         // ack it automatically so we don't keep refetching it.
@@ -2214,6 +2220,15 @@ query_done(vc m, void *, vc, ValidPtr)
             // continue out  before...
             continue;
         }
+        // if we have already "ack"ed it to the server, but somehow
+        // the server didn't get the ack. if one of the two conditions above
+        // isn't true, we definitely have some odd state going on.
+        // have to think about this.
+        if(sql_mid_has_tag(mid, "_ack"))
+        {
+            continue;
+        }
+
         if(!Mid_to_logical_clock.contains(mid))
         {
             long lc;
@@ -2280,7 +2295,9 @@ store_direct(MMChannel *m, vc msg, void *)
     // if we're not the recipient then drop the
     // channel so it goes thru the server
     // vector(vector(recipients...) vector(fromid text_message attachid vector(yy dd hh mm ss) rating)
-
+    // i'm not sure this check makes any sense in the group world any more, since
+    // the recipient can be changed depending on foreground/background and so on.
+    //
     if(!My_UID.is_nil() && msg[QQM_RECIP_VEC][0] != My_UID)
     {
         GRTLOG("ok not sent", 0, 0);
