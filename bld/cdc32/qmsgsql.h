@@ -81,6 +81,7 @@ void import_remote_tupdate(cvcr remote_uid, cvcr vals);
 vc sql_get_non_local_messages_at_uid(vc uid, int max_count);
 vc sql_get_non_local_messages_at_uid_recent(vc uid, int max_count);
 vc sql_uid_updated_since(vc time);
+int sql_attachment_already_received(const vc& att_name);
 
 vc sql_dump_mi();
 vc sql_dump_mt();

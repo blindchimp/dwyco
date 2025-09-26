@@ -1676,6 +1676,17 @@ sql_delete_mid(const vc& mid)
     sql_commit_transaction();
 }
 
+int
+sql_attachment_already_received(const vc& att_name)
+{
+    if(att_name.is_nil())
+        return 0;
+    vc res = sql_simple("select 1 from mid_att where att = ?1 limit 1", att_name);
+    if(res.num_elems() == 0)
+        return 0;
+    return 1;
+}
+
 long
 sql_get_max_logical_clock()
 {

@@ -7696,6 +7696,17 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     // is probably a dup, so just reject it outright. this tries to
     // work around a bug where messages send both directly and via
     // the server end up referencing the same attachment.
+    if(sql_attachment_already_received(att))
+    {
+        if(q->msg_download_callback)
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, from);
+        dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
+        q->cancel();
+        delete q;
+        return;
+    }
+
 
     if(msg[QQM_BODY_ATTACHMENT_LOCATION].type() != VC_VECTOR)
     {

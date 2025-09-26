@@ -14,6 +14,7 @@
 #include "qauth.h"
 #include "servass.h"
 #include "fnmod.h"
+#include "qmsgsql.h"
 
 using namespace dwyco;
 
@@ -313,12 +314,14 @@ MMChannel::regular_control_procedures2(vc v)
 }
 
 static
-void
+int
 save_small_attachment(vc qqm, vc att_contents)
 {
     vc file_basename = qqm[QQM_MSG_VEC][QQM_BODY_ATTACHMENT];
     if(!is_attachment(file_basename))
-        return;
+        return 0;
+    if(sql_attachment_already_received(file_basename))
+        return 0;
     DwString actual_filename = newfn(file_basename);
     // if an error happens in here, we can't really do much about it
     // except avoid leaving crumbs... when the message is eventually
@@ -327,15 +330,16 @@ save_small_attachment(vc qqm, vc att_contents)
     if(!f)
     {
         DeleteFile(actual_filename.c_str());
-        return;
+        return 0;
     }
     if(fwrite((const char *)att_contents, att_contents.len(), 1, f) != 1)
     {
         fclose(f);
         DeleteFile(actual_filename.c_str());
-        return;
+        return 0;
     }
     fclose(f);
+    return 1;
 }
 
 void
@@ -353,9 +357,13 @@ MMChannel::process_with_response(vc v)
             // if there is a small inline attachment, drop that out now
             if(!v[2].is_nil())
             {
-                save_small_attachment(v[1], v[2]);
+                if(save_small_attachment(v[1], v[2]))
+                     (*store_message_callback)(this, v[1], smcb_arg2);
             }
-            (*store_message_callback)(this, v[1], smcb_arg2);
+            else
+            {
+                 (*store_message_callback)(this, v[1], smcb_arg2);
+            }
         }
         vc resp(VC_VECTOR);
         vc tp(VC_VECTOR);
