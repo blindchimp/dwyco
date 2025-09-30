@@ -117,6 +117,12 @@ qt_add_executable(phoo
 
 
 )
+
+if (ANDROID)
+    include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
+    add_android_openssl_libraries(phoo)
+endif()
+
 qt_add_ios_ffmpeg_libraries(phoo)
 
 
@@ -226,8 +232,9 @@ set_target_properties(phoo PROPERTIES
     QT_ANDROID_TARGET_SDK_VERSION 35
 
 )
+set_property(TARGET phoo APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
 set_target_properties(phoo PROPERTIES
- QT_ANDROID_EXTRA_LIBS "${androidlibs}"
+ #QT_ANDROID_EXTRA_LIBS "${androidlibs}"
  QT_ANDROID_VERSION_NAME ${PHOO_VERSION_NAME}
  QT_ANDROID_VERSION_CODE ${PHOO_VERSION_CODE}
 

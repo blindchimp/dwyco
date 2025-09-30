@@ -365,6 +365,7 @@ bld/vorbis/vq/.deps/
 bld/vorbis/vq/Makefile
 randobld/jni/cdc32
 randobld/jni/crypto5
+randobld/jni/crypto8
 randobld/jni/dwcls
 randobld/jni/gsm
 randobld/jni/jenkins
