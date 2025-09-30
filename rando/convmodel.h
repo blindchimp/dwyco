@@ -10,7 +10,7 @@
 #define CONVMODEL_H
 
 #include <QObject>
-#include "QSortFilterProxyModel"
+#include <QSortFilterProxyModel>
 #include "QQmlObjectListModel.h"
 #include "QQmlVarPropertyHelpers.h"
 
