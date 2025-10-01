@@ -230,7 +230,7 @@ QMsgSql::init_schema(const DwString& schema_name)
                 // note: from 6 to 7 were just index changes, so going to 7 then back to 6
                 // should be ok, except i forgot to comment out the debugging stuff below, so
                 // it will crash, oops.
-                if((int)res[0][0] == 7)
+                if((int)res[0][0] == 6)
                 {
                     throw 0;
                 }
@@ -331,7 +331,7 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
             sql_simple("create index if not exists gmidx on group_map(gid)");
 
-            sql_simple("pragma user_version = 7");
+            sql_simple("pragma user_version = 6");
             sql_commit_transaction();
         }
         catch(int i)
