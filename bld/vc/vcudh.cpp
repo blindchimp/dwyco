@@ -438,10 +438,9 @@ vclh_dh_store_and_forward_get_key(vc sfpack, vc our_material)
 
 static
 vc
-check_and_get_key(vc pack, vc our_material, vc checkstr)
+check_and_get_key(const vc& pack, const vc& our_material, const vc& checkstr)
 {
     SecByteBlock akey(EphDH->AgreedValueLength());
-    ECB_Mode<AES>::Encryption kc;
 
     if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[DH_STATIC_PRIVATE],
                      (const byte *)(const char *)pack[1]))
@@ -467,7 +466,7 @@ check_and_get_key(vc pack, vc our_material, vc checkstr)
     }
 
     // test the key, return if it looks ok
-
+    ECB_Mode<AES>::Encryption kc;
     kc.SetKey(sk, sk.SizeInBytes());
     byte buf[16];
     memset(buf, 0, sizeof(buf));

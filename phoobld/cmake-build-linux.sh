@@ -1,5 +1,5 @@
 #!/bin/sh
-QTDIR="$HOME/Qt/6.8.3/gcc_64"
+QTDIR="$HOME/Qt/6.8.2/gcc_64"
 export PATH=$QTDIR/bin:$PATH
 export CMAKE_CXX_COMPILER_LAUNCHER=ccache
 

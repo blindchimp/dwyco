@@ -4963,17 +4963,17 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     vc attachment;
     vc from;
 
-    vc u;
+    vc assoc_uid;
 
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    vc summary = find_cur_msg(id);
+    vc mid(VC_BSTRING, msg_id, strlen(msg_id));
+    vc summary = find_cur_msg(mid);
     if(!summary.is_nil())
     {
         GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
         return 0;
     }
 
-    body = direct_to_body(id, u);
+    body = direct_to_body(mid, assoc_uid);
     if(body.is_nil())
     {
         GRTLOG("make_forward_zap: cant find id %s", msg_id, 0);
@@ -4988,14 +4988,14 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     {
         DwString s;
         append_forwarded_text(s, body);
-        text = s.c_str();
+        text = vc(VC_BSTRING, s.c_str(), s.length());
     }
 
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
     else
-        s2 = (const char *)to_hex(u);
+        s2 = (const char *)to_hex(assoc_uid);
 
     DwString na((const char *)to_hex(gen_id()));
 
@@ -5052,7 +5052,7 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
         nb = strip_chain(body);
         DwString s;
         append_forwarded_text(s, nb);
-        text = s.c_str();
+        text = vc(VC_BSTRING, s.c_str(), s.length());
         body = nb;
     }
 
@@ -5069,7 +5069,7 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
         m->filehash = gen_hash(na);
         m->user_filename = body[QM_BODY_FILE_ATTACHMENT];
     }
-    m->msg_text = (const char *)text;
+    m->msg_text = text;
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_forward_zap: ret %d", m->vp.cookie, 0);
@@ -5234,7 +5234,7 @@ dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
     }
 #endif
 
-    if(!CopyFile(newfn((const char *)attachment).c_str(), dst_filename, 0))
+    if(!CopyFile(newfn(attachment).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
         // file in the first place, and it might be unwritable but
@@ -5292,7 +5292,7 @@ dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
     }
 #endif
 
-    s2 += (const char *)attachment;
+    s2 += attachment;
 
     if(!CopyFile(newfn(s2).c_str(), dst_filename, 0))
     {
@@ -7668,7 +7668,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     // 8: attachment loc
     // 9: special type
 
-    vc msg = m[1][1];
+    const vc msg = m[1][1];
 
     if(msg.is_nil())
     {
@@ -7682,15 +7682,31 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     }
 
     q->body = msg;
-    vc from = msg[QQM_BODY_FROM];
-
-    if(msg[QQM_BODY_ATTACHMENT].is_nil())
+    const vc from = msg[QQM_BODY_FROM];
+    const vc att = msg[QQM_BODY_ATTACHMENT];
+    if(att.is_nil())
     {
 
         add_server_response_to_direct_list(q, msg);
         delete q;
         return;
     }
+
+    // if we already have a message indexed with that attachment, it
+    // is probably a dup, so just reject it outright. this tries to
+    // work around a bug where messages send both directly and via
+    // the server end up referencing the same attachment.
+    if(sql_attachment_already_received(att))
+    {
+        if(q->msg_download_callback)
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, from);
+        dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
+        q->cancel();
+        delete q;
+        return;
+    }
+
 
     if(msg[QQM_BODY_ATTACHMENT_LOCATION].type() != VC_VECTOR)
     {
@@ -7743,7 +7759,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         port = port + vc(1);
         port = port + vc(DWYCO_SEND_FILE_PORT_OFFSET);
     }
-    if(!(mc = fetch_attachment(msg[QQM_BODY_ATTACHMENT], eo_xfer, m[1], 0, q->vp,
+    if(!(mc = fetch_attachment(att, eo_xfer, m[1], 0, q->vp,
                                set_status, 0, q->vp, ip, port)))
     {
         if(q->msg_download_callback)

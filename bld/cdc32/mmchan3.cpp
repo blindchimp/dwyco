@@ -782,6 +782,11 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
 
     if(!is_attachment(remote_fn))
         return sproto::alt_next;
+    // this is a hack to avoid having messages with attachments
+    // coming from two paths referencing the same file.
+    if(sql_attachment_already_received(remote_fn))
+        return sproto::alt_next;
+
     DwString actual_fn = newfn(remote_fn);
     write_fd = fopen(actual_fn.c_str(), "wb");
     if(!write_fd)

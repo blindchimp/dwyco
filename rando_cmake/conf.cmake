@@ -10,6 +10,7 @@ add_compile_definitions(
 	CDCCORE_STATIC
 	DWYCO_FORCE_DESKTOP_VGQT
         NO_DWYCO_AUDIO
+	DWYCO_VC_CONV
 )
 # Determine the host platform
 if(UNIX)

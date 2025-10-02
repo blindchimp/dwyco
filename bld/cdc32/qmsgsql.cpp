@@ -52,6 +52,8 @@ using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
 ssns::signal1<vc> Qmsg_update;
 
+// the argument should be the number of the "uid" in the arg list for the query.
+// so, if the uid is the second arg (ie, ?2), argnum should be 2.
 #define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
 class QMsgSql : public SimpleSql
@@ -131,11 +133,13 @@ QMsgSql::init_schema_fav()
         const vc& res = sql_simple("pragma mt.user_version");
         if((int)res[0][0] == 2)
             throw 0;
+#ifdef DWYCO_DBG_SCHEMA
         if((int)res[0][0] != 0)
         {
             // note: remove and rebuild old databases during debugging
             oopanic("old tags found");
         }
+#endif
         sql_simple("create table if not exists mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("create table if not exists mt.gmt("
                    "mid text not null, "
@@ -209,20 +213,38 @@ QMsgSql::init_schema(const DwString& schema_name)
                 // us from mistakenly running on a database we have
                 // upgraded during debugging.remove this once
                 // experiments are merged.
+
+                // this is cheap, so do it whether or not the schema version changes.
+                // this doesn't warrant a version update (which would make old
+                // software crash, and not be able to connect to sync.)
+                sql_start_transaction();
+                sql_simple("drop index if exists gisent_idx");
+                sql_simple("drop index if exists giatt_idx");
+                sql_simple("drop index if exists gifrom_group");
+                sql_simple("drop index if exists sent_idx");
+                sql_simple("drop index if exists att_idx");
+                sql_simple("create table if not exists mid_att(mid text not null primary key, att text not null)");
+                sql_commit_transaction();
+
                 const vc& res = sql_simple("pragma user_version");
+                // note: from 6 to 7 were just index changes, so going to 7 then back to 6
+                // should be ok, except i forgot to comment out the debugging stuff below, so
+                // it will crash, oops.
                 if((int)res[0][0] == 6)
                 {
                     throw 0;
                 }
+#ifdef DWYCO_DBG_SCHEMA
                 if((int)res[0][0] != 0)
                 {
                     // note: remove and rebuild old databases during debugging
 
                     oopanic("old database found");
                 }
+#endif
             }
 
-            sql_simple("create table schema_sections(name primary key not null, val)");
+            sql_simple("create table if not exists schema_sections(name primary key not null, val)");
 
             // WARNING: the order and number of the fields in this table
             // is the same as the #defines for the msg index in
@@ -251,8 +273,8 @@ QMsgSql::init_schema(const DwString& schema_name)
             // NOTE: these indexes need to be dropped
             // if we have a query that is based on global "has_attachment", a partial
             // index might be more useful.
-            sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
-            sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
+            // sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
+            // sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
             sql_simple("create table if not exists dir_meta(dirname text collate nocase primary key not null, time integer default 0)");
 
@@ -290,10 +312,9 @@ QMsgSql::init_schema(const DwString& schema_name)
             // if we have a query that is based on global "has_attachment", a partial
             // index might be more useful.
             // likewise for from_group
-            sql_simple("create index if not exists gisent_idx on gi(is_sent)");
-            sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
-            sql_simple("create index if not exists gifrom_group on gi(from_group)");
-
+            // sql_simple("create index if not exists gisent_idx on gi(is_sent)");
+            // sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
+            // sql_simple("create index if not exists gifrom_group on gi(from_group)");
 
             sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
             sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
@@ -309,12 +330,16 @@ QMsgSql::init_schema(const DwString& schema_name)
             // a simple map for presentation purposes that can be derived without talking to a server
             sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
             sql_simple("create index if not exists gmidx on group_map(gid)");
+
             sql_simple("pragma user_version = 6");
             sql_commit_transaction();
         }
-        catch(...)
+        catch(int i)
         {
-            sql_rollback_transaction();
+            if(i == 0)
+                sql_commit_transaction();
+            else
+                sql_rollback_transaction();
         }
     }
     else if(schema_name.eq("mt"))
@@ -1583,7 +1608,7 @@ exit_qmsg_sql()
 
 static
 void
-sql_insert_record(vc entry, vc assoc_uid)
+sql_insert_record(const vc& entry, const vc& assoc_uid, const vc& att)
 {
     VCArglist a;
 	// +1 because of the sql statement
@@ -1633,13 +1658,43 @@ sql_insert_record(vc entry, vc assoc_uid)
         a[QM_IDX_FROM_GROUP + 1] = to_hex(entry[QM_IDX_FROM_GROUP]);
 
     sql_bulk_query(&a);
+    if(!att.is_nil())
+    {
+        sql_simple("insert into mid_att (mid, att) values(?1, ?2)", a[2], att);
+    }
 }
 
 static
 void
-sql_delete_mid(vc mid)
+sql_delete_mid(const vc& mid)
 {
-    sql_simple("delete from msg_idx where mid = ?1", mid);
+    // note: if it isn't in the msg_idx, but it is not downloaded here
+    // we still might find it in gi. but deleting it from the msg_idx
+    // will trigger the updates needed.
+    sql_start_transaction();
+    vc res = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
+    if(res.num_elems() == 0)
+    {
+        // still might find it in gi, so try that
+        res = sql_simple("delete from gi where mid = ?1 returning 1", mid);
+        if(res.num_elems() > 0)
+        {
+            sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
+        }
+    }
+    sql_simple("delete from mid_att where mid = ?1", mid);
+    sql_commit_transaction();
+}
+
+int
+sql_attachment_already_received(const vc& att_name)
+{
+    if(att_name.is_nil())
+        return 0;
+    vc res = sql_simple("select 1 from mid_att where att = ?1 limit 1", att_name);
+    if(res.num_elems() == 0)
+        return 0;
+    return 1;
 }
 
 long
@@ -2210,7 +2265,7 @@ sql_count_index(vc uid)
 
 static
 vc
-index_from_body(vc recipient, vc body)
+index_from_body(const vc& recipient,  vc body, vc& att)
 {
     vc uid;
     if(recipient.is_nil())
@@ -2234,6 +2289,7 @@ index_from_body(vc recipient, vc body)
     nentry[QM_IDX_IS_FILE] = body[QM_BODY_FILE_ATTACHMENT].is_nil() ? vcnil : vctrue;
     nentry[QM_IDX_SPECIAL_TYPE] = body[QM_BODY_SPECIAL_TYPE].type() == VC_VECTOR ? body[QM_BODY_SPECIAL_TYPE][0] : vcnil;
     nentry[QM_IDX_HAS_ATTACHMENT] = body[QM_BODY_ATTACHMENT].is_nil() ? vcnil : vctrue;
+    att = body[QM_BODY_ATTACHMENT];
     nentry[QM_IDX_FROM_GROUP] = body[QM_BODY_FROM_GROUP];
     vc lc = body[QM_BODY_LOGICAL_CLOCK];
     // older messages won't have logical clock, so just fall back on the
@@ -2304,7 +2360,9 @@ create_date_index(vc uid)
                 vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
                 if(res.num_elems() > 0)
                     continue;
-                sql_insert_record(index_from_body(uid, info), uid);
+                vc att;
+                vc nentry = index_from_body(uid, info, att);
+                sql_insert_record(nentry, uid, att);
             }
         }
 
@@ -2328,7 +2386,9 @@ create_date_index(vc uid)
                 vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
                 if(res.num_elems() > 0)
                     continue;
-                sql_insert_record(index_from_body(uid, info), uid);
+                vc att;
+                vc nentry = index_from_body(uid, info, att);
+                sql_insert_record(nentry, uid, att);
             }
         }
         sql_simple("delete from msg_idx where assoc_uid = ?1 and mid not in (select * from found_mid)", huid);
@@ -2543,7 +2603,8 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     GRTLOGVC(date);
     GRTLOGVC(logical_clock);
 
-    vc nentry = index_from_body(recip, body);
+    vc att;
+    vc nentry = index_from_body(recip, body, att);
     GRTLOGVC(nentry);
     int ret = 0;
     try
@@ -2556,7 +2617,7 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
         // somehow. the reason this bug went for so long was probably
         // because it was masked by the "rescan" triggers being updated.
         vc res = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", to_hex(uid));
-        sql_insert_record(nentry, uid);
+        sql_insert_record(nentry, uid, att);
         if(res.num_elems() == 0)
         {
             se_emit(SE_USER_ADD, uid);

@@ -9,9 +9,17 @@
 # and run the build-aab.sh script that is in
 # deploy-rando.
 # we don't put build-aab.sh here since it contains private keys.
+#
+# note: we don't need to set a bunch of stuff since qt-cmake
+# seems to bind itself by default to the "host build" when we
+# built android-qt
 
 #/home/dwight/android682_arm64-v8a/bin/qt-cmake -S /home/dwight/git/dwyco/rando -B /tmp/r -GNinja
-$HOME/syncdev/qta682/android682_x86_64/bin/qt-cmake -S $HOME/git/dwyco/rando -B /tmp/r -GNinja \
+#-D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" 
+
+$HOME/syncdev/qta682/android682_x86_64/bin/qt-cmake \
+-D CMAKE_BUILD_TYPE=Release \
+-S $HOME/git/dwyco/rando -B /tmp/r -GNinja \
 -DQT_ANDROID_BUILD_ALL_ABIS=TRUE \
 -DQT_PATH_ANDROID_ABI_arm64-v8a="$HOME/syncdev/qta682/android682_arm64_v8a" \
 -DQT_PATH_ANDROID_ABI_x86_64="$HOME/syncdev/qta682/android682_x86_64" \

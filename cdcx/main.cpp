@@ -248,7 +248,9 @@ int main(int argc, char *argv[])
 #if !defined(CDCX_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
-
+#ifdef WIN32
+    QApplication::setStyle("windowsvista");
+#endif
     QApplication app(argc, argv);
     srand(time(0));
     AvoidSSL = !QSslSocket::supportsSsl();

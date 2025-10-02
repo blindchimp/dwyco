@@ -2199,6 +2199,12 @@ query_done(vc m, void *, vc, ValidPtr)
         // this is a hack, for sure... really need to have some consistent way of
         // assiging lc's for each path thru the system. maybe the server even
         // needs to have its own lc
+
+        // BUG: here is where we can get confused since we re-wrote the mid
+        // locally in a call to "store_direct". the mid in the server does not
+        // match the local one anymore, so we really need to get this squared away.
+        // this is almost certainly the cause of the problem "double-delivery" with
+        // the same attachments
         vc mid = v[QM_ID];
         // if we have already fetched the message and it is local, just
         // ack it automatically so we don't keep refetching it.
@@ -2214,6 +2220,15 @@ query_done(vc m, void *, vc, ValidPtr)
             // continue out  before...
             continue;
         }
+        // if we have already "ack"ed it to the server, but somehow
+        // the server didn't get the ack. if one of the two conditions above
+        // isn't true, we definitely have some odd state going on.
+        // have to think about this.
+        if(sql_mid_has_tag(mid, "_ack"))
+        {
+            continue;
+        }
+
         if(!Mid_to_logical_clock.contains(mid))
         {
             long lc;
@@ -2280,7 +2295,9 @@ store_direct(MMChannel *m, vc msg, void *)
     // if we're not the recipient then drop the
     // channel so it goes thru the server
     // vector(vector(recipients...) vector(fromid text_message attachid vector(yy dd hh mm ss) rating)
-
+    // i'm not sure this check makes any sense in the group world any more, since
+    // the recipient can be changed depending on foreground/background and so on.
+    //
     if(!My_UID.is_nil() && msg[QQM_RECIP_VEC][0] != My_UID)
     {
         GRTLOG("ok not sent", 0, 0);
@@ -3123,17 +3140,28 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
     s += t;
     DwString s2 = s;
     s += ".bod";
-
-    vc msg;
-    if(load_info(msg, s.c_str(), 1))
+    // note change: previously if we couldn't find the message in the
+    // fs, we didn't unindex it. delete now means "unindex it, and remove it
+    // from the fs too. this avoids situations where "deleting" an entry in
+    // a model that can't be found would quietly ignore the delete and the
+    // thing was effectively undeletable.
+    if(!inhibit_indexing)
     {
-        if(!inhibit_indexing)
+        try
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
             sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
+    }
+    vc msg;
+    if(load_info(msg, s.c_str(), 1))
+    {
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s.c_str());
@@ -3142,13 +3170,6 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
     s2 += ".snt";
     if(load_info(msg, s2.c_str(), 1))
     {
-        if(!inhibit_indexing)
-        {
-            sql_start_transaction();
-            remove_msg_idx(uid, msg_id);
-            sql_remove_all_tags_mid(msg_id);
-            sql_commit_transaction();
-        }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
@@ -4323,16 +4344,16 @@ append_forwarded_text(DwString& s, const vc& body)
         handle = uid_to_handle(from, &cant_resolve);
 //        if(cant_resolve)
 //            handle = " ";
-        s += (const char *)handle;
+        s += handle;
         if(cant_resolve)
         {
             fetch_info(from);
             s += " (";
-            s += (const char *)uid_to_short_text(from);
+            s += uid_to_short_text(from);
             s += ")";
         }
         s += "\r\n";
-        s += (const char *)body[QM_BODY_NEW_TEXT];
+        s += body[QM_BODY_NEW_TEXT];
         return;
     }
     s += "from ";
@@ -4340,16 +4361,16 @@ append_forwarded_text(DwString& s, const vc& body)
     handle = uid_to_handle(from, &cant_resolve);
 //    if(cant_resolve)
 //        handle = " ";
-    s += (const char *)handle;
+    s += handle;
     if(cant_resolve)
     {
         fetch_info(from);
         s += " (";
-        s += (const char *)uid_to_short_text(from);
+        s += uid_to_short_text(from);
         s += ")";
     }
     s += "\r\n";
-    s += (const char *)body[QM_BODY_NEW_TEXT];
+    s += body[QM_BODY_NEW_TEXT];
     s += "\r\n---\r\n";
     append_forwarded_text(s, body[QM_BODY_FORWARDED_BODY]);
 }

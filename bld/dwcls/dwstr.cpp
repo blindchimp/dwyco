@@ -15,6 +15,29 @@
 #include <io.h>
 #endif
 
+#ifdef DWYCO_VC_CONV
+#include "vc.h"
+DwString::DwString(const vc& v)
+    : DwVec<char>(v.len() + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64, 0, 1)
+{
+    if(v.type() != VC_STRING)
+        oopanic("bad vc dwstring conversion");
+    memcpy(&(*this)[0], (const char *)v, v.len());
+    (*this)[v.len()] = 0;
+}
+DwString&
+DwString::operator+=(const vc& s)
+{
+    int l = s.len();
+    int old_count = count;
+    set_size(count + l);
+    char *eos = &(*this)[old_count - 1];
+    memcpy(eos, (const char *)s, l);
+    (*this)[count - 1] = 0;
+    return *this;
+}
+#endif
+
 DwString&
 DwString::tr(char from, char to)
 {

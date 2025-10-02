@@ -79,6 +79,11 @@ qt_add_executable(rando
    ${SRCS}
 )
 
+if (ANDROID)
+    include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
+    add_android_openssl_libraries(rando)
+endif()
+
 qt_add_qml_module(rando
     URI dwyco
     VERSION 1.0
@@ -150,8 +155,11 @@ set_target_properties(rando PROPERTIES
     QT_ANDROID_TARGET_SDK_VERSION 35
 
 )
+
+# we put openssl in, so don't override it, just append our stuff
+set_property(TARGET rando APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
 set_target_properties(rando PROPERTIES
- QT_ANDROID_EXTRA_LIBS "${androidlibs}"
+ #QT_ANDROID_EXTRA_LIBS "${androidlibs}"
  QT_ANDROID_VERSION_NAME ${RANDO_VERSION_NAME}
  QT_ANDROID_VERSION_CODE ${RANDO_VERSION_CODE}
 
