@@ -166,31 +166,46 @@ backup_msg(const vc& uid, const vc& mid)
             actual_fn += (const char *)attfn;
             if(access(actual_fn.c_str(), 0) != 0)
             {
-                throw -1;
+                throw -2;
             }
             struct stat s;
             if(stat(actual_fn.c_str(), &s) == -1)
-                throw -1;
+                throw -2;
             int fd = open(actual_fn.c_str(), O_RDONLY);
             if(fd == -1)
-                throw -1;
+                throw -2;
             buf = new char[s.st_size];
             if(buf == 0)
-                throw -1;
+                throw -2;
             if(read(fd, buf, s.st_size) != s.st_size)
-                throw -1;
+                throw -2;
             sql_insert_record(uid, mid, ret, attfn, vc(VC_BSTRING, buf, s.st_size));
             delete [] buf;
             buf = 0;
             close(fd);
         }
-        catch(...)
+        catch(int e)
         {
             if(fd != -1)
                 close(fd);
             delete [] buf;
-            // note: this is probably not a good idea
-            //sql_insert_record(uid, mid, ret, attfn, "");
+            if(e == -2)
+            {
+                // the message is corrupt or we couldn't
+                // get it loaded for some reason.
+                // just ignore the error
+                return;
+            }
+            // database error, probably need to have a real
+            // error type for this rather than "-1"
+            throw;
+        }
+        catch(...)
+        {
+            // all other error's are probably database related, so
+            // this means "terminate the backup", likely for
+            // the case where we are limiting the size for android
+            // backup.
             throw;
         }
 
