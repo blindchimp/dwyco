@@ -1,5 +1,5 @@
 
-# note: it isn't clear from the docs that we spec the signing here whle configuring, but
+# note: it isn't clear from the docs that we spec the signing here while configuring, but
 # the details of the signing keys and whatnot are provided via environment
 # variables during the build process. maybe there is a way to do that
 # in cmake i'm just not aware of...
