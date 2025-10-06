@@ -11,7 +11,7 @@ set(RANDO_VERSION "4.315")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
 set(RANDO_VERSION_CODE 3000182)
 if (ANDROID)
-    include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
+    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -80,7 +80,7 @@ qt_add_executable(rando
 )
 
 if (ANDROID)
-    include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
+    #include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
     add_android_openssl_libraries(rando)
 endif()
 

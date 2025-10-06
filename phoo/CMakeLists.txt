@@ -11,7 +11,7 @@ set(PHOO_VERSION "4.403")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
 set(PHOO_VERSION_CODE 2000129)
 if (ANDROID)
-    include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
+    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -119,7 +119,7 @@ qt_add_executable(phoo
 )
 
 if (ANDROID)
-    include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
+    #include(/Users/dwight/Library/Android/Sdk/android_openssl/android_openssl.cmake)
     add_android_openssl_libraries(phoo)
 endif()
 
