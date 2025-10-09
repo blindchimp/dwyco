@@ -120,7 +120,7 @@ qt_add_executable(phoo
 
 if (ANDROID)
     #include(/Users/dwight/Library/Android/Sdk/android_openssl/android_openssl.cmake)
-    add_android_openssl_libraries(phoo)
+    #add_android_openssl_libraries(phoo)
 endif()
 
 qt_add_ios_ffmpeg_libraries(phoo)
