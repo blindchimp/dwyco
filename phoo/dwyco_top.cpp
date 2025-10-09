@@ -1847,7 +1847,11 @@ DwycoCore::init()
 
     DVP::init_dvp();
     simple_call::init(this);
+#ifdef ANDROID
+    AvoidSSL = 1;
+#else
     AvoidSSL = !QSslSocket::supportsSsl();
+#endif
     if(!AvoidSSL)
     {
         // this is a silly hack for linux desktop where we end up
