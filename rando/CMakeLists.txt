@@ -7,11 +7,12 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.315")
+set(RANDO_VERSION "4.320")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000182)
+set(RANDO_VERSION_CODE 3000183)
+set(QT_ANDROID_TARGET_SDK_VERSION 35)
 if (ANDROID)
-    include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
+    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -80,7 +81,7 @@ qt_add_executable(rando
 )
 
 if (ANDROID)
-    include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
+    #include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
     add_android_openssl_libraries(rando)
 endif()
 
@@ -153,6 +154,10 @@ set_target_properties(rando PROPERTIES
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
     QT_ANDROID_TARGET_SDK_VERSION 35
+    # this doesn't seem to be available in qt 6.8 (maybe 6.9?)
+    # the workaround is to uninstall the android-36 sdk or figure out
+    # how to fiddle with gradle.properties manually or something stupid
+    QT_ANDROID_COMPILE_SDK_VERSION "android-35"
 
 )
 

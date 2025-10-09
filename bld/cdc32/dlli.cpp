@@ -5197,7 +5197,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
     m->file_basename = out_fn.c_str();
     m->actual_filename = newfn(out_fn);
     m->filehash = gen_hash(out_fn.c_str());
-    m->user_filename = dwbasename(a.c_str()).c_str();
+    m->user_filename = dwbasename(a).c_str();
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_file_zap: ret %d", m->vp.cookie, 0);

@@ -1341,7 +1341,7 @@ FindVec::find_to_vec(const char *pat)
     for(i = 0; i < glb.gl_pathc; ++i)
     {
         DwString a(glb.gl_pathv[i]);
-        a = dwbasename(a.c_str());
+        a = dwbasename(a);
         ret[i] = new WIN32_FIND_DATA;
         memset(ret[i], 0, sizeof(*ret[i]));
         strncpy(ret[i]->cFileName, a.c_str(), sizeof(ret[i]->cFileName) - 1);
@@ -4426,7 +4426,7 @@ remove_all_but(const char *fn, vc nodel)
 
 static
 void
-find_files_to_keep(DwString subdir, DwString pat, vc nodel)
+find_files_to_keep(const DwString& subdir, const DwString& pat, vc nodel)
 {
     DwString match(newfn(subdir));
 
@@ -4521,9 +4521,11 @@ clean_cruft()
     remove_all_but("*.aux", nodel);
     DwString d1, user, tmp;
     get_fn_prefixes(d1, user, tmp);
-// note: this is a good cleanup, but we can't do it as long as we
-// are keeping the remote index databases in tmp.
-#if 0
+    // note: this is a good cleanup, but we want to keep
+    // the *.tdb files longer. this needs a bit of a rework
+    // to put the "long-term" cache files someplace, but since
+    // this function is a kluge anyway, just special-case it
+#if 1
     // this is a bit dangerous, but for this one case where the
     // names are identical except for a "/tmp/" on the end of the
     // tmp pfx, we'll delete all the files in that path
@@ -4538,8 +4540,11 @@ clean_cruft()
         for(int i = 0; i < nn; ++i)
         {
             const WIN32_FIND_DATA& n = *fv[i];
+            DwString fn = n.cFileName;
+            if(fn.find(".tdb", fn.length() - 4) == fn.length() - 4)
+                continue;
             DwString tfn = tmp;
-            tfn += n.cFileName;
+            tfn += fn;
             DeleteFile(tfn.c_str());
 
         }

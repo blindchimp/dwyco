@@ -236,25 +236,8 @@ newfn(const char *fn)
 }
 #endif
 
-// for cases where we want to force the location of
-// the file
 DwString
-newfn_userpfx(const char *fn)
-{
-    DwString a(fn);
-    if(!Do_fnmod)
-        return a;
-
-    if(!User_prefix)
-        return a;
-    DwString p(User_prefix);
-    p += a;
-    return p;
-
-}
-
-DwString
-prepend_pfx(const char *subdir, const char *fn)
+prepend_pfx(const char *subdir, const vc& fn)
 {
     DwString a(subdir);
     a = newfn(a);
@@ -266,7 +249,7 @@ prepend_pfx(const char *subdir, const char *fn)
 // misc filename modification things
 
 DwString
-dwbasename(const char *name)
+dwbasename(const DwString& name)
 {
     DwString f(name);
     auto b = f.rfind(DIRSEPSTR);
@@ -367,7 +350,7 @@ fn_extension(vc fn)
 DwString
 fn_base_wo_extension(const DwString& fn)
 {
-    DwString base = dwbasename(fn.c_str());
+    DwString base = dwbasename(fn);
     int c = base.rfind(".");
     if(c == DwString::npos)
         return base;

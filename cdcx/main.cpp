@@ -390,6 +390,14 @@ int main(int argc, char *argv[])
     if(!QFile(userdir + "servers2").exists())
         QFile::copy(Sys_pfx + "/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
+    // note: we flubbed up in the file mapping, letting this public key for the server
+    // be referenced in the userdir instead of the system dir. this was a problem on linux
+    // as the stuff that needs the key wouldn't find it in the userdir. since i'm not sure
+    // how the other platforms reference files in the "system dir", i'll just copy it over
+    // to the userdir. we really need to just call this file out by name in the file
+    // mappings and hardwire it to the systemdir, but this is fine for now.
+    if(!QFile(userdir + "dsadwyco.pub").exists())
+        QFile::copy(Sys_pfx + "/dsadwyco.pub", userdir + "dsadwyco.pub");
 
     dwyco_trace_init();
     int dum;

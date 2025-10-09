@@ -219,7 +219,7 @@ MMChannel::send_file_info(int subchan, sproto *p, const char *ev)
     vc v(VC_VECTOR);
 
     vc v2(VC_VECTOR);
-    DwString f2 = dwbasename((const char *)remote_filename);
+    DwString f2 = dwbasename(remote_filename);
     v2[0] = f2.c_str();
     if(p->fn_to_send.length() == 0)
         p->fn_to_send = newfn(remote_filename);
@@ -263,7 +263,7 @@ MMChannel::send_file_info_server(int subchan, sproto *p, const char *ev)
     vc v(VC_VECTOR);
 
     vc v2(VC_VECTOR);
-    DwString f2 = dwbasename((const char *)remote_filename);
+    DwString f2 = dwbasename(remote_filename);
     v2[0] = f2.c_str();
 
     if(p->fn_to_send.length() == 0)
