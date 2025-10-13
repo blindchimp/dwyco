@@ -7,13 +7,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.320")
+set(RANDO_VERSION "4.321")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
 set(RANDO_VERSION_CODE 3000183)
 set(QT_ANDROID_TARGET_SDK_VERSION 35)
-if (ANDROID)
-    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
-endif()
+#if (ANDROID)
+#    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
+#endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
 include_directories(
@@ -81,7 +81,7 @@ qt_add_executable(rando
 )
 
 if (ANDROID)
-    #include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
+    include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
     add_android_openssl_libraries(rando)
 endif()
 
@@ -160,7 +160,9 @@ set_target_properties(rando PROPERTIES
     QT_ANDROID_COMPILE_SDK_VERSION "android-35"
 
 )
-
+if (ANDROID)
+    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
+    add_android_openssl_libraries(rando)
 # we put openssl in, so don't override it, just append our stuff
 set_property(TARGET rando APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
 set_target_properties(rando PROPERTIES
@@ -169,6 +171,7 @@ set_target_properties(rando PROPERTIES
  QT_ANDROID_VERSION_CODE ${RANDO_VERSION_CODE}
 
 )
+endif()
 
 set(BASELIBS
     cdc32
