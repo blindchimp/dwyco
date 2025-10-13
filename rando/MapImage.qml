@@ -55,7 +55,15 @@ Page {
         map.activeMapType: map.supportedMapTypes[map.supportedMapTypes.length - 1]
         Component.onCompleted: {
             map.addMapItem(loc_circle)
+            // note: we had to change the tile server, but the cache doesn't
+            // seem to invalidate itself properly. so do a one-off cache clear
+            var a = core.get_local_setting("bugfix_clear_map_cache1")
+            if(a === "") {
+                map.clearData();
+                core.set_local_setting("bugfix_clear_map_cache1", "1")
+            }
         }
+
 
         MapCircle {
             id: loc_circle
