@@ -17,11 +17,13 @@
 #/home/dwight/android682_arm64-v8a/bin/qt-cmake -S /home/dwight/git/dwyco/rando -B /tmp/r -GNinja
 #-D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" 
 QTDIR=$HOME/qt682
+rm -rf /tmp/r
 
 $HOME/syncdev/qta682/android682_x86_64/bin/qt-cmake \
 -D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" \
 -D CMAKE_BUILD_TYPE=Release \
--S $HOME/git/dwyco/rando -B /tmp/r -GNinja \
+-D QT_NO_GLOBAL_APK_TARGET_PART_OF_ALL:BOOL=OFF \
+-S $HOME/git/dwyco/rando -B /tmp/r  -GNinja \
 -DQT_ANDROID_BUILD_ALL_ABIS=TRUE \
 -DQT_PATH_ANDROID_ABI_arm64-v8a="$HOME/syncdev/qta682/android682_arm64_v8a" \
 -DQT_PATH_ANDROID_ABI_x86_64="$HOME/syncdev/qta682/android682_x86_64" \

@@ -27,7 +27,11 @@ Page {
         // connection, since qt has problems accessing the
         // encryption stuff (for https connections)
         // on android and other platforms.
-        PluginParameter { name: "osm.mapping.custom.host"; value: "http://a.tile.openstreetmap.org/" }
+        //PluginParameter { name: "osm.mapping.custom.host"; value: "https://tile.thunderforest.com/neighbourhood/%z/%x/%y.png?apikey=0698437986fb4f2999e18c53e5809e12" }
+        PluginParameter { name: "osm.mapping.custom.host"; value: "https://tile.openstreetmap.org/" }
+        PluginParameter { name: "osm.mapping.custom.mapcopyright"; value: "OpenStreetMap" }
+        PluginParameter { name: "osm.mapping.custom.datacopyright"; value: "OpenStreetMap" }
+
     }
 
     MapView {
@@ -55,7 +59,18 @@ Page {
         map.activeMapType: map.supportedMapTypes[map.supportedMapTypes.length - 1]
         Component.onCompleted: {
             map.addMapItem(loc_circle)
+            // note: we had to change the tile server, but the cache doesn't
+            // seem to invalidate itself properly. so do a one-off cache clear
+            var a = core.get_local_setting("bugfix_clear_map_cache1")
+            if(a === "") {
+                map.clearData();
+                core.set_local_setting("bugfix_clear_map_cache1", "1")
+            }
         }
+        map.onActiveMapTypeChanged: {
+            console.log("MAP TYPE ", map.activeMapType)
+        }
+
 
         MapCircle {
             id: loc_circle

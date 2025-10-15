@@ -7,13 +7,11 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.320")
+set(RANDO_VERSION "4.323")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000183)
+set(RANDO_VERSION_CODE 3000185)
 set(QT_ANDROID_TARGET_SDK_VERSION 35)
-if (ANDROID)
-    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
-endif()
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
 include_directories(
@@ -37,10 +35,17 @@ endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
 # Get Qt version from the Qt6 config
+# Qt6 BUG in multi-abi android builds: the execute_process thing is only done
+# for the main abi being built. the other 3 abi's end up with empty QT_VERSION
+# strings. so we just hard code it for now.
+if(ANDROID)
+   set(QT_VERSION "6.8.2")
+else()
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
 # Define a preprocessor macro with the Qt version
-add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
+add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -79,11 +84,6 @@ qt_add_resources(SRCS
 qt_add_executable(rando
    ${SRCS}
 )
-
-if (ANDROID)
-    #include(/home/dwight/Android/Sdk/android_openssl/android_openssl.cmake)
-    add_android_openssl_libraries(rando)
-endif()
 
 qt_add_qml_module(rando
     URI dwyco
@@ -160,7 +160,9 @@ set_target_properties(rando PROPERTIES
     QT_ANDROID_COMPILE_SDK_VERSION "android-35"
 
 )
-
+if (ANDROID)
+    include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
+    add_android_openssl_libraries(rando)
 # we put openssl in, so don't override it, just append our stuff
 set_property(TARGET rando APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
 set_target_properties(rando PROPERTIES
@@ -169,6 +171,7 @@ set_target_properties(rando PROPERTIES
  QT_ANDROID_VERSION_CODE ${RANDO_VERSION_CODE}
 
 )
+endif()
 
 set(BASELIBS
     cdc32

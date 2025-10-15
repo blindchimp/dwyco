@@ -530,6 +530,8 @@ void DWYCOEXPORT dwyco_random_string2(char **str_out, int len);
 void DWYCOEXPORT dwyco_eze2(const char *str, int len_str, char **out, int *len_out);
 // you must call dwyco_free_array on the returned pointer
 void DWYCOEXPORT dwyco_ezd2(const char *str, int len_str, char **out, int *len_out);
+// you must call dwyco_free_array on the returned pointer
+int DWYCOEXPORT dwyco_load_file_e(const char *fn, char **str_out, int *len_out);
 
 int DWYCOEXPORT dwyco_set_profile_from_composer(int compid, const char *text, int len_text,
         DwycoProfileCallback cb, void *arg);

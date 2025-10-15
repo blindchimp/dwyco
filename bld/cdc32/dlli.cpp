@@ -914,6 +914,23 @@ dwyco_ezd2(const char *str, int len_str, char **str_out, int *len_out)
     memcpy(*str_out, (const char *)eout, eout.len());
 }
 
+// internal api, do not use
+// must call dwyco_free_array on returned pointer
+DWYCOEXPORT
+int
+dwyco_load_file_e(const char *fn, char **str_out, int *len_out)
+{
+    vc out;
+    if(load_info_e(out, fn, 0) == 0)
+        return 0;
+    if(out.type() != VC_STRING)
+        return 0;
+    *str_out = new char[out.len()];
+    *len_out = out.len();
+    memcpy(*str_out, (const char *)out, out.len());
+    return 1;
+}
+
 DWYCOEXPORT
 void
 dwyco_set_fn_prefixes( const char *sys_pfx, const char *user_pfx, const char *tmp_pfx)

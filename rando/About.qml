@@ -59,7 +59,13 @@ Page {
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
-
+        Label {
+            textFormat: Text.RichText
+            text: "Maps and Map data from <a href='https://openstreetmap.org'>OpenStreetMap</a>"
+            wrapMode: Text.WordWrap
+            onLinkActivated: (link) => { Qt.openUrlExternally(link) }
+            Layout.fillWidth: true
+        }
         Button {
             text: "Privacy policy"
             onClicked: {
