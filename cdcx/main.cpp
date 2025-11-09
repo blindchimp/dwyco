@@ -221,6 +221,9 @@ static
 void
 setup_emergency_servers()
 {
+#ifdef LOCAL_SERVERS
+    return;
+#endif
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
