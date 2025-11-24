@@ -76,7 +76,6 @@ dowiz()
     dwyco_set_setting("rate/kbits_per_sec_in", QByteArray::number(down).constData());
 
     setting_put("first-run", 0);
-    settings_save();
     Block_DLL = 0;
     TheConfigForm->load();
     Mainwinform->move(0, Mainwinform->y());

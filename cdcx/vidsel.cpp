@@ -163,7 +163,6 @@ VidSel::on_ok_button_clicked()
     QByteArray ba = v.toByteArray();
 
     setting_put("video device", DwOString(ba.constData(), 0, ba.length()));
-    settings_save();
     //block_enable_video_capture_preview(0, &ui_id);
     save_ui_id = ui_id;
     ui_id = -1; // don't blit here anymore
@@ -334,7 +333,6 @@ VidSel::load_devlist()
                         QByteArray ba = v.toByteArray();
 
                         setting_put("video device", DwOString(ba.constData(), 0, ba.length()));
-                        settings_save();
                     }
                 }
             }

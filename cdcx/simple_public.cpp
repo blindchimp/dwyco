@@ -287,7 +287,6 @@ simple_public::simple_public(QWidget *parent) :
     if(!setting_get("chat_dont_display_video", hide_video))
     {
         setting_put("chat_dont_display_video", 0);
-        settings_save();
     }
     ui_id = -1;
     Simple_publics.append(vp);

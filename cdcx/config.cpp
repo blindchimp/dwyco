@@ -131,30 +131,30 @@ configform::accept()
     dwyco_set_setting("rate/kbits_per_sec_out", ui.upload_speed->text().toLatin1());
     dwyco_set_setting("rate/kbits_per_sec_in", ui.download_speed->text().toLatin1());
 
-    setting_put("chat_dont_display_video", ui.chat_dont_display_video->isChecked());
+    setting_put("chat_dont_display_video", ui.chat_dont_display_video->isChecked(), 0);
     if(simple_public::Simple_publics.count() > 0)
     {
         simple_public *s = (simple_public *)(void*)simple_public::Simple_publics[0];
         s->set_hide_video(ui.chat_dont_display_video->isChecked());
     }
-    setting_put("call_acceptance/max_audio", ui.CDC_call_acceptance__max_audio->text());
-    setting_put("call_acceptance/max_audio_recv", ui.CDC_call_acceptance__max_audio_recv->text());
-    setting_put("mute_alerts", ui.mute_alerts->isChecked());
+    setting_put("call_acceptance/max_audio", ui.CDC_call_acceptance__max_audio->text(), 0);
+    setting_put("call_acceptance/max_audio_recv", ui.CDC_call_acceptance__max_audio_recv->text(), 0);
+    setting_put("mute_alerts", ui.mute_alerts->isChecked(), 0);
     //setting_put("chat_dont_show_pics", ui.chat_dont_show_pics->isChecked());
-    setting_put("chat_pic_size", ui.picsize_combobox->currentIndex());
-    setting_put("profiles_no_auto_load", ui.profiles_no_auto_load->isChecked());
+    setting_put("chat_pic_size", ui.picsize_combobox->currentIndex(), 0);
+    setting_put("profiles_no_auto_load", ui.profiles_no_auto_load->isChecked(), 0);
     int old = 0;
     setting_get("chat_show_unreviewed", old);
-    setting_put("chat_show_unreviewed", ui.chat_show_all->isChecked());
+    setting_put("chat_show_unreviewed", ui.chat_show_all->isChecked(), 0);
     if(!!old != ui.chat_show_all->isChecked())
     {
         emit content_filter_event(!old);
     }
 
-    setting_put("disable_backups", ui.disable_backups->isChecked());
-    setting_put("disable_bg", ui.inhibit_bg_checkbox->isChecked());
+    setting_put("disable_backups", ui.disable_backups->isChecked(), 0);
+    setting_put("disable_bg", ui.inhibit_bg_checkbox->isChecked(), 0);
 
-    settings_save();
+    settings_save2();
 }
 
 void
