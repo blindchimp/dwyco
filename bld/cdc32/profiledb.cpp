@@ -26,6 +26,7 @@ namespace dwyco {
 ssns::signal2<vc, int> Profile_updated;
 ssns::signal2<vc, int> Keys_updated;
 ssns::signal2<vc, int> Pk_verification_failed;
+int Prf_check_hashes;
 
 struct Sql : public SimpleSql
 {
@@ -351,6 +352,9 @@ prf_already_cached(const vc& uid)
     }
     if(Prf_session_cache.contains(uid))
         return 1;
+
+    if(Prf_check_hashes)
+        return 0;
 
     // this is here to see if we can stop the crush of "get-info"
     // calls to the server on session startup. previously, we just

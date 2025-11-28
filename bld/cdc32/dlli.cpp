@@ -1806,6 +1806,23 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             {
                 dwyco::DirectSend::Inline_attach_size = (int)m[3][12];
             }
+            // this is a list of uid's that we should invalidate (roughly
+            // the list of profiles that have changed since last login.)
+            // if it is nil, then we should just use the old style of
+            // checking the hash on all profiles we need to display.
+            const vc prof_updates = m[3][13];
+            if(prof_updates.type() == VC_VECTOR)
+            {
+                for(int i = 0; i < prof_updates.num_elems(); ++i)
+                {
+                    prf_invalidate(prof_updates[i]);
+                }
+                dwyco::Prf_check_hashes = 0;
+            }
+            else
+            {
+                dwyco::Prf_check_hashes = 1;
+            }
             pal_login();
         }
         if(m[2] == created)
