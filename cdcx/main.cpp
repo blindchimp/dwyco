@@ -459,7 +459,6 @@ int main(int argc, char *argv[])
     {
         setting_put("askup", 1);
         Askup = 1;
-        settings_save();
     }
 #endif
     if(!setting_get("server", Last_server))
