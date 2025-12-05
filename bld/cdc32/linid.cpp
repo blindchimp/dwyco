@@ -57,7 +57,7 @@ set_get_uniq(int& method)
 #else
 
 #ifdef MACOSX
-    ret = system("/sbin/ifconfig | grep ether | sort -u | tr -d '\\012 ' >/tmp/.k");
+    ret = system("/usr/sbin/ioreg -c IOPlatformExpertDevice | grep IOPlatformSerialNumber | tr -d '\\012 ' >/tmp/.k");
 #else
     ret = system("/sbin/ip link| grep ether | sort -u | tr -d '\\012 ' >/tmp/.k");
 #endif

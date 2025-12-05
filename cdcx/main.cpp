@@ -221,6 +221,9 @@ static
 void
 setup_emergency_servers()
 {
+#ifdef LOCAL_SERVERS
+    return;
+#endif
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
@@ -456,20 +459,17 @@ int main(int argc, char *argv[])
     {
         setting_put("askup", 1);
         Askup = 1;
-        settings_save();
     }
 #endif
     if(!setting_get("server", Last_server))
     {
         Last_server = 0;
         setting_put("server", Last_server);
-        settings_save();
     }
     if(!setting_get("server_id", Last_server_id))
     {
         Last_server_id = "";
         setting_put("server_id", Last_server_id);
-        settings_save();
     }
 
 
@@ -538,7 +538,6 @@ int main(int argc, char *argv[])
     if(!setting_get("invis", invis))
     {
         setting_put("invis", 0);
-        settings_save();
     }
     dwyco_set_initial_invis(invis);
 
@@ -872,7 +871,6 @@ int main(int argc, char *argv[])
     if(!setting_get("pointsize", psz))
     {
         setting_put("pointsize", 0);
-        settings_save();
         psz = 0;
     }
     if(psz != 0)

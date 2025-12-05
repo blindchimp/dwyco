@@ -245,7 +245,6 @@ confirm_ignore()
     if(setting_get("ignore-confirm", val) == 0)
     {
         setting_put("ignore-confirm", 1);
-        settings_save();
     }
     if(!val)
         return 1;
@@ -266,7 +265,6 @@ confirm_ignore()
     else if(msgBox.clickedButton() == yesalways)
     {
         setting_put("ignore-confirm", 0);
-        settings_save();
         return 1;
     }
     return 0;
@@ -458,9 +456,9 @@ save_low_sec(const DwOString& a)
     dwyco_eze2(a.c_str(), a.length(), &e, &elen);
     DwOString ea = DwOString(e, 0, elen);
     dwyco_free_array(e);
-    setting_put("server-pw", ea);
-    setting_put("mode", DwOString("0"));
-    settings_save();
+    setting_put("server-pw", ea, 0);
+    setting_put("mode", DwOString("0"), 0);
+    settings_save2();
 }
 
 void
@@ -473,10 +471,10 @@ save_high_sec(const DwOString& a)
     dwyco_gen_pass(a.c_str(), a.length(), &salt, &salt_len,
                    &hash, &len_hash);
     DwOString hs(hash, 0, len_hash);
-    setting_put("server-pw", hs);
-    setting_put("salt", DwOString(salt, 0, salt_len));
-    setting_put("mode", DwOString("1"));
-    settings_save();
+    setting_put("server-pw", hs, 0);
+    setting_put("salt", DwOString(salt, 0, salt_len), 0);
+    setting_put("mode", DwOString("1"), 0);
+    settings_save2();
     dwyco_free_array(salt);
     dwyco_free_array(hash);
 }
@@ -578,9 +576,9 @@ set_current_server(int i)
     Current_server_id = "";
     Last_selected_id = "";
     Last_selected_idx = i;
-    setting_put("server", i);
-    setting_put("server_id", DwOString(""));
-    settings_save();
+    setting_put("server", i, 0);
+    setting_put("server_id", DwOString(""), 0);
+    settings_save2();
 
     const char *out;
     int out_len;
@@ -591,7 +589,6 @@ set_current_server(int i)
     {
         i = 0;
         setting_put("server", i);
-        settings_save();
     }
     if(dwyco_list_get(Dwyco_server_list, i, DWYCO_SL_SERVER_NAME,
                       &out, &out_len, &out_type) == 0)
@@ -668,7 +665,6 @@ set_current_server(const DwOString& id)
     // we log into a system server
     //setting_put("server", -1);
     setting_put("server_id", Current_server_id);
-    settings_save();
     DWYCO_LIST snl;
 
     if(dwyco_get_lobby_name_by_id2(id.c_str(), &snl))
@@ -1082,7 +1078,6 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     if(!setting_get("display-offline", doff))
     {
         setting_put("display-offline", 1);
-        settings_save();
         doff = 1;
     }
     Display_all_uid = doff;
@@ -1093,7 +1088,6 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     if(!setting_get("display-chat-users", doff))
     {
         setting_put("display-chat-users", 1);
-        settings_save();
         doff = 1;
     }
     Display_chat_users = doff;
@@ -1104,7 +1098,6 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     if(!setting_get("display-pics-in-user-list", doff))
     {
         setting_put("display-pics-in-user-list", 1);
-        settings_save();
         doff = 1;
     }
     Display_pics_in_user_list = doff;
@@ -1115,7 +1108,6 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     if(!setting_get("allow-multiple-windows", doff))
     {
         setting_put("allow-multiple-windows", 0);
-        settings_save();
         doff = 0;
     }
     Allow_multiple_windows = doff;
@@ -1980,7 +1972,6 @@ confirm_show_profile()
     if(setting_get("show-profile-confirm", val) == 0)
     {
         setting_put("show-profile-confirm", 1);
-        settings_save();
     }
     if(!val)
         return 1;
@@ -2002,7 +1993,6 @@ confirm_show_profile()
     else if(msgBox.clickedButton() == yesalways)
     {
         setting_put("show-profile-confirm", 0);
-        settings_save();
         return 1;
     }
     return 0;
@@ -4147,7 +4137,6 @@ void mainwinform::on_actionShow_Offline_Users_triggered(bool checked)
     dwyco_field_debug("show-offline", 1);
     Display_all_uid = checked;
     setting_put("display-offline", !!checked);
-    settings_save();
     refetch_user_list();
     load_users();
     cdcx_set_refresh_users(1);
@@ -4204,7 +4193,6 @@ void mainwinform::on_actionAllow_multiple_profiles_and_browsers_triggered(bool c
     dwyco_field_debug("allow-multiple", 1);
     Allow_multiple_windows = checked;
     setting_put("allow-multiple-windows", !!checked);
-    settings_save();
 }
 
 void mainwinform::on_actionShow_Lobby_List_toggled(bool )
@@ -4433,7 +4421,6 @@ void mainwinform::on_actionMake_me_invisible_triggered(bool checked)
     }
 
     setting_put("invis", checked);
-    settings_save();
 
 
 }
@@ -4468,7 +4455,6 @@ void mainwinform::on_actionShow_Public_Chat_Users_triggered(bool checked)
     dwyco_field_debug("show-public-chat-users", 1);
     Display_chat_users = checked;
     setting_put("display-chat-users", !!checked);
-    settings_save();
     refetch_user_list();
     load_users();
     cdcx_set_refresh_users(1);
@@ -4480,7 +4466,6 @@ void mainwinform::on_actionShow_pics_in_user_list_triggered(bool checked)
     dwyco_field_debug("show-pics", 1);
     Display_pics_in_user_list = checked;
     setting_put("display-pics-in-user-list", !!checked);
-    settings_save();
     refetch_user_list();
     load_users();
     cdcx_set_refresh_users(1);
@@ -4513,7 +4498,6 @@ void mainwinform::on_actionShow_Archived_Users_triggered(bool checked)
     dwyco_field_debug("show-archived", 1);
     Display_archived_users = !!checked;
     setting_put("display-archived-users", !!checked);
-    settings_save();
     refetch_user_list();
     load_users();
     cdcx_set_refresh_users(1);
@@ -4526,7 +4510,6 @@ void mainwinform::on_actionIncrease_text_size_triggered()
     int sz = f.pointSize();
     sz += 2;
     setting_put("pointsize", sz);
-    settings_save();
     QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
 }
 
@@ -4538,13 +4521,11 @@ void mainwinform::on_actionDecrease_text_size_triggered()
     if(sz < 0)
         sz = 0;
     setting_put("pointsize", sz);
-    settings_save();
     QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
 }
 
 void mainwinform::on_actionReset_to_default_text_size_triggered()
 {
     setting_put("pointsize", 0);
-    settings_save();
     QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
 }

@@ -1688,7 +1688,11 @@ DwycoCore::init()
 
     //DVP::init_dvp();
     //simple_call::init(this);
-    AvoidSSL = 1; //!QSslSocket::supportsSsl();
+    // note: on desktop, this does something to initialize
+    // ssl. which is weird. if i don't do this, https
+    // things in qml mapping don't seem to work.
+    //AvoidSSL = !QSslSocket::supportsSsl();
+    AvoidSSL = 1;
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     //dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);

@@ -1625,8 +1625,9 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     }
     else
     {
+        static const vc vcok("ok");
         // m[1] is the profile or "ok" if our cache is up to date
-        if(m[1].type() == VC_STRING && m[1] == vc("ok"))
+        if(m[1].type() == VC_STRING && m[1] == vcok)
         {
             prf_set_cached(uid);
             const vc ai = make_best_local_info(uid, 0);

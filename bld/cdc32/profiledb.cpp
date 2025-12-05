@@ -26,6 +26,7 @@ namespace dwyco {
 ssns::signal2<vc, int> Profile_updated;
 ssns::signal2<vc, int> Keys_updated;
 ssns::signal2<vc, int> Pk_verification_failed;
+int Prf_check_hashes;
 
 struct Sql : public SimpleSql
 {
@@ -66,8 +67,20 @@ struct Sql : public SimpleSql
 };
 
 static Sql *sDb;
+
+// since profile look-ups are frequent, once we read the
+// database results, we store them in memory forever
+// unless they are invalidated. there usually aren't enough
+// profiles loaded during a session to worry about making this
+// into something more complicated like an LRU cache or something.
 static vc Prf_memory_cache;
+
+// the session cache is used mainly to avoid querying the
+// server too much. we allow more or less one query per session
+// unless there is some user action to force it, or the server
+// invalidates things explicitly.
 static vc Prf_session_cache;
+
 
 static vc Pk_memory_cache;
 static vc Pk_session_cache;
@@ -337,7 +350,30 @@ prf_already_cached(const vc& uid)
         // server.
         return 0;
     }
-    return Prf_session_cache.contains(uid);
+    if(Prf_session_cache.contains(uid))
+        return 1;
+
+    if(Prf_check_hashes)
+        return 0;
+
+    // this is here to see if we can stop the crush of "get-info"
+    // calls to the server on session startup. previously, we just
+    // assumed that we needed to check profiles with the server
+    // once at startup, kind of like http does with web pages.
+    // but with profiles, the answer is almost always "ok", so
+    // we're changing to the assumption that what we have in the
+    // local cache is probably ok. this just means that the profiles
+    // have to be checked eventually, maybe when they are used in
+    // some way, rather than being updated eagerly.
+
+    if(Prf_memory_cache.contains(uid))
+        return 1;
+
+    const vc huid = to_hex(uid);
+    vc res = sql_simple("select 1 from prf where uid = ?1", huid);
+    if(res.num_elems() == 0)
+        return 0;
+    return 1;
 }
 
 void
