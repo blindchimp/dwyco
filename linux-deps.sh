@@ -19,3 +19,5 @@ sudo apt install libv4l-dev
 sudo apt install v4l-utils
 sudo apt install libxkbcommon-dev
 sudo apt install libxcb-xkb-dev
+sudo apt install libgl1-mesa-dev
+
