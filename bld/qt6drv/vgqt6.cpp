@@ -970,7 +970,11 @@ vgqt_init(void *aqext, int frame_rate)
     {
         if(Cur_idx < 0 || Cur_idx >= Cams.count() * 3)
             return 0;
+        if(CFormats[Cur_idx].isNull())
+            return 0;
+
         Cam = new QCamera(Cams[Cur_idx / 3]);
+
         Cam->setCameraFormat(CFormats[Cur_idx]);
         QObject::connect(Cam, &QCamera::activeChanged, config_viewfinder);
         QVideoSink *vs = new QVideoSink;
