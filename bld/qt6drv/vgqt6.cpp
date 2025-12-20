@@ -676,7 +676,7 @@ find_closest(const QList<QCameraFormat>& formats, int cols, int rows)
         QVideoFrameFormat::Format_NV21,
         QVideoFrameFormat::Format_UYVY,
         QVideoFrameFormat::Format_YUYV,
-        QVideoFrameFormat::Format_RGBX8888
+        //QVideoFrameFormat::Format_RGBX8888
     };
     int nf = sizeof(fmts) / sizeof(fmts[0]);
 
@@ -1130,6 +1130,7 @@ conv_data(vframe ivf)
 
         int fmt = 0;
         int swap = 0;
+        bool packed = true;
         QVideoFrameFormat::PixelFormat vfpf = vf.pixelFormat();
         switch(vfpf)
         {
@@ -1168,7 +1169,7 @@ conv_data(vframe ivf)
             // for now, if the stride isn't the same as
             // the dimensions, bail
             if(vf.bytesPerLine(0) != vf.width())
-                ::abort();
+                packed = false;
             break;
         default:
             // just a guess so we don't crash
@@ -1246,7 +1247,7 @@ conv_data(vframe ivf)
         }
 
 #else
-        if(fmt != AQ_NV21)
+        if(fmt != AQ_NV21 || !packed)
         {
             // just to avoid crashing
             f.planes[0] = pgm_allocarray(f.c, f.r);
