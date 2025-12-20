@@ -4195,6 +4195,7 @@ MMChannel::service_channels(int *spin_out)
     }
     if(SKID_cleaner_timer.is_expired())
     {
+        SKID_cleaner_timer.ack_expire();
         clean_gj();
     }
     if(some_serviced_channels_net())
