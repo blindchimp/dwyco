@@ -68,7 +68,7 @@
 #include <unistd.h>
 #include <string.h>
 #endif
-
+#define USE_AI_CODE
 //#define USE_QML_CAMERA
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -1246,6 +1246,132 @@ conv_data(vframe ivf)
             return f;
         }
 
+#elif defined(USE_AI_CODE)
+        /* ------------------------------------------------------------------
+         * macOS: NV21 (or any format) – no extra copying.
+         * The source planes may have non‑zero stride; `stbir_resize_uint8`
+         * accepts an `input_stride_in_bytes`, so we can use the source data
+         * in‑place.  All resizing is done directly into the output buffers.
+         * ------------------------------------------------------------------ */
+            if (fmt != AQ_NV21) {
+                /* Unsupported format – return empty planes */
+                f.planes[0] = pgm_allocarray(f.c, f.r);
+                f.planes[1] = pgm_allocarray(f.c / 2, f.r / 2);
+                f.planes[2] = pgm_allocarray(f.c / 2, f.r / 2);
+                vf.unmap();  vf = QVideoFrame();
+                return f;
+            }
+
+            /* ------------------------------------------------------------------
+             * 1. Prepare working buffer dimensions
+             * ------------------------------------------------------------------
+        */
+            #define SSCOLS (640)
+            int calcrows = (float)rows / ((float)cols / SSCOLS);
+            if (calcrows % 2 != 0) ++calcrows;          /* even number of rows */
+            int SSROWS = calcrows;                      /* resized height      */
+
+            /* Allocate the Y and temporary UV interleaved buffers */
+            gray **g  = pgm_allocarray(SSCOLS, SSROWS); /* Y plane            */
+            int ncols = SSCOLS;
+            int nrows = SSROWS;
+            unsigned char *uv_interleaved = new unsigned char[(SSCOLS/2) * (SSROWS/2) * 2];
+
+            /* ------------------------------------------------------------------
+             * 2. Resize Y directly from source
+             * ------------------------------------------------------------------
+        */
+            unsigned char *srcY  = (unsigned char *)vf.bits(0);
+            int strideY           = vf.bytesPerLine(0);     /* source stride */
+
+            if (rows == SSCOLS && cols == SSROWS) {
+                /* Exact size – simple copy (stride may still differ) */
+                for (int r = 0; r < rows; ++r)
+                    memcpy(&g[0][0] + r * SSCOLS,
+                           srcY + r * strideY, cols);
+            } else {
+                /* Use STB to resize directly into the target buffer */
+                stbir_resize_uint8(srcY, cols, rows, strideY,
+                                   &g[0][0], SSCOLS, SSROWS, 0, 1);
+            }
+
+            /* Optional flip for macOS drivers */
+#ifdef MACOSX
+            flip_in_place(g, SSCOLS, SSROWS);
+#endif
+
+            /* Rotate if requested */
+            if (Orientation != 0) {
+                gray **rg = pgm_rot(g, ncols, nrows, Orientation);
+                pgm_freearray(g, SSROWS);
+                g = rg;
+            }
+
+            /* ------------------------------------------------------------------
+             * 3. Resize interleaved UV (VU) directly from source
+             * ------------------------------------------------------------------
+        */
+            unsigned char *srcUV = (unsigned char *)vf.bits(1);
+            int strideUV          = vf.bytesPerLine(1);     /* source stride */
+
+            if (cols == SSCOLS && rows == SSROWS) {
+                /* Source already has correct size – copy to interleaved buffer */
+                for (int r = 0; r < rows / 2; ++r)
+                    memcpy(uv_interleaved + r * SSCOLS,
+                           srcUV + r * strideUV, SSCOLS);
+            } else {
+                /* Use STB to resize directly into the interleaved buffer */
+                stbir_resize_uint8(srcUV, cols, rows, strideUV,
+                                   uv_interleaved, SSCOLS, SSROWS, 0, 2);
+            }
+
+            /* ------------------------------------------------------------------
+             * 4. Split interleaved UV into separate Cb / Cr planes
+             * ------------------------------------------------------------------
+        */
+            gray **cr, **cb;
+            get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2,
+                                          uv_interleaved, cr, cb, 1);
+
+            /* Swap Cb/Cr channels if requested */
+            if(swap)
+            {
+                gray **tmp = cr;
+                cr = cb;
+                cb = tmp;
+            }
+
+            /* Rotate chroma planes if requested */
+            if (Orientation != 0) {
+                int c = SSCOLS / 2;
+                int r = SSROWS / 2;
+                gray **rcr = pgm_rot(cr, c, r, Orientation);
+                pgm_freearray(cr, SSROWS / 2);
+                cr = rcr;
+
+                c = SSCOLS / 2;
+                r = SSROWS / 2;
+                gray **rcb = pgm_rot(cb, c, r, Orientation);
+                pgm_freearray(cb, SSROWS / 2);
+                cb = rcb;
+            }
+
+            /* ------------------------------------------------------------------
+             * 5. Finalise output
+             * ------------------------------------------------------------------
+        */
+            f.c = ncols;
+            f.r = nrows;
+
+            f.planes[0] = g;
+            f.planes[1] = cb;
+            f.planes[2] = cr;
+
+            /* Clean up */
+            delete[] uv_interleaved;
+            vf.unmap();
+            vf = QVideoFrame();
+            return f;
 #else
         if(fmt != AQ_NV21 || !packed)
         {
