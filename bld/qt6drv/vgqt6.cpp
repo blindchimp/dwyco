@@ -68,7 +68,7 @@
 #include <unistd.h>
 #include <string.h>
 #endif
-#define USE_AI_CODE
+#undef USE_AI_CODE
 //#define USE_QML_CAMERA
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -1373,7 +1373,7 @@ conv_data(vframe ivf)
             vf = QVideoFrame();
             return f;
 #else
-        if(fmt != AQ_NV21 || !packed)
+        if(fmt != AQ_NV21)
         {
             // just to avoid crashing
             f.planes[0] = pgm_allocarray(f.c, f.r);
@@ -1393,10 +1393,13 @@ conv_data(vframe ivf)
         gray **g = pgm_allocarray(SSCOLS, SSROWS);
         int ncols = SSCOLS;
         int nrows = SSROWS;
-        if(cols == SSCOLS && rows == SSROWS)
+        if(cols == SSCOLS && rows == SSROWS && packed)
             memcpy(&g[0][0], c, cols * rows);
         else
-            stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
+        {
+            int stride = vf.bytesPerLine(0);
+            stbir_resize_uint8(c, cols, rows, stride, &g[0][0], SSCOLS, SSROWS, 0, 1);
+        }
 
         // NOTE: this flipping is for cdc-x compatibility.
         // the driver produces flipped images because the old ms
@@ -1418,20 +1421,21 @@ conv_data(vframe ivf)
             g = rg;
         }
 
-        c += f.c * f.r;
+        //c += f.c * f.r;
         c = vf.bits(1);
         // note: 2 channels, cb and cr
         gray **cr;
         gray **cb;
 
-        if(cols == SSCOLS && rows == SSROWS)
+        bool cpacked = (vf.bytesPerLine(1) == cols);
+        if(cols == SSCOLS && rows == SSROWS && cpacked)
         {
             get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, c, cr, cb, 1);
         }
         else
         {
             gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
-            stbir_resize_uint8(c, cols / 2, rows / 2, 0, &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
+            stbir_resize_uint8(c, cols / 2, rows / 2, vf.bytesPerLine(1), &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
             get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
             pgm_freearray(gc, SSROWS / 2);
         }
