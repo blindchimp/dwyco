@@ -477,20 +477,22 @@ int read_from_pipeline(FILE *pipe, unsigned char *buffer, size_t block_size) {
     return (int)bytes_read;
 }
 
+#define TTCOLS 320
+#define TTROWS 240
 
 static void *
 test_thread(void *)
 {
     int t = 0;
-    Orientation = 270;
+    Orientation = 0;
     FILE *pipe = 0;
-    if(create_test_pattern_pipeline(320, 240, "NV12", &pipe) != 0)
+    if(create_test_pattern_pipeline(TTCOLS, TTROWS, "NV12", &pipe) != 0)
         return 0;
     while(1)
     {
         if(stop_thread)
             break;
-        QVideoFrame f(QVideoFrameFormat(QSize(320, 240), QVideoFrameFormat::Format_NV12));
+        QVideoFrame f(QVideoFrameFormat(QSize(TTCOLS, TTROWS), QVideoFrameFormat::Format_NV12));
         f.map(QVideoFrame::ReadWrite);
         uchar *bits = f.bits(0);
 #if 0
@@ -501,7 +503,7 @@ test_thread(void *)
         memset(bits + 320*63, 255, 120);
         memset(bits + 320*240, 0, 2 * 160 * 120);
 #endif
-        if(read_from_pipeline(pipe, bits, get_frame_size(320, 240, VideoFormat::NV12)) == 0)
+        if(read_from_pipeline(pipe, bits, get_frame_size(TTCOLS, TTROWS, VideoFormat::NV12)) == 0)
             break;
         //create_test_frame(bits, 320, 240, VideoFormat::NV21, t);
         ++t;
