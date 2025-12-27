@@ -74,8 +74,9 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 //#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
-#include "stb_image_resize.h"
-#undef TEST_THREAD
+#include "stb_image_resize2.h"
+//#define MACOSX
+//#define TEST_THREAD
 #ifdef TEST_THREAD
 #include <pthread.h>
 #endif
@@ -1398,7 +1399,7 @@ conv_data(vframe ivf)
         else
         {
             int stride = vf.bytesPerLine(0);
-            stbir_resize_uint8(c, cols, rows, stride, &g[0][0], SSCOLS, SSROWS, 0, 1);
+            stbir_resize_uint8_linear(c, cols, rows, stride, &g[0][0], SSCOLS, SSROWS, 0, (stbir_pixel_layout)1);
         }
 
         // NOTE: this flipping is for cdc-x compatibility.
@@ -1435,7 +1436,7 @@ conv_data(vframe ivf)
         else
         {
             gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
-            stbir_resize_uint8(c, cols / 2, rows / 2, vf.bytesPerLine(1), &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
+            stbir_resize_uint8_linear(c, cols / 2, rows / 2, vf.bytesPerLine(1), &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, (stbir_pixel_layout)2);
             get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
             pgm_freearray(gc, SSROWS / 2);
         }
