@@ -446,7 +446,7 @@ int create_test_pattern_pipeline(int cols, int rows, const char *format, FILE **
 
     // Construct the gstreamer pipeline command
     snprintf(command, MAX_COMMAND_LENGTH,
-             "gst-launch-1.0 videotestsrc ! video/x-raw,width=%d,height=%d,format=%s,framerate=30/1 ! fdsink fd=1",
+             "gst-launch-1.0 -q videotestsrc ! video/x-raw,width=%d,height=%d,format=%s,framerate=30/1 ! fdsink fd=1",
              cols, rows, format);
 
     // Open the pipeline using popen
@@ -542,12 +542,13 @@ vgqt_free_video_devices(char **d)
 
 #endif
 
+// note: source is assumed to have width == stride
 static
 gray **
 pgm_rot(gray **inp, int& cols, int& rows, int rot)
 {
-    if(rot == 0)
-        return inp;
+    if(rot == 0 || !(rot == 180 || rot == 90 || rot == 270))
+        oopanic("wrong rotate");
     gray *s = inp[0]; //&inp[0][0];
     gray **dst;
     if(rot == 180)
@@ -595,7 +596,8 @@ pgm_rot(gray **inp, int& cols, int& rows, int rot)
 
 // this is for nv21
 // c should point to the first sample in the block of
-// interleaved chroma samples
+// interleaved chroma samples.
+// c is assumed to have width == stride
 static void
 get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu_out, gray**& vv_out, int subsample)
 {
@@ -1430,8 +1432,8 @@ conv_data(vframe ivf)
         gray **cr;
         gray **cb;
 
-        bool cpacked = (vf.bytesPerLine(1) == cols);
-        if(cols == SSCOLS && rows == SSROWS && cpacked)
+
+        if(cols == SSCOLS && rows == SSROWS && packed)
         {
             get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, c, cr, cb, 1);
         }
