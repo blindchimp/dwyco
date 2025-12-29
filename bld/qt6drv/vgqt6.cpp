@@ -477,8 +477,33 @@ int read_from_pipeline(FILE *pipe, unsigned char *buffer, size_t block_size) {
     return (int)bytes_read;
 }
 
-#define TTCOLS 320
-#define TTROWS 240
+#define TTCOLS 640
+#define TTROWS 480
+#define TTSTRIDE 0
+#include <QAbstractVideoBuffer>
+#include <sys/random.h>
+
+class tvidbuf : public QAbstractVideoBuffer
+{
+public:
+    QVideoFrameFormat format() const {
+        return QVideoFrameFormat(QSize(TTCOLS, TTROWS), QVideoFrameFormat::Format_NV12);
+    }
+    QAbstractVideoBuffer::MapData map(QVideoFrame::MapMode mode) {
+       return b;
+    }
+    QAbstractVideoBuffer::MapData b;
+    gray **y;
+    gray **cbcr;
+    tvidbuf() {
+        y = 0;
+        cbcr = 0;
+    }
+    ~tvidbuf() {
+        pgm_freearray(y, TTROWS);
+        pgm_freearray(cbcr, TTROWS / 2);
+    }
+};
 
 static void *
 test_thread(void *)
@@ -492,22 +517,51 @@ test_thread(void *)
     {
         if(stop_thread)
             break;
-        QVideoFrame f(QVideoFrameFormat(QSize(TTCOLS, TTROWS), QVideoFrameFormat::Format_NV12));
-        f.map(QVideoFrame::ReadWrite);
-        uchar *bits = f.bits(0);
-#if 0
-        memset(bits, t, 320 * 240);
-        memset(bits + 320*60, 0, 120);
-        memset(bits + 320*61, 0, 120);
-        memset(bits + 320*62, 255, 120);
-        memset(bits + 320*63, 255, 120);
-        memset(bits + 320*240, 0, 2 * 160 * 120);
-#endif
-        if(read_from_pipeline(pipe, bits, get_frame_size(TTCOLS, TTROWS, VideoFormat::NV12)) == 0)
+        int len = get_frame_size(TTCOLS, TTROWS, VideoFormat::NV12);
+        uchar *tmp = new uchar[len];
+
+        // now goof with the stride to make sure the stride handling is right in conv_data
+
+        if(read_from_pipeline(pipe, tmp, get_frame_size(TTCOLS, TTROWS, VideoFormat::NV12)) == 0)
             break;
+
+        gray **y = pgm_allocarray(TTCOLS + TTSTRIDE, TTROWS);
+        getrandom(&y[0][0], (TTCOLS + TTSTRIDE) * TTROWS, 0);
+        for(int r = 0; r < TTROWS; ++r)
+        {
+            memcpy(&y[r][0], tmp + (r * TTCOLS), TTCOLS);
+        }
+
+        gray **cbcr = pgm_allocarray(TTCOLS + TTSTRIDE, TTROWS / 2);
+        getrandom(&cbcr[0][0], (TTCOLS + TTSTRIDE) * TTROWS / 2, 0);
+        uchar *tmp2 = tmp + TTCOLS * TTROWS;
+        for(int r = 0; r < TTROWS / 2; ++r)
+        {
+            memcpy(&cbcr[r][0], tmp2 + (r * TTCOLS), TTCOLS);
+        }
+
+        delete [] tmp;
+
+        tvidbuf *_vb = new tvidbuf;
+        auto __vb = std::unique_ptr<QAbstractVideoBuffer>(_vb);
+        tvidbuf& vb = *_vb;
+        vb.b.planeCount = 2;
+        vb.b.data[0] = &y[0][0];
+        vb.b.data[1] = &cbcr[0][0];
+        vb.b.bytesPerLine[0] = TTCOLS + TTSTRIDE;
+        vb.b.bytesPerLine[1] = TTCOLS + TTSTRIDE;
+        vb.y = y;
+        vb.cbcr = cbcr;
+
+
+        QVideoFrame f(std::move(__vb));
+        //f.map(QVideoFrame::ReadWrite);
+        //uchar *bits = f.bits(0);
+
+
         //create_test_frame(bits, 320, 240, VideoFormat::NV21, t);
         ++t;
-        f.unmap();
+        //f.unmap();
         add_frame(f);
         QThread::msleep(30);
     }
