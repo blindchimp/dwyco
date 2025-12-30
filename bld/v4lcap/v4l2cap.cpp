@@ -143,6 +143,13 @@ probe_v4l(const char *dev, int cols, int rows, DwString& name_out, int& cap_form
                      nice_names[i], cols, rows, fmt.fmt.pix.width, fmt.fmt.pix.height);
             continue;
         }
+        // when we fix capture stuff to properly handle non-zero padding, take this out
+        if(fmt.fmt.pix.bytesperline != cols)
+        {
+            fprintf (stderr, " format %s unavailable ask (%d %d) get non-zero padding (%d)\n",
+                     nice_names[i], cols, rows, fmt.fmt.pix.bytesperline);
+            continue;
+        }
         fprintf(stderr, "got fmt %s (%d, %d)\n", nice_names[i], cols, rows);
         break;
     }
