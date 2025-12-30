@@ -333,9 +333,11 @@ int main(int argc, char *argv[])
         // a little bit to avoid apps indexing temp images on all platforms
         QString fp = d.filePath(".nomedia");
         QFile f(fp);
-        f.open(QIODevice::WriteOnly);
-        f.putChar(0);
-        f.close();
+        if(f.open(QIODevice::WriteOnly))
+        {
+            f.putChar(0);
+            f.close();
+        }
     }
     {
         QDir shares(userdir + "shares");
