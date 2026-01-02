@@ -457,16 +457,16 @@ verification_record_exists(vc uid)
 
 static
 int
-load_pk(vc uid, vc& prf_out)
+load_pk(const vc& uid, vc& prf_out)
 {
     if(uid.type() != VC_STRING)
         return 0;
 
     if(Pk_memory_cache.find(uid, prf_out))
         return 1;
-    vc huid = to_hex(uid);
+    const vc huid = to_hex(uid);
     // WARNING: the columns of this select are ordered by the PKC_* constants
-     vc res = sql_simple("select static_public, dwyco_sig, alt_static_public, alt_server_sig, alt_gname "
+    vc res = sql_simple("select static_public, dwyco_sig, alt_static_public, alt_server_sig, alt_gname "
                          "from pubkeys where uid = ?1", huid);
      if(res.num_elems() == 0)
          return 0;
@@ -474,7 +474,7 @@ load_pk(vc uid, vc& prf_out)
      // note: for compat, rest of system expects "nils" instead of zero len strings.
 
     vc prf(VC_VECTOR);
-    vc d = res[0];
+    const vc d = res[0];
     int n = d.num_elems();
 
     for(int i = 0; i < n; ++i)

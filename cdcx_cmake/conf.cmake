@@ -16,6 +16,9 @@ add_compile_definitions(
 if(UNIX)
     add_compile_definitions(UNIX LINUX)
 	add_compile_options(-Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function)
+        # use this if you are testing the the "TEST_THREAD" in vgqt. otherwise, you'll get the more
+        # reliable direct v4l2 driver
+        #add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
 endif()
 
 if(WIN32)

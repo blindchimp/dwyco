@@ -68,14 +68,15 @@
 #include <unistd.h>
 #include <string.h>
 #endif
-
+#undef USE_AI_CODE
 //#define USE_QML_CAMERA
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 //#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
-#include "stb_image_resize.h"
-#undef TEST_THREAD
+#include "stb_image_resize2.h"
+//#define MACOSX
+//#define TEST_THREAD
 #ifdef TEST_THREAD
 #include <pthread.h>
 #endif
@@ -445,7 +446,7 @@ int create_test_pattern_pipeline(int cols, int rows, const char *format, FILE **
 
     // Construct the gstreamer pipeline command
     snprintf(command, MAX_COMMAND_LENGTH,
-             "gst-launch-1.0 videotestsrc ! video/x-raw,width=%d,height=%d,format=%s,framerate=30/1 ! fdsink fd=1",
+             "gst-launch-1.0 -q videotestsrc ! video/x-raw,width=%d,height=%d,format=%s,framerate=30/1 ! fdsink fd=1",
              cols, rows, format);
 
     // Open the pipeline using popen
@@ -476,35 +477,91 @@ int read_from_pipeline(FILE *pipe, unsigned char *buffer, size_t block_size) {
     return (int)bytes_read;
 }
 
+#define TTCOLS 640
+#define TTROWS 480
+#define TTSTRIDE 0
+#include <QAbstractVideoBuffer>
+#include <sys/random.h>
+
+class tvidbuf : public QAbstractVideoBuffer
+{
+public:
+    QVideoFrameFormat format() const {
+        return QVideoFrameFormat(QSize(TTCOLS, TTROWS), QVideoFrameFormat::Format_NV12);
+    }
+    QAbstractVideoBuffer::MapData map(QVideoFrame::MapMode mode) {
+       return b;
+    }
+    QAbstractVideoBuffer::MapData b;
+    gray **y;
+    gray **cbcr;
+    tvidbuf() {
+        y = 0;
+        cbcr = 0;
+    }
+    ~tvidbuf() {
+        pgm_freearray(y, TTROWS);
+        pgm_freearray(cbcr, TTROWS / 2);
+    }
+};
 
 static void *
 test_thread(void *)
 {
     int t = 0;
-    Orientation = 270;
+    Orientation = 0;
     FILE *pipe = 0;
-    if(create_test_pattern_pipeline(320, 240, "NV12", &pipe) != 0)
+    if(create_test_pattern_pipeline(TTCOLS, TTROWS, "NV12", &pipe) != 0)
         return 0;
     while(1)
     {
         if(stop_thread)
             break;
-        QVideoFrame f(QVideoFrameFormat(QSize(320, 240), QVideoFrameFormat::Format_NV12));
-        f.map(QVideoFrame::ReadWrite);
-        uchar *bits = f.bits(0);
-#if 0
-        memset(bits, t, 320 * 240);
-        memset(bits + 320*60, 0, 120);
-        memset(bits + 320*61, 0, 120);
-        memset(bits + 320*62, 255, 120);
-        memset(bits + 320*63, 255, 120);
-        memset(bits + 320*240, 0, 2 * 160 * 120);
-#endif
-        if(read_from_pipeline(pipe, bits, get_frame_size(320, 240, VideoFormat::NV12)) == 0)
+        int len = get_frame_size(TTCOLS, TTROWS, VideoFormat::NV12);
+        uchar *tmp = new uchar[len];
+
+        // now goof with the stride to make sure the stride handling is right in conv_data
+
+        if(read_from_pipeline(pipe, tmp, get_frame_size(TTCOLS, TTROWS, VideoFormat::NV12)) == 0)
             break;
+
+        gray **y = pgm_allocarray(TTCOLS + TTSTRIDE, TTROWS);
+        getrandom(&y[0][0], (TTCOLS + TTSTRIDE) * TTROWS, 0);
+        for(int r = 0; r < TTROWS; ++r)
+        {
+            memcpy(&y[r][0], tmp + (r * TTCOLS), TTCOLS);
+        }
+
+        gray **cbcr = pgm_allocarray(TTCOLS + TTSTRIDE, TTROWS / 2);
+        getrandom(&cbcr[0][0], (TTCOLS + TTSTRIDE) * TTROWS / 2, 0);
+        uchar *tmp2 = tmp + TTCOLS * TTROWS;
+        for(int r = 0; r < TTROWS / 2; ++r)
+        {
+            memcpy(&cbcr[r][0], tmp2 + (r * TTCOLS), TTCOLS);
+        }
+
+        delete [] tmp;
+
+        tvidbuf *_vb = new tvidbuf;
+        auto __vb = std::unique_ptr<QAbstractVideoBuffer>(_vb);
+        tvidbuf& vb = *_vb;
+        vb.b.planeCount = 2;
+        vb.b.data[0] = &y[0][0];
+        vb.b.data[1] = &cbcr[0][0];
+        vb.b.bytesPerLine[0] = TTCOLS + TTSTRIDE;
+        vb.b.bytesPerLine[1] = TTCOLS + TTSTRIDE;
+        vb.y = y;
+        vb.cbcr = cbcr;
+
+
+        QVideoFrame f(std::move(__vb));
+        //f.map(QVideoFrame::ReadWrite);
+        //uchar *bits = f.bits(0);
+
+
         //create_test_frame(bits, 320, 240, VideoFormat::NV21, t);
         ++t;
-        f.unmap();
+        //f.unmap();
         add_frame(f);
         QThread::msleep(30);
     }
@@ -539,12 +596,13 @@ vgqt_free_video_devices(char **d)
 
 #endif
 
+// note: source is assumed to have width == stride
 static
 gray **
 pgm_rot(gray **inp, int& cols, int& rows, int rot)
 {
-    if(rot == 0)
-        return inp;
+    if(rot == 0 || !(rot == 180 || rot == 90 || rot == 270))
+        oopanic("wrong rotate");
     gray *s = inp[0]; //&inp[0][0];
     gray **dst;
     if(rot == 180)
@@ -592,7 +650,8 @@ pgm_rot(gray **inp, int& cols, int& rows, int rot)
 
 // this is for nv21
 // c should point to the first sample in the block of
-// interleaved chroma samples
+// interleaved chroma samples.
+// c is assumed to have width == stride
 static void
 get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu_out, gray**& vv_out, int subsample)
 {
@@ -676,7 +735,7 @@ find_closest(const QList<QCameraFormat>& formats, int cols, int rows)
         QVideoFrameFormat::Format_NV21,
         QVideoFrameFormat::Format_UYVY,
         QVideoFrameFormat::Format_YUYV,
-        QVideoFrameFormat::Format_RGBX8888
+        //QVideoFrameFormat::Format_RGBX8888
     };
     int nf = sizeof(fmts) / sizeof(fmts[0]);
 
@@ -970,7 +1029,11 @@ vgqt_init(void *aqext, int frame_rate)
     {
         if(Cur_idx < 0 || Cur_idx >= Cams.count() * 3)
             return 0;
+        if(CFormats[Cur_idx].isNull())
+            return 0;
+
         Cam = new QCamera(Cams[Cur_idx / 3]);
+
         Cam->setCameraFormat(CFormats[Cur_idx]);
         QObject::connect(Cam, &QCamera::activeChanged, config_viewfinder);
         QVideoSink *vs = new QVideoSink;
@@ -1126,6 +1189,7 @@ conv_data(vframe ivf)
 
         int fmt = 0;
         int swap = 0;
+        bool packed = true;
         QVideoFrameFormat::PixelFormat vfpf = vf.pixelFormat();
         switch(vfpf)
         {
@@ -1164,7 +1228,7 @@ conv_data(vframe ivf)
             // for now, if the stride isn't the same as
             // the dimensions, bail
             if(vf.bytesPerLine(0) != vf.width())
-                ::abort();
+                packed = false;
             break;
         default:
             // just a guess so we don't crash
@@ -1241,6 +1305,132 @@ conv_data(vframe ivf)
             return f;
         }
 
+#elif defined(USE_AI_CODE)
+        /* ------------------------------------------------------------------
+         * macOS: NV21 (or any format) – no extra copying.
+         * The source planes may have non‑zero stride; `stbir_resize_uint8`
+         * accepts an `input_stride_in_bytes`, so we can use the source data
+         * in‑place.  All resizing is done directly into the output buffers.
+         * ------------------------------------------------------------------ */
+            if (fmt != AQ_NV21) {
+                /* Unsupported format – return empty planes */
+                f.planes[0] = pgm_allocarray(f.c, f.r);
+                f.planes[1] = pgm_allocarray(f.c / 2, f.r / 2);
+                f.planes[2] = pgm_allocarray(f.c / 2, f.r / 2);
+                vf.unmap();  vf = QVideoFrame();
+                return f;
+            }
+
+            /* ------------------------------------------------------------------
+             * 1. Prepare working buffer dimensions
+             * ------------------------------------------------------------------
+        */
+            #define SSCOLS (640)
+            int calcrows = (float)rows / ((float)cols / SSCOLS);
+            if (calcrows % 2 != 0) ++calcrows;          /* even number of rows */
+            int SSROWS = calcrows;                      /* resized height      */
+
+            /* Allocate the Y and temporary UV interleaved buffers */
+            gray **g  = pgm_allocarray(SSCOLS, SSROWS); /* Y plane            */
+            int ncols = SSCOLS;
+            int nrows = SSROWS;
+            unsigned char *uv_interleaved = new unsigned char[(SSCOLS/2) * (SSROWS/2) * 2];
+
+            /* ------------------------------------------------------------------
+             * 2. Resize Y directly from source
+             * ------------------------------------------------------------------
+        */
+            unsigned char *srcY  = (unsigned char *)vf.bits(0);
+            int strideY           = vf.bytesPerLine(0);     /* source stride */
+
+            if (rows == SSCOLS && cols == SSROWS) {
+                /* Exact size – simple copy (stride may still differ) */
+                for (int r = 0; r < rows; ++r)
+                    memcpy(&g[0][0] + r * SSCOLS,
+                           srcY + r * strideY, cols);
+            } else {
+                /* Use STB to resize directly into the target buffer */
+                stbir_resize_uint8(srcY, cols, rows, strideY,
+                                   &g[0][0], SSCOLS, SSROWS, 0, 1);
+            }
+
+            /* Optional flip for macOS drivers */
+#ifdef MACOSX
+            flip_in_place(g, SSCOLS, SSROWS);
+#endif
+
+            /* Rotate if requested */
+            if (Orientation != 0) {
+                gray **rg = pgm_rot(g, ncols, nrows, Orientation);
+                pgm_freearray(g, SSROWS);
+                g = rg;
+            }
+
+            /* ------------------------------------------------------------------
+             * 3. Resize interleaved UV (VU) directly from source
+             * ------------------------------------------------------------------
+        */
+            unsigned char *srcUV = (unsigned char *)vf.bits(1);
+            int strideUV          = vf.bytesPerLine(1);     /* source stride */
+
+            if (cols == SSCOLS && rows == SSROWS) {
+                /* Source already has correct size – copy to interleaved buffer */
+                for (int r = 0; r < rows / 2; ++r)
+                    memcpy(uv_interleaved + r * SSCOLS,
+                           srcUV + r * strideUV, SSCOLS);
+            } else {
+                /* Use STB to resize directly into the interleaved buffer */
+                stbir_resize_uint8(srcUV, cols, rows, strideUV,
+                                   uv_interleaved, SSCOLS, SSROWS, 0, 2);
+            }
+
+            /* ------------------------------------------------------------------
+             * 4. Split interleaved UV into separate Cb / Cr planes
+             * ------------------------------------------------------------------
+        */
+            gray **cr, **cb;
+            get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2,
+                                          uv_interleaved, cr, cb, 1);
+
+            /* Swap Cb/Cr channels if requested */
+            if(swap)
+            {
+                gray **tmp = cr;
+                cr = cb;
+                cb = tmp;
+            }
+
+            /* Rotate chroma planes if requested */
+            if (Orientation != 0) {
+                int c = SSCOLS / 2;
+                int r = SSROWS / 2;
+                gray **rcr = pgm_rot(cr, c, r, Orientation);
+                pgm_freearray(cr, SSROWS / 2);
+                cr = rcr;
+
+                c = SSCOLS / 2;
+                r = SSROWS / 2;
+                gray **rcb = pgm_rot(cb, c, r, Orientation);
+                pgm_freearray(cb, SSROWS / 2);
+                cb = rcb;
+            }
+
+            /* ------------------------------------------------------------------
+             * 5. Finalise output
+             * ------------------------------------------------------------------
+        */
+            f.c = ncols;
+            f.r = nrows;
+
+            f.planes[0] = g;
+            f.planes[1] = cb;
+            f.planes[2] = cr;
+
+            /* Clean up */
+            delete[] uv_interleaved;
+            vf.unmap();
+            vf = QVideoFrame();
+            return f;
 #else
         if(fmt != AQ_NV21)
         {
@@ -1262,10 +1452,13 @@ conv_data(vframe ivf)
         gray **g = pgm_allocarray(SSCOLS, SSROWS);
         int ncols = SSCOLS;
         int nrows = SSROWS;
-        if(cols == SSCOLS && rows == SSROWS)
+        if(cols == SSCOLS && rows == SSROWS && packed)
             memcpy(&g[0][0], c, cols * rows);
         else
-            stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
+        {
+            int stride = vf.bytesPerLine(0);
+            stbir_resize_uint8_linear(c, cols, rows, stride, &g[0][0], SSCOLS, SSROWS, 0, (stbir_pixel_layout)1);
+        }
 
         // NOTE: this flipping is for cdc-x compatibility.
         // the driver produces flipped images because the old ms
@@ -1287,20 +1480,21 @@ conv_data(vframe ivf)
             g = rg;
         }
 
-        c += f.c * f.r;
+        //c += f.c * f.r;
         c = vf.bits(1);
         // note: 2 channels, cb and cr
         gray **cr;
         gray **cb;
 
-        if(cols == SSCOLS && rows == SSROWS)
+
+        if(cols == SSCOLS && rows == SSROWS && packed)
         {
             get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, c, cr, cb, 1);
         }
         else
         {
             gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
-            stbir_resize_uint8(c, cols / 2, rows / 2, 0, &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
+            stbir_resize_uint8_linear(c, cols / 2, rows / 2, vf.bytesPerLine(1), &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, (stbir_pixel_layout)2);
             get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
             pgm_freearray(gc, SSROWS / 2);
         }

@@ -729,11 +729,8 @@ dostringrep(vc v)
 	VcIOHackStr *o = new VcIOHackStr;
 
 	v.stringrep(*o);
-	*o << '\0';
-    char *s = o->str();
+    vc ret(VC_BSTRING, o->ref_str(), o->pcount());
     delete o;
-	vc ret(VC_STRING, s);
-    delete [] s;
 	return ret;
 }
 
