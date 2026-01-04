@@ -353,7 +353,8 @@ init_index_data()
 {
     try {
         sql_start_transaction();
-        sql_simple("delete from pull_failed");
+        // note: ca 2026, pull_failed not cleared, see notes XXX
+        //sql_simple("delete from pull_failed");
         sql_simple("delete from midlog");
         sql_commit_transaction();
     }  catch (...) {
@@ -1056,6 +1057,11 @@ import_remote_mi(const vc& remote_uid)
         s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
 
+        // instead of clearing everything on connection (ca before 2026), be more selective, to
+        // reduce the number of failing queries when significant parts of the corpus become inaccessible
+        s.sql_simple("delete from pull_failed where mid in (select mid from mi2.msg_idx)");
+        s.sql_simple("delete from pull_failed where mid in (select mid from mt.gmt)");
+
         // probably makes a lot of sense to clean out unknown uid's, if we have
         // an "authoritative" idea what the current group membership is. it will keep
         // those uids from propagating around to other clients, just in case the remote
@@ -1185,7 +1191,10 @@ import_remote_iupdate(vc remote_uid, vc vals)
                 }
             }
         }
-
+        if(!mid.is_nil())
+        {
+            sql_simple("delete from pull_failed where mid = ?1", mid);
+        }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
 
