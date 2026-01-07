@@ -1051,12 +1051,12 @@ private:
     vc package_next_cmd();
 
     std::future<int> *unpack_index_future;
-    int unpack_index(cvcr cmd);
-    void process_pull(cvcr cmd);
-    void process_pull_resp(cvcr cmd);
-    void process_iupdate(cvcr cmd);
-    void process_tupdate(cvcr cmd);
-    void process_syncpoint(cvcr cmd);
+    int unpack_index(vc cmd);
+    void process_pull(vc cmd);
+    void process_pull_resp(vc cmd);
+    void process_iupdate(vc cmd);
+    void process_tupdate(vc cmd);
+    void process_syncpoint(vc cmd);
 
     bool eager_pull_timer_active;
     DwTimer eager_pull_timer;
