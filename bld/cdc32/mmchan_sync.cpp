@@ -492,8 +492,7 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     if(s == NORMAL_RECV)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
-        // (ca 2026) don't clean pull_failed on reconnect, see note XXX
-        //clean_pull_failed_uid(remote_uid());
+        clean_pull_failed_uid(remote_uid());
         if((int)get_settings_value("sync/eager") >= 1)
         {
             eager_pull_timer_active = true;
