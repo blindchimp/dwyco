@@ -1067,11 +1067,11 @@ private:
 public:
     dwyco::sendq sync_sendq;
 private:
-    void send_pull_resp(const vc &mid, const vc &uid, const vc &msg, const vc &att, const vc &pri, const vc &why = vcnil);
-    void send_pull_error(cvcr mid, cvcr pri, cvcr why = vcnil);
+    void send_pull_resp(const vc &mid, const vc &uid, const vc &msg, const vc &att, const vc &pri);
+    void send_pull_error(cvcr mid, cvcr pri);
 
     void cleanup_pulls(int myid);
-    void pull_done(cvcr mid, cvcr remote_uid, cvcr success, cvcr why);
+    void pull_done(cvcr mid, cvcr remote_uid, cvcr success);
 
     // this is useful for long-running servers where
     // we want to discard protocol-runs that have stalled

@@ -224,7 +224,6 @@ QMsgSql::init_schema(const DwString& schema_name)
                 sql_simple("drop index if exists sent_idx");
                 sql_simple("drop index if exists att_idx");
                 sql_simple("create table if not exists mid_att(mid text not null primary key, att text not null)");
-                sql_simple("create table if not exists pull_failed_why(mid text not null, uid text not null, time integer not null, reason text, unique(mid, uid) on conflict replace)");
                 sql_commit_transaction();
 
                 const vc& res = sql_simple("pragma user_version");
@@ -354,18 +353,8 @@ init_index_data()
 {
     try {
         sql_start_transaction();
-
-        if(settings_get_eager_mode() != 1)
-        {
-            sql_simple("delete from pull_failed");
-            sql_simple("delete from pull_failed_why");
-        }
-        else
-        {
-            // note: ca 2026, eager mode pull_failed not cleared
-            // there might be some heuristics we can put in here to
-            // use the why table to decide what can be re-tried after a time
-        }
+        // note: ca 2026, pull_failed not cleared, see notes XXX
+        //sql_simple("delete from pull_failed");
         sql_simple("delete from midlog");
         sql_commit_transaction();
     }  catch (...) {
@@ -374,20 +363,10 @@ init_index_data()
 }
 
 void
-add_pull_failed(const vc& mid, const vc& uid, const vc& why)
+add_pull_failed(const vc& mid, const vc& uid)
 {
     const vc& huid = to_hex(uid);
-    try {
-        sql_start_transaction();
-        sql_simple("insert into pull_failed(mid, uid) values(?1, ?2)", mid, huid);
-        sql_simple("insert into pull_failed_why(mid, uid, time, reason) values(?1, ?2, strftime('%s', 'now'), ?3)", mid, huid, why);
-
-        sql_commit_transaction();
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
-    }
+    sql_simple("insert into pull_failed(mid, uid) values(?1, ?2)", mid, huid);
 }
 
 bool
@@ -402,18 +381,13 @@ void
 clean_pull_failed_mid(const vc& mid)
 {
     sql_simple("delete from pull_failed where mid = ?1", mid);
-    sql_simple("delete from pull_failed_why where mid = ?1", mid);
 }
 
 void
 clean_pull_failed_uid(const vc& uid)
 {
     vc huid = to_hex(uid);
-    // don't delete in eager mode
-    if(settings_get_eager_mode() == 1)
-        return;
     sql_simple("delete from pull_failed where uid = ?1", huid);
-    sql_simple("delete from pull_failed_why where uid = ?1", huid);
 }
 
 // cancel all the
@@ -950,8 +924,6 @@ remove_sync_state()
         sql_simple("delete from midlog");
         sql_simple("delete from mt.taglog");
         sql_simple("delete from deltas");
-        sql_simple("delete from pull_failed");
-        sql_simple("delete from pull_failed_why");
         sql_commit_transaction();
         // note: we might be getting called while inside a nested
         // transaction, and the vacuum fails. which might be ok, but
@@ -1087,13 +1059,8 @@ import_remote_mi(const vc& remote_uid)
 
         // instead of clearing everything on connection (ca before 2026), be more selective, to
         // reduce the number of failing queries when significant parts of the corpus become inaccessible
-        if(settings_get_eager_mode() == 1)
-        {
-            s.sql_simple("delete from pull_failed where mid in (select mid from mi2.msg_idx)");
-            s.sql_simple("delete from pull_failed where mid in (select mid from mt.gmt)");
-            s.sql_simple("delete from pull_failed_why where mid in (select mid from mi2.msg_idx)");
-            s.sql_simple("delete from pull_failed_why where mid in (select mid from mt.gmt)");
-        }
+        s.sql_simple("delete from pull_failed where mid in (select mid from mi2.msg_idx)");
+        s.sql_simple("delete from pull_failed where mid in (select mid from mt.gmt)");
 
         // probably makes a lot of sense to clean out unknown uid's, if we have
         // an "authoritative" idea what the current group membership is. it will keep
@@ -1227,7 +1194,6 @@ import_remote_iupdate(vc remote_uid, vc vals)
         if(!mid.is_nil())
         {
             sql_simple("delete from pull_failed where mid = ?1", mid);
-            sql_simple("delete from pull_failed_why where mid = ?1", mid);
         }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
@@ -1805,7 +1771,7 @@ sql_last_recved_msg(vc uid)
 }
 
 int
-sql_is_mid_local(const vc& mid)
+sql_is_mid_local(vc mid)
 {
     vc res = sql_simple("select 1 from msg_idx where mid = ?1 limit 1", mid);
     if(res.num_elems() == 0)
@@ -1814,7 +1780,7 @@ sql_is_mid_local(const vc& mid)
 }
 
 int
-sql_is_mid_anywhere(const vc& mid)
+sql_is_mid_anywhere(vc mid)
 {
     vc res = sql_simple("select 1 from gi where mid = ?1 limit 1", mid);
     if(res.num_elems() == 0)
@@ -1823,7 +1789,7 @@ sql_is_mid_anywhere(const vc& mid)
 }
 
 int
-sql_mid_has_tombstone(const vc& mid)
+sql_mid_has_tombstone(vc mid)
 {
     vc res = sql_simple("select 1 from msg_tomb where mid = ?1", mid);
     if(res.num_elems() == 0)

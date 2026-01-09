@@ -56,7 +56,7 @@ MMChannel::assert_eager_pulls()
     const vc uid = remote_uid();
     //vc huid = to_hex(uid);
     vc mids;
-    int eager_mode = settings_get_eager_mode();
+    int eager_mode = (int)get_settings_value("sync/eager");
     // note: we are goofing here, eager_mode = 1 is "normal" mode
     // and 2 is "recent mode", but if it is anything else, we still
     // want to act like "normal mode"
@@ -213,40 +213,30 @@ MMChannel::process_pull(vc cmd)
 {
     if(cmd[0] != vc("pull"))
         oopanic("pull");
-    const vc mid = cmd[1];
-    const vc pri = cmd[2];
+    vc mid = cmd[1];
+    vc pri = cmd[2];
     // load the msg and attachment, and send it back as a "pull-resp"
     // XXX note this probably needs to be done in one query, but
     // this is a weird case anywhere, where a client has sent us
     // a request thinking it is still in the global index...
     // this is kinda a race if there are tombstones propagating
     // while a bunch of pulls are getting done.
-    if(sql_mid_has_tombstone(mid))
+    if(!sql_is_mid_local(mid) || sql_mid_has_tombstone(mid))
     {
-        send_pull_error(mid, pri, "tomb");
-        return;
-    }
-    if(!sql_is_mid_anywhere(mid))
-    {
-        send_pull_error(mid, pri, "unknown");
-        return;
-    }
-    if(!sql_is_mid_local(mid))
-    {
-        send_pull_error(mid, pri, "nonlocal");
+        send_pull_error(mid, pri);
         return;
     }
     vc huid = sql_get_uid_from_mid(mid);
     if(huid.is_nil())
     {
-        send_pull_error(mid, pri, "fail");
+        send_pull_error(mid, pri);
         return;
     }
 
     vc body = load_body_by_id(from_hex(huid), mid);
     if(body.is_nil())
     {
-        send_pull_error(mid, pri, "fail");
+        send_pull_error(mid, pri);
         return;
     }
 
@@ -260,7 +250,7 @@ MMChannel::process_pull(vc cmd)
         att = file_to_string(a);
         if(att.is_nil())
         {
-            send_pull_error(mid, pri, "fail");
+            send_pull_error(mid, pri);
             return;
         }
     }
@@ -270,12 +260,12 @@ MMChannel::process_pull(vc cmd)
 }
 
 void
-MMChannel::pull_done(cvcr mid, cvcr remote_uid, cvcr success, cvcr why)
+MMChannel::pull_done(cvcr mid, cvcr remote_uid, cvcr success)
 {
     if(success.is_nil())
     {
         pulls::pull_failed(mid, remote_uid);
-        add_pull_failed(mid, remote_uid, why);
+        add_pull_failed(mid, remote_uid);
     }
     else
     {
@@ -316,11 +306,9 @@ MMChannel::process_pull_resp(vc cmd)
     vc body = cmd[3];
     vc att = cmd[4];
 
-    // uid nil means the pull failed
     if(uid.is_nil())
     {
-        vc why = cmd[5];
-        pull_done(mid, remote_uid(), vcnil, why);
+        pull_done(mid, remote_uid(), vcnil);
         return;
     }
 
@@ -400,7 +388,7 @@ MMChannel::process_pull_resp(vc cmd)
     }
     sql_commit_transaction();
     se_emit_msg_pull_ok(mid, uid);
-    pull_done(mid, remote_uid(), vctrue, vcnil);
+    pull_done(mid, remote_uid(), vctrue);
 
 }
 
@@ -444,7 +432,7 @@ MMChannel::send_pull(const vc& mid, int pri)
 }
 
 void
-MMChannel::send_pull_resp(const vc& mid, const vc& uid, const vc& msg, const vc& att, const vc& pri, const vc& why)
+MMChannel::send_pull_resp(const vc& mid, const vc& uid, const vc& msg, const vc& att, const vc& pri)
 {
     vc cmd(VC_VECTOR);
     cmd[0] = "pull-resp";
@@ -452,25 +440,13 @@ MMChannel::send_pull_resp(const vc& mid, const vc& uid, const vc& msg, const vc&
     cmd[2] = uid;
     cmd[3] = msg;
     cmd[4] = att;
-    cmd[5] = why;
     sync_sendq.append(cmd, pri);
 }
 
-// the "why" parameter is useful to the requester in a couple of
-// situations, and can help it decide if it needs to re-query
-// the pull later, or never try again, etc.
-// why can be:
-//  nil - old protocol, unknown reason, we aren't providing the contents.
-//  unknown - the mid is not in our index in any way, no gi, no tombstone, nothing (transient)
-//  tomb - we have a tombstone for it. so you'll never receive the contents from us (permanent)
-//  fail - we know about the mid, but we can't send the contents because of load failures or database fails. (transient)
-//  nonlocal - we know about the mid, but we do not have the contents locally. (transient)
-//
-//
 void
-MMChannel::send_pull_error(cvcr mid, cvcr pri, cvcr why)
+MMChannel::send_pull_error(cvcr mid, cvcr pri)
 {
-    send_pull_resp(mid, vcnil, vcnil, vcnil, pri, why);
+    send_pull_resp(mid, vcnil, vcnil, vcnil, pri);
 }
 
 void
@@ -493,7 +469,7 @@ MMChannel::mms_sync_state_changed(enum syncstate s)
     if(s == NORMAL_SEND)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
-        // note: it is better to assert eager pulls once on the recv side
+        // note: it is better to do assert eager pulls once on the recv side
         // since we get the signal right after we unpack the
         // remote client's latest info
         Group_uids.add(remote_uid());
@@ -517,8 +493,8 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
         // (ca 2026) don't clean pull_failed on reconnect, see note XXX
-        clean_pull_failed_uid(remote_uid());
-        if(settings_get_eager_mode() >= 1)
+        //clean_pull_failed_uid(remote_uid());
+        if((int)get_settings_value("sync/eager") >= 1)
         {
             eager_pull_timer_active = true;
             assert_eager_pulls();
@@ -538,7 +514,7 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
 void
 MMChannel::eager_pull_processing()
 {
-    if(settings_get_eager_mode() == 0)
+    if((int)get_settings_value("sync/eager") == 0)
     {
         eager_pull_timer.stop();
         return;

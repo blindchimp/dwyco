@@ -25,7 +25,6 @@ int set_settings_value(const char *name, int);
 int set_settings_value(const char *name, vc);
 void bind_sql_setting(vc name, void (*fn)(vc, vc));
 void bind_sql_section(vc pfx, void (*fn)(vc, vc));
-int settings_get_eager_mode();
 }
 //template<class T> int set_settings_value(const char *name, T val);
 #endif
