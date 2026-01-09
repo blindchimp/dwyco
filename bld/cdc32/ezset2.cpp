@@ -92,6 +92,12 @@ static init_settings Initial_settings[] =
     // on the server or anything, this is just something a potential
     // group joiner needs to have in order to request the group private key.
     DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
+
+    // originally, this was just
+    // 0 - nothing (on demand only)
+    // 1 - everything (fetch everything we know of)
+    // now we added this:
+    // 2 - fetch everything we know of that is "recent" (30 days or so)
     // this is "recent" mode, by default
     DWUIDECLVAL(VC_INT, sync/eager, "", 2),
 
@@ -310,6 +316,12 @@ get_settings_value(const char *name)
     if(!Map->find(name, s))
         oopanic("bad setting");
     return s->value;
+}
+
+int
+settings_get_eager_mode()
+{
+    return (int)get_settings_value("sync/eager");
 }
 }
 
