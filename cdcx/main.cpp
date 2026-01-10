@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
     qInstallMessageHandler(myMessageOutput);
 #endif
 #ifdef WIN32
-    QApplication::setStyle("windowsvista");
+    //QApplication::setStyle("windowsvista");
 #endif
     QApplication app(argc, argv);
     srand(time(0));
