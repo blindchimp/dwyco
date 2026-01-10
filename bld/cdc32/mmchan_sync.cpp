@@ -184,7 +184,7 @@ MMChannel::package_next_cmd()
 }
 
 int
-MMChannel::unpack_index(cvcr cmd)
+MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
         return 0;
@@ -209,7 +209,7 @@ MMChannel::unpack_index(cvcr cmd)
 }
 
 void
-MMChannel::process_pull(cvcr cmd)
+MMChannel::process_pull(vc cmd)
 {
     if(cmd[0] != vc("pull"))
         oopanic("pull");
@@ -282,7 +282,7 @@ MMChannel::pull_done(cvcr mid, cvcr remote_uid, cvcr success)
 }
 
 void
-MMChannel::process_pull_resp(cvcr cmd)
+MMChannel::process_pull_resp(vc cmd)
 {
     // XXX: this probably needs to be conditional on whether
     // we have a tombstone here or not. you can imagine a case
@@ -393,7 +393,7 @@ MMChannel::process_pull_resp(cvcr cmd)
 }
 
 void
-MMChannel::process_iupdate(cvcr cmd)
+MMChannel::process_iupdate(vc cmd)
 {
     //GRTLOGVC(cmd);
     vc mid = import_remote_iupdate(remote_uid(), cmd[1]);
@@ -409,14 +409,14 @@ MMChannel::process_iupdate(cvcr cmd)
 }
 
 void
-MMChannel::process_tupdate(cvcr cmd)
+MMChannel::process_tupdate(vc cmd)
 {
     //GRTLOGVC(cmd);
     import_remote_tupdate(remote_uid(), cmd[1]);
 }
 
 void
-MMChannel::process_syncpoint(cvcr cmd)
+MMChannel::process_syncpoint(vc cmd)
 {
     import_new_syncpoint(remote_uid(), cmd[1]);
 }
