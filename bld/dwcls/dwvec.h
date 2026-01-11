@@ -77,6 +77,7 @@
 #define DWVEC_INLINES
 #undef DWVEC_NO_INDEX_CHECK
 #endif
+#include <utility>
 #include <stdlib.h>
 #include "dwiter.h"
 #undef index
@@ -103,7 +104,7 @@
 template<class T> class DwVecIter;
 
 #ifndef DWVEC_DEFAULTBLOCKSIZE
-#define DWVEC_DEFAULTBLOCKSIZE 4
+#define DWVEC_DEFAULTBLOCKSIZE 16
 #endif
 #define DWVEC_FIXED 1
 #define DWVEC_AUTO_EXPAND 1
@@ -135,8 +136,8 @@ public:
 
     DwVec(const DwVec&);
     DwVec& operator=(const DwVec&);
-    DwVec(DwVec&&);
-    DwVec& operator=(DwVec&&);
+    DwVec(DwVec&&) noexcept;
+    DwVec& operator=(DwVec&&) noexcept;
     int operator==(const DwVec&) const;
     int operator!=(const DwVec& t) const {
         return !(*this == t);
@@ -240,7 +241,7 @@ DwVec<T>::operator=(const DwVec<T>& vec)
 }
 
 template<class T>
-DwVec<T>::DwVec(DwVec<T>&& vec)
+DwVec<T>::DwVec(DwVec<T>&& vec) noexcept
 {
     count = vec.count;
     is_fixed = vec.is_fixed;
@@ -257,7 +258,7 @@ DwVec<T>::DwVec(DwVec<T>&& vec)
 
 template<class T>
 DwVec<T>&
-DwVec<T>::operator=(DwVec<T>&& vec)
+DwVec<T>::operator=(DwVec<T>&& vec) noexcept
 {
     if(this != &vec)
     {
@@ -410,7 +411,7 @@ DwVec<T>::set_size(long new_count)
         long cnt = new_count < old_count ? new_count : old_count;
         long i;
         for(i = 0; i < cnt; ++i)
-            new_values[i] = values[i];
+            new_values[i] = std::move(values[i]);
         delete [] values;
         values = new_values;
 #ifdef DWVEC_DOINIT
