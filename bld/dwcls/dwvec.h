@@ -104,7 +104,7 @@
 template<class T> class DwVecIter;
 
 #ifndef DWVEC_DEFAULTBLOCKSIZE
-#define DWVEC_DEFAULTBLOCKSIZE 16
+#define DWVEC_DEFAULTBLOCKSIZE 8
 #endif
 #define DWVEC_FIXED 1
 #define DWVEC_AUTO_EXPAND 1
@@ -311,9 +311,34 @@ DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
     auto_expand = aexp;
 }
 
+#if 0
+#include <stdio.h>
+#include <typeinfo>
+#include <mutex>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+
+extern int Go;
+extern int Go_f;
+extern std::mutex Go_mutex;
+#endif
 template<class T>
 DwVec<T>::~DwVec()
 {
+#if 0
+    if(Go)
+    {
+        std::lock_guard<std::mutex> lock(Go_mutex);
+        if(!Go_f)
+            Go_f = open("/tmp/baz.xxx", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+        char a[512];
+        sprintf(a, "%s %lu %ld %ld\n", typeid(T).name(), sizeof(T), count, alloced_count);
+        write(Go_f, a, strlen(a));
+    }
+#endif
     delete [] values;
 }
 
