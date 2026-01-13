@@ -42,9 +42,17 @@ myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString
 
 }
 
+#if 0
+#include <mutex>
+int Go;
+int Go_f;
+std::mutex Go_mutex;
+#endif
+
 int main(int argc, char *argv[])
 {
-#if 1 && defined(DWYCO_RELEASE)
+    //Go = 1;
+#if 0 && defined(DWYCO_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
 

@@ -127,7 +127,7 @@ RCQDEC(rep)
 }
 
 
-vc::vc(vc&& v)
+vc::vc(vc&& v) noexcept
 {
     rep = v.rep;
     v.rep = vc_nil::vcnilrep;
@@ -135,7 +135,7 @@ vc::vc(vc&& v)
 
 
 vc&
-vc::operator=(vc&& v)
+vc::operator=(vc&& v) noexcept
 {
     if(this != &v)
     {

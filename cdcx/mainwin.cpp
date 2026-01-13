@@ -2996,7 +2996,7 @@ decorate(const DwOString& uid, QStandardItemModel *umodel, QModelIndex mi)
             if(uid_from_online)
                 umodel->setData(mi, QColor(Qt::red), Qt::ForegroundRole);
             else
-                umodel->setData(mi, QColor(Qt::darkMagenta), Qt::ForegroundRole);
+                umodel->setData(mi, QColor(QColorConstants::Svg::darkorange), Qt::ForegroundRole);
             if(Display_pics_in_user_list)
             {
                 QPixmap pm = ThePreviewCache->get_preview_by_uid(uid);
@@ -3031,7 +3031,7 @@ decorate(const DwOString& uid, QStandardItemModel *umodel, QModelIndex mi)
         }
         else
         {
-            umodel->setData(mi, QColor(Qt::black), Qt::ForegroundRole);
+            umodel->setData(mi, qApp->palette().color(QPalette::Text), Qt::ForegroundRole);
             if(Display_pics_in_user_list)
             {
                 QPixmap pm = ThePreviewCache->get_preview_by_uid(uid);

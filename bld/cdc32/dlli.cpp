@@ -5876,12 +5876,12 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
 //            s = (const char *)uid_to_dir(v[0][QM_BODY_FROM]);
 //        else
 //            s = (const char *)uid_to_dir(vc(VC_BSTRING, recip_uid, uid_len));
-        s = (const char *)uid_to_dir(ruid);
+        s = uid_to_dir(ruid);
         s += DIRSEPSTR;
     }
-    s += (const char *)body[QM_BODY_ATTACHMENT];
-    m->file_basename = (const char *)body[QM_BODY_ATTACHMENT];
-    m->actual_filename = newfn(s).c_str();
+    s += body[QM_BODY_ATTACHMENT];
+    m->file_basename = body[QM_BODY_ATTACHMENT];
+    m->actual_filename = newfn(s);
     m->inhibit_hashing = 1;
     GRTLOG("make_zap_view: ret %d", m->vp.cookie, 0);
     return m->vp.cookie;

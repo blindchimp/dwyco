@@ -42,10 +42,10 @@ public:
     DwVecP& operator=(const DwVecP& s) {
         return (DwVecP&)DwVec<void *>::operator=(s);
     }
-    DwVecP& operator=(DwVecP&& s) {
+    DwVecP& operator=(DwVecP&& s) noexcept {
         return (DwVecP&)DwVec<void *>::operator=(std::move(s));
     }
-    DwVecP(DwVecP&& v) : DwVec<void *>::DwVec<void *>(std::move(v)) {}
+    DwVecP(DwVecP&& v) noexcept : DwVec<void *>::DwVec<void *>(std::move(v)) {}
 
     ~DwVecP() {}
     int operator==(const DwVecP& s) const {
