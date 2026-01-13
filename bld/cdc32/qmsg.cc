@@ -4328,7 +4328,7 @@ power_clean_safe()
 }
 
 void
-append_forwarded_text(DwString& s, const vc& body)
+append_forwarded_text(DwString& s, vc body)
 {
     if(body.type() != VC_VECTOR)
     {
