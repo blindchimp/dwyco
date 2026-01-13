@@ -954,7 +954,7 @@ gen_authentication(vc qmsg, const vc& att_hash)
 }
 
 int
-verify_authentication(const vc& text, const vc& uid, const vc& att_hash, const vc& datevec, const vc& no_forward, const vc& mac)
+verify_authentication(const vc& text, const vc& uid, const vc& att_hash, vc datevec, const vc& no_forward, const vc& mac)
 {
     SHA1 sha;
     byte *secret = (byte *)HASH_SECRET;
