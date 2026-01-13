@@ -1011,7 +1011,7 @@ verify_authentication(const vc& text, const vc& uid, const vc& att_hash, const v
 }
 
 int
-verify_chain(const vc& body, int top, const vc& a_att_hash, const vc& attachment_dir)
+verify_chain(vc body, int top, const vc& a_att_hash, const vc& attachment_dir)
 {
     GRTLOG("verify chain %d", top, 0);
     GRTLOGVC(body);
@@ -1020,10 +1020,10 @@ verify_chain(const vc& body, int top, const vc& a_att_hash, const vc& attachment
     const vc from = body[QM_BODY_FROM];
     vc text = body[QM_BODY_NEW_TEXT];
     const vc attachment = body[QM_BODY_ATTACHMENT];
-    const vc authvec = body[QM_BODY_AUTH_VEC];
+    vc authvec = body[QM_BODY_AUTH_VEC];
     const vc new_text = body[QM_BODY_NEW_TEXT];
-    const vc forwarded_body = body[QM_BODY_FORWARDED_BODY];
-    const vc datevec = body[QM_BODY_DATE];
+    vc forwarded_body = body[QM_BODY_FORWARDED_BODY];
+    vc datevec = body[QM_BODY_DATE];
     const vc no_forward = body[QM_BODY_NO_FORWARD];
     vc att_hash = a_att_hash;
 

@@ -93,7 +93,7 @@ void append_forwarded_text(DwString& s, vc body);
 void append_forwarded_bodies(vc v, vc body);
 vc get_body_text(vc body);
 int verify_authentication(const vc &text, const vc &uid, const vc &att_filename, const vc &datevec, const vc &no_forward, const vc &mac);
-int verify_chain(const vc &body, int top, const vc &att_hash, const vc &attachment_dir = vcnil);
+int verify_chain(vc body, int top, const vc &att_hash, const vc &attachment_dir = vcnil);
 vc strip_port(vc);
 vc strip_chain(vc);
 int check_profile_authenticator(vc m, vc uid);
