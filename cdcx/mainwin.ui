@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="contextMenuPolicy">
-   <enum>Qt::DefaultContextMenu</enum>
+   <enum>Qt::ContextMenuPolicy::DefaultContextMenu</enum>
   </property>
   <property name="windowTitle">
    <string>Dwyco CDC-X </string>
@@ -19,33 +19,6 @@
   <property name="windowIcon">
    <iconset resource="icons.qrc">
     <normaloff>:/new/prefix1/greenguy.png</normaloff>:/new/prefix1/greenguy.png</iconset>
-  </property>
-  <property name="styleSheet">
-   <string notr="true">#MainWindow {background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);}
-QTextEdit {
-padding: 1px;
-border-style: solid;
-border: 2px solid gray;
-border-radius: 2px;
-}
-QLineEdit {
-padding: 1px;
-border-style: solid;
-border: 2px solid gray;
-border-radius: 2px;
-}
-QListView {
-padding: 1px;
-border-style: solid;
-border: 2px solid gray;
-border-radius: 2px;
-}
-QTreeView {
-padding: 1px;
-border-style: solid;
-border: 2px solid gray;
-border-radius: 2px;
-}</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <property name="sizePolicy">
@@ -95,10 +68,10 @@ border-radius: 2px;
        <string>This is the main pal list. Red means user is online.</string>
       </property>
       <property name="editTriggers">
-       <set>QAbstractItemView::NoEditTriggers</set>
+       <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
       </property>
       <property name="selectionMode">
-       <enum>QAbstractItemView::ExtendedSelection</enum>
+       <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
       </property>
       <property name="indentation">
        <number>2</number>
@@ -116,7 +89,7 @@ border-radius: 2px;
      <x>0</x>
      <y>0</y>
      <width>394</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetup">
@@ -184,7 +157,7 @@ border-radius: 2px;
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="orientation">
-    <enum>Qt::Horizontal</enum>
+    <enum>Qt::Orientation::Horizontal</enum>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
