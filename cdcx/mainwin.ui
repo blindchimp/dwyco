@@ -20,6 +20,33 @@
    <iconset resource="icons.qrc">
     <normaloff>:/new/prefix1/greenguy.png</normaloff>:/new/prefix1/greenguy.png</iconset>
   </property>
+  <property name="styleSheet">
+   <string notr="true">
+QTextEdit {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}
+QLineEdit {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}
+QListView {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}
+QTreeView {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}</string>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
