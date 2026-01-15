@@ -50,6 +50,7 @@ aswitch::~aswitch()
  * in dark mode. can you make it work better by honoring dark mode colors
  * for text.
  * (insert above function)
+ * +a bunch of other tweaks
  */
 static QColor contrastColor(const QColor &bg)
 {
@@ -72,8 +73,9 @@ void aswitch::paintEvent(QPaintEvent *event)
     QColor onColor   = pal.color(QPalette::Highlight);   // background for "on"
     QColor offColor  = pal.color(QPalette::Button);
     QColor offText   = pal.color(QPalette::ButtonText);  // default text color
+    QColor borderColor = contrastColor(Qt::gray);      // border color from palette
 
-    painter.fillRect(rect(), bgColor);
+    painter.fillRect(rect(), Qt::gray);
 
     QRect switchRect;
     QString text;
@@ -81,14 +83,17 @@ void aswitch::paintEvent(QPaintEvent *event)
     QColor textColor;
 
     int halfWidth = width() / 2;
+    int borderOffset = 1;  // account for 1px border
 
     if (isChecked()) {
-        switchRect  = QRect(halfWidth, 0, halfWidth, height());
+        switchRect  = QRect(halfWidth + borderOffset, borderOffset,
+                           halfWidth - borderOffset, height() - 2 * borderOffset);
         switchColor = onColor;
         text        = QStringLiteral("Turn off");
         textColor   = contrastColor(onColor);   // ensure readable on highlight
     } else {
-        switchRect  = QRect(0, 0, halfWidth, height());
+        switchRect  = QRect(borderOffset, borderOffset,
+                           halfWidth - borderOffset, height() - 2 * borderOffset);
         switchColor = offColor;
         text        = QStringLiteral("Turn on");
         textColor   = offText;                  // normal button text color
@@ -97,4 +102,11 @@ void aswitch::paintEvent(QPaintEvent *event)
     painter.fillRect(switchRect, switchColor);
     painter.setPen(textColor);
     painter.drawText(switchRect, Qt::AlignCenter, text);
+
+    // Draw 1px border around entire widget
+    QPen borderPen(borderColor);
+    borderPen.setWidth(1);
+    painter.setPen(borderPen);
+    painter.drawRect(rect().adjusted(0, 0, -1, -1));  // adjust to keep exactly 1px
 }
+
