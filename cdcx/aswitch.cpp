@@ -21,24 +21,92 @@ aswitch::~aswitch()
 }
 
 
-void
-aswitch::paintEvent(QPaintEvent* event)
+// void
+// aswitch::paintEvent(QPaintEvent* event)
+// {
+//     QPainter painter(this);
+//     painter.fillRect(rect(), Qt::gray);
+//     QRect switchRect;
+//     QColor switchColor;
+//     QString text;
+//     int halfWidth = width() / 2;
+//     if (isChecked()) {
+//         switchRect = QRect(halfWidth, 0, halfWidth, height());
+//         switchColor = QColor(Qt::cyan);
+//         text = "Turn off";
+//     } else {
+//         switchRect = QRect(0, 0, halfWidth, height());
+//         switchColor = QColor(Qt::darkGray);
+//         text = "Turn On";
+//     }
+//     painter.fillRect(switchRect, switchColor);
+//     painter.drawText(switchRect, Qt::AlignCenter, text);
+// }
+
+// WARNING: AI generated, ca 2026
+/*
+ * the following qt6 widgets function creates a button with a cyan
+ * foreground in one of the states, which is hard to read with white text
+ * in dark mode. can you make it work better by honoring dark mode colors
+ * for text.
+ * (insert above function)
+ * +a bunch of other tweaks
+ */
+static QColor contrastColor(const QColor &bg)
 {
-    QPainter painter(this);
-    painter.fillRect(rect(), Qt::gray);
-    QRect switchRect;
-    QColor switchColor;
-    QString text;
-    int halfWidth = width() / 2;
-    if (isChecked()) {
-        switchRect = QRect(halfWidth, 0, halfWidth, height());
-        switchColor = QColor(Qt::cyan);
-        text = "Turn off";
-    } else {
-        switchRect = QRect(0, 0, halfWidth, height());
-        switchColor = QColor(Qt::darkGray);
-        text = "Turn On";
-    }
-    painter.fillRect(switchRect, switchColor);
-    painter.drawText(switchRect, Qt::AlignCenter, text);
+    // Perceived luminance, simple formula.
+    const int luminance = qRound(0.299 * bg.red() +
+                                 0.587 * bg.green() +
+                                 0.114 * bg.blue());
+
+    return luminance > 128 ? Qt::black : Qt::white;
 }
+
+void aswitch::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+
+    QPainter painter(this);
+
+    const QPalette pal = this->palette();
+    QColor bgColor   = pal.color(QPalette::Button);
+    QColor onColor   = pal.color(QPalette::Highlight);   // background for "on"
+    QColor offColor  = pal.color(QPalette::Button);
+    QColor offText   = pal.color(QPalette::ButtonText);  // default text color
+    QColor borderColor = contrastColor(Qt::gray);      // border color from palette
+
+    painter.fillRect(rect(), Qt::gray);
+
+    QRect switchRect;
+    QString text;
+    QColor switchColor;
+    QColor textColor;
+
+    int halfWidth = width() / 2;
+    int borderOffset = 1;  // account for 1px border
+
+    if (isChecked()) {
+        switchRect  = QRect(halfWidth + borderOffset, borderOffset,
+                           halfWidth - borderOffset, height() - 2 * borderOffset);
+        switchColor = onColor;
+        text        = QStringLiteral("Turn off");
+        textColor   = contrastColor(onColor);   // ensure readable on highlight
+    } else {
+        switchRect  = QRect(borderOffset, borderOffset,
+                           halfWidth - borderOffset, height() - 2 * borderOffset);
+        switchColor = offColor;
+        text        = QStringLiteral("Turn on");
+        textColor   = offText;                  // normal button text color
+    }
+
+    painter.fillRect(switchRect, switchColor);
+    painter.setPen(textColor);
+    painter.drawText(switchRect, Qt::AlignCenter, text);
+
+    // Draw 1px border around entire widget
+    QPen borderPen(borderColor);
+    borderPen.setWidth(1);
+    painter.setPen(borderPen);
+    painter.drawRect(rect().adjusted(0, 0, -1, -1));  // adjust to keep exactly 1px
+}
+

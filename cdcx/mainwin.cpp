@@ -2674,16 +2674,9 @@ circlize(QPixmap pm)
     QImage img = pm.toImage();
     img = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     QImage imageOut(img.size(),QImage::Format_ARGB32_Premultiplied);
-    //painter on it
+    imageOut.fill(Qt::transparent);
+
     QPainter painter(&imageOut);
-    painter.eraseRect(imageOut.rect());
-    //set opacity
-//    painter.setOpacity(0);
-//    painter.setBrush(Qt::white);
-//    painter.setPen(Qt::NoPen);
-//    //draw transparent image
-//    painter.drawImage(0,0,img);
-    //set opacity
     painter.setOpacity(1);
     QPainterPath path(QPointF(0,0));
     //your mask - ellipse

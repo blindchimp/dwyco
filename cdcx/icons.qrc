@@ -60,7 +60,6 @@
         <file alias="kill.png">misc_icons/kill.png</file>
         <file alias="media 1-16x16.png">misc_icons/media 1-16x16.png</file>
         <file alias="media 2-16x16.png">misc_icons/media 2-16x16.png</file>
-        <file alias="media-1-16x16.png">misc_icons/media-1-16x16.png</file>
         <file alias="music 2-16x16.png">misc_icons/music 2-16x16.png</file>
         <file alias="noatunplay.png">misc_icons/noatunplay.png</file>
         <file alias="panel-screenshot.png">misc_icons/panel-screenshot.png</file>
