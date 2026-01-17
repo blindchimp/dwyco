@@ -312,7 +312,7 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group, int inhibit_encry
     m->no_forward = 1;
     m->dont_save_sent = 1;
     m->send_buttonClick();
-    // NOTE: we allow inhibit the use of the default PK encryption here in order to
+    // NOTE: we allow inhibiting the use of the default PK encryption here in order to
     // improve the chances that someone will be able to get the join
     // message and respond to the requests. the problem is that we may not
     // have a group key, especially early on before a client has a chance
@@ -328,7 +328,7 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group, int inhibit_encry
     // by brute-forcing the hash, they would be able to start a new
     // run of the protocol and get G. so, there is definitely room for
     // improvement here, like asking the user to allow the protocol to
-    // proceed, or any of other things. all of them make it less convenient to use
+    // proceed, or any number of other things. all of them make it less convenient to use
     // so probably would have to be optional.
     if(!send_via_server(m->qfn, inhibit_encryption, no_group, 1))
     {

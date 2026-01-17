@@ -256,8 +256,8 @@ public:
 	inline vc(const vc& v);
 	inline notvirtual ~vc() ;
 	inline notvirtual vc& operator=(const vc& v);
-        inline vc(vc&& v);
-        inline vc& operator=(vc&& v);
+        inline vc(vc&& v) noexcept;
+        inline vc& operator=(vc&& v) noexcept;
         inline notvirtual int is_nil() const ;
 #else
 	vc() ;
@@ -617,7 +617,7 @@ RCQDEC(rep)
 }
 
 inline
-vc::vc(vc&& v)
+vc::vc(vc&& v) noexcept
 {
     rep = v.rep;
     v.rep = vc_nil::vcnilrep;
@@ -625,7 +625,7 @@ vc::vc(vc&& v)
 
 inline
 vc&
-vc::operator=(vc&& v)
+vc::operator=(vc&& v) noexcept
 {
     if(this != &v)
     {

@@ -175,7 +175,14 @@ init_entropy()
         read(fd, p, sizeof(p));
         close(fd);
     }
-    // if open fails, just append whatever trash is on stack
+    else
+    {
+        // thwart clever optimizers that might think
+        // accessing p results in undefined behavior
+        for(int i = 0; i < sizeof(p); ++i)
+            p[i] = dwyco_rand();
+    }
+
     a += DwString(p, 0, sizeof(p));
     a += DwString((const char *)Entropy, 0, Entropy.len());
     vc s2(VC_BSTRING, a.c_str(), a.length());

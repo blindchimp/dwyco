@@ -29,6 +29,8 @@ DwString&
 DwString::operator+=(const vc& s)
 {
     int l = s.len();
+    if(l == 0)
+        return *this;
     int old_count = count;
     set_size(count + l);
     char *eos = &(*this)[old_count - 1];

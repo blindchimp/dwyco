@@ -77,6 +77,7 @@
 #define DWVEC_INLINES
 #undef DWVEC_NO_INDEX_CHECK
 #endif
+#include <utility>
 #include <stdlib.h>
 #include "dwiter.h"
 #undef index
@@ -103,7 +104,7 @@
 template<class T> class DwVecIter;
 
 #ifndef DWVEC_DEFAULTBLOCKSIZE
-#define DWVEC_DEFAULTBLOCKSIZE 4
+#define DWVEC_DEFAULTBLOCKSIZE 8
 #endif
 #define DWVEC_FIXED 1
 #define DWVEC_AUTO_EXPAND 1
@@ -135,8 +136,8 @@ public:
 
     DwVec(const DwVec&);
     DwVec& operator=(const DwVec&);
-    DwVec(DwVec&&);
-    DwVec& operator=(DwVec&&);
+    DwVec(DwVec&&) noexcept;
+    DwVec& operator=(DwVec&&) noexcept;
     int operator==(const DwVec&) const;
     int operator!=(const DwVec& t) const {
         return !(*this == t);
@@ -240,7 +241,7 @@ DwVec<T>::operator=(const DwVec<T>& vec)
 }
 
 template<class T>
-DwVec<T>::DwVec(DwVec<T>&& vec)
+DwVec<T>::DwVec(DwVec<T>&& vec) noexcept
 {
     count = vec.count;
     is_fixed = vec.is_fixed;
@@ -257,7 +258,7 @@ DwVec<T>::DwVec(DwVec<T>&& vec)
 
 template<class T>
 DwVec<T>&
-DwVec<T>::operator=(DwVec<T>&& vec)
+DwVec<T>::operator=(DwVec<T>&& vec) noexcept
 {
     if(this != &vec)
     {
@@ -310,9 +311,34 @@ DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
     auto_expand = aexp;
 }
 
+#if 0
+#include <stdio.h>
+#include <typeinfo>
+#include <mutex>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+
+extern int Go;
+extern int Go_f;
+extern std::mutex Go_mutex;
+#endif
 template<class T>
 DwVec<T>::~DwVec()
 {
+#if 0
+    if(Go)
+    {
+        std::lock_guard<std::mutex> lock(Go_mutex);
+        if(!Go_f)
+            Go_f = open("/tmp/baz.xxx", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+        char a[512];
+        sprintf(a, "%s %lu %ld %ld\n", typeid(T).name(), sizeof(T), count, alloced_count);
+        write(Go_f, a, strlen(a));
+    }
+#endif
     delete [] values;
 }
 
@@ -410,7 +436,7 @@ DwVec<T>::set_size(long new_count)
         long cnt = new_count < old_count ? new_count : old_count;
         long i;
         for(i = 0; i < cnt; ++i)
-            new_values[i] = values[i];
+            new_values[i] = std::move(values[i]);
         delete [] values;
         values = new_values;
 #ifdef DWVEC_DOINIT

@@ -122,7 +122,7 @@ msglist_model::data ( const QModelIndex & index, int role ) const
         if(dwyco_get_attr(msg_idx, index.row(), DWYCO_MSG_IDX_ATT_HAS_VIDEO, str) != 0)
         {
             if(dwyco_get_attr(msg_idx, index.row(), DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO, str) != 0)
-                return QVariant(QImage(":/new/prefix1/media-1-16x16.png"));
+                return QVariant(QImage(":/new/prefix1/media 1-16x16.png"));
             else
                 return QVariant(QImage(":/new/prefix1/media 2-16x16.png"));
         }
