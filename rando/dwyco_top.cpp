@@ -1188,6 +1188,7 @@ setup_locations()
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy("assets:/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy("assets:/license.txt", userdir + "license.txt");
     QFile::copy("assets:/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
@@ -1197,6 +1198,7 @@ setup_locations()
     QFile::copy("assets:/qtquickcontrols2.conf", userdir + "qtquickcontrols2.conf");
 #else
     QFile::copy(":androidinst3/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst3/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy(":androidinst3/assets/license.txt", userdir + "license.txt");
     QFile::copy(":androidinst3/assets/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
