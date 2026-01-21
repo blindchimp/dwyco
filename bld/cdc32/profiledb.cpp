@@ -167,9 +167,7 @@ init_prfdb()
     }
     try
     {
-        DwString sigpub(newfn("dsadwyco.pub"));
-
-        vclh_dsa_pub_init(sigpub.c_str());
+        vclh_dsa_pub_init(newfn("dsadwyco.pub"));
         Can_verify = 1;
     }
     catch(...)
