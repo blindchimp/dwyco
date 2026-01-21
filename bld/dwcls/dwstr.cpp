@@ -38,6 +38,12 @@ DwString::operator+=(const vc& s)
     (*this)[count - 1] = 0;
     return *this;
 }
+
+DwString::operator vc() const
+{
+    return vc(VC_BSTRING, c_str(), length());
+}
+
 #endif
 
 DwString&

@@ -29,6 +29,7 @@ public:
 #ifdef DWYCO_VC_CONV
     DwString(const vc&);
     DwString& operator+=(const vc&);
+    operator vc() const;
 #endif
     enum {npos = -1};
 
