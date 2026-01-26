@@ -27,11 +27,13 @@ serialize(vc v)
 }
 
 int
-deserialize(vc v, vc& out)
+deserialize(vc v, vc& out, long mem_limit)
 {
     if(v.type() != VC_STRING)
         return 0;
     vcxstream vcx((const char *)v, v.len(), vcxstream::FIXED);
+    if(mem_limit != -1)
+        vcx.set_max_memory(mem_limit);
 
     vc item;
     long len;

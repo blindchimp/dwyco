@@ -1399,7 +1399,7 @@ vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 }
 
 vc
-encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
+encdec_xfer_dec_ctx(vc ctx, vc v, vc& out, long mem_limit)
 {
     encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bd)
@@ -1432,6 +1432,10 @@ encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
 	}
 
     vcxstream vcx((const char *)tmp, tmp.len(), vcxstream::FIXED);
+    if(mem_limit != -1)
+    {
+        vcx.set_max_memory(mem_limit);
+    }
 
 	vc item;
 	long len;
