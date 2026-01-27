@@ -3132,8 +3132,8 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
 {
     if(uid.len() == 0)
         return;
-    DwString s((const char *)to_hex(uid));
-    DwString t((const char *)msg_id);
+    DwString s(to_hex(uid));
+    DwString t(msg_id);
 
     s += ".usr";
     s = newfn(s);
