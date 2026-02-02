@@ -19,6 +19,7 @@ public:
     bool eventFilter(QObject *obj, QEvent *e);
 signals:
     void return_hit();
+    void ctrl_return_hit();
     void chat_typing();
     void esc_hit();
 

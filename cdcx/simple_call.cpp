@@ -128,6 +128,7 @@ simple_call::simple_call(const DwOString& auid, QWidget *parent) :
     ReturnFilter *return_filter = new ReturnFilter;
     connect(return_filter, SIGNAL(chat_typing()), this, SLOT(keyboard_input()));
     connect(return_filter, SIGNAL(return_hit()), this, SLOT(on_send_button_clicked()));
+    connect(return_filter, SIGNAL(ctrl_return_hit()), this, SLOT(insert_line_break()));
     connect(return_filter, SIGNAL(esc_hit()), this, SLOT(clear_chatwin()));
     keyboard_active_timer.setSingleShot(1);
     connect(&keyboard_active_timer, SIGNAL(timeout()), this, SLOT(keyboard_inactive()));
@@ -2128,6 +2129,12 @@ simple_call::clear_chatwin()
     ui->textEdit->clear();
 }
 
+void
+simple_call::insert_line_break()
+{
+    ui->textEdit->insertPlainText("\n");
+}
+
 static
 void
 DWYCOCALLCONV
@@ -2230,10 +2237,6 @@ void simple_call::on_send_button_clicked()
         new_zap();
     }
 
-//    if(!dwyco_zap_send3(zap_id, uid.c_str(), uid.length(), txt.constData(), txt.length(),
-//        no_forward,
-//        msg_send_callback, (void *)vp.cookie,
-//        msg_status_callback, (void *)vp.cookie))
     const char *pid = "";
     int len_pid = 0;
     if(!dwyco_zap_send4(zap_id, uid.c_str(), uid.length(), txt.constData(), txt.length(), no_forward,
@@ -2249,10 +2252,6 @@ void simple_call::on_send_button_clicked()
         preview_fn = add_pfx(Sys_pfx, "no_img.png");
         dwyco_delete_zap_composition(zap_id);
         new_zap();
-//        if(!dwyco_zap_send3(zap_id, uid.c_str(), uid.length(), txt.constData(), txt.length(),
-//            no_forward,
-//            msg_send_callback, (void *)vp.cookie,
-//            msg_status_callback, (void *)vp.cookie))
         if(!dwyco_zap_send4(zap_id, uid.c_str(), uid.length(), txt.constData(), txt.length(), no_forward,
                             &pid, &len_pid))
         {
@@ -2264,8 +2263,6 @@ void simple_call::on_send_button_clicked()
 
     }
     pers_id = DwOString(pid, 0, len_pid);
-
-
 
     ui->textEdit->setHtml("");
     emit send_msg_event(uid);
