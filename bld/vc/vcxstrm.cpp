@@ -214,6 +214,13 @@ vcxstream::get_status()
 	return stat;
 }
 
+void
+vcxstream::cur_buf(const char *& buf_out, long& len_out)
+{
+    buf_out = buf;
+    len_out = cur - buf;
+}
+
 int
 vcxstream::open(enum status s, enum e_iostyle ios)
 {

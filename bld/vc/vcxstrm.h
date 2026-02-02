@@ -43,13 +43,7 @@ typedef int VCXCHIT;
 
 class vcxstream
 {
-friend vc lh_bf_xfer_enc(vc);
-friend vc vclh_bf_xfer_enc_ctx(vc, vc);
-friend vc vclh_compress_xfer(vc, vc);
-friend vc vclh_serialize(vc);
-friend vc serialize(vc);
-friend int deserialize(vc, vc&);
-friend vc vclh_encdec_xfer_enc_ctx(vc, vc);
+
 friend class vc_uvsocket;
 friend class vc_double;
 friend class vc_decomposable;
@@ -189,6 +183,14 @@ public:
 
     int flushnb();
     enum status get_status();
+
+    // warning: this is more like an internal api.
+    // the buf and len returned only really make sense
+    // when you are creating objects in memory and just
+    // need to copy out the contents of the memory after
+    // doing eg. a serialization or something
+    void cur_buf(const char *& buf_out, long& len_out);
+
 private:
     long max_memory;
     int max_count_digits;  // roughly log10(max_memory)

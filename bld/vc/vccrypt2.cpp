@@ -795,8 +795,9 @@ lh_bf_xfer_enc(vc v)
 		return vcnil;
 	if((len = v.xfer_out(vcx)) == -1)
 		return vcnil;
-
-	vc tmp(VC_BSTRING, vcx.buf, vcx.cur - vcx.buf);
+    const char *buf;
+    vcx.cur_buf(buf, len);
+    vc tmp(VC_BSTRING, buf, len);
 	byte iv[8];
 	if(!Rng)
 		init_rng();
@@ -1142,8 +1143,9 @@ vclh_bf_xfer_enc_ctx(vc ctx, vc v)
 		return vcnil;
 	if((len = v.xfer_out(vcx)) == -1)
 		return vcnil;
-
-	vc tmp(VC_BSTRING, vcx.buf, vcx.cur - vcx.buf);
+    const char *buf;
+    vcx.cur_buf(buf, len);
+    vc tmp(VC_BSTRING, buf, len);
 	byte iv[8];
 	if(!Rng)
 		init_rng();
@@ -1381,8 +1383,9 @@ vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 		return vcnil;
 	if((len = v.xfer_out(vcx)) == -1)
 		return vcnil;
-
-	vc tmp(VC_BSTRING, vcx.buf, vcx.cur - vcx.buf);
+    const char *buf;
+    vcx.cur_buf(buf, len);
+    vc tmp(VC_BSTRING, buf, len);
 	byte iv[12];
 	if(!Rng)
 		init_rng();
