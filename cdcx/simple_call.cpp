@@ -2198,7 +2198,17 @@ void simple_call::on_send_button_clicked()
 {
     QString a;
     QString b;
+    int send_pic = ui->actionSend_snapchat->isChecked() && !Public_chat_video_pause;
     b = ui->textEdit->toPlainText();
+    if(b.length() == 0)
+    {
+        if(send_pic)
+        {
+            do_refresh();
+            play_sound("camera1.wav");
+        }
+        return;
+    }
     a = b;
     QByteArray txt = b.toAscii();
     int no_forward = 0;
@@ -2218,7 +2228,6 @@ void simple_call::on_send_button_clicked()
     fn = add_pfx(Tmp_pfx, fn);
 
     DwOString preview_fn = add_pfx(Sys_pfx, "no_img.png");
-    int send_pic = ui->actionSend_snapchat->isChecked() && !Public_chat_video_pause;
 
     if(send_pic)
     {
