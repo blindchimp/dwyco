@@ -2496,7 +2496,7 @@ MMChannel::crypto_agree(vc crypto, int caller)
     if(get_pk(rem_uid, pk))
     {
         vc s = dh_static_material(their_pubkeys);
-        if(!verification_record_exists(rem_uid))
+        if(!pk_verified(rem_uid))
         {
             pk_not_verified.emit(rem_uid, 0);
         }

@@ -453,6 +453,26 @@ verification_record_exists(vc uid)
     return 1;
 }
 
+int
+pk_verified(vc uid)
+{
+    vc huid = to_hex(uid);
+    vc ret = sql_simple("select 1 from pk_verified where uid = ?1 and verified = 1", huid);
+    if(ret.num_elems() == 0)
+        return 0;
+    return 1;
+}
+
+// this is so we can cache a positive response from the server
+// that says this uid has no key at all (an old account, for example.)
+int
+pk_set_no_key(vc uid)
+{
+    vc huid = to_hex(uid);
+    sql_simple("insert or replace into pk_verified(uid, verified, time) values (?1, -1, strftime('%s', 'now'))", huid);
+    return 1;
+}
+
 static
 int
 load_pk(const vc& uid, vc& prf_out)
@@ -599,9 +619,9 @@ save_pk(vc uid, vc pk)
                 {
                     // verify the signature on store
                     vc spk = serialize(pk[PKC_STATIC_PUBLIC]);
-                    DwString a(uid, uid.len());
-                    a += DwString(spk, spk.len());
-                    vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
+                    DwString a(uid);
+                    a += spk;
+                    vc h = vclh_sha(a);
                     // if it doesn't verify, just delete any verification record
                     // and emit a signal?
                     if(!vclh_dsa_verify(h, sig).is_nil())
@@ -654,7 +674,15 @@ pk_session_cached(const vc& uid)
         // server.
         return 0;
     }
-    return Pk_session_cache.contains(uid);
+    if(Pk_session_cache.contains(uid))
+        return 1;
+    // if we have verified it, don't bother contacting the server again.
+    // this wasn't done in the past because i was paranoid about
+    // making sure they keys were as fresh as possible. but it just
+    // turns out everything seems to work ok, so there is no need for that.
+    if(verification_record_exists(uid))
+        return 1;
+    return 0;
 }
 
 void

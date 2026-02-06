@@ -1430,12 +1430,13 @@ fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
     {
         if(m[2] == vc("no-key"))
         {
-            pk_invalidate(uid);
+            //pk_invalidate(uid);
             // to avoid repeatedly fetching a key that may never exist
             // (like it was an old account that never had a key generated
             // for it), for this session we'll just cache this response
             // from the server.
             pk_set_session_cache(uid);
+            pk_set_no_key(uid);
             TRACK_ADD(QM_fetch_pk_no_key2, 1);
         }
         else
@@ -1503,12 +1504,13 @@ fetch_pk_done(vc m, void *user_arg, vc uid, ValidPtr)
     {
         if(m[2] == vc("no-key"))
         {
-            pk_invalidate(uid);
+            //pk_invalidate(uid);
             // to avoid repeatedly fetching a key that may never exist
             // (like it was an old account that never had a key generated
             // for it), for this session we'll just cache this response
             // from the server.
             pk_set_session_cache(uid);
+            pk_set_no_key(uid);
             TRACK_ADD(QM_fetch_pk_no_key, 1);
         }
         else
