@@ -1489,8 +1489,10 @@ fetch_group_uids(vc m, void *, vc, ValidPtr)
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         const vc uid = uids[i];
+        if(pk_verified(uid))
+            continue;
         if(dirth_pending_callbacks(fetch_pk_done2, 0, ReqType(), uid))
-            return;
+            continue;
         dirth_send_get_pk(My_UID, uid, QckDone(fetch_pk_done2, 0, uid));
     }
 
