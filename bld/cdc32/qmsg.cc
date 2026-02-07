@@ -4749,6 +4749,7 @@ ignoring_you_update(vc m, void *, vc, ValidPtr)
         for(int i = 0; i < uids.num_elems(); ++i)
         {
             Mutual_ignore.add(uids[i]);
+            MMChannel::destroy_by_uid(uids[i]);
         }
     }
     else if(m[1][0] == vc("d"))
