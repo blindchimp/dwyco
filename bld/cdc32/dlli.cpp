@@ -3747,7 +3747,6 @@ dwyco_call_reject(int id, int session_ignore)
     if(session_ignore)
     {
         vc u;
-        extern vc Session_ignore;
         if(!m->remote_cfg.is_nil() && m->remote_cfg.find("my uid", u))
         {
             Session_ignore.add(u);

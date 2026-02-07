@@ -106,12 +106,13 @@ vc No_direct_att;
 vc Session_infos;
 vc MsgFolders;
 vc Pals;
+vc Session_ignore;
 }
 
 // list of message summaries both from server and direct
 static vc Cur_msgs;
 
-vc Session_ignore;
+
 // mutual is separated out because we want to have a
 // part of the ignore list that cannot be maniplated
 // via the api
