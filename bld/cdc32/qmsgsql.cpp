@@ -1239,6 +1239,12 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
         const vc& op = vals[vals.num_elems() - 1];
         static vc op_a("a");
         static vc op_d("d");
+        // note: this ignore processing is a hack. we only need it
+        // because we keep an in-memory data structure as a cache.
+        // it isn't clear we really need the cache, as it probably
+        // isn't queried that much...
+        static vc ign("_ignore");
+        bool reload_ignore = false;
         if(op == op_a)
         {
             const vc& mid = vals[0];
@@ -1262,6 +1268,8 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
                 // be fixed eventually
                 se_emit_uid_list_changed();
             }
+            if(tag == ign)
+                reload_ignore = true;
         }
         else if (op == op_d)
         {
@@ -1284,11 +1292,16 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
                 // be fixed eventually
                 se_emit_uid_list_changed();
             }
+            if(tag == ign)
+                reload_ignore = true;
         }
         else
             oopanic("bad tupdate");
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
+        //
+        if(reload_ignore)
+            Cur_ignore = get_local_ignore();
     }
     catch(...)
     {
