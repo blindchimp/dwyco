@@ -36,6 +36,14 @@ Page {
     property bool lock_to_bottom: false
     property int is_blocked: 0
     property int prov_img_height
+    /* --------- AI CODE --------- */
+    // warning: if you do not use ({}) the entire file acts weird.
+    // one model insists {} is ok, but it clearly is not. gemini got this right
+
+    property var drafts: ({})
+    property string _prev_uid: ""    // holds the UID before the current change
+    property bool _updatingText: false
+    /* --------- END AI CODE --------- */
 
     prov_img_height: .33 * height
     function star_fun(b) {
@@ -590,9 +598,24 @@ Page {
     }
 
     onTo_uidChanged: {
+
+        /* Save the current draft for the old UID */
+        if (_prev_uid !== "") {
+            drafts[_prev_uid] = textField1.text
+        }
+
+        /* Load the draft for the new UID (or clear if none) */
+        if (to_uid !== "") {
+            _updatingText = true
+            textField1.text = chatbox_page.drafts[to_uid] || ""
+            _updatingText = false
+        }
+
+        /* Update the helper variable */
+        _prev_uid = to_uid
         if(to_uid === "")
             return
-        textField1.text = ""
+        //textField1.text = ""
         core.reset_unviewed_msgs(to_uid)
         cur_source = ""
         cur_source = core.uid_to_profile_preview(to_uid)
@@ -1040,6 +1063,7 @@ Page {
         // }
 
         onLengthChanged: {
+            if (chatbox_page._updatingText) return
             core.uid_keyboard_input(to_uid)
         }
         onInputMethodComposingChanged: {
@@ -1057,6 +1081,16 @@ Page {
             }
 
         }
+        /* Update draft when user types or clears text */
+        onTextChanged: {
+            if (chatbox_page._updatingText) return      // ignore programmatic changes
+            if (text === "") {
+                chatbox_page.drafts[to_uid] = ""        // clear stored draft
+            } else {
+                chatbox_page.drafts[to_uid] = text
+            }
+        }
+
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
         // will pop up on the previous screen, wtf.
