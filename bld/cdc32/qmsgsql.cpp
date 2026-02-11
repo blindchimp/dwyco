@@ -1673,7 +1673,7 @@ sql_insert_record(const vc& entry, const vc& assoc_uid, const vc& att)
     sql_bulk_query(&a);
     if(!att.is_nil())
     {
-        sql_simple("insert into mid_att (mid, att) values(?1, ?2)", a[2], att);
+        sql_simple("insert or ignore into mid_att (mid, att) values(?1, ?2)", a[2], att);
     }
 }
 
