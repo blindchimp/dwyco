@@ -21,17 +21,20 @@ serialize(vc v)
         return vcnil;
     if((len = v.xfer_out(vcx)) == -1)
         return vcnil;
-
-    vc ret(VC_BSTRING, vcx.buf, vcx.cur - vcx.buf);
+    const char *buf;
+    vcx.cur_buf(buf, len);
+    vc ret(VC_BSTRING, buf, len);
     return ret;
 }
 
 int
-deserialize(vc v, vc& out)
+deserialize(vc v, vc& out, long mem_limit)
 {
     if(v.type() != VC_STRING)
         return 0;
     vcxstream vcx((const char *)v, v.len(), vcxstream::FIXED);
+    if(mem_limit != -1)
+        vcx.set_max_memory(mem_limit);
 
     vc item;
     long len;

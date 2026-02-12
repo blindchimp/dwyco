@@ -28,6 +28,7 @@ using namespace dwyco;
 namespace dwyco {
 ssns::signal1<vc> Join_signal;
 ssns::signal2<vc, vc> Join_attempts;
+#define GRP_MSG_SIZE_LIMIT (10 * 1024)
 
 struct skid_sql : public SimpleSql
 {
@@ -151,6 +152,9 @@ add_join_log(vc msg, vc uid)
 // the results, possibly getting some better confidence in
 // the key (since all the final keys should be the same),
 // but i haven't bothered with that here.
+// note: existing members of the group expect the messages
+// to be encrypted with a password. use something strong
+// to avoid letting someone get your group key.
 
 /*
  * G is the group you want to join
@@ -250,7 +254,7 @@ xfer_dec(vc vs, vc password, vc& detail)
     vc v;
     // XXX there are probably some reasonable
     // constraints we can put on the deserialization
-    if(!deserialize(vs, v))
+    if(!deserialize(vs, v, GRP_MSG_SIZE_LIMIT))
     {
         detail = "deserialize failed";
         return vcnil;
@@ -278,7 +282,7 @@ xfer_dec(vc vs, vc password, vc& detail)
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);
     vc ret;
-    vc p = encdec_xfer_dec_ctx(enc_ctx, v, ret);
+    vc p = encdec_xfer_dec_ctx(enc_ctx, v, ret, GRP_MSG_SIZE_LIMIT);
     if(p.is_nil())
     {
         detail = "decryption failed";

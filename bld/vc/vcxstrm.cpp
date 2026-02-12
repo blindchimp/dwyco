@@ -29,7 +29,7 @@ long vcxstream::Max_memory = LONG_MAX;
 int vcxstream::Max_count_digits;
 // this is used to estimate the amount of memory being used during
 // a deserialization. seriously "estimate", it can be surprising in
-// some cases if you decide you deserialize something that is
+// some cases if you decide to deserialize something that is
 // an N byte image or something, and the tally says "2 * N". this could
 // happen because the stream needs to do extra allocations for
 // large items, etc. using this is more of a "stopgap" hardening thing
@@ -212,6 +212,13 @@ enum vcxstream::status
 vcxstream::get_status()
 {
 	return stat;
+}
+
+void
+vcxstream::cur_buf(const char *& buf_out, long& len_out)
+{
+    buf_out = buf;
+    len_out = cur - buf;
 }
 
 int

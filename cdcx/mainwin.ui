@@ -121,7 +121,7 @@ border-radius: 2px;
    </property>
    <widget class="QMenu" name="menuSetup">
     <property name="title">
-     <string>Setup</string>
+     <string>&amp;Setup</string>
     </property>
     <addaction name="actionVideo"/>
     <addaction name="actionUser_profile"/>
@@ -132,7 +132,7 @@ border-radius: 2px;
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionHow_to_buy_a_subscription"/>
@@ -142,7 +142,7 @@ border-radius: 2px;
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
-     <string>Windows</string>
+     <string>&amp;Windows</string>
     </property>
     <addaction name="actionShow_Directory"/>
     <addaction name="actionShow_Profile_Grid"/>
@@ -164,14 +164,14 @@ border-radius: 2px;
    </widget>
    <widget class="QMenu" name="menuLobby">
     <property name="title">
-     <string>Lobby</string>
+     <string>&amp;Lobby</string>
     </property>
     <addaction name="actionCreate_new_lobby"/>
     <addaction name="actionRemove_lobby"/>
    </widget>
    <widget class="QMenu" name="menuExit">
     <property name="title">
-     <string>Exit</string>
+     <string>&amp;Exit</string>
     </property>
     <addaction name="actionHide"/>
     <addaction name="actionExit_2"/>

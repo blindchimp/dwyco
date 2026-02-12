@@ -66,7 +66,7 @@ init_rtlog()
 #endif
 }
 
-DwString
+vc
 logbasename(const char *name)
 {
     DwString f(name);

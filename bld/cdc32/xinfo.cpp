@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#include <stdio.h>
+
 #include "xinfo.h"
 #include "vccomp.h"
 #include "vcxstrm.h"
@@ -16,8 +16,6 @@
 #ifdef LINUX
 #include <unistd.h>
 #endif
-
-using namespace dwyco;
 
 namespace dwyco {
 
@@ -30,7 +28,7 @@ backout(vc *)
 }
 
 int
-save_info(vc info, const char *filename, int nomodify)
+save_info(vc info, const DwString& filename, int nomodify)
 {
     DwString newfn;
     if(!nomodify)
@@ -45,8 +43,8 @@ save_info(vc info, const char *filename, int nomodify)
     vc_composite::new_dfs();
     vc f(VC_FILE);
     f.set_err_callback(backout);
-    vc v = newfn.c_str();
-    if(f.open(v, (vcfilemode)(VCFILE_WRITE|VCFILE_BINARY)))
+
+    if(f.open(newfn, (vcfilemode)(VCFILE_WRITE|VCFILE_BINARY)))
     {
         vcxstream vcx(f, 0, 128 * 1024);
         if(!vcx.open(vcxstream::WRITEABLE))
@@ -91,7 +89,7 @@ err2:
 }
 
 int
-load_info(vc& info, const char *filename, int nomodify)
+load_info(vc& info, const DwString& filename, int nomodify)
 {
     DwString newfn;
     if(!nomodify)
@@ -104,8 +102,8 @@ load_info(vc& info, const char *filename, int nomodify)
     vc f(VC_FILE);
     int err = 0;
     f.set_err_callback(backout);
-    vc v = newfn.c_str();
-    if(!f.open(v, (vcfilemode)(VCFILE_READ|VCFILE_BINARY)))
+
+    if(!f.open(newfn, (vcfilemode)(VCFILE_READ|VCFILE_BINARY)))
         return 0;
     vcxstream vcx(f, 0, 128 * 1024);
     if(!vcx.open(vcxstream::READABLE))
@@ -136,7 +134,7 @@ init_xkey()
 }
 
 int
-save_info_e(vc info, const char *filename, int nomodify)
+save_info_e(vc info, const DwString& filename, int nomodify)
 {
     if(enc_ctx.is_nil())
         init_xkey();
@@ -151,7 +149,7 @@ save_info_e(vc info, const char *filename, int nomodify)
 }
 
 int
-load_info_e(vc& info, const char *filename, int nomodify)
+load_info_e(vc& info, const DwString& filename, int nomodify)
 {
     if(enc_ctx.is_nil())
         init_xkey();

@@ -49,11 +49,11 @@ private:
 
 
 #include "dwstr.h"
-DwString logbasename(const char *);
+vc logbasename(const char *);
 #define RTLOGSTART {static int init; static int logit; \
 	if(!init) {\
 		init = 1; \
-		if(RTLogOn.contains("*") || RTLogOn.contains(logbasename(__FILE__).c_str())) {\
+        if(RTLogOn.contains("*") || RTLogOn.contains(logbasename(__FILE__))) {\
 			logit = 1; \
 		} \
 	}\

@@ -209,7 +209,10 @@ vclh_compress_xfer(vc ctx, vc v)
 		return vcnil;
 
     z_stream *d = (z_stream *)(void *)ctx;
-	DwGrowingString *b = run_cfilter(*d, vcx.buf, vcx.cur - vcx.buf);
+    const char *buf = 0;
+    long len2;
+    vcx.cur_buf(buf, len2);
+    DwGrowingString *b = run_cfilter(*d, buf, len2);
 	vc ret(VC_BSTRING, b->ref_str(), b->length());
 	delete b;
 	return ret;

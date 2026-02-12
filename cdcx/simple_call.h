@@ -129,6 +129,7 @@ public slots:
     void set_remote_image(int, const QImage& qi);
     void start_media_calls();
     void clear_chatwin();
+    void insert_line_break();
     void check_resize();
     void update_content_filters();
 
