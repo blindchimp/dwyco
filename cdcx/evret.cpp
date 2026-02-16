@@ -23,7 +23,13 @@ ReturnFilter::eventFilter(QObject *obj, QEvent *e)
         dwyco_add_entropy_timer((char *)keyEvent, sizeof(*keyEvent));
         //qDebug("Ate key press %d", keyEvent->key());
         emit chat_typing();
-        if(keyEvent->key() == Qt::Key_Return)
+        if((keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) &&
+                (keyEvent->modifiers() & Qt::ControlModifier))
+        {
+            emit ctrl_return_hit();
+            return 1;
+        }
+        if(keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter)
         {
             emit return_hit();
             return 1;

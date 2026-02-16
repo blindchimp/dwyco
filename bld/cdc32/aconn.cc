@@ -240,7 +240,7 @@ start_broadcaster()
 
     DwString a;
     a = "any:any";
-    if(Local_broadcast.socket_init(a.c_str(), 0, 1).is_nil())
+    if(Local_broadcast.socket_init(a, 0, 1).is_nil())
     {
         stop_broadcaster();
         return 0;
@@ -252,7 +252,7 @@ start_broadcaster()
     }
     a = "255.255.255.255:";
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
-    Local_broadcast.socket_connect(a.c_str());
+    Local_broadcast.socket_connect(a);
 
     Broadcast_timer.reset();
 
@@ -298,7 +298,7 @@ start_discover()
     a = "any:";
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     // this didn't appear to work with just "ip:port" for broadcasts
-    if(Local_discover.socket_init(a.c_str(), 0, 1).is_nil())
+    if(Local_discover.socket_init(a, 0, 1).is_nil())
     {
         stop_discover();
         return 0;
@@ -354,12 +354,12 @@ static
 vc
 strip_port(vc ip)
 {
-    DwString a((const char *)ip);
+    DwString a(ip);
     int b = a.find(":");
     if(b == DwString::npos)
         return ip;
     a.remove(b);
-    vc ret(a.c_str());
+    vc ret(a);
     return ret;
 }
 

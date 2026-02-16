@@ -889,10 +889,10 @@ generate_mac_msg(vc m)
         return vcnil;
 
     vc smsg = vclh_serialize(m);
-    DwString s((const char *)Current_session_key, 0, Current_session_key.len());
-    s += DwString((const char *)smsg, 0, smsg.len());
-    s += DwString((const char *)Current_authenticator, 0, Current_authenticator.len());
-    vc mac = vclh_sha(vc(VC_BSTRING, s.c_str(), s.length()));
+    DwString s(Current_session_key);
+    s += smsg;
+    s += Current_authenticator;
+    vc mac = vclh_sha(s);
     mac = vc(VC_BSTRING, (const char *)mac, 12);
 
     vc v(VC_VECTOR);

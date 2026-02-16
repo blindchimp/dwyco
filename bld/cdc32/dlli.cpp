@@ -3747,7 +3747,6 @@ dwyco_call_reject(int id, int session_ignore)
     if(session_ignore)
     {
         vc u;
-        extern vc Session_ignore;
         if(!m->remote_cfg.is_nil() && m->remote_cfg.find("my uid", u))
         {
             Session_ignore.add(u);
@@ -4746,7 +4745,7 @@ internal_boot_file(const char *handle, int len_handle, const char *desc, int len
     prf[PRF_REVIEWED] = 0;
     prf[PRF_REGULAR] = 0;
     int ret = 1;
-    if(!save_info(prf, newfn("boot.dif").c_str()))
+    if(!save_info(prf, newfn("boot.dif")))
         ret = 0;
     return ret;
 }
@@ -6935,7 +6934,7 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         // to validate some aspect of the keys. but i feel like solving that
         // problem right away isn't worth the wait. this *does* solve the problem
         // of trying to avoid relying on the server to store group private keys, so that's something.
-        vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
+        vclh_dsa_pub_init(newfn("dsadwyco.pub"));
         DwString a(dha->alt_name());
         vc spk = serialize(dha->my_static_public()[DH_STATIC_PUBLIC]);
         if(spk != serialized_pk)

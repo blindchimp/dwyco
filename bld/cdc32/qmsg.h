@@ -24,6 +24,7 @@ extern vc No_direct_att;
 extern vc Session_infos;
 extern vc MsgFolders;
 extern vc Pals;
+extern vc Session_ignore;
 }
 
 //void load_users(int only_recent, int *total_out);

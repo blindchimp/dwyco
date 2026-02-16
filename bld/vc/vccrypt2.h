@@ -59,7 +59,7 @@ vc vclh_encdec_enc_ctx(vc ctx, vc v);
 vc vclh_encdec_dec_ctx(vc ctx, vc v);
 vc vclh_encdec_xfer_dec_ctx(vc ctx, vc v, vc out);
 vc vclh_encdec_xfer_enc_ctx(vc ctx, vc v);
-vc encdec_xfer_dec_ctx(vc ctx, vc v, vc& out);
+vc encdec_xfer_dec_ctx(vc ctx, vc v, vc& out, long mem_limit = -1);
 
 
 #endif

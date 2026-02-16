@@ -9,12 +9,12 @@
 #ifndef XINFO_H
 #define XINFO_H
 #include "vc.h"
-
+class DwString;
 namespace dwyco {
-int save_info(vc info, const char *filename, int nomodify = 0);
-int load_info(vc& info, const char *filename, int nomodify = 0);
-int save_info_e(vc info, const char *filename, int nomodify = 0);
-int load_info_e(vc& info, const char *filename, int nomodify = 0);
+int save_info(vc info, const DwString& filename, int nomodify = 0);
+int load_info(vc& info, const DwString& filename, int nomodify = 0);
+int save_info_e(vc info, const DwString& filename, int nomodify = 0);
+int load_info_e(vc& info, const DwString& filename, int nomodify = 0);
 }
 
 #endif

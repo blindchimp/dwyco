@@ -106,12 +106,13 @@ vc No_direct_att;
 vc Session_infos;
 vc MsgFolders;
 vc Pals;
+vc Session_ignore;
 }
 
 // list of message summaries both from server and direct
 static vc Cur_msgs;
 
-vc Session_ignore;
+
 // mutual is separated out because we want to have a
 // part of the ignore list that cannot be maniplated
 // via the api
@@ -1430,12 +1431,13 @@ fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
     {
         if(m[2] == vc("no-key"))
         {
-            pk_invalidate(uid);
+            //pk_invalidate(uid);
             // to avoid repeatedly fetching a key that may never exist
             // (like it was an old account that never had a key generated
             // for it), for this session we'll just cache this response
             // from the server.
             pk_set_session_cache(uid);
+            pk_set_no_key(uid);
             TRACK_ADD(QM_fetch_pk_no_key2, 1);
         }
         else
@@ -1488,8 +1490,10 @@ fetch_group_uids(vc m, void *, vc, ValidPtr)
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         const vc uid = uids[i];
+        if(pk_verified(uid))
+            continue;
         if(dirth_pending_callbacks(fetch_pk_done2, 0, ReqType(), uid))
-            return;
+            continue;
         dirth_send_get_pk(My_UID, uid, QckDone(fetch_pk_done2, 0, uid));
     }
 
@@ -1503,12 +1507,13 @@ fetch_pk_done(vc m, void *user_arg, vc uid, ValidPtr)
     {
         if(m[2] == vc("no-key"))
         {
-            pk_invalidate(uid);
+            //pk_invalidate(uid);
             // to avoid repeatedly fetching a key that may never exist
             // (like it was an old account that never had a key generated
             // for it), for this session we'll just cache this response
             // from the server.
             pk_set_session_cache(uid);
+            pk_set_no_key(uid);
             TRACK_ADD(QM_fetch_pk_no_key, 1);
         }
         else
@@ -3132,8 +3137,8 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
 {
     if(uid.len() == 0)
         return;
-    DwString s((const char *)to_hex(uid));
-    DwString t((const char *)msg_id);
+    DwString s(to_hex(uid));
+    DwString t(msg_id);
 
     s += ".usr";
     s = newfn(s);
@@ -4744,6 +4749,7 @@ ignoring_you_update(vc m, void *, vc, ValidPtr)
         for(int i = 0; i < uids.num_elems(); ++i)
         {
             Mutual_ignore.add(uids[i]);
+            MMChannel::destroy_by_uid(uids[i]);
         }
     }
     else if(m[1][0] == vc("d"))

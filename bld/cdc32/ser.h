@@ -11,6 +11,6 @@
 #include "vc.h"
 
 vc serialize(vc v);
-int deserialize(vc v, vc& out);
+int deserialize(vc v, vc& out, long mem_limit = -1);
 
 #endif

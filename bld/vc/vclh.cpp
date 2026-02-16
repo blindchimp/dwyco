@@ -2925,8 +2925,9 @@ vclh_serialize(vc v)
 		return vcnil;
 	if((len = v.xfer_out(vcx)) == -1)
 		return vcnil;
-
-	vc ret(VC_BSTRING, vcx.buf, vcx.cur - vcx.buf);
+    const char *buf;
+    vcx.cur_buf(buf, len);
+    vc ret(VC_BSTRING, buf, len);
 	return ret;
 }
 

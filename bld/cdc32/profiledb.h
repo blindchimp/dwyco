@@ -31,6 +31,8 @@ void pk_invalidate(vc uid);
 void pk_set_session_cache(vc uid);
 int pk_session_cached(const vc &uid);
 int verification_record_exists(vc uid);
+int pk_verified(vc uid);
+int pk_set_no_key(vc uid);
 
 #define PKC_STATIC_PUBLIC 0
 #define PKC_DWYCO_SIGNATURE 1
