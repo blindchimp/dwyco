@@ -89,8 +89,52 @@ check_args(const char *sql, int count)
 }
 #endif
 
+static
+int
+final(sqlite3_stmt *s)
+{
+    int ret = sqlite3_reset(s);
+    sqlite3_clear_bindings(s);
+    return ret;
+}
+
+// perform sqlite3 query prep and execution
+//
+// the arglist should have
+// a[0] as the string sql to be prepared
+// a[1..n] are the bindings to be set into the statement where ?1, ?2, etc.
+// THE DEBUGGING STUFF ASSUMES YOU ARE USING THE ?n form for parameters.
+// if you use other forms (like just '?', or whatever other forms sqlite uses)
+// it will confuse things, so just stick with the ?n form.
+//
+// if stmt_in_out is 0, this just performs the prepare, binds, runs the query
+// and finalizes the statement.
+//
+// if stmt_in_out != 0, and *stmt_in_out == 0
+//  the prepare is performed, it is binded, and run, HOWEVER, the statement
+//  is RESET and params UNBOUND, and *stmt_in_out is set to the prepared
+//  statement that you can cache. it is up to the caller to finalize it.
+//
+// if *stmt_in_out != 0
+//  it is assumed to be an sqlite3_stmt that has already prepared, and is in the
+//  state where it has been RESET and can be BOUND to parameters and run. when the
+//  query is done, the statement is RESET and UNBOUND.
+//
+// NOTE: you MUST only provide prepared statements that correspond to the
+// same DB connection you provide when the statemnet is prepared.
+// random stuff will occur otherwise.
+//
+// in all cases, the results are returned as a VC_VECTOR, one for each record
+// in the result. each record is again a VC_VECTOR.
+//
+// if there is a generic error, vcnil is returned. this is usually the result of a programming error.
+// if there is a SQLITE3_BUSY error, the string "busy" is returned.
+// if there is a database full error, the string "full" is returned.
+// in these cases, it is up to the caller to determine how to proceed.
+//
+
 vc
-sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
+sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a, sqlite3_stmt **stmt_in_out)
 {
     const VCArglist &aa = *a;
     const vc& sql = aa.get(0);
@@ -112,19 +156,39 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     check_args(sql, aa.num_elems() - 1);
 #endif
 
-    if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
-                                     &st, &tail)) != SQLITE_OK)
+    int (*finalize)(sqlite3_stmt *) = 0;
+
+    if(stmt_in_out != 0 && *stmt_in_out != 0)
     {
-#ifdef DWYCO_DBG_CHECK_SQL
-        oopanic(sqlite3_errmsg(dbs));
-        throw -1;
-#endif
-        TRACK_ADD_str(sqlite3_errmsg(dbs), 1);
-        return vcnil;
+        st = *stmt_in_out;
+        finalize = final;
+
     }
-    if(tail && *tail != 0)
+    else
     {
-        USER_BOMB("must be exactly 1 sql statement in query", vcnil)
+        if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
+                                         &st, &tail)) != SQLITE_OK)
+        {
+#ifdef DWYCO_DBG_CHECK_SQL
+            oopanic(sqlite3_errmsg(dbs));
+            throw -1;
+#endif
+            TRACK_ADD_str(sqlite3_errmsg(dbs), 1);
+            return vcnil;
+        }
+        if(tail && *tail != 0)
+        {
+            USER_BOMB("must be exactly 1 sql statement in query", vcnil)
+        }
+        if(stmt_in_out)
+        {
+            *stmt_in_out = st;
+            finalize = final;
+        }
+        else
+        {
+            finalize = sqlite3_finalize;
+        }
     }
     // bind in vars
     if(a->num_elems() > 1)
@@ -137,7 +201,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             case VC_INT:
                 if(sqlite3_bind_int64(st, i, val) != SQLITE_OK)
                 {
-                    sqlite3_finalize(st);
+                    (*finalize)(st);
                     USER_BOMB("sql bind error", vcnil)
                 }
                 break;
@@ -145,21 +209,21 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             case VC_BSTRING:
                 if(sqlite3_bind_text(st, i, val, val.len(), SQLITE_TRANSIENT) != SQLITE_OK)
                 {
-                    sqlite3_finalize(st);
+                    (*finalize)(st);
                     USER_BOMB("sql bind error", vcnil)
                 }
                 break;
             case VC_DOUBLE:
                 if(sqlite3_bind_double(st, i, val) != SQLITE_OK)
                 {
-                    sqlite3_finalize(st);
+                    (*finalize)(st);
                     USER_BOMB("sql bind error", vcnil)
                 }
                 break;
             case VC_NIL:
                 if(sqlite3_bind_null(st, i) != SQLITE_OK)
                 {
-                    sqlite3_finalize(st);
+                    (*finalize)(st);
                     USER_BOMB("sql bind error", vcnil)
                 }
                 break;
@@ -177,7 +241,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
                 }
                 if(sqlite3_bind_blob(st, i, (const void *)(const char *)(val[1]), val[1].len(), SQLITE_TRANSIENT) != SQLITE_OK)
                 {
-                    sqlite3_finalize(st);
+                    (*finalize)(st);
                     USER_BOMB("sql bind error", vcnil)
                 }
                 break;
@@ -255,13 +319,13 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             // in the debugger.
             const char *volatile a = sqlite3_errmsg(dbs);
             TRACK_ADD_str(a, 1);
-            sqlite3_finalize(st);
+            (*finalize)(st);
             return vcnil;
         }
     }
 out:
     ;
-    sqlite3_finalize(st);
+    (*finalize)(st);
     GRTLOGVC(res);
     return res;
 }

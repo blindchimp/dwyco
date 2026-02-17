@@ -17,7 +17,7 @@ struct sqlite3;
 #else
 #include <sqlite3.h>
 #endif
-
+#include <dwmapr.h>
 
 namespace dwyco {
 
@@ -32,9 +32,19 @@ private:
     sqlite3 *Db;
     int tdepth;
 
+    // this is a simple prepared statement cache
+    // each time query is called, it consults the
+    // the cache and uses the prepared statement.
+    // there is no eviction, the cache is cumulative.
+    // the cache is cleared and queries finalized when
+    // calling "exit".
+    typedef DwMapR<sqlite3_stmt *, vc> Cache;
+    typedef DwMapRIter<sqlite3_stmt *, vc> CacheIter;
+    Cache scache;
+
 public:
     typedef void(*update_hook)(void *,int ,char const *,char const *, sqlite3_int64);
-    SimpleSql(const DwString& nm) {
+    SimpleSql(const DwString& nm) : scache(127) {
         dbnames[0] = nm;
         schema_names[0] = "main";
         Db = 0;
