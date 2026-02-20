@@ -39,8 +39,10 @@ Page {
     onTo_uidChanged: {
         if(to_uid === "")
             return
+        cur_source = ""
         cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
+        top_toolbar_text.rawtext = ""
+        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
         ind_online = core.get_established_state(to_uid)
         filter_show_only_fav = 0
         filter_show_sent = 1
@@ -162,6 +164,10 @@ Page {
 
                 Item {
                     id: prof
+                    property bool censor_it
+                    property bool regular
+                    censor_it: censor && !regular
+                    regular: {return init_called && core.uid_profile_regular(to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -170,12 +176,12 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
                                 return
-                            return (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid))) ?
+                            return (!prof.censor_it) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -184,8 +190,10 @@ Page {
 
                     }
                     Text {
-                        id:top_toolbar_text
+                        id: top_toolbar_text
                         //width: dp(160)
+                        property string rawtext: ""
+                        text: to_uid.length == 0 ? "" : (!prof.censor_it ? rawtext : censor_name(rawtext))
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit
@@ -458,11 +466,11 @@ Page {
             Image {
                 id: preview
                 anchors.fill: parent
-                visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                visible: {HAS_ATTACHMENT}
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                source: { PREVIEW_FILENAME !== "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                 //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
@@ -479,6 +487,7 @@ Page {
 
             Text {
                 function gentext(msg) {
+                    return msg
                     return "<html>" + msg + "</html>"
                 }
 
@@ -487,7 +496,7 @@ Page {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 //anchors.top: preview.visible ? undefined : parent.top
-                height: preview.visible ? parent.height : implicitHeight
+                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
                 wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
@@ -496,6 +505,7 @@ Page {
                 color: amber_light
                 style: Text.Outline
                 styleColor: "black"
+                padding: 3
 
                 clip: true
             }

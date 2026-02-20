@@ -66,20 +66,20 @@ Page {
         target: core
         function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id === msgviewer.ui_id) {
-                view_source = img_path
+                msgviewer.view_source = img_path
             }
         }
         function onMid_tag_changed(changed_mid) {
-            if(changed_mid != mid)
+            if(changed_mid != msgviewer.mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = core.has_tag_message(msgviewer.mid, "_fav")
+            hid = core.has_tag_message(msgviewer.mid, "_hid")
         }
         function onMsg_tag_change_global(changed_mid, huid) {
-            if(changed_mid != mid)
+            if(changed_mid != msgviewer.mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = core.has_tag_message(msgviewer.mid, "_fav")
+            hid = core.has_tag_message(msgviewer.mid, "_hid")
         }
         function onQt_app_state_change(app_state) {
             if(app_state === 0) {
@@ -87,9 +87,9 @@ Page {
 
             }
             if(app_state !== 0) {
-                if(view_id !== -1) {
-                core.stop_zap_view(view_id)
-                core.delete_zap_view(view_id)
+                if(msgviewer.view_id !== -1) {
+                core.stop_zap_view(msgviewer.view_id)
+                core.delete_zap_view(msgviewer.view_id)
                 }
             }
         }
@@ -103,122 +103,20 @@ Page {
                 anchors.centerIn: parent
                 source: mi("ic_action_overflow.png")
             }
-            onClicked: optionsMenu.open()
-            MenuItem {
-                id: untrash_item
-                text: "Untrash msg"
-                visible: false
-                onTriggered: {
-                    core.unset_tag_message(mid, "_trash")
-                    themsglist.invalidate_model_filter()
-                    stack.pop()
-                }
+            onClicked: {
+                if(is_trash)
+                    optionsMenuTrash.open()
+                else
+                    optionsMenu.open()
             }
-            MenuItem {
-                id: review_item
-                text: "Review"
-                visible: false
-                onTriggered: {
-                    stack.push(msg_review)
 
-                }
-            }
-            Menu {
+            MsgViewMenu {
                 id: optionsMenu
-                x: parent.width - width
-                transformOrigin: Menu.TopRight
-                MenuItem {
-                    text: is_trash ? "Delete forever" : "Trash msg"
-                    onTriggered: {
-                        if(is_trash) { 
-                            core.delete_message(uid, mid)
-                        } else {
-                            core.set_tag_message(mid, "_trash")
-                        }
-                        themsglist.invalidate_model_filter()
-                        stack.pop()
-                    }
-                }
-//                MenuItem {
-//                    text: "Untrash msg"
-//                    visible: is_trash
-//                    onTriggered: {
-//                        core.unset_tag_message(mid, "_trash")
-//                        themsglist.invalidate_model_filter()
-//                        stack.pop()
-//                    }
-//                }
-                MenuItem {
-                    text: "Forward msg"
-                    onTriggered: {
-                        forward_dialog.mid_to_forward = mid
-                        //forward_dialog.uid_folder = uid
-                        stack.push(forward_dialog)
-                    }
-                }
-
-                MenuItem {
-                    text: fav ? "Unfavorite" : "Favorite"
-                    onTriggered: {
-                        core.set_fav_message(mid, !fav)
-                    }
-                }
-                MenuItem {
-                    text: hid ? "Unhide" : "Hide"
-                    onTriggered: {
-                        if(hid)
-                            core.unset_tag_message(mid, "_hid")
-                        else
-                            core.set_tag_message(mid, "_hid")
-                        themsglist.invalidate_model_filter()
-                    }
-                }
-                MenuItem {
-                    text: "Copy Text"
-                    onTriggered: {
-                        msg_text.selectAll()
-                        msg_text.copy()
-                    }
-                }
-
-                MenuItem {
-                    text: "Report"
-                    onTriggered: {
-                        stack.push(msg_report)
-
-                    }
-                }
-
-//                MenuItem {
-//                    text: "Review"
-//                    visible: core.this_uid === the_man
-//                    onTriggered: {
-//                        stack.push(msg_review)
-
-//                    }
-//                }
-
-
-                onVisibleChanged: {
-                    if(visible) {
-                        if(is_trash) {
-                            untrash_item.visible = true
-                            optionsMenu.insertItem(0, untrash_item)
-                        }
-                        else {
-                            untrash_item.visible = false
-                            optionsMenu.removeItem(untrash_item)
-                        }
-                        if(core.this_uid === the_man) {
-                            review_item.visible = true
-                            optionsMenu.addItem(review_item)
-                        } else {
-                            review_item.visible = false
-                            optionsMenu.removeItem(review_item)
-                        }
-                    }
-                }
-
+                visible: false
+            }
+            MsgViewMenuTrash {
+                id: optionsMenuTrash
+                visible: false
             }
         }
     }
@@ -298,10 +196,10 @@ Page {
                 onClicked: {
                     // supposedly you don't need storage permissions to add to
                     // image collections via mediastore on newer android versions
-                    if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
-                        if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
-                            return
-                    }
+                    // if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
+                    //     if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
+                    //         return
+                    // }
 
                     var export_name = core.export_attachment(mid)
                     if(export_name.length > 0) {

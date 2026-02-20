@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 #else
     engine.rootContext()->setContextProperty("dwyco_debug", false);
 #endif
-
+    QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     int ret;

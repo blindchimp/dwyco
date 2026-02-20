@@ -12,7 +12,8 @@ import QtQuick.Controls
 import dwyco
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import Qt.labs.platform as Mumble
+import QtCore
+//import Qt.labs.platform as Mumble
 
 Page {
     id: rectangle1
@@ -107,10 +108,10 @@ Page {
                     checkable: false
                     visible: !cam.visible
                     onClicked: {
-                        if(Qt.platform.os == "android") {
+                        if(Qt.platform.os === "android") {
                             // ugh, what a hack
-                            android_img_pick_hack = 0
-                            android_img_pick_hack = 1
+                            applicationWindow1.android_img_pick_hack = 0
+                            applicationWindow1.android_img_pick_hack = 1
                             if(notificationClient.open_image() === 0) {
                                 failed_msg.text = "Android blocked access to images."
                                 animateOpacity.start()
@@ -159,14 +160,14 @@ Page {
 
         visible: false
         active: visible
-        sourceComponent: Mumble.FileDialog {
+        sourceComponent: FileDialog {
                 title: "Pick a picture"
-                folder: shortcuts.pictures
+                currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
                 onAccepted: {
-                    console.log(fileUrl)
-                    console.log(Qt.resolvedUrl(fileUrl))
+                    console.log(selectedFile)
+                    console.log(Qt.resolvedUrl(selectedFile))
                     //img_preview.source = fileUrl
-                    prof_pic_preview.source = fileUrl
+                    prof_pic_preview.source = selectedFile
                     prof_pic_preview.ok_vis = true
                     prof_pic_preview.ok_text = "Ok"
                     stack.push(prof_pic_preview, {"ok_text":"Use"})
@@ -259,7 +260,8 @@ Page {
     ColumnLayout {
         id: column
         anchors.fill: parent
-        spacing: 3
+        anchors.topMargin: 5
+        spacing: 6
 
         TextFieldX {
             id: handle

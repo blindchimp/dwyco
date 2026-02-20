@@ -14,7 +14,8 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtMultimedia
-import dwyco 1.0
+import QtCore
+import dwyco
 //import Qt.labs.platform as Mumble
 
 ApplicationWindow {
@@ -108,21 +109,50 @@ ApplicationWindow {
     property bool server_account_created: false
     property int android_img_pick_hack: 0
 
+    // this is set to true if the distributor requires user-generated content
+    // to be censored (Google and Apple). When this is false, the display of
+    // various content is controlled by the user "show_unreviewed" item.
+    property bool corporate_censorship: is_mobile
     property bool dwy_invis: false
     property bool dwy_quiet: false
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
     property bool show_archived_users: false
+    property bool init_called: false
+
+    property bool censor
+    censor:  corporate_censorship || !show_unreviewed
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
     property int qt_application_state: 0
     property bool is_mobile
+    property bool hard_close: false
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+    // let's be serious, ca 2024 there is no practical choice regarding distribution
+    // of mobile apps
+    property string corporate_overlord
+    corporate_overlord: {
+        if(Qt.platform.os === "android")
+            return "Google, Inc."
+        if(Qt.platform.os === "ios")
+            return "Apple, Inc."
+        return ""
+    }
     MediaDevices {
          id: media_devices
      }
+
+    function beep() {
+        if(dwy_quiet)
+            return
+        if(Qt.platform.os == "android") {
+            notificationClient.beep()
+        } else {
+            sound_recv.play()
+        }
+    }
     property bool is_camera_available
     is_camera_available: camListModel.count > 2 || media_devices.length > 0
 
@@ -147,6 +177,15 @@ ApplicationWindow {
         return Math.round(Date.now() / 1000)
     }
 
+    function censor_name(namestr) {
+        var first = namestr.substr(0, 3)
+        return first.concat("***")
+
+    }
+    function regular_profile(reviewed, regular) {
+        return reviewed == 1 && regular == 1
+    }
+
     id: applicationWindow1
     visible: true
     // android will override this and go full screen, which is
@@ -167,7 +206,12 @@ ApplicationWindow {
 
     }
     property int close_bounce: 0
-    onClosing: (close)=> {
+    onClosing: (close) => {
+                   if(hard_close) {
+                       close.accepted = true
+                       return
+                   }
+
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
@@ -202,8 +246,45 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        AndroidPerms.request_sync("android.permission.CAMERA")
-        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+        if(camera_permission.status !== Qt.PermissionStatus.Granted) {
+            console.log("CAMERA DENIED")
+            camera_permission.request()
+        } else {
+            console.log("CAMERA ALLOWED")
+        }
+        if(microphone_permission.status !== Qt.PermissionStatus.Granted) {
+            console.log("MIC DENIED")
+            microphone_permission.request()
+        } else {
+            console.log("MIC ALLOWED")
+        }
+
+        //AndroidPerms.request_sync("android.permission.CAMERA")
+        //AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+    }
+
+    CameraPermission {
+        id: camera_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Camera now granted")
+            } else {
+                console.log("Camera denied again")
+            }
+
+        }
+    }
+
+    MicrophonePermission {
+        id: microphone_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Mic now granted")
+            } else {
+                console.log("Mic denied again")
+            }
+
+        }
     }
 
 
@@ -633,6 +714,7 @@ ApplicationWindow {
                 Qt.inputMethod.hide()
                 if(state === "start") {
                     core.init()
+                    init_called = true
                 }
             }
         }
@@ -684,7 +766,7 @@ ApplicationWindow {
 
         z: 10
         exit_button.onClicked: {
-            expire_immediate = true
+            applicationWindow1.expire_immediate = true
             Qt.quit()
         }
         Component.onCompleted: {

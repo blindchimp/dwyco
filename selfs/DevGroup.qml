@@ -48,6 +48,7 @@ Page {
         Button {
             text: "Quit"
             onClicked: {
+                hard_close = true
                 Qt.quit()
             }
         }
@@ -66,9 +67,9 @@ Page {
         visible: !quitnow
         Label {
             id: helpme
-            text: "<a href=\"https://www.dwyco.net/general-5\">What is device linking?</a>"
+            text: "<a href=\"https://www.dwyco.net/general-5\" style=\"color: #0000FF;\">What is device linking?</a>"
             textFormat: Text.RichText
-            onLinkActivated: {
+            onLinkActivated: (link) => {
                 Qt.openUrlExternally(link)
             }
         }
@@ -157,7 +158,7 @@ Page {
             Layout.fillWidth: true
         }
 
-        Switch {
+        SwitchDelegate {
             id: join_button
             text: qsTr("Enable to link this device (requires restart)")
             onClicked: {
@@ -169,9 +170,9 @@ Page {
             enabled: up_and_running && group_pw.text_input.length >= 3 && group_name.text_input.length >= 4
             Layout.fillWidth: true
         }
-        Switch {
+        SwitchDelegate {
             id: unjoin_button
-            text: qsTr("Disable to UNLINK this device (requires restart)")
+            text: qsTr("Click to UNLINK this device... (requires restart)")
             onClicked: {
                 confirm_leave.visible = true
 //                if(core.start_gj2("", "") === 1) {
@@ -222,7 +223,7 @@ Page {
             visible: group_active
         }
 
-        RadioButton {
+        RadioDelegate {
             text: "Recent (recommended)"
             checked: core.eager_pull === 2
             onClicked: {
@@ -234,7 +235,7 @@ Page {
 
 
         }
-        RadioButton {
+        RadioDelegate {
             text: "Lazy (only when viewed)"
             checked: core.eager_pull === 0
             onClicked: {
@@ -244,7 +245,7 @@ Page {
             Layout.fillWidth: true
 
         }
-        RadioButton {
+        RadioDelegate {
             text: "Everything (server mode)"
             checked: core.eager_pull === 1
             onClicked: {

@@ -105,6 +105,15 @@
 
 extern int Public_chat_video_pause;
 //extern QByteArray My_uid;
+
+// these are a bit problematic. you must
+// initializes these based on whatever your
+// client system supports *before* you create
+// any of these simple_call objects. that
+// usually means probing the camera, and/or using
+// dwyco_get_audio_hw to probe for mics/speakers.
+// this might involve requesting permissions and
+// whatnot, which is still very platform-specific.
 int HasCamera;
 int HasCamHardware;
 int HasAudioInput;

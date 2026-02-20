@@ -19,6 +19,7 @@
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
+#include <QQmlEngine>
 #ifndef NO_BUILDTIME
 #include "buildtime.h"
 #else
@@ -29,6 +30,7 @@
 class DwycoCore : public QObject
 {
     Q_OBJECT
+    QML_ELEMENT
 
     QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
@@ -58,7 +60,10 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
     QML_READONLY_VAR_PROPERTY(int, android_backup_available)
 
-    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready)
+    QML_READONLY_VAR_PROPERTY(QString, qt_version_string)
+
+    QML_READONLY_VAR_PROPERTY(int, emergency_exit)
 
 
 public:
@@ -88,6 +93,8 @@ public:
         m_android_backup_available = 0;
         m_desktop_update_ready = false;
         m_total_users = 0;
+        m_qt_version_string = QT_VERSION_STRING;
+        m_emergency_exit = 0;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -421,6 +428,8 @@ signals:
     void msg_tag_change_global(const QByteArray& mid, const QString& huid);
 
     void join_result(QString gname, int result);
+
+    void emergency_exit_signal(int what, int must_exit, QString msg);
 
 private:
 

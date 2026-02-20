@@ -73,9 +73,23 @@ Page {
                 MenuItem {
                     text: "Delete forever"
                     onTriggered: {
-                        model.obliterate_all_selected()
-                        //model.tag_all_selected("_hid")
-                        multiselect_mode = false
+                        confirm_delete.visible = true
+                    }
+                    MessageYN {
+                        id: confirm_delete
+                        title: "Delete selected msgs?"
+                        text: "Delete selected msgs on ALL devices?"
+                        informativeText: "No UNDO"
+
+                        onYesClicked: {
+                            model.obliterate_all_selected()
+                            //model.tag_all_selected("_hid")
+                            multiselect_mode = false
+                            close()
+                        }
+                        onNoClicked: {
+                            close()
+                        }
                     }
                 }
             }
@@ -88,8 +102,8 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Deletes on all your devices"
-            delete_warning_text: "Delete all selected messages FOREVER?"
+            delete_warning_inf_text: "Deletes on ALL your devices"
+            delete_warning_text: "Delete selected messages FOREVER?"
             star_icon: mi("delete-restore-black.png")
             is_trash: true
         }
@@ -178,8 +192,22 @@ Page {
                         MenuItem {
                             text: "Empty Trash"
                             onTriggered: {
-                                model.set_all_selected()
-                                model.obliterate_all_selected()
+                                confirm_empty.visible = true
+                            }
+                            MessageYN {
+                                id: confirm_empty
+                                title: "Empty trash?"
+                                text: "Delete ALL trash on ALL devices?"
+                                informativeText: "No UNDO"
+
+                                onYesClicked: {
+                                    model.set_all_selected()
+                                    model.obliterate_all_selected()
+                                    close()
+                                }
+                                onNoClicked: {
+                                    close()
+                                }
                             }
                         }
 
@@ -287,11 +315,11 @@ Page {
             Image {
                 id: preview
                 anchors.fill: parent
-                visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                visible: {HAS_ATTACHMENT}
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                source: { PREVIEW_FILENAME !== "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                 //source: {PREVIEW_FILENAME !== "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
@@ -308,6 +336,7 @@ Page {
 
             Text {
                 function gentext(msg) {
+                    return msg
                     return "<html>" + msg + "</html>"
                 }
 
@@ -316,7 +345,7 @@ Page {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 //anchors.top: preview.visible ? undefined : parent.top
-                height: preview.visible ? parent.height : implicitHeight
+                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
                 wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
@@ -325,6 +354,7 @@ Page {
                 color: amber_light
                 style: Text.Outline
                 styleColor: "black"
+                padding: 3
 
                 clip: true
             }

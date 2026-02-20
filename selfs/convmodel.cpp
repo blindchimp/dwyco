@@ -124,17 +124,18 @@ ConvListModel::obliterate_all_selected()
     }
 
     hack_unread_count();
-    reload_conv_list();
+    ::reload_conv_list();
 
 }
 
 static
 void
-trash_messages(QByteArray buid)
+trash_messages(const QByteArray& buid)
 {
     DWYCO_LIST msgs;
     if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
         return;
+    simple_scoped q(msgs);
 
     DWYCO_LIST favs;
     if(!dwyco_get_tagged_mids(&favs, "_fav"))
@@ -153,7 +154,6 @@ trash_messages(QByteArray buid)
         fset.insert(qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID));
     }
 
-    simple_scoped q(msgs);
     n = q.rows();
 
     for(int i = 0; i < n; ++i)
@@ -202,7 +202,7 @@ ConvListModel::trash_all_selected()
     dwyco_end_bulk_update();
 
     hack_unread_count();
-    reload_conv_list();
+    ::reload_conv_list();
 
 }
 
@@ -513,7 +513,7 @@ ConvSortFilterModel::at_least_one_selected()
 void
 ConvSortFilterModel::reload_convlist()
 {
-    reload_conv_list();
+    ::reload_conv_list();
     invalidateFilter();
 }
 

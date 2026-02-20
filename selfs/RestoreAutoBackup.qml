@@ -93,6 +93,7 @@ Rectangle {
                 core.set_local_setting("reindex1", "")
                 //core.set_local_setting("restore-prompt", "1")
                 core.exit()
+                hard_close = true
                 Qt.quit()
             }
             Layout.fillWidth: true

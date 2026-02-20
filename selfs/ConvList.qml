@@ -224,18 +224,20 @@ Page {
                GradientStop { position: 0.0; color: primary_light }
                GradientStop { position: 1.0; color: primary_dark}
            }
+           property bool censor_it
+           censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
            RowLayout {
                id: drow
                spacing: mm(1)
                anchors.fill: parent
 
-               CircularImage {
+               CircularImage2 {
                    id: ppic
                    //width: dp(80)
                    //height: dp(60)
                    source : { 
-                       (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                       (!invalid && !is_blocked && !censor_it && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" 
                    }
@@ -314,7 +316,8 @@ Page {
                }
 
                Text {
-                   text: display
+                   // on desktop, don't censor text
+                   text: (!censor_it || !is_mobile)  ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
                    font: applicationWindow1.font
@@ -326,7 +329,7 @@ Page {
            MouseArea {
                anchors.fill: drow
                acceptedButtons: Qt.LeftButton|Qt.RightButton
-               onClicked: {
+               onClicked : (mouse) => {
                    console.log("click")
                    console.log(index)
                    listView2.currentIndex = index
@@ -411,12 +414,14 @@ Page {
                GradientStop { position: 0.0; color: primary_light }
                GradientStop { position: 1.0; color: primary_dark}
            }
+           property bool censor_it
+           censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
-           CircularImage {
+           CircularImage2 {
                id: ppic
                anchors.centerIn: parent
                source : {
-                   (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                   (!invalid && !is_blocked && !censor_it && resolved_counter > -1) ?
                                core.uid_to_profile_preview(uid) :
                                "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                }
@@ -491,7 +496,8 @@ Page {
            }
 
            Text {
-               text: display
+               // don't censor text on desktop
+               text: (!censor_it || !is_mobile) ? display : censor_name(display)
                elide: Text.ElideRight
                clip: true
                anchors.bottom: parent.bottom

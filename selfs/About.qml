@@ -26,15 +26,17 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "Selfs (open source):"
-            }
-
-            Label {
-                text: core.client_name
+                text: "Selfs (open source): " + core.client_name + " (Qt " + core.qt_version_string + ")"
                 Layout.fillWidth: true
+                fontSizeMode: Text.Fit
             }
-
         }
+        Label {
+            text: "Content censored for " + corporate_overlord
+            visible: corporate_censorship && is_mobile
+            Layout.fillWidth: true
+        }
+
         Label {
             text: "(C) 1995-present, Dwyco, Inc."
             Layout.fillWidth: true
@@ -66,12 +68,9 @@ Page {
             Layout.fillWidth: true
         }
 
-
-
         Button {
             text: "Privacy policy"
             onClicked: {
-
                 Qt.openUrlExternally("https://www.dwyco.net/privacy-policy")
             }
             Layout.fillWidth: true

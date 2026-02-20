@@ -41,7 +41,7 @@ Rectangle {
     anchors.fill: parent
 
     color: "black"
-    state: "PhotoCapture"
+    state: camera_permission.status !== Qt.PermissionStatus.Granted ? "Idle" : "PhotoCapture"
     
     Component.onCompleted: {
         cameraUI.snapshot.connect(stack.get(stack.depth - 2).snapshot)
@@ -127,7 +127,7 @@ Rectangle {
                               file_captured = path
                               console.log("SAVED ", file_captured)
                               //photoPreview.ok_vis = true
-                              photoPreview.source = "file://" + file_captured
+                              photoPreview.source = core.from_local_file(file_captured)
 
                           }
         }
@@ -203,9 +203,17 @@ Rectangle {
             color: "white"
         }
 
-        text: qsTr("(No camera devices available)")
+        text: {camera_permission.status !== Qt.PermissionStatus.Granted ? qsTr("Camera permission denied by Android") : qsTr("(No camera devices available)")}
         z: 6
-        visible: {devices.videoInputs.length === 0}
+        visible: {camera_permission.status !== Qt.PermissionStatus.Granted || devices.videoInputs.length === 0}
+        Label {
+            anchors.centerIn: parent
+            anchors.margins: mm(3)
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: "(If the \"ask\" button doesn't work, go to Android settings to allow the camera permission.)"
+        }
+
         Button {
             anchors.left: parent.left
             anchors.bottom: parent.bottom
@@ -213,6 +221,22 @@ Rectangle {
             text: "Back"
             onClicked: {
                 stack.pop()
+            }
+        }
+        Button {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: mm(3)
+            text: "Ask permission"
+            visible: camera_permission.status !== Qt.PermissionStatus.Granted && devices.videoInputs.length !== 0
+            onClicked: {
+                camera_permission.request()
+                stack.pop()
+            }
+        }
+        onVisibleChanged: {
+            if(visible && devices.videoInputs.length !== 0) {
+                camera_permission.request()
             }
         }
 

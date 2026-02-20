@@ -27,7 +27,8 @@
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-#include "msglistmodel.h"
+#include "msgrawmodel.h"
+#include "msgproxymodel.h"
 #include "pfx.h"
 #include "ssmap.h"
 #include "dwycoimageprovider.h"
@@ -50,7 +51,7 @@
 #include "audi_qt.h"
 void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
-#include "androidperms.h"
+//#include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 //#include "v4lcapexp.h"
@@ -580,7 +581,8 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     else if(cmd == DWYCO_SE_USER_ADD)
     {
         TheConvListModel->add_uid_to_model(suid);
-        dwyco_fetch_info(uid, len_uid);
+        // adding it to the model causes info to be fetched
+        //dwyco_fetch_info(uid, len_uid);
     }
     else if(cmd == DWYCO_SE_USER_DEL)
     {
@@ -1508,8 +1510,15 @@ dwyco_emergency(int what, int must_exit, const char *msg)
 {
     if(what == DWYCO_EMERGENCY_GENERAL_PANIC)
         ::abort();
+    if(TheDwycoCore)
+    {
+        TheDwycoCore->update_emergency_exit(what);
+        emit TheDwycoCore->emergency_exit_signal(what, must_exit, msg);
+    }
+    else
+    {
     exit(0);
-
+    }
 }
 
 //static
@@ -1579,7 +1588,7 @@ DwycoCore::select_vid_dev(int i)
 
     if(i == 0)
     {
-        TheDwycoCore->emit camera_change(0);
+        emit TheDwycoCore->camera_change(0);
         write_vid_setting(0);
         return;
     }
@@ -1850,7 +1859,11 @@ DwycoCore::init()
 
     DVP::init_dvp();
     simple_call::init(this);
+#ifdef ANDROID
+    AvoidSSL = 1;
+#else
     AvoidSSL = !QSslSocket::supportsSsl();
+#endif
     if(!AvoidSSL)
     {
         // this is a silly hack for linux desktop where we end up
@@ -1868,6 +1881,9 @@ DwycoCore::init()
     }
 
 
+    // some old androids despite "supportsssl" returning
+    // true, it doesn't work. will figure out later.
+    AvoidSSL = 1;
     Net_access = new QNetworkAccessManager(this);
     connect(Net_access, &QNetworkAccessManager::finished,
             this, &DwycoCore::dir_download_finished);
@@ -2076,7 +2092,10 @@ DwycoCore::init()
     load_unviewed();
     update_any_unviewed(any_unviewed_msgs());
     reload_conv_list();
-    reload_ignore_list();
+    // don't do this, we'll load it when they display the dialog.
+    // this causes a lot of "fetch_info"'s to happen at start up
+    // that aren't really needed.
+    //reload_ignore_list();
 
     const char *uid;
     int len_uid;
@@ -3545,10 +3564,17 @@ dwyco_register_qml(QQmlContext *root)
 {
     setup_locations();
     TheRootCtx = root;
-    qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
-    qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
-    qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
-    qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
+    // the registration of these things is done via QML_ELEMENT
+    // macros in qt6. note, i think some of these might be better
+    // defined as just context properties (as below). maybe
+    // the msglist_model might make sense as a type, since multiple
+    // objects in that case might be useful.
+
+    //qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
+    //qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
+    //qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
+    //qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
+
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
@@ -3595,8 +3621,8 @@ dwyco_register_qml(QQmlContext *root)
     root->setContextProperty("JoinLogModel", jlm);
 
 //#ifdef ANDROID
-    AndroidPerms *a = new AndroidPerms;
-    root->setContextProperty("AndroidPerms", a);
+    //AndroidPerms *a = new AndroidPerms;
+    //root->setContextProperty("AndroidPerms", a);
 //#endif
 
 }

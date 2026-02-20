@@ -10,7 +10,6 @@
 // that can be instantiated and used to select users, for example.
 #include "ctlist.h"
 #include "dlli.h"
-#include "getinfo.h"
 #include "dwycolist2.h"
 
 SimpleContactModel::SimpleContactModel(QObject *parent) :

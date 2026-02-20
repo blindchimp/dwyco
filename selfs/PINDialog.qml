@@ -52,8 +52,14 @@ Rectangle {
     }
 
     password_ok : {
-        if(calc_pw(pw) === correct_pw || xhit === 5)
+        if(calc_pw(pw) === correct_pw || xhit === 5) {
+            if(xhit === 5) {
+                corporate_censorship = false
+                core.set_local_setting("user_test", "true")
+            }
+
             return 1
+        }
         else
             return 0
     }

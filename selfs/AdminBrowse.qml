@@ -23,7 +23,7 @@ Rectangle {
 
         FolderListModel {
             id: folderModel
-            nameFilters: ["*.ppm"]
+            nameFilters: ["*.ppm", "*.jpg"]
         }
 
         Component {
@@ -40,13 +40,14 @@ Rectangle {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: fileName
+                        text: fileName.substr(0,6)
                     }
                 }
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        var filename = filePath.replace(".ppm", "")
+                        var filename = filePath.replace(".ppm.jpg", "")
+
                         //filename = filePath + "/" + filename
                         themsgview.view_id = -1
                         themsgview.view_source = ""

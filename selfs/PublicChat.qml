@@ -15,7 +15,7 @@ import dwyco
 
 Page {
     id: pchat
-    anchors.fill: parent
+    //anchors.fill: parent
     property alias model: listView1.model
     //property int connect_server: 0
     
@@ -211,13 +211,13 @@ Page {
         placeholderText: qsTr("Type...")
         height: Math.max(implicitHeight * 1.3, contentHeight)
         wrapMode: TextInput.WordWrap
-        background: Rectangle {
-                    radius: 2
-                    anchors.fill: parent
-                    border.color: "#333"
-                    border.width: 1
-                    color: "lawngreen"
-                }
+        // background: Rectangle {
+        //             radius: 2
+        //             anchors.fill: parent
+        //             border.color: "#333"
+        //             border.width: 1
+        //             color: "lawngreen"
+        //         }
             
         onLengthChanged: {
             //core.uid_keyboard_input(to_uid)

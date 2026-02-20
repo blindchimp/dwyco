@@ -46,18 +46,20 @@ Page {
                 GradientStop { position: 0.0; color: "lightgreen" }
                 GradientStop { position: 1.0; color: "lightgrey"}
             }
+            property bool censor_it
+            censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
             RowLayout {
                 id: drow
                 spacing: mm(1)
                 anchors.fill: parent
 
-                CircularImage {
+                CircularImage2 {
                     id: ppic
                     //width: dp(80)
                     //height: dp(60)
                     source : {
-                        (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                        (!invalid && !censor_it && resolved_counter > -1) ?
                                     core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }
@@ -87,11 +89,13 @@ Page {
                     //id: display_name
                     //color: {(IS_IN_LOBBY == 1 || IS_ONLINE == 1) ? "red" : "black"}
                     //font.italic: {IS_ACTIVE ? true : false}
-                    text: display
+                    // on desktop, don't censor text
+                    text: (!censor_it || !is_mobile)  ? display : censor_name(display)
                     //anchors.verticalCenter: parent.verticalCenter
 
                     elide: Text.ElideRight
                     clip: true
+                    font: applicationWindow1.font
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
 

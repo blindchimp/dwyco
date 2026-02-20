@@ -35,7 +35,17 @@ Page {
     property var call_buttons_model
     property bool lock_to_bottom: false
     property int is_blocked: 0
+    property int prov_img_height
+    /* --------- AI CODE --------- */
+    // warning: if you do not use ({}) the entire file acts weird.
+    // one model insists {} is ok, but it clearly is not. gemini got this right
 
+    property var drafts: ({})
+    property string _prev_uid: ""    // holds the UID before the current change
+    property bool _updatingText: false
+    /* --------- END AI CODE --------- */
+
+    prov_img_height: .33 * height
     function star_fun(b) {
         console.log("chatbox star")
         model.fav_all_selected(b ? 1 : 0)
@@ -146,6 +156,10 @@ Page {
 
                 Item {
                     id: prof
+                    property bool censor_it
+                    property bool regular
+                    censor_it: censor && !prof.regular
+                    regular: {chatbox_page.to_uid !== "" && applicationWindow1.init_called && core.uid_profile_regular(chatbox_page.to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -154,12 +168,12 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
                                 return
-                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
+                            return (is_blocked !== 1 && !prof.censor_it) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -170,6 +184,8 @@ Page {
                     Text {
                         id: top_toolbar_text
                         //width: dp(160)
+                        property string rawtext: ""
+                        text: to_uid.length == 0 ? "" : (!prof.censor_it ? rawtext : censor_name(rawtext))
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit
@@ -391,10 +407,10 @@ Page {
                         MenuItem {
                             text: "Send picture"
                             onTriggered: {
-                                if(Qt.platform.os == "android") {
+                                if(Qt.platform.os === "android") {
                                     // ugh, what a hack
-                                    android_img_pick_hack = 0
-                                    android_img_pick_hack = 2
+                                    applicationWindow1.android_img_pick_hack = 0
+                                    applicationWindow1.android_img_pick_hack = 2
                                     if(notificationClient.open_image() === 0) {
                                         failed_msg.text = "Android blocked access to images."
                                         animateOpacity.start()
@@ -507,8 +523,8 @@ Page {
     background: Rectangle {
         color: primary_dark
         gradient: Gradient {
-            GradientStop { position: 0.0; color: primary_light }
-            GradientStop { position: 1.0; color: primary_dark}
+            GradientStop { position: 1.0; color: primary_light }
+            GradientStop { position: 0.0; color: primary_dark}
         }
     }
     
@@ -542,7 +558,8 @@ Page {
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
-                top_toolbar_text.text = core.uid_to_name(uid)
+                top_toolbar_text.rawtext = ""
+                top_toolbar_text.rawtext = core.uid_to_name(uid)
             }
         }
         function onSc_connect_terminated(uid) {
@@ -581,12 +598,29 @@ Page {
     }
 
     onTo_uidChanged: {
+
+        /* Save the current draft for the old UID */
+        if (_prev_uid !== "") {
+            drafts[_prev_uid] = textField1.text
+        }
+
+        /* Load the draft for the new UID (or clear if none) */
+        if (to_uid !== "") {
+            _updatingText = true
+            textField1.text = chatbox_page.drafts[to_uid] || ""
+            _updatingText = false
+        }
+
+        /* Update the helper variable */
+        _prev_uid = to_uid
         if(to_uid === "")
             return
-        textField1.text = ""
+        //textField1.text = ""
         core.reset_unviewed_msgs(to_uid)
+        cur_source = ""
         cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
+        top_toolbar_text.rawtext = ""
+        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         call_buttons_model = core.get_button_model(to_uid)
@@ -618,7 +652,7 @@ Page {
 
     PicPreview {
         id: chat_pic_preview
-        onClosed: {
+        onClosed: (ok) => {
             if(ok) {
                 url_to_send = source
                 core.simple_send_url(to_uid, "", url_to_send)
@@ -637,6 +671,7 @@ Page {
     }
 
     RowLayout {
+        id: listview_layout
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -714,7 +749,7 @@ Page {
 
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
 
             //anchors.left: {(SENT == 0) ? parent.left : undefined}
             //x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
@@ -752,7 +787,7 @@ Page {
 
             Image {
                 id: deco2
-                visible: IS_QD
+                visible: IS_QD === 1
                 source: decoration
                 anchors.left: ditem.left
                 anchors.top: ditem.top
@@ -808,7 +843,7 @@ Page {
                 height: 16
                 anchors.top: ditem.top
                 anchors.left: is_forwarded.right
-                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                visible: {IS_QD === 0 && (HAS_VIDEO === 1 && HAS_SHORT_VIDEO === 0)}
                 z: 3
                 color: primary_light
                 radius: width / 2
@@ -838,18 +873,19 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                    visible: {HAS_ATTACHMENT}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    //Layout.minimumWidth: (listView1.width * 3) / 4
-                    Layout.maximumHeight: listView1.height / 2
+                    Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : 0
+                    //Layout.maximumHeight: listView1.height / 2
+                    Layout.preferredHeight: chatbox_page.prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
 
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    source: { PREVIEW_FILENAME !== "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                     //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
@@ -885,7 +921,7 @@ Page {
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    width: implicitWidth
+                    //width: implicitWidth
                     horizontalAlignment: { (SENT === 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
@@ -893,7 +929,7 @@ Page {
                     font: applicationWindow1.font
                     color: primary_text
                     clip: true
-                    onLinkActivated: {
+                    onLinkActivated: (link)=> {
                         console.log(link + " link activated")
                         Qt.openUrlExternally(link)
                     }
@@ -1018,15 +1054,16 @@ Page {
         wrapMode: TextInput.WordWrap
         height: implicitHeight // Math.max(implicitHeight * 2, contentHeight)
         
-        background: Rectangle {
-            radius: 10
-            anchors.fill: parent
-            border.color: "#333"
-            border.width: 1
-            color: icons
-        }
+        // background: Rectangle {
+        //     radius: 10
+        //     anchors.fill: parent
+        //     border.color: "#333"
+        //     border.width: 1
+        //     color: icons
+        // }
 
         onLengthChanged: {
+            if (chatbox_page._updatingText) return
             core.uid_keyboard_input(to_uid)
         }
         onInputMethodComposingChanged: {
@@ -1044,6 +1081,16 @@ Page {
             }
 
         }
+        /* Update draft when user types or clears text */
+        onTextChanged: {
+            if (chatbox_page._updatingText) return      // ignore programmatic changes
+            if (text === "") {
+                chatbox_page.drafts[to_uid] = ""        // clear stored draft
+            } else {
+                chatbox_page.drafts[to_uid] = text
+            }
+        }
+
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
         // will pop up on the previous screen, wtf.
@@ -1079,7 +1126,7 @@ Page {
         }
     }
 
-    Button {
+    TipButton {
         property int but_width
         property int but_height
         id: toolButton1
@@ -1092,12 +1139,13 @@ Page {
         anchors.bottomMargin: 1
         //anchors.verticalCenter: textField1.verticalCenter
         
-        enabled: {textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0}
+        enabled: {textField1.inputMethodComposing || textField1.length > 0}
         
         background: Rectangle {
             id: bg
             color: accent
             radius: 20
+            //radius: toolButton1.radius
             // this is weird, setting size is supposed to be unnecessary...
             // qt5.10 didn't have a problem with the previous code that was here.
             anchors.fill: toolButton1
@@ -1106,17 +1154,24 @@ Page {
             anchors.centerIn: bg
             source: mi("ic_send_black_24dp.png")
             opacity: toolButton1.enabled ? 1.0 : 0.3
+            //scale: 2
         }
         
+        //icon.source: mi("ic_send_black_24dp.png")
+        //icon.width: width
+        //icon.height: height
+        //radius: width / 2
+        //icon.color: accent
 
-        text: "send"
+        //text: "send"
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
             core.simple_send(to_uid, core.strip_html(textField1.text))
             core.start_control(to_uid)
             themsglist.reload_model()
-            textField1.text = ""
+            //textField1.text = ""
+            textField1.clear()
             listView1.positionViewAtBeginning()
         }
         Component.onCompleted: {
@@ -1130,8 +1185,10 @@ Page {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
-        anchors.bottom: toolButton1.top
-        anchors.right: toolButton1.right
+        anchors.bottom: listview_layout.bottom
+        anchors.bottomMargin: mm(2)
+        anchors.right: listview_layout.right
+        anchors.rightMargin: conv_sidebar.width
 
         background: Rectangle {
             id: gtb_bg
@@ -1168,8 +1225,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: !toolButton1.enabled && core.has_audio_input
-        visible: !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
         z: 5
         background: Rectangle {
             id: bg2
@@ -1218,7 +1275,8 @@ Page {
         onVisibleChanged: {
             if(visible) {
                 value = 0
-                sound_alert.play()
+                //sound_alert.play()
+                beep()
             }
         }
         z: 5

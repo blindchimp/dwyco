@@ -20,7 +20,7 @@ Page {
     property bool dragging
     property int is_blocked: 0
 
-    anchors.fill:parent
+    //anchors.fill: parent
     header: SimpleToolbar {
 
     }
@@ -31,6 +31,20 @@ Page {
         preview_text = is_blocked === 1 ? "unblock user to see profile" : core.uid_to_name(uid)
         preview_desc = is_blocked === 1 ? "" : core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
 
+        if(is_blocked) {
+            return
+        }
+        // note: don't censor anything on desktop if the person is trying to click through,
+        // they probably want to see it.
+        if(!censor || !is_mobile || core.uid_profile_regular(uid)) {
+            preview_source = core.uid_to_profile_preview(uid)
+            preview_text = core.uid_to_name(uid)
+            preview_desc = core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
+        } else {
+            preview_source =  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
+            preview_text = censor_name(core.uid_to_name(uid))
+            preview_desc = censor_name(core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION))
+        }
     }
 
     Connections {
