@@ -1,3 +1,4 @@
+#include <cstring>
 #ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
@@ -35,7 +36,9 @@ Unpackbits::getbit_raw(BITBUFT*& inbuf)
     }
     else
     {
-        cur = *inbuf++;
+        //cur = *inbuf++;
+        memcpy(&cur, inbuf, 4);
+        ++inbuf;
         cur = int_to_le(cur);
 #ifdef SHOW
         printf("%x load %x\n", this, cur);
@@ -60,7 +63,9 @@ Unpackbits::getbits_raw(int bits, BITBUFT*& inbuf)
         val = cur >> (BITBUFSZ - bits_left);
         val <<= (bits - bits_left);
         int morebits = bits - bits_left;
-        cur = *inbuf++;
+        //cur = *inbuf++;
+        memcpy(&cur, inbuf, 4);
+        ++inbuf;
         cur = int_to_le(cur);
 #ifdef SHOW
         printf("%x load %x\n", this, cur);
@@ -87,7 +92,11 @@ Unpackbits::getbits_raw(int bits, BITBUFT*& inbuf)
 void
 Unpackbits::init(BITBUFT*& inbuf)
 {
-    cur = *inbuf++;
+    //cur = *inbuf++;
+    // in the field, this isn't always aligned, probably worked ok
+    // on x86 though
+    memcpy(&cur, inbuf, 4);
+    ++inbuf;
     cur = int_to_le(cur);
 #ifdef SHOW
     printf("%x load %x\n", this, cur);

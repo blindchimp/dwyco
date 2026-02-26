@@ -298,14 +298,40 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a, sqlite3_stmt **stmt_in_out)
                     resrow[i] = sqlite3_column_double(st, i);
                     break;
                 case SQLITE_BLOB:
-                    resrow[i] = vc(VC_BSTRING, (const char *)sqlite3_column_blob(st, i), sqlite3_column_bytes(st, i));
+                {
+                    // per docs, do these in this order to allow "conversions"
+                    // NOTE: the docs are not clear 0 pointers can be returned
+                    // at this API. it may just be the wording is confusing
+                    // since sql NULL and pointer NULL are sprinkled in the
+                    // docs pages for these API's.
+                    //
+                    const char *a = (const char *)sqlite3_column_blob(st, i);
+                    int len = sqlite3_column_bytes(st, i);
+                    if(a == 0)
+                    {
+                        a = "";
+                        len = 0;
+                    }
+
+                    resrow[i] = vc(VC_BSTRING, a, len);
                     break;
+                }
                 case SQLITE_NULL:
                     resrow[i] = vcnil;
                     break;
                 case SQLITE_TEXT:
-                    resrow[i] = vc(VC_BSTRING, (const char *)sqlite3_column_text(st, i), sqlite3_column_bytes(st, i));
+                {
+                    const char *a = (const char *)sqlite3_column_text(st, i);
+                    int len = sqlite3_column_bytes(st, i);
+                    if(a == 0)
+                    {
+                        a = "";
+                        len = 0;
+                    }
+
+                    resrow[i] = vc(VC_BSTRING, a, len);
                     break;
+                }
                 default:
                     oopanic("bogus sqlite type");
                 }
