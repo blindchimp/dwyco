@@ -20,8 +20,8 @@ class DwSet : public DwBag<T>
 {
     friend class DwSetIter<T>;
 public:
-    DwSet(T def, int t) :
-        DwBag<T>(def, t) {}
+    DwSet(int t) :
+        DwBag<T>(t) {}
 
 
     void add(const T& key, T** wp = 0) {
