@@ -96,7 +96,7 @@ private:
 	void bomb_rem_list();
 
 public:
-	vc_list_set() : list(vcnil) {}
+    vc_list_set() {}
 	vc_list_set(const vc_list_set& v) : list(v.list) {}
 
 	enum vc_type type() const { return VC_LIST; }
@@ -142,8 +142,8 @@ protected:
 	virtual void bomb_rem();
 
 public:
-	vc_bag(int a) : set(vcnil, a) {}
-    vc_bag() : set(vcnil, 31) {}
+    vc_bag(int a) : set(a) {}
+    vc_bag() : set(31) {}
 	vc_bag(const vc_bag& v) : set(v.set) {}
 
 	enum vc_type type() const { return VC_BAG; }
