@@ -50,7 +50,7 @@ public:
 
 thdr
 tcls::DwMapR(unsigned int tsize)
-    : set(DwAssocImp<R,D>(), tsize)
+    : set(tsize)
 {
 }
 

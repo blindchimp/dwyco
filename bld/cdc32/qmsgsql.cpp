@@ -776,7 +776,7 @@ sync_user(vc v)
 
     const vc& res = sql_simple("select mid from msg_idx where assoc_uid = ?1", to_hex(uid));
     int nm = res.num_elems();
-    DwBag<vc> b(vcnil, nm / 3 + 1);
+    DwBag<vc> b(nm / 3 + 1);
     for(int i = 0; i < nm; ++i)
     {
         b.add(res[i][0]);
