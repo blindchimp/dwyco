@@ -344,7 +344,14 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
     for(j=0;j<P_NOISECURVES;j++)
       p->noiseoffset[j][i]=
         p->vi->noiseoff[j][inthalfoc]*(1.-del) +
-        p->vi->noiseoff[j][inthalfoc+1]*del;
+              // vorbis_init with 44100khz and 32000 output leads to this expression
+              // indexing past the end of the noiseoff array (per UBSan).
+              // this isn't a full fix, just something i noticed that "del" seemed to be
+              // zero in this case, which essentially hid the errant access.
+              // i was paranoid about keeping the math the same, despite the
+              // obvious situation that del might not be zero in other cases
+              //
+        (inthalfoc == P_BANDS - 1 && del == 0.0 ? 0.0 : p->vi->noiseoff[j][inthalfoc+1]*del);
 
   }
 #if 0
