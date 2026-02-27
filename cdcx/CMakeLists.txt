@@ -129,7 +129,7 @@ set(BASELIBS
     pbm
     theora.1.2.x
     speex
-    vorbis112
+    libvorbis-1.3.7
     ogg
     jenkins
     qt6drv

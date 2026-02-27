@@ -58,12 +58,12 @@ set(SOURCES
     lib/block.c 
     lib/bitrate.c 
     lib/analysis.c
-	radxe/alloca.c
+    radxe/alloca.c
 )
 endif()
 
 
-add_library(vorbis112 OBJECT
+add_library(libvorbis-1.3.7 OBJECT
 	${SOURCES}
 )
 
