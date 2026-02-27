@@ -149,6 +149,7 @@ if(UNIX AND NOT APPLE)
 target_link_libraries(CDC-X PRIVATE
     ${BASELIBS}
     v4lcap
+    # -fsanitize=undefined -fno-omit-frame-pointer
     -lv4l2
     -ldl
     -pthread

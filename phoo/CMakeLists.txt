@@ -295,6 +295,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
+   #-fsanitize=undefined
    #v4lcap
     -ldl
 )

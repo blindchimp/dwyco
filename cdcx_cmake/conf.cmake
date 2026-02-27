@@ -19,6 +19,7 @@ if(UNIX)
         # use this if you are testing the the "TEST_THREAD" in vgqt. otherwise, you'll get the more
         # reliable direct v4l2 driver
         #add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
+	#add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
 endif()
 
 if(WIN32)

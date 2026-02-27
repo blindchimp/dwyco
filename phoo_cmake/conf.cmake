@@ -12,6 +12,8 @@ add_compile_definitions(
         DWYCO_VC_CONV
 )
 
+#add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
+
 if(NOT WIN32)
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 endif()
