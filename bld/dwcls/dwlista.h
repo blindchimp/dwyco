@@ -13,7 +13,7 @@
 
 #include <stdlib.h>
 #include "dwiter.h"
-
+[[noreturn]] void oopanic(const char *a);
 // i had to pull this class out of
 // DwListA because the Borland C++ compiler wouldn't let
 // me reference the type in a friend class...
@@ -27,7 +27,8 @@ class listelem
     friend class DwListA<T>;
     friend class DwListAIter<T>;
 private:
-    listelem(const T& cd) : clnt_data(cd) {}
+    listelem(const T& cd) : clnt_data(cd) {next = prev = nullptr;}
+    listelem() { next = prev = nullptr;}
     T clnt_data;
     listelem *next;
     listelem *prev;
@@ -44,14 +45,12 @@ protected:
     int             count;
     listelem<T> *        current;
     listelem<T> *        listheader;
-    T def;
 
-    void basic_init(const T& def);
+    void basic_init();
     void do_copy(const DwListA&);
 
 public:
 
-    DwListA(T def);
     DwListA();
     DwListA(const DwListA&);
     virtual ~DwListA();
@@ -73,7 +72,7 @@ public:
     void fastforward();
     void forward();
     void backward();
-    T search(const T& key);
+    int search(const T& key, T& item);
     int exists(const T& key);
     int exists(const T& key) const;
     int exists(const T& key, T& val_out);
@@ -122,11 +121,10 @@ DwListA<T>::get_by_iter(DwIter<DwListA<T>, T> *a) const
 
 template<class T>
 void
-DwListA<T>::basic_init(const T& deflt)
+DwListA<T>::basic_init()
 {
     count = 0;
-    def = deflt;
-    listheader = new listelem<T>(def);
+    listheader = new listelem<T>();
     listheader->prev = listheader->next = listheader;
     current = listheader;
 }
@@ -146,16 +144,9 @@ DwListA<T>::do_copy(const DwListA<T>& l)
 }
 
 template <class T>
-DwListA<T>::DwListA(T deflt)
-{
-    basic_init(deflt);
-}
-
-template <class T>
 DwListA<T>::DwListA()
 {
-    T tmp = T();
-    basic_init(tmp);
+    basic_init();
 }
 
 
@@ -220,7 +211,7 @@ DwListA<T>::operator==(const DwListA<T>& l) const
 template<class T>
 DwListA<T>::DwListA(const DwListA<T>& l)
 {
-    basic_init(l.def);
+    basic_init();
     do_copy(l);
 }
 
@@ -236,7 +227,7 @@ template <class T>
 void
 DwListA<T>::append(const T& data)
 {
-    listelem<T> *        e;
+    listelem<T> *e;
 
     e = new listelem<T>(data);
     e->next = listheader;
@@ -264,7 +255,7 @@ const T&
 DwListA<T>::peek_read()
 {
     if (current == listheader)
-        return def;
+        oopanic("dwlista: peek at eol");
     const T& data = current->clnt_data;
     forward();
     return data;
@@ -284,7 +275,7 @@ T
 DwListA<T>::read()
 {
     if (current == listheader)
-        return def;
+        oopanic("dwlista: read at eol");
     const T& data = current->clnt_data;
     forward();
     return data;
@@ -295,7 +286,7 @@ T
 DwListA<T>::read_back()
 {
     if (current == listheader)
-        return def;
+        oopanic("dwlista: read_back at eol");
     const T& data = current->clnt_data;
     backward();
     return data;
@@ -307,7 +298,7 @@ T
 DwListA<T>::get() const
 {
     if (current == listheader)
-        return def;
+        oopanic("dwlista: get at eol");
     return current->clnt_data;
 }
 
@@ -317,7 +308,7 @@ const T*
 DwListA<T>::peek_ptr() const
 {
     if (current == listheader)
-        return &def;
+        oopanic("dwlista: peek_ptr at eol");
     return &current->clnt_data;
 }
 
@@ -327,7 +318,7 @@ T
 DwListA<T>::get_first() const
 {
     if (count == 0)
-        return def;
+        oopanic("dwlista: get_first empty list");
     return listheader->next->clnt_data;
 }
 
@@ -337,7 +328,7 @@ T
 DwListA<T>::get_last() const
 {
     if (count == 0)
-        return def;
+        oopanic("dwlista: get_first empty list");
     return listheader->prev->clnt_data;
 }
 
@@ -372,8 +363,8 @@ DwListA<T>::backward()
 }
 
 template<class T>
-T
-DwListA<T>::search(const T& key)
+int
+DwListA<T>::search(const T& key, T& item)
 {
     rewind();
     for(int i = 0; i < count; ++i)
@@ -382,10 +373,11 @@ DwListA<T>::search(const T& key)
         if (search_fun(key, d))
         {
             backward();
-            return d;
+            item = d;
+            return 1;
         }
     }
-    return def;
+    return 0;
 }
 
 template<class T>

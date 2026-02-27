@@ -7,9 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.326")
+set(RANDO_VERSION "4.328")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000188)
+set(RANDO_VERSION_CODE 3000189)
 set(QT_ANDROID_TARGET_SDK_VERSION 35)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
@@ -39,7 +39,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Materia
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
 # strings. so we just hard code it for now.
 if(ANDROID)
-   set(QT_VERSION "6.10.1")
+   set(QT_VERSION "6.10.2")
 else()
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()

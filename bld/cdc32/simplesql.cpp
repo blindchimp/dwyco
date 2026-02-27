@@ -96,6 +96,13 @@ SimpleSql::exit()
 {
     if(!Db)
         return;
+    CacheIter i(&scache);
+    for(;!i.eol(); i.forward())
+    {
+        auto s = i.get();
+        sqlite3_finalize(s.get_value());
+    }
+    scache.clear();
     sqlite3_close_v2(Db);
     Db = 0;
     dbnames.del(1, dbnames.num_elems() - 1);
@@ -376,7 +383,18 @@ SimpleSql::query(const VCArglist *a)
 #endif
     static vc busy("busy");
     static vc full("full");
-    vc res = sqlite3_bulk_query(Db, a);
+    sqlite3_stmt *cached_stmt = 0;
+    const vc sql = (*a)[0];
+    int found = scache.find(sql, cached_stmt);
+
+    // note: bulk_query unbinds and resets the query
+    vc res = sqlite3_bulk_query(Db, a, &cached_stmt);
+
+    if(!found && cached_stmt)
+    {
+        scache.add(sql, cached_stmt);
+    }
+
     if(res.is_nil() || (res.type() == VC_STRING && res == busy))
         throw -1;
     if(res.type() == VC_STRING && res == full)
