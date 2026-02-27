@@ -60,7 +60,10 @@ Unpackbits::getbits_raw(int bits, BITBUFT*& inbuf)
     ELTYPE val;
     if(bits >= bits_left)
     {
-        val = cur >> (BITBUFSZ - bits_left);
+        if(bits_left == 0) // avoid UB
+            val = cur;
+        else
+            val = cur >> (BITBUFSZ - bits_left);
         val <<= (bits - bits_left);
         int morebits = bits - bits_left;
         //cur = *inbuf++;
@@ -70,7 +73,8 @@ Unpackbits::getbits_raw(int bits, BITBUFT*& inbuf)
 #ifdef SHOW
         printf("%x load %x\n", this, cur);
 #endif
-        val |= (cur >> (BITBUFSZ - (morebits))) & ((1 << (morebits)) - 1);
+        if(morebits != 0) // avoid UB
+            val |= (cur >> (BITBUFSZ - (morebits))) & ((1 << (morebits)) - 1);
         bits_left = BITBUFSZ - (morebits);
         cur <<= morebits;
 #ifdef SHOW
