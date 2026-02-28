@@ -10,6 +10,9 @@ basic idea for an android build:
 get the version of the NDK required for the version of Qt you are building for:
 Qt 6.5.3 NDK 25.1.8937393
 Qt 6.7.3 NDK 26.1.10909125
+Qt 6.8+ NDK 28.2.xxx
+(the reason for this is to allow 16kb aligned builds without needed to
+ferret out all the little command options. NDK 28.2+ does it by default.)
 
 export NDK=~/android/android-ndk (the default)
 

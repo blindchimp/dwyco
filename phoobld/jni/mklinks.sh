@@ -29,7 +29,7 @@ ln -s ../../bld/kazlib
 ln -s ../../bld/libogg-1.3.3 libogg
 ln -s  ../../bld/speexdsp libspeex
 ln -s ../../bld/theora.1.2.x libtheora
-ln -s  ../../bld/libvorbis-1.3.6 libvorbis
+ln -s  ../../bld/libvorbis-1.3.7 libvorbis
 ln -s ../../bld/vc
 ln -s ../../bld/zlib
 ln -s ../../bld/ppm
