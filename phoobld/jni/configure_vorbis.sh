@@ -8,6 +8,7 @@ export CFLAGS="-fPIC -DANDROID"
 maindir=`pwd`
 oggpath="/libogg/output"
 oggdir=$maindir$oggpath
+export PKG_CONFIG_PATH=$maindir/libogg
 
 pushd libvorbis
 

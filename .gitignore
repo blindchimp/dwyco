@@ -630,3 +630,5 @@ rando/.cache/
 
 randobld/jni/crypto8
 CMakeLists.txt.user
+
+bld/libogg-1.3.6/output/
