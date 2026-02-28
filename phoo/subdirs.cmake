@@ -7,7 +7,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto8 ${CMAKE_CURRENT_BINARY_DIR}/
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/jenkins ${CMAKE_CURRENT_BINARY_DIR}/bld/jenkins)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/dwcls ${CMAKE_CURRENT_BINARY_DIR}/bld/dwcls)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libogg-1.3.3 ${CMAKE_CURRENT_BINARY_DIR}/bld/libogg-1.3.3)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libogg-1.3.6 ${CMAKE_CURRENT_BINARY_DIR}/bld/libogg-1.3.6)
 #add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vorbis112 ${CMAKE_CURRENT_BINARY_DIR}/bld/vorbis112)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libvorbis-1.3.7 ${CMAKE_CURRENT_BINARY_DIR}/bld/libvorbis-1.3.7)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/theora.1.2.x ${CMAKE_CURRENT_BINARY_DIR}/bld/theora.1.2.x)
