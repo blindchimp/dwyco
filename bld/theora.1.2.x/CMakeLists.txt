@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 
 project(theora.1.2.x LANGUAGES C)
-include_directories(include ../ogg/include ../vorbis/include)
+include_directories(include ../libogg-1.3.6/include ../vorbis/include)
 
 
 set(SOURCES

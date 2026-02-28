@@ -20,8 +20,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../gsm
     ${CMAKE_CURRENT_SOURCE_DIR}/../speex/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../theora.1.2.x/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../ogg/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vorbis112/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libogg-1.3.6/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libvorbis-1.3.7/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../miniupnp/miniupnp-master/miniupnpc
     .
