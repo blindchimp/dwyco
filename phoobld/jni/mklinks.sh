@@ -26,7 +26,7 @@ ln -s ../../bld/dwcls
 ln -s ../../bld/gsm
 ln -s ../../bld/jenkins
 ln -s ../../bld/kazlib
-ln -s ../../bld/libogg-1.3.3 libogg
+ln -s ../../bld/libogg-1.3.6 libogg
 ln -s  ../../bld/speexdsp libspeex
 ln -s ../../bld/theora.1.2.x libtheora
 ln -s  ../../bld/libvorbis-1.3.7 libvorbis
