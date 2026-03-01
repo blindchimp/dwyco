@@ -1,12 +1,16 @@
-
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto5 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto5)
+# note: this is a kluge, hoping that zlib gets created first since it screws
+# around and creates some header files at build time (whoever decided this
+# was a good thing... sheesh)
+#add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/zlib ${CMAKE_CURRENT_BINARY_DIR}/bld/zlib)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto8 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto8)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/jenkins ${CMAKE_CURRENT_BINARY_DIR}/bld/jenkins)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/dwcls ${CMAKE_CURRENT_BINARY_DIR}/bld/dwcls)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/ogg ${CMAKE_CURRENT_BINARY_DIR}/bld/ogg)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vorbis112 ${CMAKE_CURRENT_BINARY_DIR}/bld/vorbis112)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libogg-1.3.6 ${CMAKE_CURRENT_BINARY_DIR}/bld/libogg-1.3.6)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libvorbis-1.3.7 ${CMAKE_CURRENT_BINARY_DIR}/bld/libvorbis-1.3.7)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/theora.1.2.x ${CMAKE_CURRENT_BINARY_DIR}/bld/theora.1.2.x)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/speex ${CMAKE_CURRENT_BINARY_DIR}/bld/speex)
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pbm ${CMAKE_CURRENT_BINARY_DIR}/bld/pbm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pgm ${CMAKE_CURRENT_BINARY_DIR}/bld/pgm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/ppm ${CMAKE_CURRENT_BINARY_DIR}/bld/ppm)
@@ -16,10 +20,3 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/uv ${CMAKE_CURRENT_BINARY_DIR}/bld/u
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vc ${CMAKE_CURRENT_BINARY_DIR}/bld/vc)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/miniupnp/miniupnp-master/miniupnpc ${CMAKE_CURRENT_BINARY_DIR}/bld/miniupnp/miniupnp-master/miniupnpc)
 
-if(UNIX AND NOT APPLE)
-#add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qtdrv ${CMAKE_CURRENT_BINARY_DIR}/bld/qtdrv)
-#add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/v4lcap ${CMAKE_CURRENT_BINARY_DIR}/bld/v4lcap)
-endif()
-if(APPLE)
-#add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qtdrv ${CMAKE_CURRENT_BINARY_DIR}/bld/qtdrv)
-endif()

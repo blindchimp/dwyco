@@ -16,7 +16,7 @@ include(subdirs.cmake)
 set(BASELIBS
     cdc32
     vc
-    crypto5
+    crypto8
     dwcls
     gsm
     kazlib
@@ -25,7 +25,8 @@ set(BASELIBS
     pbm
     theora.1.2.x
     speex
-    vorbis112
+    libvorbis-1.3.7
+    #libogg-1.3.6
     ogg
     jenkins
     uv
