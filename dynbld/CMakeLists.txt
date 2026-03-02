@@ -34,11 +34,21 @@ set(BASELIBS
 )
 
 add_library(dwyco SHARED dwyco.cpp)
+if(APPLE)
+find_library(mumble CoreFoundation)
+find_library(mumble2 ApplicationServices)
+
 target_link_libraries(dwyco PRIVATE
     ${BASELIBS}
-    #${mumble}
-    #${mumble2}
+    ${mumble}
+    ${mumble2}
 )
+else()
+    target_link_libraries(dwyco PRIVATE
+        ${BASELIBS}
+
+    )
+endif()
 #target_link_libraries(dwyco PRIVATE ${mumble} ${mumble2})
 
 #target_compile_definitions(dwyco_jni PRIVATE DWYCO_JNI_LIBRARY)

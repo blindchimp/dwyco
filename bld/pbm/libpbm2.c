@@ -1,3 +1,4 @@
+#ifdef DWYCO_PBM_FILE_OPS
 /* libpbm2.c - pbm utility library part 2
 **
 ** Copyright (C) 1988 by Jef Poskanzer.
@@ -132,3 +133,4 @@ pbm_readpbm( file, colsP, rowsP )
 
     return bits;
     }
+#endif

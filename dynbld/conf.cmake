@@ -1,4 +1,4 @@
-set(DWYCOBG 0)
+set(DWYCOBG 1)
 set(DWYCO_APP "dynlib")
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 add_compile_definitions(VCCFG_FILE DWYCO_APP_NICENAME="dwyco-generic" DWYCO_VC_CONV)
@@ -20,6 +20,8 @@ endif()
 if(APPLE)
     # Set compiler definitions for macOS
     add_compile_definitions(MACOSX)
+    add_compile_options(-fPIC -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function)
+
 endif()
 
 
