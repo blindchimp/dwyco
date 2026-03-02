@@ -523,12 +523,11 @@ system_info()
     vc v(VC_VECTOR);
 
 #ifdef _Windows
-    extern RECT ScreenSize;
     vc screen(VC_VECTOR);
-    screen.append(ScreenSize.left);
-    screen.append(ScreenSize.top);
-    screen.append(ScreenSize.right);
-    screen.append(ScreenSize.bottom);
+    screen.append(0);
+    screen.append(0);
+    screen.append(0);
+    screen.append(0);
 
     OSVERSIONINFO o;
     memset(&o, 0, sizeof(o));

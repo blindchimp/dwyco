@@ -10,7 +10,6 @@
 #include <windows.h>
 #include "vc.h"
 
-RECT ScreenSize;
 vc Transmit_stats;
 int Crashed_last_time;
 vc StackDump;
