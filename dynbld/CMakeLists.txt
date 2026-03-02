@@ -4,11 +4,6 @@ project(dwyco LANGUAGES CXX)
 set(DWYCO_CONFDIR dynbld)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 
-if(APPLE)
-find_library(mumble CoreFoundation)
-find_library(mumble2 ApplicationServices)
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(subdirs.cmake)
@@ -26,7 +21,6 @@ set(BASELIBS
     theora.1.2.x
     speex
     libvorbis-1.3.7
-    #libogg-1.3.6
     ogg
     jenkins
     uv
@@ -34,7 +28,13 @@ set(BASELIBS
 )
 
 add_library(dwyco SHARED dwyco.cpp)
+
+target_link_options(dwyco PRIVATE
+    $<$<CONFIG:Release>:-s>
+)
+
 if(APPLE)
+
 find_library(mumble CoreFoundation)
 find_library(mumble2 ApplicationServices)
 
