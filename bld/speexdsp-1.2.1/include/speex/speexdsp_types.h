@@ -118,8 +118,14 @@
    typedef unsigned int spx_uint32_t;
 
 #else
-
-#include "speexdsp_config_types.h"
+#  include <sys/types.h>
+   typedef int16_t spx_int16_t;
+   typedef u_int16_t spx_uint16_t;
+   typedef int32_t spx_int32_t;
+   typedef u_int32_t spx_uint32_t;
+   typedef int64_t spx_int64_t;
+   typedef u_int64_t spx_uint64_t;
+//#include "speexdsp_config_types.h"
 
 #endif
 

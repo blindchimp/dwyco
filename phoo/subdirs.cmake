@@ -11,7 +11,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libogg-1.3.6 ${CMAKE_CURRENT_BINARY_
 #add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vorbis112 ${CMAKE_CURRENT_BINARY_DIR}/bld/vorbis112)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libvorbis-1.3.7 ${CMAKE_CURRENT_BINARY_DIR}/bld/libvorbis-1.3.7)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/theora.1.2.x ${CMAKE_CURRENT_BINARY_DIR}/bld/theora.1.2.x)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/speex ${CMAKE_CURRENT_BINARY_DIR}/bld/speex)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/speexdsp-1.2.1 ${CMAKE_CURRENT_BINARY_DIR}/bld/speexdsp-1.2.1)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pbm ${CMAKE_CURRENT_BINARY_DIR}/bld/pbm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pgm ${CMAKE_CURRENT_BINARY_DIR}/bld/pgm)
