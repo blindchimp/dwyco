@@ -43,6 +43,14 @@ if(MSVC)
     )
 endif()
 
+if(ANDROID)
+	set(EXTRA_FILES glob/glob.c winemu.cc linid.cpp )
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glob)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/winemu)
+	add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
+endif()
+
+
 if(APPLE AND NOT UNIX)
     add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
