@@ -1,0 +1,22 @@
+# note: this is a kluge, hoping that zlib gets created first since it screws
+# around and creates some header files at build time (whoever decided this
+# was a good thing... sheesh)
+#add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/zlib ${CMAKE_CURRENT_BINARY_DIR}/bld/zlib)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto8 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto8)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/jenkins ${CMAKE_CURRENT_BINARY_DIR}/bld/jenkins)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/dwcls ${CMAKE_CURRENT_BINARY_DIR}/bld/dwcls)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libogg-1.3.6 ${CMAKE_CURRENT_BINARY_DIR}/bld/libogg-1.3.6)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/libvorbis-1.3.7 ${CMAKE_CURRENT_BINARY_DIR}/bld/libvorbis-1.3.7)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/theora.1.2.x ${CMAKE_CURRENT_BINARY_DIR}/bld/theora.1.2.x)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/speexdsp-1.2.1 ${CMAKE_CURRENT_BINARY_DIR}/bld/speexdsp-1.2.1)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pbm ${CMAKE_CURRENT_BINARY_DIR}/bld/pbm)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pgm ${CMAKE_CURRENT_BINARY_DIR}/bld/pgm)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/ppm ${CMAKE_CURRENT_BINARY_DIR}/bld/ppm)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/gsm ${CMAKE_CURRENT_BINARY_DIR}/bld/gsm)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/cdc32 ${CMAKE_CURRENT_BINARY_DIR}/bld/cdc32)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/uv ${CMAKE_CURRENT_BINARY_DIR}/bld/uv)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vc ${CMAKE_CURRENT_BINARY_DIR}/bld/vc)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/miniupnp/miniupnp-master/miniupnpc ${CMAKE_CURRENT_BINARY_DIR}/bld/miniupnp/miniupnp-master/miniupnpc)
+
