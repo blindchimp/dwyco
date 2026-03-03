@@ -1,2 +1,0 @@
-in qt creator, "automatic signing" doesn't seem to work. you have to select a manually managed profile. no idea why.
-

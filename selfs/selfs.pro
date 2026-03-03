@@ -17,7 +17,7 @@ DEFINES += NO_BUILDTIME
 VER="1.70"
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
-# i'll shit myself if this works on all platforms
+# i will shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
 CONFIG(appdir) {
@@ -129,7 +129,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -152,7 +152,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -193,7 +193,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -222,7 +222,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -245,7 +245,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -274,7 +274,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -295,7 +295,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
+$${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
@@ -404,7 +404,7 @@ $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
 $${D}/pbm/$${S}/pbm.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
-$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/libvorbis-1.3.7/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
 $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
@@ -430,7 +430,7 @@ $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
 $${D}/pbm/$${S}/pbm.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
-$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/libvorbis-1.3.7/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
 $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \

@@ -261,7 +261,7 @@ set(BASELIBS
  #   zlib
     theora.1.2.x
     speex
-    vorbis112
+    libvorbis-1.3.7
     ogg
     jenkins
     uv
@@ -295,6 +295,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
+   #-fsanitize=undefined
    #v4lcap
     -ldl
 )

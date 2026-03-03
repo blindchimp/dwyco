@@ -10,6 +10,7 @@ set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(
     CDCCORE_STATIC
     DWYCO_VC_CONV
+    DWYCO_PBM_FILE_OPS
 )
 
 # Determine the host platform
@@ -19,6 +20,7 @@ if(UNIX)
         # use this if you are testing the the "TEST_THREAD" in vgqt. otherwise, you'll get the more
         # reliable direct v4l2 driver
         #add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
+	#add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
 endif()
 
 if(WIN32)

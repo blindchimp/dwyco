@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 
 project(vorbis112 LANGUAGES C)
-include_directories(include lib ../ogg/include)
+include_directories(include lib ../libogg-1.3.6/include)
 
 if(UNIX)
 set(SOURCES  
@@ -58,12 +58,12 @@ set(SOURCES
     lib/block.c 
     lib/bitrate.c 
     lib/analysis.c
-	radxe/alloca.c
+    radxe/alloca.c
 )
 endif()
 
 
-add_library(vorbis112 OBJECT
+add_library(libvorbis-1.3.7 OBJECT
 	${SOURCES}
 )
 
