@@ -1,3 +1,8 @@
+// ca 3/2026
+// this compiles and runs in qt6, but we only distribute it
+// with windows cdc-x that is built with qt6 as well. be sure to use
+// the same version for both this and cdc-x.
+//
 // ca 6/2022
 // this appears to compile and work ok with qt5 now, but with the
 // new background processing, the update aspects of this are even
