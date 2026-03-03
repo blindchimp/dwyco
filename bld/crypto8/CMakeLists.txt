@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(NDEBUG CRYTPOPP_DISABLE_ASM)
 
-add_library(crypto8 STATIC
+add_library(crypto8 OBJECT
 
 allocate.cpp 
 algparam.cpp 

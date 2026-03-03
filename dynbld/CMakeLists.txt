@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(dwyco LANGUAGES CXX)
+project(dwyco_shared LANGUAGES CXX)
 set(DWYCO_CONFDIR dynbld)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 
@@ -27,7 +27,7 @@ set(BASELIBS
     miniupnpc
 )
 
-add_library(dwyco SHARED dwyco.cpp)
+add_library(dwyco_jni SHARED dwyco.cpp)
 
 target_link_options(dwyco PRIVATE
     $<$<CONFIG:Release>:-s>
