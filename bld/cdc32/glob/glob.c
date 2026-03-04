@@ -551,7 +551,7 @@ glob2(Char *pathbuf, Char *pathend, Char *pattern, glob_t *pglob)
 static int
 glob3(Char *pathbuf, Char *pathend, Char *pattern, Char *restpattern, glob_t *pglob)
 {
-	register struct dirent *dp;
+	struct dirent *dp;
 	DIR *dirp;
 	int err;
 	char buf[MAXPATHLEN];
@@ -586,8 +586,8 @@ glob3(Char *pathbuf, Char *pathend, Char *pattern, Char *restpattern, glob_t *pg
 	else
 		readdirfunc = readdir;
 	while ((dp = (*readdirfunc)(dirp))) {
-		register u_char *sc;
-		register Char *dc;
+		u_char *sc;
+		Char *dc;
 
 		/* Initial DOT must be matched literally. */
 		if (dp->d_name[0] == DOT && *pattern != DOT)
@@ -629,8 +629,8 @@ glob3(Char *pathbuf, Char *pathend, Char *pattern, Char *restpattern, glob_t *pg
 static int
 globextend(const Char *path, glob_t *pglob)
 {
-	register char **pathv;
-	register int i;
+	char **pathv;
+	int i;
 	u_int newsize;
 	char *copy;
 	const Char *p;
@@ -665,7 +665,7 @@ globextend(const Char *path, glob_t *pglob)
  * pattern causes a recursion level.
  */
 static int
-match(register Char *name, register Char *pat, Char *patend)
+match(Char *name, Char *pat, Char *patend)
 {
 	int ok, negate_range;
 	Char c, k;
@@ -716,8 +716,8 @@ match(register Char *name, register Char *pat, Char *patend)
 void
 globfree(glob_t *pglob)
 {
-	register int i;
-	register char **pp;
+	int i;
+	char **pp;
 
 	if (pglob->gl_pathv != NULL) {
 		pp = pglob->gl_pathv + pglob->gl_offs;
@@ -729,7 +729,7 @@ globfree(glob_t *pglob)
 }
 
 static DIR *
-g_opendir(register Char *str, glob_t *pglob)
+g_opendir(Char *str, glob_t *pglob)
 {
 	char buf[MAXPATHLEN];
 
@@ -745,7 +745,7 @@ g_opendir(register Char *str, glob_t *pglob)
 }
 
 static int
-g_lstat(register Char *fn, struct stat *sb, glob_t *pglob)
+g_lstat(Char *fn, struct stat *sb, glob_t *pglob)
 {
 	char buf[MAXPATHLEN];
 
@@ -756,7 +756,7 @@ g_lstat(register Char *fn, struct stat *sb, glob_t *pglob)
 }
 
 static int
-g_stat(register Char *fn, struct stat *sb, glob_t *pglob)
+g_stat(Char *fn, struct stat *sb, glob_t *pglob)
 {
 	char buf[MAXPATHLEN];
 
@@ -793,9 +793,9 @@ g_strcat(Char *dst, const Char* src)
 #endif
 
 static void
-g_Ctoc(register const Char *str, char *buf)
+g_Ctoc(const Char *str, char *buf)
 {
-	register char *dc;
+	char *dc;
 
 	for (dc = buf; (*dc++ = *str++) != EOS;)
 		continue;
@@ -803,9 +803,9 @@ g_Ctoc(register const Char *str, char *buf)
 
 #ifdef DEBUG
 static void
-qprintf(const char *str, register Char *s)
+qprintf(const char *str, Char *s)
 {
-	register Char *p;
+	Char *p;
 
 	(void)printf("%s:\n", str);
 	for (p = s; *p; p++)
