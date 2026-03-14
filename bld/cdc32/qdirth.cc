@@ -688,47 +688,6 @@ dirth_send_unignore(vc id, vc uid, QckDone d)
     dirth_send(m, d);
 }
 
-// note: this should go to the server of the *recipient* of the
-// ignore.
-void
-dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
-{
-    QckMsg m;
-
-    d.type = ReqType("ignore-count");
-    m[QTYPE] = reqtype("ignore-count", d);
-    m[QFROM] = id;
-    m[2] = uid;
-    m[3] = delta;
-
-    vc who = uid;
-    vc port;
-    vc ip = get_server_ip_by_uid(who, port);
-    vc name = get_server_name_by_uid(who, port);
-    if(ip == My_server_ip && port == My_server_port)
-    {
-        dirth_send(m, d);
-    }
-    else
-    {
-        // send to secondary server
-        vc mm = generate_mac_msg(m.v);
-        // note: auth-command response will bounce to the
-        // the encapsulated command's callback
-
-        QckMsg m2;
-        m2[QTYPE] = reqtype("auth-command", d);
-        m2[QFROM] = id;
-        m2[2] = mm;
-        if(mm.is_nil() || !send_to_secondary(ip, port, m2, d))
-        {
-            vc resp(VC_VECTOR);
-            resp[0] = vcnil;
-            dirth_q_local_action(resp, d);
-            return;
-        }
-    }
-}
 
 #if 0
 void
