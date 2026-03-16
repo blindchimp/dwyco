@@ -4718,6 +4718,17 @@ dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_o
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_map_uid_to_uids(const char *uid, int len_uid, DWYCO_LIST *list_out)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc uids = map_uid_to_uids(buid);
+    *list_out = dwyco_list_from_vc(uids);
+    return 1;
+
+}
+
 int
 internal_boot_file(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email)
 {

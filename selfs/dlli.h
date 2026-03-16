@@ -560,7 +560,11 @@ void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
 // NOTE: returns the current group representative from our current
 // local cache. NOTE: this is EPHEMERAL, the representative can change.
 // XXX: need a message to indicate the groups we observe have changed.
-int dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out);
+int DWYCOEXPORT dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out);
+// return a list of uids in the same group as the given uid. if the uid is not in
+// a group, it returns a list with just the uid in it.
+int DWYCOEXPORT dwyco_map_uid_to_uids(const char *uid, int len_uid, DWYCO_LIST *list_out);
+
 // not impl.
 int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
 int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);
