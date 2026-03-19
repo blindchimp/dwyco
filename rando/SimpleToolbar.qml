@@ -20,7 +20,7 @@ ToolBar {
         color: accent
     }
 
-    implicitWidth: parent.width
+    //implicitWidth: parent.width
 
     RowLayout {
         Item {

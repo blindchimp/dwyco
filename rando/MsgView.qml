@@ -123,7 +123,7 @@ Page {
     footer: ToolBar {
         id: footbar
         //visible: !clean_button.checked
-        implicitWidth: parent.width
+        //implicitWidth: parent.width
         RowLayout {
             width: parent.width
             TipButton {
