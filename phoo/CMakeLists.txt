@@ -131,7 +131,7 @@ if (ANDROID)
     #add_android_openssl_libraries(phoo)
 endif()
 
-qt_add_ios_ffmpeg_libraries(phoo)
+#qt_add_ios_ffmpeg_libraries(phoo)
 
 
 qt_import_plugins(phoo
