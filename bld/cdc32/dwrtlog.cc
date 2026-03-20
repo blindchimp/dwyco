@@ -151,7 +151,7 @@ DwRTLog::log(const char *fmt, const char *file, int line,
     snprintf(tmp, sizeof(tmp) - 1, fmt, a1, a2, a3, a4, a5, a6);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp << "\n";
-#ifdef ANDROID
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
     os->reset();
@@ -183,7 +183,7 @@ DwRTLog::log(const char *fmt, const char *file, int line,
     snprintf(tmp, sizeof(tmp) - 1, fmt, a1, a2, a3, a4, a5);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp << "\n";
-#ifdef ANDROID
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
     os->reset();
@@ -219,7 +219,7 @@ DwRTLog::vlog(const char *fmt, const char *file, int line, ...)
     vsnprintf(tmp, sizeof(tmp) - 1, fmt, ap);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp << "\n";
-#ifdef ANDROID
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
     os->reset();
@@ -252,7 +252,7 @@ DwRTLog::log(const char *file, int line, vc v)
 #endif
     v.print_top(*os);
     (*os) << "\n";
-#ifdef ANDROID
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
     os->reset();

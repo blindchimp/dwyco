@@ -3334,7 +3334,7 @@ dwyco_call_accepted(int chan_id, const char *name, const char *location, const c
     dwyco_set_channel_destroy_callback(chan_id, call_died, (void *)sc->vp.cookie);
     Mainwinform->add_call(suid, chan_id);
     stop_animation(suid);
-    dwyco_call_type ct(chan_id, call_type, len_call_type, uid, len_uid);
+    dwyco_call_type ct(chan_id, call_type, len_call_type, uid, len_uid, DWYCO_CT_RECV);
 
     if(!call_find(chan_id, ct))
     {

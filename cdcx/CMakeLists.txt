@@ -42,7 +42,7 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"4.327\"
+DWYCO_NICE_VERSION=\"4.328\"
 )
 include_directories(
 ./dllwin ../bld/qt6drv ../bld/dwcls .
@@ -129,7 +129,7 @@ set(BASELIBS
     pbm
     theora.1.2.x
     speex
-    vorbis112
+    libvorbis-1.3.7
     ogg
     jenkins
     qt6drv
@@ -149,6 +149,7 @@ if(UNIX AND NOT APPLE)
 target_link_libraries(CDC-X PRIVATE
     ${BASELIBS}
     v4lcap
+    # -fsanitize=undefined -fno-omit-frame-pointer
     -lv4l2
     -ldl
     -pthread

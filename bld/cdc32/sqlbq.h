@@ -12,7 +12,7 @@
 
 namespace dwyco {
 
-vc sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a);
+vc sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a, sqlite3_stmt **stmt_in_out = 0);
 
 }
 

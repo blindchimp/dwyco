@@ -1,3 +1,4 @@
+#ifdef DWYCO_PBM_FILE_OPS
 /* libpbm4.c - pbm utility library part 4
 **
 ** Copyright (C) 1988 by Jef Poskanzer.
@@ -78,3 +79,4 @@ pbm_getint( file )
 
     return i;
     }
+#endif

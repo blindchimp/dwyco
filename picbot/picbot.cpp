@@ -114,6 +114,38 @@ map_uids(const QSet<QByteArray>& from)
     return to;
 }
 
+void
+remove_mapped_uids(const QByteArray& uid, QSet<QByteArray>& set)
+{
+    DWYCO_LIST ulist;
+    if(dwyco_map_uid_to_uids(uid.constData(), uid.length(), &ulist))
+    {
+        simple_scoped qulist(ulist);
+        int n = qulist.rows();
+        for(int i = 0; i < n; ++i)
+        {
+            set.remove(qulist.get<QByteArray>(i));
+        }
+    }
+
+}
+
+void
+add_mapped_uids(const QByteArray& uid, QSet<QByteArray>& set)
+{
+    DWYCO_LIST ulist;
+    if(dwyco_map_uid_to_uids(uid.constData(), uid.length(), &ulist))
+    {
+        simple_scoped qulist(ulist);
+        int n = qulist.rows();
+        for(int i = 0; i < n; ++i)
+        {
+            set.insert(qulist.get<QByteArray>(i));
+        }
+    }
+
+}
+
 QByteArray
 time_till()
 {
@@ -204,6 +236,7 @@ send_pic(QByteArray buid)
         return 0;
     Sent.insert(buid);
     Sent.insert(map_uid(buid));
+    add_mapped_uids(buid, Sent);
     save_it(Sent, "sent.qds");
 
     // select random file
@@ -397,6 +430,7 @@ main(int argc, char *argv[])
             {
                 Subscribers.remove(uid);
                 Subscribers.remove(map_uid(uid));
+                remove_mapped_uids(uid, Subscribers);
                 save_it(Subscribers, "subscribers.qds");
                 send_reply_to(uid, "Ok, no more pic of the day. Thanks!");
             }

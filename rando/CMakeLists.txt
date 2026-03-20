@@ -7,9 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.326")
+set(RANDO_VERSION "4.328")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000188)
+set(RANDO_VERSION_CODE 3000189)
 set(QT_ANDROID_TARGET_SDK_VERSION 35)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
@@ -39,7 +39,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Materia
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
 # strings. so we just hard code it for now.
 if(ANDROID)
-   set(QT_VERSION "6.10.1")
+   set(QT_VERSION "6.10.2")
 else()
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
@@ -131,10 +131,10 @@ qt_add_qml_module(rando
 )
 
 set(androidlibs
-    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/arm64-v8a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/armeabi-v7a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/x86/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/x86_64/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../rando_dynbld/build/arm64-v8a/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../rando_dynbld/build/armeabi-v7a/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../rando_dynbld/build/x86/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../rando_dynbld/build/x86_64/libdwyco_jni.so
 )
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -199,7 +199,8 @@ qt_import_plugins(rando
 if(ANDROID)
     target_link_libraries(rando PRIVATE
         qt-qml-models
-        ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
+	jhead
+        ${CMAKE_CURRENT_SOURCE_DIR}/../rando_dynbld/build/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
         Qt6::Quick
         Qt6::Network
 #        Qt6::Multimedia

@@ -27,6 +27,8 @@
 // (dtors are called for the removed items)
 // * on vector destruction, T's dtor is called for elements 0 to count - 1.
 //
+// if T has complicated ctors/dtors that can throw, or if T has complicated
+// alignment requirements, this class isn't likely to work very well.
 #include <string.h>
 #include <utility>
 
@@ -37,7 +39,7 @@
 // might be holding a reference to the internal vector, and
 // panics if you attempt an operation that might move that
 // vector someplace else. this produces false positives, but
-// is useful for finding that "oops" things were you are
+// is useful for finding that "oops" things where you are
 // keeping an address around too long. generally, if you
 // are performing modifications to the vector other than
 // "append", this probably isn't the right class to use.
@@ -66,7 +68,7 @@ public:
 
     inline void append(const T&);
     inline void append(T&&);
-    inline void append2(T);
+    //inline void append2(T);
     //inline void append(void *);
 
     inline T get(int i) const;
@@ -143,6 +145,7 @@ DwSVec<T>::append(const T& c)
     ++count;
 }
 
+#if 0
 template<class T>
 inline
 void
@@ -152,9 +155,13 @@ DwSVec<T>::append2(T c)
     if(count >= real_count)
         oopanic("bad svec append");
 #endif
+    // BUG, not sure what i was doing here.
+    // need to "init" the memory or at least
+    // use the placement new
     ((T*)big)[count] = c;
     ++count;
 }
+#endif
 
 
 #if 0

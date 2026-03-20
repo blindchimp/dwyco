@@ -20,16 +20,11 @@ $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
-$${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
-$${D}/speex/libspeex.a \
-$${D}/vorbis112/libvorbis.a \
-$${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 -ldl
 
@@ -38,17 +33,12 @@ $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
-$${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
-$${D}/vorbis112/libvorbis.a \
-$${D}/ogg/libogg.a \
-$${D}/jenkins/libjenkins.a \
-$${D}/speex/libspeex.a
+$${D}/jenkins/libjenkins.a
 
 
 QMAKE_CXX=ccache g++

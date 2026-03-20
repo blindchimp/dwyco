@@ -10,6 +10,7 @@
 ** implied warranty.
 */
 
+#ifdef DWYCO_PBM_FILE_OPS
 #include "pgm.h"
 #include "libpgm.h"
 #include "pbm.h"
@@ -149,3 +150,4 @@ pgm_readpgm( file, colsP, rowsP, maxvalP )
 
     return grays;
     }
+#endif

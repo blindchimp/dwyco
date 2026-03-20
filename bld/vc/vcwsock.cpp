@@ -834,14 +834,14 @@ void
 vc_winsock::clear_read_set()
 {
 	delete Read_set;
-    Read_set = new SocketSet(0, 31);
+    Read_set = new SocketSet(31);
 }
 
 void
 vc_winsock::clear_write_set()
 {
 	delete Write_set;
-    Write_set = new SocketSet(0, 31);
+    Write_set = new SocketSet(31);
 }
 
 // initialize thread local variables
@@ -849,9 +849,9 @@ int
 vc_winsock::thread_startup()
 {
 	//dispatcher = new VcWinsockDispatcher;
-    Read_set = new SocketSet(0, 31);
-    Write_set = new SocketSet(0, 31);
-	All_socks = new SocketSet(0, 31);
+    Read_set = new SocketSet(31);
+    Write_set = new SocketSet(31);
+    All_socks = new SocketSet(31);
 	return 1;
 }
 

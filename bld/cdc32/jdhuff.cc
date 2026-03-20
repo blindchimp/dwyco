@@ -456,15 +456,21 @@ JDUnpackbits::huff_decode(d_derived_tbl *htbl, BITBUFT*& inbuf)
 	unsigned long savecur = cur;
 	if(HUFF_LOOKAHEAD >= bits_left)
 	{
-		val = cur >> (BITBUFSZ - bits_left);
+        if(bits_left == 0) // avoid UB
+            val = cur;
+        else
+            val = cur >> (BITBUFSZ - bits_left);
 		val <<= (HUFF_LOOKAHEAD - bits_left);
 		int morebits = HUFF_LOOKAHEAD - bits_left;
-		cur = *inbuf++;
+        //cur = *inbuf++;
+        memcpy(&cur, inbuf, 4);
+        ++inbuf;
 		cur = int_to_le(cur);
 #ifdef SHOW
 printf("%x load %x\n", this, cur);
 #endif
-		val |= (cur >> (BITBUFSZ - (morebits))) & ((1 << (morebits)) - 1);
+        if(morebits != 0) // avoid UB
+            val |= (cur >> (BITBUFSZ - (morebits))) & ((1 << (morebits)) - 1);
 		//bits_left = BITBUFSZ - (morebits);
 		//cur <<= morebits;
 		if((nb = htbl->look_nbits[val]) != 0)

@@ -2903,9 +2903,9 @@ MMChannel::recv_config(vc cfg)
                 goto cleanup;
             }
             vc ipw = Current_alternate->hash_key_material();
-            DwString ips((const char *)ipw, ipw.len());
+            DwString ips(ipw);
             ips += dwyco::Schema_version_hack;
-            ipw = vc(VC_BSTRING, ips.c_str(), ips.length());
+            ipw = ips;
             if(pw != ipw)
             {
                 send_error("sync wrong group or schema");

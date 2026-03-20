@@ -17,9 +17,10 @@ JPEGDecoderColor::JPEGDecoderColor()
     cb = new JPEGTDecoderChroma(0, (TPGMMSWDCTDecoder *)luma);
     cr = new JPEGTDecoderChroma(1, (TPGMMSWDCTDecoder *)luma);
 #else
-    luma = new TPGMMSWDCTDecoder;
-    cb = new JPEGTDecoderChroma(0, (TPGMDCTDecoder *)luma);
-    cr = new JPEGTDecoderChroma(1, (TPGMDCTDecoder *)luma);
+    auto a = new TPGMMSWDCTDecoder;
+    luma = a;
+    cb = new JPEGTDecoderChroma(0, a);
+    cr = new JPEGTDecoderChroma(1, a);
 #endif
 
 }

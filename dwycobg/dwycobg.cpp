@@ -12,15 +12,25 @@
 // background "sync" process to act like a server to
 // store all the messages for a given linked-device group.
 //
+// as described below, dwycobg listens on the given port, and any connection to that port
+// causes dwycobg to exit immediately. the port is essentially used for synchronization
+// with a "main" process, usually one that has a UI that will continue accessing
+// the databases and other state information required by the messenger.
+// if dwycobg starts, and it cannot listen on the given port, it will exit
+// within a few seconds. by acquiring that port, the "main app" can essentially
+// gain exclusive access to the shared state.
+//
 // if invoked like this:
 // dwycobg <port>
 // the background process just runs sending and receiving messages
 // in the background, performing sync services if the uid is in a group,
 // and attempting to perform desktop notifications if new messages arrive.
-//
+
 // dwycobg <port> exit-outq-empty
 // this is identical to the above mode, except, as soon as the output
-// message queue is empty, the process exits.
+// message queue is empty, the process exits. this is intended for use in
+// situations that allow someone to send a message, and immediately exit or
+// background the app. this mode continues sending the messages then exits.
 //
 // if invoked like this:
 // dwycobg <port> <group-name> <group-pw>

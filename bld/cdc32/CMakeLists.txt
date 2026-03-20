@@ -18,10 +18,10 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../pgm
     ${CMAKE_CURRENT_SOURCE_DIR}/../ppm
     ${CMAKE_CURRENT_SOURCE_DIR}/../gsm
-    ${CMAKE_CURRENT_SOURCE_DIR}/../speex/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../speexdsp-1.2.1/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../theora.1.2.x/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../ogg/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vorbis112/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libogg-1.3.6/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libvorbis-1.3.7/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../miniupnp/miniupnp-master/miniupnpc
     .
@@ -43,12 +43,20 @@ if(MSVC)
     )
 endif()
 
+if(ANDROID)
+	set(EXTRA_FILES glob/glob.c winemu.cc linid.cpp dwybg_wrap.c)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glob)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/winemu)
+	add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
+endif()
+
+
 if(APPLE AND NOT UNIX)
     add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
 
 if(${DWYCOBG} EQUAL 1)
-    add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
+    add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS DWYCO_NO_ACQ_VIDEO_MEDIA
 )
 endif()
 

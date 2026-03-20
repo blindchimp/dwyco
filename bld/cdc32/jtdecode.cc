@@ -200,7 +200,7 @@ JPEGTDecoder::decode_frame(DWBYTE* ctrl, DWBYTE* overhead, BITBUFT* img,
         for(j = 0, jb = 0; j < ri_cols; j += MSZ, ++jb)
         {
             start_block();
-            MAT *rx = &ref_xform[ib][jb];
+            //MAT *rx = &ref_xform[ib][jb];
 #if 0
             int qid = *control++;
             if(qid != HOLD_BLOCK) // hold existing block

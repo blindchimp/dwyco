@@ -19,7 +19,7 @@ class MMChannel;
 
 namespace dwyco {
 class MMCall;
-// this class sends a message over a "direct" link between two
+// DirectSend sends a message over a "direct" link between two
 // clients. there is no encryption done here, the link that is used
 // is an encrypted tunnel. if a suitable link does not exist
 // to the recipient (this only sends to one recipient), a link setup is
@@ -30,6 +30,12 @@ class MMCall;
 // to the remote side. if there is a failure detected, the message is
 // moved to the outbox. the client can decide what to do with the
 // message at that point. this class does not attempt a retry.
+//
+// a note on DwQSend life-time:
+// when you create this object with a queued message filename, then call
+// send_message, it takes care of deleting itself. the only time you should
+// manually delete this object is if you create one, then decide immediately
+// to get rid of it without calling send_message or cancel.
 //
 // wierd special cases:
 //
@@ -42,7 +48,7 @@ class MMCall;
 // is eventually setup is via a server proxy, this class fails immediately
 // (presumably so you can send it via server.) if the link is direct
 // the send occurs normally.
-// note: attachments that are considered "small" (about 20k) are sent
+// note: attachments that are considered "small" (about 20k, but server configurable) are sent
 // inline, and that works both direct and via proxy.
 //
 

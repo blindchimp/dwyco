@@ -688,47 +688,6 @@ dirth_send_unignore(vc id, vc uid, QckDone d)
     dirth_send(m, d);
 }
 
-// note: this should go to the server of the *recipient* of the
-// ignore.
-void
-dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
-{
-    QckMsg m;
-
-    d.type = ReqType("ignore-count");
-    m[QTYPE] = reqtype("ignore-count", d);
-    m[QFROM] = id;
-    m[2] = uid;
-    m[3] = delta;
-
-    vc who = uid;
-    vc port;
-    vc ip = get_server_ip_by_uid(who, port);
-    vc name = get_server_name_by_uid(who, port);
-    if(ip == My_server_ip && port == My_server_port)
-    {
-        dirth_send(m, d);
-    }
-    else
-    {
-        // send to secondary server
-        vc mm = generate_mac_msg(m.v);
-        // note: auth-command response will bounce to the
-        // the encapsulated command's callback
-
-        QckMsg m2;
-        m2[QTYPE] = reqtype("auth-command", d);
-        m2[QFROM] = id;
-        m2[2] = mm;
-        if(mm.is_nil() || !send_to_secondary(ip, port, m2, d))
-        {
-            vc resp(VC_VECTOR);
-            resp[0] = vcnil;
-            dirth_q_local_action(resp, d);
-            return;
-        }
-    }
-}
 
 #if 0
 void
@@ -889,10 +848,10 @@ generate_mac_msg(vc m)
         return vcnil;
 
     vc smsg = vclh_serialize(m);
-    DwString s((const char *)Current_session_key, 0, Current_session_key.len());
-    s += DwString((const char *)smsg, 0, smsg.len());
-    s += DwString((const char *)Current_authenticator, 0, Current_authenticator.len());
-    vc mac = vclh_sha(vc(VC_BSTRING, s.c_str(), s.length()));
+    DwString s(Current_session_key);
+    s += smsg;
+    s += Current_authenticator;
+    vc mac = vclh_sha(s);
     mac = vc(VC_BSTRING, (const char *)mac, 12);
 
     vc v(VC_VECTOR);

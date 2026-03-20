@@ -42,11 +42,16 @@ extern DwycoEmergencyCallback dwyco_emergency_callback;
 void
 oopanic(const char *s)
 {
-    FILE *f = fopen(newfn("lhcore").c_str(), "wb");
-    if(f)
+
+#ifdef _Windows
+    int fd = open(newfn("lhcore").c_str(), O_CREAT|O_BINARY|O_TRUNC|O_WRONLY, _S_IREAD|_S_IWRITE);
+#else
+    int fd = open(newfn("lhcore").c_str(), O_CREAT|O_BINARY|O_TRUNC|O_WRONLY, S_IRUSR|S_IWUSR);
+#endif
+    if(fd != -1)
     {
-        fputs(s, f);
-        fclose(f);
+        write(fd, s, strlen(s));
+        close(fd);
     }
 #ifndef DWYCO_NO_AUTOBUG
     {
@@ -95,9 +100,12 @@ void coopanic(char *s)
     {
         int fd;
         fd = open("crashed", O_WRONLY);
-        char ct = 2;
-        write(fd, &ct, sizeof(ct));
-        close(fd);
+	if(fd != -1)
+	{
+		char ct = 2;
+		write(fd, &ct, sizeof(ct));
+		close(fd);
+	}
     }
 #endif
     _exit(1);

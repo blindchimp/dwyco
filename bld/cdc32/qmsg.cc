@@ -1343,9 +1343,10 @@ FindVec::find_to_vec(const char *pat)
     {
         DwString a(glb.gl_pathv[i]);
         a = dwbasename(a);
-        ret[i] = new WIN32_FIND_DATA;
-        memset(ret[i], 0, sizeof(*ret[i]));
-        strncpy(ret[i]->cFileName, a.c_str(), sizeof(ret[i]->cFileName) - 1);
+        auto w = new WIN32_FIND_DATA;
+        memset(w, 0, sizeof(*w));
+        strncpy(w->cFileName, a.c_str(), sizeof(w->cFileName) - 1);
+        ret[i] = w;
     }
     globfree(&glb);
     if(free_pat)

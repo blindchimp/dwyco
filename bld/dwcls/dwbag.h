@@ -18,6 +18,8 @@
 #include "dwiter.h"
 #include "dwhash.h"
 
+[[noreturn]] void oopanic(const char *a);
+
 template <class T> class DwBagIter;
 
 // note: this is gross. this provides a way to
@@ -38,7 +40,6 @@ private:
     DwVecP<DwListA<T> > table;
     int table_size;
     int count;
-    T def;
 
     void init(int idx) {
         if(table[idx] == 0)
@@ -47,7 +48,7 @@ private:
 
 public:
 
-    DwBag(T def, int tabsize);
+    DwBag(int tabsize);
     DwBag(const DwBag&);
     virtual ~DwBag();
 
@@ -77,12 +78,11 @@ public:
 
 
 template<class T>
-DwBag<T>::DwBag(T deflt, int tabsz)
+DwBag<T>::DwBag(int tabsz)
     : table(tabsz == 0 ? 31 : tabsz, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND)
 {
     count = 0;
     table_size = table.num_elems();
-    def = deflt;
 }
 
 template<class T>
@@ -91,7 +91,6 @@ DwBag<T>::DwBag(const DwBag<T>& m)
 {
     count = m.count;
     table_size = m.table_size;
-    def = m.def;
     table = m.table;
     for(int i = 0; i < table_size; ++i)
     {
@@ -105,7 +104,7 @@ void
 DwBag<T>::set_size(int sz)
 {
     if(count != 0)
-        ::abort();
+        oopanic("set_size on non-zero size bag");
     table.set_size(sz);
     table_size = sz;
 }
@@ -117,7 +116,6 @@ DwBag<T>::operator=(const DwBag<T>& m)
     clear();
     count = m.count;
     table_size = m.table_size;
-    def = m.def;
     table.set_size(m.table_size);
     for(int i = 0; i < table_size; ++i)
     {

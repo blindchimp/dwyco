@@ -201,18 +201,29 @@ op_in(DWBYTE *&inbuf, ogg_packet *op)
 __attribute__ ((optnone))
 #endif
 {
+#if 0
     int total_len = *((int *)inbuf);
     inbuf += 4;
     op->b_o_s = *((int *)inbuf);
     inbuf += 4;
     op->e_o_s = *(int *)inbuf;
     inbuf += 4;
+#endif
+    int total_len;
+    memcpy(&total_len, inbuf, 4);
+    memcpy(&op->b_o_s, inbuf + 4, 4);
+    memcpy(&op->e_o_s, inbuf + 8, 4);
+    inbuf += 12;
 // hack for some arm processors where there is an alignment
 // restriction for 8 byte items (and this will always end up on
 // a 4 byte boundary.)
     {
-        unsigned int a1 = *(unsigned int *)inbuf;
-        unsigned int a2 = *(unsigned int *)(inbuf + 4);
+        //unsigned int a1 = *(unsigned int *)inbuf;
+        //unsigned int a2 = *(unsigned int *)(inbuf + 4);
+        unsigned int a1;
+        unsigned int a2;
+        memcpy(&a1, inbuf, 4);
+        memcpy(&a2, inbuf + 4, 4);
         op->granulepos = ((long long)a2 << 32) | a1;
     }
 #if 0
@@ -220,8 +231,12 @@ __attribute__ ((optnone))
 #endif
     inbuf += 8;
     {
-        unsigned int a1 = *(unsigned int *)inbuf;
-        unsigned int a2 = *(unsigned int *)(inbuf + 4);
+        //unsigned int a1 = *(unsigned int *)inbuf;
+        //unsigned int a2 = *(unsigned int *)(inbuf + 4);
+        unsigned int a1;
+        unsigned int a2;
+        memcpy(&a1, inbuf, 4);
+        memcpy(&a2, inbuf + 4, 4);
         op->packetno = ((long long)a2 << 32) | a1;
     }
 #if 0
