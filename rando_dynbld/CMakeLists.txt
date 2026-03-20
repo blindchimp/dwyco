@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(dwyco_shared LANGUAGES CXX)
-set(DWYCO_CONFDIR dynbld)
+set(DWYCO_CONFDIR rando_dynbld)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -13,18 +13,11 @@ set(BASELIBS
     vc
     crypto8
     dwcls
-    gsm
     kazlib
     ppm
     pgm
     pbm
-    theora.1.2.x
-    speex
-    libvorbis-1.3.7
-    ogg
     jenkins
-    uv
-    miniupnpc
 )
 
 add_library(dwyco_jni SHARED dwyco.cpp)
@@ -46,7 +39,6 @@ target_link_libraries(dwyco_jni PRIVATE
 else()
     target_link_libraries(dwyco_jni PRIVATE
         ${BASELIBS}
-
     )
 endif()
 #target_link_libraries(dwyco PRIVATE ${mumble} ${mumble2})

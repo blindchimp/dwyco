@@ -116,7 +116,7 @@ final(sqlite3_stmt *s)
 //  statement that you can cache. it is up to the caller to finalize it.
 //
 // if *stmt_in_out != 0
-//  it is assumed to be an sqlite3_stmt that has already prepared, and is in the
+//  it is assumed to be an already prepared sqlite3_stmt, and is in the
 //  state where it has been RESET and can be BOUND to parameters and run. when the
 //  query is done, the statement is RESET and UNBOUND.
 //

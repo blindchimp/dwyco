@@ -131,7 +131,7 @@ if (ANDROID)
     #add_android_openssl_libraries(phoo)
 endif()
 
-qt_add_ios_ffmpeg_libraries(phoo)
+#qt_add_ios_ffmpeg_libraries(phoo)
 
 
 qt_import_plugins(phoo
@@ -215,10 +215,10 @@ qt_add_qml_module(phoo
 )
 
 set(androidlibs
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoobld/libs/arm64-v8a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoobld/libs/armeabi-v7a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoobld/libs/x86/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoobld/libs/x86_64/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/arm64-v8a/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/armeabi-v7a/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/x86/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/x86_64/libdwyco_jni.so
 )
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -281,7 +281,8 @@ if(ANDROID)
     target_link_libraries(phoo PRIVATE
         qt-qml-models
         qt6drv
-        ${CMAKE_CURRENT_SOURCE_DIR}/../phoobld/libs/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
+	jhead
+        ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
         Qt6::Quick
         Qt6::Network
         Qt6::Multimedia
