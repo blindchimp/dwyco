@@ -1,16 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-/* Simple PGM image library – minimal, C99 */
-typedef unsigned char gray;
+#include "pgm.h"
 
 /* Allocates a 2‑D array of gray values (rows x cols) with contiguous memory. */
-unsigned char **pgm_allocarray(int cols, int rows) {
+gray **pgm_allocarray(int cols, int rows) {
     /* Allocate contiguous block for all gray values */
-    unsigned char *block = malloc(rows * cols * sizeof(unsigned char));
+    gray *block = malloc(rows * cols * sizeof(gray));
     if (!block) return NULL;
     /* Allocate row pointer array */
-    unsigned char **rows_ptr = malloc(rows * sizeof(unsigned char *));
+    gray **rows_ptr = malloc(rows * sizeof(gray *));
     if (!rows_ptr) {
         free(block);
         return NULL;
@@ -22,7 +20,7 @@ unsigned char **pgm_allocarray(int cols, int rows) {
     return rows_ptr;
 }
 
-void pgm_freearray(unsigned char **arr, int rows) {
+void pgm_freearray(gray **arr, int rows) {
     if (!arr) return;
     /* First free the contiguous data block (pointed to by arr[0]) */
     free(arr[0]);
@@ -48,7 +46,7 @@ pm_freerow( char *itrow )
     }
 
 
-unsigned char **pgm_readpgm(FILE *fp, int *colsP, int *rowsP) {
+gray **pgm_readpgm(FILE *fp, int *colsP, int *rowsP) {
     if (!fp) return NULL;
     char format[3];
     if (fscanf(fp, "%2s", format) != 1) { return NULL; }
@@ -65,25 +63,25 @@ unsigned char **pgm_readpgm(FILE *fp, int *colsP, int *rowsP) {
     if (rowsP) *rowsP = rows;
     //if (maxvalP) *maxvalP = maxval;
     fgetc(fp); // skip single whitespace
-    unsigned char **img = pgm_allocarray(cols, rows);
+    gray **img = pgm_allocarray(cols, rows);
     if (!img) { return NULL; }
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
             int val = fgetc(fp);
             if (val == EOF) { pgm_freearray(img, rows); return NULL; }
-            img[r][c] = (unsigned char)val;
+            img[r][c] = (gray)val;
         }
     }
     return img;
 }
 
-int pgm_writepgm(FILE *fp, unsigned char **img, int cols, int rows) {
-    if (!fp) return -1;
+int pgm_writepgm(FILE *fp, gray **img, int cols, int rows) {
+    if (!fp) return 0;
     int maxval = 255;
     fprintf(fp, "P5\n%d %d\n%d\n", cols, rows, maxval);
     for (int r = 0; r < rows; r++) {
-        if (fwrite(img[r], 1, cols, fp) != (size_t)cols) { return -1; }
+        if (fwrite(img[r], 1, cols, fp) != (size_t)cols) { return 0; }
     }
-    return 0;
+    return 1;
 }
 

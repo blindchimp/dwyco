@@ -1348,7 +1348,7 @@ DWYCOEXPORT
 void
 dwyco_free_image(char *p_elide, int rows)
 {
-    ppm_freearray(p_elide, rows);
+    ppm_freearray((pixel **)p_elide, rows);
 }
 
 // activity reporting
@@ -6222,13 +6222,13 @@ dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
     if(!f)
     {
         GRTLOG("create_preview_view: %d can't open %s", viewid, filename);
-        ppm_freearray(vimg, rows);
+        ppm_freearray((pixel **)vimg, rows);
         return 0;
     }
     // duh, no error checking
     ppm_writeppm(f, (pixel **)vimg, cols, rows);
     fclose(f);
-    ppm_freearray(vimg, rows);
+    ppm_freearray((pixel **)vimg, rows);
     return 1;
 #endif
 }

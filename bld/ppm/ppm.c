@@ -1,17 +1,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "ppm.h"
 /* Simple PPM/PGM image library – modern, minimal, C99 */
-
-/* Pixel type for PPM */
-typedef struct {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-} pixel;
-
-typedef unsigned char pixval;
 
 /* Allocates a 2‑D array of pixels (rows x cols) with contiguous memory. */
 pixel **ppm_allocarray(int cols, int rows) {
@@ -75,15 +66,15 @@ pixel **ppm_readppm(FILE *fp, int *colsP, int *rowsP) {
     return img;
 }
 
-/* Writes a binary P6 PPM file. Returns 0 on success, -1 on failure. */
+/* Writes a binary P6 PPM file. Returns 1 on success, 0 on failure. */
 int ppm_writeppm(FILE *fp, pixel **img, int cols, int rows) {
-    if (!fp) return -1;
+    if (!fp) return 0;
     fprintf(fp, "P6\n%d %d\n%d\n", cols, rows, 255);
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
             unsigned char rgb[3] = {img[r][c].r, img[r][c].g, img[r][c].b};
-            if (fwrite(rgb, 1, 3, fp) != 3) { return -1; }
+            if (fwrite(rgb, 1, 3, fp) != 3) { return 0; }
         }
     }
-    return 0;
+    return 1;
 }
