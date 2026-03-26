@@ -6226,7 +6226,7 @@ dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
         return 0;
     }
     // duh, no error checking
-    ppm_writeppm(f, (pixel **)vimg, cols, rows, PPM_MAXMAXVAL, 0);
+    ppm_writeppm(f, (pixel **)vimg, cols, rows);
     fclose(f);
     ppm_freearray(vimg, rows);
     return 1;

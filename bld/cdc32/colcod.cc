@@ -11,6 +11,7 @@
  * $Header: g:/dwight/repo/cdc32/rcs/colcod.cc 1.5 1997/11/25 20:41:03 dwight Stable095 $
  */
 #include <stdio.h>
+#include <string.h>
 #include "colcod.h"
 #include "jtcode.h"
 #include "chroma.h"

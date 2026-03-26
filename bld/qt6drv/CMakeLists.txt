@@ -15,7 +15,7 @@ find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS MultimediaWidgets)
 #find_package(QT NAMES Qt6 REQUIRED COMPONENTS Concurrent)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
-include_directories(../miscsrc ../ppm ../pgm ../pbm ../cdc32)
+include_directories(../miscsrc ../ppm ../pgm ../cdc32)
 add_library(qt6drv STATIC
     audi_qt6.cpp
         audo_qt6.cpp
