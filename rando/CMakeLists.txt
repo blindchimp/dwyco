@@ -179,7 +179,8 @@ set(BASELIBS
     crypto8
     dwcls
     kazlib
-    pbm
+    pgm
+    ppm
     uv
     jenkins
     qt-qml-models
