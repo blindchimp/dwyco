@@ -4,8 +4,7 @@ CONFIG -= qt
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
-INCLUDEPATH +=  ../pbm ../pgm
+INCLUDEPATH += ../pgm
 
 SOURCES = \
-	libppm1.c \
-    libppm2.c
+        ppm.cpp
