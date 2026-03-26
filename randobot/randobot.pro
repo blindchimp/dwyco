@@ -23,7 +23,6 @@ $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
 -ldl
@@ -36,7 +35,6 @@ $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a
 

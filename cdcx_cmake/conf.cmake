@@ -10,7 +10,6 @@ set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(
     CDCCORE_STATIC
     DWYCO_VC_CONV
-    DWYCO_PBM_FILE_OPS
 )
 
 # Determine the host platform

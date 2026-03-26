@@ -1,7 +1,7 @@
 set(DWYCOBG 1)
 set(DWYCO_APP "dynlib")
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-add_compile_definitions(VCCFG_FILE DWYCO_APP_NICENAME="dwyco-generic" DWYCO_VC_CONV DWYCO_PBM_FILE_OPS)
+add_compile_definitions(VCCFG_FILE DWYCO_APP_NICENAME="dwyco-generic" DWYCO_VC_CONV )
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
