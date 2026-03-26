@@ -257,7 +257,6 @@ set(BASELIBS
     kazlib
     ppm
     pgm
-    pbm
  #   zlib
     theora.1.2.x
     speex
