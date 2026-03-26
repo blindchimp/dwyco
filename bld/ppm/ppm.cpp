@@ -7,10 +7,10 @@
 /* Allocates a 2‑D array of pixels (rows x cols) with contiguous memory. */
 pixel **ppm_allocarray(int cols, int rows) {
     /* Allocate contiguous block for all pixels */
-    pixel *block = malloc(rows * cols * sizeof(pixel));
+    pixel *block = (pixel *)malloc(rows * cols * sizeof(pixel));
     if (!block) return NULL;
     /* Allocate row pointer array */
-    pixel **rows_ptr = malloc(rows * sizeof(pixel *));
+    pixel **rows_ptr = (pixel **)malloc(rows * sizeof(pixel *));
     if (!rows_ptr) {
         free(block);
         return NULL;

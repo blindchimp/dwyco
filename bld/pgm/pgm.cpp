@@ -5,10 +5,10 @@
 /* Allocates a 2‑D array of gray values (rows x cols) with contiguous memory. */
 gray **pgm_allocarray(int cols, int rows) {
     /* Allocate contiguous block for all gray values */
-    gray *block = malloc(rows * cols * sizeof(gray));
+    gray *block = (gray *)malloc(rows * cols * sizeof(gray));
     if (!block) return NULL;
     /* Allocate row pointer array */
-    gray **rows_ptr = malloc(rows * sizeof(gray *));
+    gray **rows_ptr = (gray **)malloc(rows * sizeof(gray *));
     if (!rows_ptr) {
         free(block);
         return NULL;
