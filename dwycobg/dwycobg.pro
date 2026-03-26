@@ -20,7 +20,6 @@ $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/uv/libuv.a \
@@ -35,7 +34,6 @@ $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/uv/libuv.a
@@ -52,7 +50,6 @@ $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
 -lpthread \
@@ -80,7 +77,6 @@ $${D}/dwcls/$${S}/dwcls.lib \
 $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
-$${D}/pbm/$${S}/pbm.lib \
 $${D}/zlib/$${S}/zlib.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
 user32.lib kernel32.lib Ws2_32.lib winmm.lib vfw32.lib advapi32.lib binmode.obj
