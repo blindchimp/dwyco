@@ -11,6 +11,7 @@
  * $Header: g:/dwight/repo/cdc32/rcs/imgmisc.cc 1.10 1997/11/25 20:41:03 dwight Stable095 $
  */
 #include <math.h>
+#include <string.h>
 #include "macs.h"
 #include "pbmcfg.h"
 #include "matcom.h"

@@ -1,5 +1,6 @@
 #ifndef PPM_H
 #define PPM_H
+#include <stdio.h>
 
 typedef struct {
     unsigned char r;
@@ -9,8 +10,8 @@ typedef struct {
 
 pixel **ppm_allocarray(int cols, int rows);
 void ppm_freearray(pixel **arr, int rows) ;
-pixel **ppm_readppm(const char *path, int *colsP, int *rowsP) ;
-int ppm_writeppm(const char *path, pixel **img, int cols, int rows) ;
+pixel **ppm_readppm(FILE *, int *colsP, int *rowsP) ;
+int ppm_writeppm(FILE *, pixel **img, int cols, int rows) ;
 
 #define PPM_GETR(p) ((p).r)
 #define PPM_GETG(p) ((p).g)

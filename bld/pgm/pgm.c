@@ -30,12 +30,29 @@ void pgm_freearray(unsigned char **arr, int rows) {
     free(arr);
 }
 
-unsigned char **pgm_readpgm(const char *path, int *colsP, int *rowsP) {
-    FILE *fp = fopen(path, "rb");
+char*
+pm_allocrow( int cols, int size )
+    {
+    char* itrow;
+
+    itrow = (char*) malloc( cols * size );
+    if ( itrow == (char*) 0 )
+        return 0;
+    return itrow;
+    }
+
+void
+pm_freerow( char *itrow )
+    {
+    free( itrow );
+    }
+
+
+unsigned char **pgm_readpgm(FILE *fp, int *colsP, int *rowsP) {
     if (!fp) return NULL;
     char format[3];
-    if (fscanf(fp, "%2s", format) != 1) { fclose(fp); return NULL; }
-    if (format[0] != 'P' || format[1] != '5') { fclose(fp); return NULL; }
+    if (fscanf(fp, "%2s", format) != 1) { return NULL; }
+    if (format[0] != 'P' || format[1] != '5') { return NULL; }
     int maxval = 0;
     int cols, rows;
     int c;
@@ -43,33 +60,30 @@ unsigned char **pgm_readpgm(const char *path, int *colsP, int *rowsP) {
         while ((c = fgetc(fp)) != '\n' && c != EOF);
     }
     if (c != EOF) ungetc(c, fp);
-    if (fscanf(fp, "%d %d %d", &cols, &rows, &maxval) != 3) { fclose(fp); return NULL; }
+    if (fscanf(fp, "%d %d %d", &cols, &rows, &maxval) != 3) {  return NULL; }
     if (colsP) *colsP = cols;
     if (rowsP) *rowsP = rows;
     //if (maxvalP) *maxvalP = maxval;
     fgetc(fp); // skip single whitespace
     unsigned char **img = pgm_allocarray(cols, rows);
-    if (!img) { fclose(fp); return NULL; }
+    if (!img) { return NULL; }
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
             int val = fgetc(fp);
-            if (val == EOF) { pgm_freearray(img, rows); fclose(fp); return NULL; }
+            if (val == EOF) { pgm_freearray(img, rows); return NULL; }
             img[r][c] = (unsigned char)val;
         }
     }
-    fclose(fp);
     return img;
 }
 
-int pgm_writepgm(const char *path, unsigned char **img, int cols, int rows) {
-    FILE *fp = fopen(path, "wb");
+int pgm_writepgm(FILE *fp, unsigned char **img, int cols, int rows) {
     if (!fp) return -1;
     int maxval = 255;
     fprintf(fp, "P5\n%d %d\n%d\n", cols, rows, maxval);
     for (int r = 0; r < rows; r++) {
-        if (fwrite(img[r], 1, cols, fp) != (size_t)cols) { fclose(fp); return -1; }
+        if (fwrite(img[r], 1, cols, fp) != (size_t)cols) { return -1; }
     }
-    fclose(fp);
     return 0;
 }
 

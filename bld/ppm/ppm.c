@@ -40,11 +40,10 @@ void ppm_freearray(pixel **arr, int rows) {
 }
 
 /* Reads a binary P6 PPM file. Returns pointer to pixel array or NULL on error. */
-pixel **ppm_readppm(const char *path, int *colsP, int *rowsP) {
-    FILE *fp = fopen(path, "rb");
+pixel **ppm_readppm(FILE *fp, int *colsP, int *rowsP) {
     if (!fp) return NULL;
     char format[3];
-    if (fscanf(fp, "%2s", format) != 1) { fclose(fp); return NULL; }
+    if (fscanf(fp, "%2s", format) != 1) { return NULL; }
     if (format[0] != 'P' || format[1] != '6') {
         fclose(fp); return NULL;
     }
@@ -56,38 +55,35 @@ pixel **ppm_readppm(const char *path, int *colsP, int *rowsP) {
         while ((c = fgetc(fp)) != '\n' && c != EOF);
     }
     if (c != EOF) ungetc(c, fp);
-    if (fscanf(fp, "%d %d %d", &cols, &rows, &maxval) != 3) { fclose(fp); return NULL; }
+    if (fscanf(fp, "%d %d %d", &cols, &rows, &maxval) != 3) { return NULL; }
     if (colsP) *colsP = cols;
     if (rowsP) *rowsP = rows;
     //if (maxvalP) *maxvalP = maxval;
     /* Skip single whitespace before pixel data */
     fgetc(fp);
     pixel **img = ppm_allocarray(cols, rows);
-    if (!img) { fclose(fp); return NULL; }
+    if (!img) { return NULL; }
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
             unsigned char rgb[3];
-            if (fread(rgb, 1, 3, fp) != 3) { ppm_freearray(img, rows); fclose(fp); return NULL; }
+            if (fread(rgb, 1, 3, fp) != 3) { ppm_freearray(img, rows); return NULL; }
             img[r][c].r = rgb[0];
             img[r][c].g = rgb[1];
             img[r][c].b = rgb[2];
         }
     }
-    fclose(fp);
     return img;
 }
 
 /* Writes a binary P6 PPM file. Returns 0 on success, -1 on failure. */
-int ppm_writeppm(const char *path, pixel **img, int cols, int rows) {
-    FILE *fp = fopen(path, "wb");
+int ppm_writeppm(FILE *fp, pixel **img, int cols, int rows) {
     if (!fp) return -1;
     fprintf(fp, "P6\n%d %d\n%d\n", cols, rows, 255);
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
             unsigned char rgb[3] = {img[r][c].r, img[r][c].g, img[r][c].b};
-            if (fwrite(rgb, 1, 3, fp) != 3) { fclose(fp); return -1; }
+            if (fwrite(rgb, 1, 3, fp) != 3) { return -1; }
         }
     }
-    fclose(fp);
     return 0;
 }
