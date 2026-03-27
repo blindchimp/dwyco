@@ -347,6 +347,7 @@ using namespace CryptoPP;
 #include <sys/stat.h>
 #include <fcntl.h>
 #endif
+#include <fcntl.h>
 #include "sepstr.h"
 #include "xinfo.h"
 #include "dhsetup.h"

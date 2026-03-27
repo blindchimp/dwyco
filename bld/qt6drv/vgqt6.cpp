@@ -1151,6 +1151,7 @@ vgqt_get_data(
     return f;
 }
 
+#define bcopy(a, b, c) memcpy((b), (a), (c))
 template<class T>
 void
 flip_in_place(T **img, int cols, int rows)
