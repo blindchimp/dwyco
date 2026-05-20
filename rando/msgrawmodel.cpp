@@ -148,6 +148,25 @@ att_file_hash(const QByteArray& mid, QByteArray& hash_out)
 }
 
 void
+msglist_raw::cleanup_unviewed_for_mid(const QByteArray& mid)
+{
+    QByteArray hash;
+    if(!att_file_hash(mid, hash))
+        return;
+    QByteArray hash_hex = hash.toHex();
+    DWYCO_LIST tl;
+    if(!dwyco_get_tagged_mids(&tl, hash_hex.constData()))
+        return;
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        dwyco_unset_msg_tag(b.constData(), "unviewed");
+    }
+    Mid_to_hash.remove(mid);
+}
+
+void
 msglist_raw::msg_recv_progress(QString mid, QString huid, QString msg, int percent_done)
 {
     QByteArray bmid = mid.toLatin1();
@@ -381,6 +400,7 @@ msglist_raw::obliterate_all_selected(const QSet<QByteArray>& selected)
         {
             if(!dwyco_get_fav_msg(mid.constData()))
             {
+                cleanup_unviewed_for_mid(mid);
                 dwyco_delete_saved_message(buid.constData(), buid.length(), mid.constData());
             }
         }
