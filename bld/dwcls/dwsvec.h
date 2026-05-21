@@ -53,7 +53,7 @@ private:
     DwSVec(const DwSVec&) = delete;
     DwSVec& operator=(const DwSVec&) = delete;
 
-    char vec[DWSVEC_INITIAL * sizeof(T)];
+    alignas(alignof(T)) char vec[DWSVEC_INITIAL * sizeof(T)];
     char *big;
     int count;
     int real_count;
