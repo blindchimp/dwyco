@@ -663,7 +663,9 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #ifdef ANDROID
     // WARNING: creating a socket in VC like this tweaks some
     // global structures used to provide bulk poll results.
-    // YOU MUST BE CERTAIN OTHER THREADS ARE NOT CALLING INTO
+    // you must build with DWYCO_VC_MT_SOCKET to protect those
+    // structures...
+    // OR YOU MUST BE CERTAIN OTHER THREADS ARE NOT CALLING INTO
     // THE MAIN API or VC, the lib itself is not thread-safe
     vc asock = vc(VC_SOCKET_STREAM_UNIX);
 #else
@@ -802,7 +804,9 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
         {
             ALOGI("bad accept %d", errno);
-            close(s);
+            // note: we know asock destructor will close this,
+            // so don't double-close
+            //close(s);
             return 1;
         }
 #endif
@@ -1059,11 +1063,14 @@ dwyco_sync_login_result(const char *str, int what)
 }
 
 
-
 DWYCOEXPORT
 int
 dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw)
 {
+#ifdef ANDROID
+    // we don't use this on android, only in "process-based" mode
+    return 1;
+#endif
 #ifndef WIN32
     signal(SIGPIPE, SIG_IGN);
 #endif
@@ -1297,3 +1304,4 @@ out:
     //exit(0);
     return 0;
 }
+
