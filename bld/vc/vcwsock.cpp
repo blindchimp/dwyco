@@ -74,6 +74,9 @@ int vc_winsock::have_net;
 SocketSet *vc_winsock::Read_set;
 SocketSet *vc_winsock::Write_set;
 
+#ifdef DWYCO_VC_MT_SOCKET
+std::recursive_mutex vc_winsock::global_mutex;
+#endif
 
 unsigned long hash(vc_winsock *a)
 {
@@ -124,6 +127,9 @@ static SocketSet *All_socks;
 int
 vc_winsock::poll_impl(int whatfor, int sec, int usec, Socketvec& res)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	fd_set rset;
 	fd_set wset;
 	fd_set eset;
@@ -239,6 +245,9 @@ vc_winsock::poll_impl(int whatfor, int sec, int usec, Socketvec& res)
 int
 vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	fd_set rset;
 	fd_set wset;
 	fd_set eset;
@@ -391,6 +400,9 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 int
 vc_winsock::poll_impl(int whatfor, int sec, int usec, Socketvec& res)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	int dont_block = 0;
 	int nfds = All_socks->num_elems();
 	//struct pollfd *pfds = new struct pollfd[nfds];
@@ -506,6 +518,9 @@ vc_winsock::poll_impl(int whatfor, int sec, int usec, Socketvec& res)
 int
 vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
     int nfds = All_socks->num_elems();
 	// note: can't really tell ahead, so just allocate big
     DwVec<struct pollfd> pfds(nfds == 0 ? 1 : nfds * 3);
@@ -809,30 +824,45 @@ vc_winsock::get_write_set()
 void
 vc_winsock::socket_add_write_set()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	Write_set->add(this);
 }
 
 void
 vc_winsock::socket_add_read_set()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	Read_set->add(this);
 }
 
 void
 vc_winsock::socket_del_write_set()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	Write_set->del(this);
 }
 
 void
 vc_winsock::socket_del_read_set()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	Read_set->del(this);
 }
 
 void
 vc_winsock::clear_read_set()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	delete Read_set;
     Read_set = new SocketSet(31);
 }
@@ -840,6 +870,9 @@ vc_winsock::clear_read_set()
 void
 vc_winsock::clear_write_set()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	delete Write_set;
     Write_set = new SocketSet(31);
 }
@@ -848,6 +881,9 @@ vc_winsock::clear_write_set()
 int
 vc_winsock::thread_startup()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	//dispatcher = new VcWinsockDispatcher;
     Read_set = new SocketSet(31);
     Write_set = new SocketSet(31);
@@ -860,6 +896,9 @@ vc_winsock::thread_startup()
 int
 vc_winsock::startup()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 	if(have_net)
 		return 1;
 #ifdef __WIN32__
@@ -867,7 +906,9 @@ vc_winsock::startup()
 	if(!get_mutex(Mutex))
 		::abort();
 #endif
-
+#endif
+	if(have_net)
+		return 1;
 	
 #ifdef USE_WINSOCK
     WSADATA wsa_data;
@@ -876,7 +917,9 @@ vc_winsock::startup()
 
 	if(err != 0)
 	{
+#ifndef DWYCO_VC_MT_SOCKET
 		ReleaseMutex(Mutex);
+#endif
 		return 0;
 	}
     if ( LOBYTE( wsa_data.wVersion ) != 2 ||
@@ -884,15 +927,19 @@ vc_winsock::startup()
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
         WSACleanup();
+#ifndef DWYCO_VC_MT_SOCKET
         ReleaseMutex(Mutex);
+#endif
         return 0;
     }
 
 #endif
 	thread_startup();
 	have_net = 1;
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 
 	return 1;
@@ -901,6 +948,9 @@ vc_winsock::startup()
 int
 vc_winsock::thread_shutoff()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	//delete dispatcher;
 	//dispatcher = 0;
 	delete Read_set;
@@ -915,9 +965,13 @@ vc_winsock::thread_shutoff()
 int
 vc_winsock::shutoff()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
+#endif
 #endif
 	int hadnet = have_net;
 #ifdef USE_WINSOCK
@@ -926,8 +980,10 @@ vc_winsock::shutoff()
 #endif
 	thread_shutoff();
 	have_net = 0;
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 	return hadnet;
 }
@@ -935,9 +991,13 @@ vc_winsock::shutoff()
 void
 vc_winsock::close_all_but(SOCKET tosave)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
+#endif
 #endif
 	SocketSetIter i(All_socks);
 	for(; !i.eol(); i.forward())
@@ -953,24 +1013,32 @@ vc_winsock::close_all_but(SOCKET tosave)
 #endif
                 }
 	}
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 }
 
 int
 vc_winsock::poll_all(int whatfor, Socketvec& out, int sec, int usec)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
+#endif
 #endif
 	out.set_size(0);
 	int num = poll_impl(whatfor, sec, usec, out);
 	if(num < 0)
 		num = -1;
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 	return num;
 }
@@ -978,16 +1046,22 @@ vc_winsock::poll_all(int whatfor, Socketvec& out, int sec, int usec)
 int
 vc_winsock::poll_sets(int whatfor, Socketvec& out, int sec, int usec)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
+#endif
 #endif
 	out.set_size(0);
 	int num = poll2_impl(whatfor, sec, usec, out);
 	if(num < 0)
 		num = -1;
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 	return num;
 }
@@ -995,6 +1069,9 @@ vc_winsock::poll_sets(int whatfor, Socketvec& out, int sec, int usec)
 vc_winsock::vc_winsock() : 
 	vcxr(this, 0, 2048, vcxstream::CONTINUOUS_READAHEAD), vcxs(this)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	if(!have_net)
 	{
 		if(startup())
@@ -1010,15 +1087,19 @@ vc_winsock::vc_winsock() :
 #else
 	buffered = 0;
 #endif
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
 #endif
+#endif
 	//dispatcher->register_handler(&ioh);
 	if(All_socks)
         All_socks->add(this);
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 }
 
@@ -1028,6 +1109,9 @@ vc_winsock::vc_winsock() :
 vc_winsock::vc_winsock(const vc_winsock& w) : 
 	vcxr(this, 0, 2048, vcxstream::CONTINUOUS_READAHEAD), vcxs(this)
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#endif
 	sock = w.sock;
 	peer_addr = w.peer_addr;
 	local_addr = w.local_addr;
@@ -1037,23 +1121,31 @@ vc_winsock::vc_winsock(const vc_winsock& w) :
 	err_callback = w.err_callback; // XXX yuck, fix this
 	async_error = w.async_error;
 	buffered = w.buffered;
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
 #endif
+#endif
 	//dispatcher->register_handler(&ioh);
 	if(All_socks)
         All_socks->add(this);
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 }
 
 vc_winsock::~vc_winsock()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 #ifdef __WIN32__
 	if(!get_mutex(Mutex))
 		::abort();
+#endif
 #endif
 	// we added these 'if's because sometimes
 	// global dtors might get fired that reference
@@ -1067,8 +1159,10 @@ vc_winsock::~vc_winsock()
 		Write_set->del(this);
 	if(All_socks)
         All_socks->del(this);
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
 	ReleaseMutex(Mutex);
+#endif
 #endif
 	if(sock != INVALID_SOCKET)
 	{
@@ -2033,12 +2127,15 @@ vc_winsock::init()
 void
 vc_winsock::set_async_error(SOCKET s, int err)
 {
-    vc_winsock *vcs;
-
+#ifdef DWYCO_VC_MT_SOCKET
+    std::lock_guard<std::recursive_mutex> lock(global_mutex);
+#else
 #ifdef __WIN32__
     if(!get_mutex(Mutex))
         ::abort();
 #endif
+#endif
+    vc_winsock *vcs;
     if(All_socks)
     {
 
@@ -2058,8 +2155,10 @@ vc_winsock::set_async_error(SOCKET s, int err)
         }
     }
 
+#ifndef DWYCO_VC_MT_SOCKET
 #ifdef __WIN32__
     ReleaseMutex(Mutex);
+#endif
 #endif
 }
 
@@ -2602,6 +2701,9 @@ vc_winsock_datagram::out_flavor(VcIO os) const
 
 vc_winsock_datagram::vc_winsock_datagram()
 {
+#ifdef DWYCO_VC_MT_SOCKET
+	std::lock_guard<std::recursive_mutex> lock(vc_winsock::global_mutex);
+#endif
 	if(have_net && iobuf == 0)
 	{
 #if 0
