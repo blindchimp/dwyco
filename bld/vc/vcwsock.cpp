@@ -777,38 +777,6 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 #endif
 
 
-#ifdef __WIN32__
-static HANDLE Mutex;
-static int
-get_mutex(HANDLE hMutex)  
-{ 
-    DWORD dwWaitResult; 
-
-    // Request ownership of mutex.
- 
-    dwWaitResult = WaitForSingleObject( 
-        hMutex,   // handle of mutex
-        20000L);   // five-second time-out interval
- 
-    switch (dwWaitResult) 
-    {
-        // The thread got mutex ownership.
-        case WAIT_OBJECT_0: 
-            return 1;
-
-        // Cannot get mutex ownership due to time-out.
-        case WAIT_TIMEOUT: 
-            return 0;
-
-        // Got ownership of the abandoned mutex object.
-        case WAIT_ABANDONED: 
-            return 0;
-    }
-
-	return 1;
-}
-#endif
-
 SocketSet *
 vc_winsock::get_read_set()
 {
@@ -898,14 +866,6 @@ vc_winsock::startup()
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-	if(have_net)
-		return 1;
-#ifdef __WIN32__
-	Mutex = CreateMutex(NULL, FALSE, NULL);
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
 #endif
 	if(have_net)
 		return 1;
@@ -917,9 +877,6 @@ vc_winsock::startup()
 
 	if(err != 0)
 	{
-#ifndef DWYCO_VC_MT_SOCKET
-		ReleaseMutex(Mutex);
-#endif
 		return 0;
 	}
     if ( LOBYTE( wsa_data.wVersion ) != 2 ||
@@ -927,20 +884,12 @@ vc_winsock::startup()
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
         WSACleanup();
-#ifndef DWYCO_VC_MT_SOCKET
-        ReleaseMutex(Mutex);
-#endif
         return 0;
     }
 
 #endif
 	thread_startup();
 	have_net = 1;
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 
 	return 1;
 }
@@ -967,11 +916,6 @@ vc_winsock::shutoff()
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
 #endif
 	int hadnet = have_net;
 #ifdef USE_WINSOCK
@@ -980,11 +924,6 @@ vc_winsock::shutoff()
 #endif
 	thread_shutoff();
 	have_net = 0;
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 	return hadnet;
 }
 
@@ -993,11 +932,6 @@ vc_winsock::close_all_but(SOCKET tosave)
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
 #endif
 	SocketSetIter i(All_socks);
 	for(; !i.eol(); i.forward())
@@ -1013,11 +947,6 @@ vc_winsock::close_all_but(SOCKET tosave)
 #endif
                 }
 	}
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 }
 
 int
@@ -1025,21 +954,11 @@ vc_winsock::poll_all(int whatfor, Socketvec& out, int sec, int usec)
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
 #endif
 	out.set_size(0);
 	int num = poll_impl(whatfor, sec, usec, out);
 	if(num < 0)
 		num = -1;
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 	return num;
 }
 
@@ -1048,21 +967,11 @@ vc_winsock::poll_sets(int whatfor, Socketvec& out, int sec, int usec)
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
 #endif
 	out.set_size(0);
 	int num = poll2_impl(whatfor, sec, usec, out);
 	if(num < 0)
 		num = -1;
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 	return num;
 }
 
@@ -1087,20 +996,9 @@ vc_winsock::vc_winsock() :
 #else
 	buffered = 0;
 #endif
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
-#endif
 	//dispatcher->register_handler(&ioh);
 	if(All_socks)
         All_socks->add(this);
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 }
 
 // note: this is private because it is only used
@@ -1121,31 +1019,15 @@ vc_winsock::vc_winsock(const vc_winsock& w) :
 	err_callback = w.err_callback; // XXX yuck, fix this
 	async_error = w.async_error;
 	buffered = w.buffered;
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
-#endif
 	//dispatcher->register_handler(&ioh);
 	if(All_socks)
         All_socks->add(this);
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 }
 
 vc_winsock::~vc_winsock()
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-#ifdef __WIN32__
-	if(!get_mutex(Mutex))
-		::abort();
-#endif
 #endif
 	// we added these 'if's because sometimes
 	// global dtors might get fired that reference
@@ -1159,11 +1041,6 @@ vc_winsock::~vc_winsock()
 		Write_set->del(this);
 	if(All_socks)
         All_socks->del(this);
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-	ReleaseMutex(Mutex);
-#endif
-#endif
 	if(sock != INVALID_SOCKET)
 	{
 		// note: this dtor may have been invoked by final
@@ -2129,11 +2006,6 @@ vc_winsock::set_async_error(SOCKET s, int err)
 {
 #ifdef DWYCO_VC_MT_SOCKET
     std::lock_guard<std::recursive_mutex> lock(global_mutex);
-#else
-#ifdef __WIN32__
-    if(!get_mutex(Mutex))
-        ::abort();
-#endif
 #endif
     vc_winsock *vcs;
     if(All_socks)
@@ -2154,12 +2026,6 @@ vc_winsock::set_async_error(SOCKET s, int err)
             vcs->async_error = err;
         }
     }
-
-#ifndef DWYCO_VC_MT_SOCKET
-#ifdef __WIN32__
-    ReleaseMutex(Mutex);
-#endif
-#endif
 }
 
 int
