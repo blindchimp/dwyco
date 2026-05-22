@@ -670,7 +670,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     vc asock = vc(VC_SOCKET_STREAM);
 #endif
     // XXX WARNING, on linux, closing the socket twice is
-    // not usually a problem. windows might squawk about it tho
+    // not usually a problem in single threaded situations. windows might squawk about it tho
     asock.socket_init(s, vctrue);
 
 #ifdef DWYCO_CDC_LIBUV
