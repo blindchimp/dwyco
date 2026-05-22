@@ -140,7 +140,10 @@ dwyco_request_singleton_lock(const char *name, int port)
         return -1;
 
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 
     DwString aname;
     aname += '\0';
@@ -163,7 +166,10 @@ dwyco_request_singleton_lock(const char *name, int port)
                 int s2;
                 s2 = socket(AF_UNIX, SOCK_STREAM, 0);
                 if(fcntl(s2, F_SETFL, O_NONBLOCK) == -1)
+                {
+                    close(s2);
                     return -1;
+                }
 
                 if(connect(s2, (const struct sockaddr *)&sap, tlen) == -1)
                 {
@@ -198,7 +204,10 @@ get_singleton_lock(const char *name, int port)
         return -1;
 
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 
     DwString aname;
     aname += '\0';
@@ -269,7 +278,10 @@ dwyco_test_funny_mutex(int port)
     }
 #else
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 #endif
     struct sockaddr_in sap;
     memset(&sap, 0, sizeof(sap));
@@ -335,7 +347,10 @@ get_funny_mutex(int port)
     }
 #else
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 #endif
     struct sockaddr_in sap;
     memset(&sap, 0, sizeof(sap));
