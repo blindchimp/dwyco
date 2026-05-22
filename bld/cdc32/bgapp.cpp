@@ -694,6 +694,18 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     scoped_poll poller(s);
 
 #endif
+    struct scoped_close
+    {
+        int fd;
+        scoped_close() {
+            fd = -1;
+        }
+        ~scoped_close() {
+            if(fd != -1)
+                close(fd);
+        }
+    };
+    scoped_close accepted_fd;
 
     int signaled = 0;
     int started_fetches = 0;
@@ -764,9 +776,13 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             }
 #endif
         }
+
+
 #ifdef WIN32
-        if(accept(s, 0, 0) != INVALID_SOCKET)
+        SOCKET afd;
+        if((afd = accept(s, 0, 0)) != INVALID_SOCKET)
         {
+            accepted_fd.fd = afd;
             break;
         }
         else
@@ -776,9 +792,11 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 return 1;
         }
 #else
-        if(accept(s, 0, 0) != -1)
+        int afd;
+        if((afd = accept(s, 0, 0)) != -1)
         {
             ALOGI("accept to exit %d", s);
+            accepted_fd.fd = afd;
             break;
         }
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
