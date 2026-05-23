@@ -1,6 +1,11 @@
 #!/bin/sh
 
-export NDK=$HOME/Android/Sdk/ndk/28.2.13676358
+if [ "$(uname)" = "Darwin" ]; then
+    NDK_BASE="$HOME/Library/Android/sdk/ndk"
+else
+    NDK_BASE="$HOME/Android/Sdk/ndk"
+fi
+export NDK="$NDK_BASE/28.2.13676358"
 SRC_DIR=$PWD
 BUILD_DIR=$SRC_DIR/build
 #ABIS=("armeabi-v7a" "arm64-v8a" "x86" "x86_64")
