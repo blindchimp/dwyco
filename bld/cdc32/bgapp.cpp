@@ -140,7 +140,10 @@ dwyco_request_singleton_lock(const char *name, int port)
         return -1;
 
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 
     DwString aname;
     aname += '\0';
@@ -163,7 +166,10 @@ dwyco_request_singleton_lock(const char *name, int port)
                 int s2;
                 s2 = socket(AF_UNIX, SOCK_STREAM, 0);
                 if(fcntl(s2, F_SETFL, O_NONBLOCK) == -1)
+                {
+                    close(s2);
                     return -1;
+                }
 
                 if(connect(s2, (const struct sockaddr *)&sap, tlen) == -1)
                 {
@@ -198,7 +204,10 @@ get_singleton_lock(const char *name, int port)
         return -1;
 
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 
     DwString aname;
     aname += '\0';
@@ -269,7 +278,10 @@ dwyco_test_funny_mutex(int port)
     }
 #else
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 #endif
     struct sockaddr_in sap;
     memset(&sap, 0, sizeof(sap));
@@ -335,7 +347,10 @@ get_funny_mutex(int port)
     }
 #else
     if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+    {
+        close(s);
         return -1;
+    }
 #endif
     struct sockaddr_in sap;
     memset(&sap, 0, sizeof(sap));
@@ -648,14 +663,16 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #ifdef ANDROID
     // WARNING: creating a socket in VC like this tweaks some
     // global structures used to provide bulk poll results.
-    // YOU MUST BE CERTAIN OTHER THREADS ARE NOT CALLING INTO
+    // you must build with DWYCO_VC_MT_SOCKET to protect those
+    // structures...
+    // OR YOU MUST BE CERTAIN OTHER THREADS ARE NOT CALLING INTO
     // THE MAIN API or VC, the lib itself is not thread-safe
     vc asock = vc(VC_SOCKET_STREAM_UNIX);
 #else
     vc asock = vc(VC_SOCKET_STREAM);
 #endif
     // XXX WARNING, on linux, closing the socket twice is
-    // not usually a problem. windows might squawk about it tho
+    // not usually a problem in single threaded situations. windows might squawk about it tho
     asock.socket_init(s, vctrue);
 
 #ifdef DWYCO_CDC_LIBUV
@@ -679,6 +696,18 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     scoped_poll poller(s);
 
 #endif
+    struct scoped_close
+    {
+        int fd;
+        scoped_close() {
+            fd = -1;
+        }
+        ~scoped_close() {
+            if(fd != -1)
+                close(fd);
+        }
+    };
+    scoped_close accepted_fd;
 
     int signaled = 0;
     int started_fetches = 0;
@@ -749,9 +778,13 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             }
 #endif
         }
+
+
 #ifdef WIN32
-        if(accept(s, 0, 0) != INVALID_SOCKET)
+        SOCKET afd;
+        if((afd = accept(s, 0, 0)) != INVALID_SOCKET)
         {
+            accepted_fd.fd = afd;
             break;
         }
         else
@@ -761,15 +794,19 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 return 1;
         }
 #else
-        if(accept(s, 0, 0) != -1)
+        int afd;
+        if((afd = accept(s, 0, 0)) != -1)
         {
             ALOGI("accept to exit %d", s);
+            accepted_fd.fd = afd;
             break;
         }
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
         {
             ALOGI("bad accept %d", errno);
-            close(s);
+            // note: we know asock destructor will close this,
+            // so don't double-close
+            //close(s);
             return 1;
         }
 #endif
@@ -1026,11 +1063,14 @@ dwyco_sync_login_result(const char *str, int what)
 }
 
 
-
 DWYCOEXPORT
 int
 dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw)
 {
+#ifdef ANDROID
+    // we don't use this on android, only in "process-based" mode
+    return 1;
+#endif
 #ifndef WIN32
     signal(SIGPIPE, SIG_IGN);
 #endif
@@ -1264,3 +1304,4 @@ out:
     //exit(0);
     return 0;
 }
+

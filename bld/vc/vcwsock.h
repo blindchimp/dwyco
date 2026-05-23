@@ -19,6 +19,9 @@ class vc_winsock;
 unsigned long hash(vc_winsock *a);
 #include "dwset.h"
 #include "vcxstrm.h"
+#ifdef DWYCO_VC_MT_SOCKET
+#include <mutex>
+#endif
 
 
 template<class T> class DwVecP;
@@ -45,8 +48,8 @@ private:
 
 	vcxstream vcxr;
 	vcxstream vcxs;
-        static int thread_startup();
-        static int thread_shutoff();
+	static int thread_startup();
+	static int thread_shutoff();
 
 friend vc lh_horrible_hack(vc);
 
@@ -103,6 +106,9 @@ public:
 	vc_winsock();
 	~vc_winsock();
 	static int have_net;
+#ifdef DWYCO_VC_MT_SOCKET
+	static std::recursive_mutex global_mutex;
+#endif
 
 	static int poll_all(int what_for, Socketvec&, int sec = 0, int usec = 0);
 	static int poll_sets(int what_for, Socketvec&, int sec = 0, int usec = 0);
@@ -168,7 +174,6 @@ class vc_winsock_datagram : public vc_winsock
 private:
 	static char *iobuf;
 	static unsigned int  iobuflen;
-
 	virtual vc_winsock_stream * wrap_sock(SOCKET s, const vc_winsock& ws) {return 0;}
 
 public:

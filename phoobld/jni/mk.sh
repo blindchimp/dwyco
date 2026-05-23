@@ -3,7 +3,11 @@
 
 if [ ! -d "$NDK" ]
 then
-export NDK=~/Android/Sdk/ndk/21.3.6528147
+if [ "$(uname)" = "Darwin" ]; then
+    export NDK=~/Library/Android/sdk/ndk/21.3.6528147
+else
+    export NDK=~/Android/Sdk/ndk/21.3.6528147
+fi
 fi
 echo $NDK
 

@@ -5654,18 +5654,18 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
 
     if(!p.is_valid())
     {
-        GRTLOG("zap_send4: bad id %d", compid, 0);
+        GRTLOG("zap_send: bad id %d", compid, 0);
         return 0;
     }
     TMsgCompose *m = (TMsgCompose *)(void *)p;
     if(!m->send_button_enabled)
     {
-        GRTLOG("zap_send4: send not enabled %d, most likely accessing media (like playing or recording it)", compid, 0);
+        GRTLOG("zap_send: send not enabled %d, most likely accessing media (like playing or recording it)", compid, 0);
         return 0;
     }
     if(!m->user_filename.is_nil() && no_forward)
     {
-        GRTLOG("zap_send4: %d refusing to send file zap with no_forward flag enabled, because we cant enforce no forwarding with this type of zap.", compid, 0);
+        GRTLOG("zap_send: %d refusing to send file zap with no_forward flag enabled, because we cant enforce no forwarding with this type of zap.", compid, 0);
         return 0; // can't honor no forward with files
     }
     vc vuid = vc(VC_BSTRING, uid, len_uid);
@@ -5677,7 +5677,7 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
     GRTLOG("zap recipients", 0, 0);
     if(v.num_elems() == 0)
     {
-        GRTLOG("zap_send4: %d error, there are no eligible recipients for the message after recipient filtering", compid, 0);
+        GRTLOG("zap_send: %d error, there are no eligible recipients for the message after recipient filtering", compid, 0);
         return 0;
     }
     m->rid_list = v;
@@ -5697,7 +5697,7 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
     {
         if(!send_best_way(m->qfn, vuid))
         {
-            GRTLOG("zap_send4: send startup failed", 0, 0);
+            GRTLOG("zap_send: send startup failed", 0, 0);
             return 0;
         }
     }
@@ -5705,7 +5705,7 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
     {
         if(!send_via_server_deferred(m->qfn))
         {
-            GRTLOG("zap_send4: send defer failed", 0, 0);
+            GRTLOG("zap_send: send defer failed", 0, 0);
             return 0;
         }
     }
@@ -5715,7 +5715,7 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
         *len_pers_id_out = m->qfn.length();
     }
 
-    GRTLOG("zap_send4: %d msg successfully q'd to send (%s).", compid, m->qfn.c_str());
+    GRTLOG("zap_send: %d msg successfully q'd to send (%s).", compid, m->qfn.c_str());
     // the file sender objects own the files now, don't let the composer delete them
     m->composer = 0;
 
