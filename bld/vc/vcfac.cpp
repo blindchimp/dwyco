@@ -189,8 +189,7 @@ vc_factory_def::do_function_call(VCArglist *, int) const
 		Vcmap->open_obj_ctx(oret);
 		fun_expr.force_eval();
 		Vcmap->close_obj_ctx();
-		CHECK_ANY_BO(vcnil);
-	}
+		}
 
 	// evaluate the base expr
 	// the obj context for base evaluation is also empty
@@ -202,8 +201,7 @@ vc_factory_def::do_function_call(VCArglist *, int) const
 		Vcmap->set_base_init(1);
 		baseval = base_expr.force_eval();
 		Vcmap->set_base_init(0);
-		CHECK_ANY_BO(vcnil);
-	}
+		}
 	else
 	{
 		baseval = base_expr;
@@ -225,8 +223,7 @@ vc_factory_def::do_function_call(VCArglist *, int) const
 			Vcmap->open_obj_ctx(oret);
 			val = expr.force_eval();
 			Vcmap->close_obj_ctx();
-			CHECK_ANY_BO(vcnil);
-			if(val.type() == VC_FUNC)
+					if(val.type() == VC_FUNC)
 			{
 				// set the name for debugging and stuff
 				// will have more than just "lamba-function"
@@ -274,8 +271,7 @@ vc_factory_def::do_function_call(VCArglist *, int) const
 		Vcmap->open_obj_ctx(oret);
 		fun_expr.force_eval();
 		Vcmap->close_obj_ctx();
-		CHECK_ANY_BO(vcnil);
-	}
+		}
 	
 	if(remove_this)
 		Vcmap->local_remove(Thisname);

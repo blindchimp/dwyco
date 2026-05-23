@@ -38,7 +38,9 @@ struct VcErr
 struct VcExc
 {
     vc excstr;
-    VcExc(const vc& e) {excstr = e;}
+    vc args;
+    VcExc(const vc& e) : excstr(e), args(vcnil) {}
+    VcExc(const vc& e, const vc& a) : excstr(e), args(a) {}
 };
 
 #endif

@@ -46,7 +46,6 @@ lh_socket_error(vc *vs)
         a.append(v2);
         a.append(v->excretval);
 		Vcmap->excraise(excstr, &a);
-		CHECK_ANY_BO(VC_SOCKET_BACKOUT);
 		return VC_SOCKET_RESUME;
 	}
 	return VC_SOCKET_BACKOUT;
@@ -92,7 +91,6 @@ lh_socket_from_os_handle(vc os_handle, vc protocol, vc listening)
 		USER_BOMB("os handle must be string number or integer", vcnil);
 	}
 	sock.socket_init(s, listening);
-	NONLH_CHECK_ANY_BO(vcnil);
 	return sock;
 }
 vc
@@ -116,7 +114,6 @@ lh_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr)
 	sock.set_err_callback(lh_socket_error);
 	sock.socket_init(local_addr, is_listen.is_nil() ? 0 : 1,
 		 reuse_addr.is_nil() ? 0 : 1);
-	CHECK_ANY_BO(vcnil);
 	return sock;
 }
 
@@ -124,7 +121,6 @@ vc
 lh_sockclose(vc sock, vc how)
 {
 	vc v = sock.socket_close(how.is_nil() ? 0 : 1);
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -147,7 +143,6 @@ lh_sockshutdown(vc sock, vc how)
         USER_BOMB("how must be r, w, or rw", vcnil);
     }
 
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -156,7 +151,6 @@ lh_accept(vc sock, vc peer_addr)
 {
 	vc tmp;
 	vc newsock = sock.socket_accept(tmp);
-	CHECK_ANY_BO(vcnil);
 	if(peer_addr.type() == VC_STRING)
 		peer_addr.local_bind(tmp);
 	else
@@ -170,7 +164,6 @@ vc
 lh_connect(vc sock, vc remote_addr)
 {
 	vc v = sock.socket_connect(remote_addr);
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -213,7 +206,6 @@ lh_poll(vc sock, vc whatfor, vc sec, vc usec)
 		tusec = -1;
 		
 	int ready = sock.socket_poll(pargs, tsec, tusec);
-	CHECK_ANY_BO(vcnil);
 
 	vc ret(VC_VECTOR);
 	if(ready & VC_SOCK_ERROR)
@@ -282,7 +274,6 @@ lh_poll_all(VCArglist *a)
 		
 	Socketvec results;
 	int n = vc_winsock::poll_all(pargs, results, sec, usec);
-	CHECK_ANY_BO(vcnil);
 	if(n < 0)
 		return vcnil;
 	vc retvec(VC_VECTOR, "", n);
@@ -368,7 +359,6 @@ lh_poll_sets(VCArglist *a)
 		
 	Socketvec results;
 	int n = vc_winsock::poll_sets(pargs, results, sec, usec);
-	CHECK_ANY_BO(vcnil);
 	if(n < 0)
 		return vcnil;
 	vc retvec(VC_VECTOR, "", n);
@@ -407,7 +397,6 @@ lh_socksend(VCArglist *a)
 	else
 		v = sock.socket_send(item, vcnil);
 
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -424,7 +413,6 @@ lh_sockrecv(VCArglist *a)
     vc sock = (*a)[0];
 
 	vc v = sock.socket_recv(recvd_item, vcnil, addr_info);
-	CHECK_ANY_BO(vcnil);
 
 	if(v.is_nil())
 		return vcnil;
@@ -460,7 +448,6 @@ lh_socksendstring(VCArglist *a)
 		v = sock.socket_send_raw((void *)data, len, 0, (*a)[2]);
 	else
 		v = sock.socket_send_raw((void *)data, len, 0);
-	CHECK_ANY_BO(vcnil);
 
 	return v;
 }
@@ -489,7 +476,6 @@ lh_sockrecvstring(VCArglist *a)
 		buf = new char[-len + 1];
 
 	vc v = sock.socket_recv_raw(buf, len, 0, addr_info);
-	CHECK_ANY_BO_CLEANUP(delete [] buf;, vcnil);
 
 	if(v.is_nil())
 	{
@@ -566,7 +552,6 @@ lh_sockset_option(VCArglist *al)
         USER_BOMB("socket option is either \"blocking\", \"nonblocking\", \"close-on-exec\", \"no-close-on-exec\", \"buffering\", \"set-broadcast\"", vcnil);
 	}
 	vc ret = sock.socket_set_option(so, arg);
-	CHECK_ANY_BO(vcnil);
 	return ret;
 }
 
@@ -658,7 +643,6 @@ lh_socksend_buf(VCArglist *a)
 	else
 		v = sock.socket_send_buf(item, vcnil);
 
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -675,7 +659,6 @@ lh_sockrecv_buf(VCArglist *a)
     vc sock = (*a)[0];
 
 	vc v = sock.socket_recv_buf(recvd_item, (*a)[1], vcnil, addr_info);
-	CHECK_ANY_BO(vcnil);
 
 	if(v.is_nil())
 		return vcnil;

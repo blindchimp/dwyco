@@ -75,7 +75,6 @@ lh_uv_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr)
 #endif
 	sock.socket_init(local_addr, is_listen.is_nil() ? 0 : 1,
 		 reuse_addr.is_nil() ? 0 : 1);
-	CHECK_ANY_BO(vcnil);
 	return sock;
 }
 
@@ -83,7 +82,6 @@ vc
 lh_uv_sockclose(vc sock, vc how)
 {
 	vc v = sock.socket_close(how.is_nil() ? 0 : 1);
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -105,7 +103,6 @@ lh_uv_sockshutdown(vc sock, vc how)
     {
         USER_BOMB("how must be r, w, or rw", vcnil);
     }
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -114,7 +111,6 @@ vc
 lh_uv_connect(vc sock, vc remote_addr)
 {
 	vc v = sock.socket_connect(remote_addr);
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -172,7 +168,6 @@ lh_uv_socksend(VCArglist *a)
 	else
 		v = sock.socket_put_obj(item, vcnil, 0);
 
-	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
@@ -192,7 +187,6 @@ lh_uv_sockrecv(VCArglist *a)
 	// i suppose if you want to emulate the old stuff, we would check
 	// for errors and raise exceptions in those cases. no overly
 	// interested in that level of emulation tho
-	CHECK_ANY_BO(vcnil);
 
 	if(!avail)
 		return vcnil;

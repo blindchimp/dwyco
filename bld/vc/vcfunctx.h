@@ -24,20 +24,13 @@ typedef DwMapR<vc,vc> VMAP;
 typedef DwMapRIter<vc,vc> VMAPIter;
 #endif
 
-class excctx;
-class excfun;
 class vc_object;
 
 class functx
 {
 private:
 	VMAP *map;
-	vc retval;
-	int doing_ret;
-	int loop_ctrl;
-	int break_level;
 	int flush_on_close;
-	excctx *exc;
 #ifdef LHOBJ
 	vc_object *obj_ctx;
 	int obj_ctx_enabled;
@@ -53,39 +46,6 @@ public:
     int find2(const vc& key, vc& out, vc*& wp) const ;
 	void del(const vc& v) const ;
 	int contains(const vc& v) const ;
-
-	void set_break_level(int n) ;
-
-	void set_retval(const vc& v) {retval = v; doing_ret = 1;}
-	int ret_in_progress() const {return doing_ret;}
-	vc get_retval() {return retval;}
-
-// support looping constructs
-	void open_loop() {++loop_ctrl;++break_level;}
-	void close_loop() {
-		if(loop_ctrl == break_level)
-			--break_level;
-		if(--loop_ctrl < 0) oopanic("loop underflow");
-	}
-    int break_in_progress() const {
-		if(loop_ctrl > break_level)
-			return 1;
-		return 0;
-	}
-
-	// support for exception handling
-
-	excfun *addhandler(const vc& pat, const vc& fun) ;
-	excfun *add_instant_backout_handler(const vc& pat) ;
-	void add_default_handler(const vc& pat, const vc& fun) ;
-        void addbackout(const vc& expr) ;
-	
-
-    // search for handler in this context
-	excctx *exchandlerfind(const vc& estr, excfun*& handler_out) ;
-	void call_backouts_back_to(excfun *);
-	int backed_out_to(excfun *handler) ;
-	void drop(excfun *handler) ;
 
 #ifdef LHOBJ
 	// augment function context with object context

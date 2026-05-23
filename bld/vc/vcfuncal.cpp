@@ -302,14 +302,8 @@ vc_funcall::eval() const
 	}
 	else
 	{
-		// no caching for computed functions
 		f = func.eval();
-		CHECK_ANY_BO(vcnil);
 	}
-	// check this early, so we can stop execution
-	// now, instead of waiting for the actual function
-	// call later (after arg evaluation)
-	//
 	if(!vetted && f.type() != VC_FUNC && f.type() != VC_MEMFUN)
 	{
 		*cached_fun = vcnil;
@@ -324,7 +318,6 @@ vc_funcall::eval() const
 
 	int n = arglist.num_elems();
 
-    //VCArglist al(n, 0, 1, 8, 0, 1);
     VCArglist al;
     al.set_size(n);
 
@@ -350,12 +343,6 @@ vc_funcall::eval() const
             _dbg.cur_idx = i;
 #endif
             al.append(arglist[i].eval());
-			if(Vcmap->dbg_backout_in_progress())
-			{
-				dbg_print(f, i);
-				return vcnil;
-			}
-			CHECK_ANY_BO(vcnil);
 		}
 	}
 
@@ -370,11 +357,6 @@ vc_funcall::eval() const
 	dbg(retval) = ret;
 #endif
 
-	if(Vcmap->dbg_backout_in_progress())
-	{
-		dbg_print(f, &al);
-		return vcnil;
-	}
 	return ret;
 }
 

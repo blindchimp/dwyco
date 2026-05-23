@@ -328,8 +328,6 @@ vc_vector::foreach(const vc& v, const vc& expr) const
 	{
 		Vcmap->local_add(v, i.get());
 		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
 	}
 	--iterators;
 	Vcmap->close_loop();
@@ -378,7 +376,6 @@ vc_vector::scal1_##name(const vc_vector& v_vec, const vc_int& v_scal) \
 	{\
 		const vc& v = v_vec[i]; \
 		vec[i] = v op vci; \
-		CHECK_DBG_BO_LOOP; \
 	} \
 } \
 void \
@@ -391,7 +388,6 @@ vc_vector::scal1_##name(const vc_vector& v_vec, const vc_double& v_scal) \
 	{\
 		const vc& v = v_vec[i]; \
 		vec[i] = v op vcd; \
-		CHECK_DBG_BO_LOOP; \
 	} \
 } \
 void \
@@ -402,7 +398,6 @@ vc_vector::scal2_int_##name(const vc& v_scal, const vc_vector& v_vec) \
 	{\
 		const vc& v = v_vec[i]; \
 		vec[i] = (const vc_int&)v_scal op v; \
-		CHECK_DBG_BO_LOOP; \
 	} \
 } \
 void \
@@ -413,7 +408,6 @@ vc_vector::scal2_double_##name(const vc& v_scal, const vc_vector& v_vec) \
 	{\
 		const vc& v = v_vec[i]; \
 		vec[i] = (const vc_double&)v_scal op v; \
-		CHECK_DBG_BO_LOOP; \
 	} \
 } \
 vc \
@@ -432,7 +426,6 @@ vc_vector::vec_##name(const vc& v)  const \
 	for(long i = 0; i < len; ++i) \
 	{ \
 		(*v1)[i] = ((const vc_vector&)v)[i] op (*this)[i]; \
-		CHECK_DBG_BO_LOOP; \
 	} \
 	retval.redefine(v1); \
 	return retval; \
@@ -742,8 +735,6 @@ vc_map::foreach(const vc& v, const vc& expr) const
 		assoc[0] = a.get_key();
         assoc[1] = a.get_value();
 		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
 	}
 	--iterators;
 	Vcmap->close_loop();
@@ -1033,8 +1024,6 @@ vc_list_set::foreach(const vc& v, const vc& expr) const
 	{
 		Vcmap->local_add(v, e);
 		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
 	}
 	--iterators;
 	Vcmap->close_loop();
@@ -1266,8 +1255,6 @@ vc_bag::foreach(const vc& v, const vc& expr) const
 	{
 		Vcmap->local_add(v, i.get());
 		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
 	}
 	--iterators;
 	Vcmap->close_loop();
@@ -1603,8 +1590,6 @@ vc_tree::foreach(const vc& v, const vc& expr) const
 		assoc[0] = a.get_key();
         assoc[1] = a.get_value();
 		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
 	}
 	--iterators;
 	Vcmap->close_loop();

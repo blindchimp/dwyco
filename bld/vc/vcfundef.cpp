@@ -195,11 +195,6 @@ vc
 vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 {
 
-	// note: args are set up,
-	// don't send out via operator() in vc_cvar,
-	// that's only good for sending things out to C++ env.
-	//  vc ret = fundef(bindargs);  <--- no good
-	// (args are passed via bindings in local environment)
 #ifdef VCDBG
 	if(!suppress_break && break_on(BREAK_CALL))
 	{
@@ -213,33 +208,36 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 	struct timeval t0;
 	gettimeofday(&t0, 0);
 #endif
-	vc ret = fundef.force_eval();
-	if(Vcmap->ret_in_progress())
-#ifndef LHPROF
-        return Vcmap->retval();
-#else //LHPROF
-        ret = Vcmap->retval();
-	struct rusage r1;
-	getrusage(RUSAGE_SELF, &r1);
-	struct timeval t1;
-	gettimeofday(&t1, 0);
+	try
+	{
+		vc ret = fundef.force_eval();
+#ifdef LHPROF
+		struct rusage r1;
+		getrusage(RUSAGE_SELF, &r1);
+		struct timeval t1;
+		gettimeofday(&t1, 0);
 
-	++call_count;
-	
-	double n = subtimeval(r1.ru_utime, r0.ru_utime);
-	total_time += n;
-	total_time2 += n * n;
-	hist_time.add_sample(n);
-	n = subtimeval(r1.ru_stime, r0.ru_stime);
-	total_sys_time += n;
-	total_sys_time2 += n * n;
-	hist_sys_time.add_sample(n);
-	n = subtimeval(t1, t0);
-	total_real_time += n;
-	total_real_time2 += n * n;
-	hist_real_time.add_sample(n);
+		++call_count;
+
+		double n = subtimeval(r1.ru_utime, r0.ru_utime);
+		total_time += n;
+		total_time2 += n * n;
+		hist_time.add_sample(n);
+		n = subtimeval(r1.ru_stime, r0.ru_stime);
+		total_sys_time += n;
+		total_sys_time2 += n * n;
+		hist_sys_time.add_sample(n);
+		n = subtimeval(t1, t0);
+		total_real_time += n;
+		total_real_time2 += n * n;
+		hist_real_time.add_sample(n);
 #endif
-	return ret;
+		return ret;
+	}
+	catch(const VcRet& vcr)
+	{
+		return vcr.retval;
+	}
 }
 
 

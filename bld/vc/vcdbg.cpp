@@ -11,6 +11,7 @@
 #ifdef VCDBG
 #include "dwdate.h"
 #include "vcmap.h"
+#include <exception>
 
 // note: there used to be a bunch of stuff in here for dropping to
 // an interactive debugging shell. it sorta worked, but it was never
@@ -98,6 +99,10 @@ VcDebugNode::~VcDebugNode()
 	if(i == -1)
 		oopanic("can't find debug node?");
 	VcDbgInfo.callstack.set_size(i);
+	if(std::uncaught_exceptions())
+	{
+		printOnBrief(VcError);
+	}
 }
 
 void

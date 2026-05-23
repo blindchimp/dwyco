@@ -118,8 +118,7 @@ vc_memselect::eval() const
 	else
 	{
 		obj = obj_expr.eval();
-		CHECK_ANY_BO(vcnil);
-	}
+		}
 
 
 #ifdef VCDBG
@@ -138,7 +137,6 @@ vc_memselect::eval() const
 #endif
 	
 	vc sel = selector.eval();
-	CHECK_ANY_BO(vcnil);
 	vc out;
 	if(obj.member_select(sel, out, 1, 0))
 		return out;

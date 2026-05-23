@@ -13,9 +13,6 @@
 #include "vc.h"
 #include "dwvecp.h"
 #include "vcfunctx.h"
-//class functx;
-class excfun;
-class excctx;
 class vc_object;
 
 class vcctx
@@ -24,17 +21,6 @@ private:
 	DwVecP<functx> maps;
 	int ctx;
     functx *cur_ctx;
-	
-	// exception handling
-	int exc_backout;
-    int exc_doing_backouts;
-	excfun *backout_handler;
-    excctx *backout_ctx;
-    vc handler_ret;
-
-    // debugging
-    int dbg_backout;
-    
 
 public:
 	vcctx();
@@ -71,45 +57,7 @@ public:
 	void open_ctx(functx * = 0) ;
 	void close_ctx();
 
-	void set_retval(const vc& v) { cur_ctx->set_retval(v); }
-    int ret_in_progress() const { return cur_ctx->ret_in_progress(); }
-	vc retval() { return cur_ctx->get_retval(); }
-
-	void open_loop() {cur_ctx->open_loop();}
-	void close_loop() {cur_ctx->close_loop();}
-    int break_in_progress() const {return cur_ctx->break_in_progress();}
-	void set_break_level(int n) {cur_ctx->set_break_level(n);}
-
-    int unwind_in_progress() const {
-		return ret_in_progress() ||
-			break_in_progress() ||
-			exc_backout || dbg_backout;
-	}
-
-	// exception handling support
-	int backed_out_to(excfun *handler) ;
-
-	excfun *addhandler(const vc& pat, const vc& fun);
-	excfun *add_instant_backout_handler(const vc& pat);
-	void add_default_handler(const vc& pat, const vc& fun) ;
-	void drophandler(excfun *handler) ;
-	void addbackout(const vc& expr) ;
-
-	void call_backouts_back_to(excfun *handler);
-	void backout_done() ;
-	int backout_in_progress() ;
-	void set_handler_ret(const vc& v) ;
-	vc get_handler_ret() ;
-
-	void excraise(const vc& str, VCArglist *al);
-
-	//
-	// debugging
-	//
 	void dump(VcIO) const;
-	int dbg_backout_in_progress() ;
-	void set_dbg_backout() ;
-	void clear_dbg_backout() ;
 };
 
 #endif

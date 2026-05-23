@@ -151,7 +151,7 @@ vc##funname(vc vec, vc index) \
 			idx = i; \
 			termsearch; \
 		} \
-		CHECK_ANY_BO(vcnil); \
+		 \
 	} \
 	if(!index.is_nil()) \
 		index.local_bind(vc(idx)); \
@@ -185,7 +185,7 @@ vc##funname(vc vec, vc val, vc index) \
 			idx = i; \
 			termsearch; \
 		} \
-		CHECK_ANY_BO(vcnil); \
+		 \
 	} \
 	if(i == n) \
 		return vcnil; \

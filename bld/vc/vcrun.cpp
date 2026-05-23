@@ -18,6 +18,7 @@
 
 #undef new
 #include "vclex.h"
+#include "vctrt.h"
 //static char Rcsid[] = "$Header: /e/linux/home/dwight/repo/vc/rcs/vcrun.cpp 1.55 1999/03/17 14:57:04 dwight Exp $";
 
 #ifdef VCDBG
@@ -167,7 +168,20 @@ init_rct();
 	fclose(i);
 
     if(!translate)
-        (void)s->force_eval();
+    {
+        try
+        {
+            (void)s->force_eval();
+        }
+        catch(const VcErr& e)
+        {
+            VcError << "runtime error: " << e.err << "\n";
+        }
+        catch(const VcExc& e)
+        {
+            VcError << "unhandled exception: " << e.excstr << "\n";
+        }
+    }
     else
     {
         vc top = s->translate(VcOutput);

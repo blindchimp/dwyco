@@ -298,16 +298,6 @@ vc_cvar::eval() const
         dbg.cur_idx = expr_num;
 #endif
 			val = atom.eval();
-			// special case: we're unwinding due to a return/break/exc
-			// action. The various return values are stashed in the
-            // function context, so we abandon it here.
-			if(Vcmap->unwind_in_progress())
-			{
-				if(Vcmap->dbg_backout_in_progress())
-					dbg_print(expr_num, var_name);
-				delete [] var_name;
-				return vcnil;
-			}	
 			atom = val;
 
 		if(!quoted)
