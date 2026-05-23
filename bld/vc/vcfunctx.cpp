@@ -228,6 +228,22 @@ functx::contains(const vc& v) const
 }
 
 void
+functx::run_backouts()
+{
+    for(int i = backouts.num_elems() - 1; i >= 0; --i)
+    {
+        try {
+            backouts[i].force_eval();
+        }
+        catch(...) {
+            // during unwind, don't let a backout failure
+            // prevent remaining backouts from running
+        }
+    }
+    backouts.set_size(0);
+}
+
+void
 functx::dump(VcIO os) const
 {
 	VMAPIter vmi(map);

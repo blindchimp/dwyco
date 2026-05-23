@@ -59,30 +59,37 @@ vc_memberfun::operator()(VCArglist *a) const
 	vfd->do_function_initialize(a);
 	Vcmap->open_obj_ctx(obj.get_obj());
 	vfd->do_arg_setup(a);
+	try {
 #ifdef VCDBG
-	// if the object has a break tag, that means we only
-	// want to break if the member function also has a
-	// break tag.  this allows breaking on entry to
-	// a particular object's member (instead of
-	// any object's member)
-	
-	vc_object *o = obj.get_obj();
-	vc retval;
-	if(break_on(BREAK_MEMCALL))
-	{
-		if(drop_to_dbg("memberfun call break", "membreak"))
-			retval = vcnil;
+		// if the object has a break tag, that means we only
+		// want to break if the member function also has a
+		// break tag.  this allows breaking on entry to
+		// a particular object's member (instead of
+		// any object's member)
+		
+		vc_object *o = obj.get_obj();
+		vc retval;
+		if(break_on(BREAK_MEMCALL))
+		{
+			if(drop_to_dbg("memberfun call break", "membreak"))
+				retval = vcnil;
+			else
+				retval = vfd->do_function_call(a, 1);
+		}
 		else
-			retval = vfd->do_function_call(a, 1);
-	}
-	else
-		retval = vfd->do_function_call(a);
+			retval = vfd->do_function_call(a);
 #else
-	vc retval = vfd->do_function_call(a);
+		vc retval = vfd->do_function_call(a);
 #endif
-	Vcmap->close_obj_ctx();
-	vfd->do_function_finalize(a);
-	return retval;
+		Vcmap->close_obj_ctx();
+		vfd->do_function_finalize(a);
+		return retval;
+	}
+	catch(...) {
+		Vcmap->close_obj_ctx();
+		vfd->do_function_finalize(a);
+		throw;
+	}
 }
 
 void

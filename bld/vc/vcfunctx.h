@@ -11,6 +11,7 @@
 // $Header: g:/dwight/repo/vc/rcs/vcfunctx.h 1.45 1996/11/17 05:58:46 dwight Stable $
 
 #include "vc.h"
+#include "dwvec.h"
 
 #ifdef PERFHACKS
 template<class R, class D> class DwAMap;
@@ -31,6 +32,7 @@ class functx
 private:
 	VMAP *map;
 	int flush_on_close;
+	DwVec<vc> backouts;
 #ifdef LHOBJ
 	vc_object *obj_ctx;
 	int obj_ctx_enabled;
@@ -46,6 +48,9 @@ public:
     int find2(const vc& key, vc& out, vc*& wp) const ;
 	void del(const vc& v) const ;
 	int contains(const vc& v) const ;
+
+	void addbackout(const vc& expr) { backouts.append(expr); }
+	void run_backouts();
 
 #ifdef LHOBJ
 	// augment function context with object context

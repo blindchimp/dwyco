@@ -1376,7 +1376,6 @@ do_exploded_funcall(vc fun, vc argvec)
 
 
 vc
-vc
 dotry(VCArglist *a)
 {
 	// try(expr, pattern1, catch1, pattern2, catch2, ...)
@@ -1438,6 +1437,13 @@ dotry(VCArglist *a)
 }
 
 vc
+doexcbackout(vc expr)
+{
+	Vcmap->addbackout(expr);
+	return vcnil;
+}
+
+vc
 doexcraise(VCArglist *a)
 {
 	// raise an exception
@@ -1452,7 +1458,7 @@ doexcraise(VCArglist *a)
 		args.append((*a)[i]);
 	throw VcExc(estr, args);
 }
-}
+
 
 vc
 doif(VCArglist *a)
@@ -3001,6 +3007,7 @@ vc::init_rest()
 	// exception handling
 	makefun("try", VC(dotry, "try", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 	makefun("excraise", VC(doexcraise, "excraise", VC_FUNC_BUILTIN_LEAF));
+	makefun("excbackout", VC(doexcbackout, "excbackout", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 
 	// I/O
 

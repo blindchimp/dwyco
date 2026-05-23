@@ -133,9 +133,15 @@ vc_func::operator()(VCArglist *al) const
 {
 	do_function_initialize(al);
 	do_arg_setup(al);
-    vc retval = do_function_call(al);
-	do_function_finalize(al);
-	return retval;
+	try {
+	    vc retval = do_function_call(al);
+		do_function_finalize(al);
+		return retval;
+	}
+	catch(...) {
+		do_function_finalize(al);
+		throw;
+	}
 }
 
 

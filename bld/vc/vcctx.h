@@ -56,6 +56,7 @@ public:
 	
 	void open_ctx(functx * = 0) ;
 	void close_ctx();
+	void addbackout(const vc& expr) { cur_ctx->addbackout(expr); }
 
 	void dump(VcIO) const;
 };

@@ -7,6 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
+#include <exception>
 #include "vcfunctx.h"
 #include "vcctx.h"
 #include "vcmap.h"
@@ -44,6 +45,8 @@ vcctx::close_ctx()
 {
 	if(ctx <= 0)
 		oopanic("ctx underflow");
+    if(std::uncaught_exceptions() > 0)
+        cur_ctx->run_backouts();
     delete cur_ctx;
 	--ctx;
     cur_ctx = maps[ctx];
