@@ -1717,13 +1717,11 @@ doloop(vc var, vc lo, vc hi, vc expr)
 			try {
 				expr.eval();
 			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
+				if(b.lev > 1) throw;
 				break;
 			}
 		}
 	} catch (VcBreak& b) {
-		// if break propagated past inner handler, propagate it
 		--b.lev;
 		if(b.lev > 0) throw;
 	}
@@ -1750,8 +1748,7 @@ dowhile(vc cond, vc expr)
 			try {
 				expr.eval();
 			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
+				if(b.lev > 1) throw;
 				break;
 			}
 #ifdef VCDBG
@@ -1806,6 +1803,8 @@ dobreak(vc v)
 	long bl = (long)v;
 	if(bl < 0)
 		USER_BOMB("can't request negative break level", vcnil);
+	if(bl == 0)
+		return vcnil;
 	throw VcBreak((int)bl);
 }
 
