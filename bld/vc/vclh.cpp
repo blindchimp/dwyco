@@ -1379,6 +1379,20 @@ int pmatch(const char *, const char *);
 vc
 dotry(VCArglist *a)
 {
+	// try/catch expr handler-pair ...
+	// arg #0 is the expression to evaluate ("try"-ed.)
+	// remaining args are pattern/handler-expression pairs.
+	// The handler expression matching the exception
+	// string is evaluated and its value is the value
+	// of the try expression. If no handler matches,
+	// the default handler (excdhandle) is checked.
+	// If no default handler matches, the exception is
+	// re-thrown to the enclosing context.
+	//
+	// Backout expressions registered during the try
+	// body (via excbackout) are evaluated in reverse
+	// order when an exception is caught.
+	//
 	if(a->num_elems()  == 0)
 		return vcnil;
 	if(a->num_elems() == 1)
@@ -1428,6 +1442,7 @@ dotry(VCArglist *a)
 	try {
 		ret = (*a)[0].force_eval();
 	} catch (const VcExc& e) {
+		// evaluate backouts registered during the body
 		Vcmap->eval_cur_backouts_since(nbo);
 		Vcmap->clear_exc_in_progress();
 		int found = 0;
