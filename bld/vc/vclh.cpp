@@ -103,7 +103,7 @@ dobacktrace(VCArglist *a)
 		VcDbgInfo.backtrace(VcError);
 #else
 	if(Vcmap)
-		Vcmap->set_dbg_backout();
+        throw VcErr("backtrace", "user backtrace");
 	else
 	{
 		// we got here by using VC without LH proper
