@@ -138,6 +138,8 @@ vc_func::operator()(VCArglist *al) const
 	try {
 		retval = do_function_call(al);
 	} catch (const VcRet& vcr) {
+		if(is_construct)
+			throw;
 		retval = vcr.retval;
 	} catch (...) {
 		do_function_finalize(al);
