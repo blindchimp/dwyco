@@ -46,7 +46,17 @@ vcctx::close_ctx()
 	if(ctx <= 0)
 		oopanic("ctx underflow");
     if(std::uncaught_exceptions() > 0)
+    {
         cur_ctx->run_backouts();
+        if(cur_ctx->is_dbg_backout())
+        {
+            dbg_print_date();
+            if(cur_ctx->get_func_name().is_nil())
+                VcError << "exiting context\n";
+            else
+                VcError << "exiting " << (const char *)cur_ctx->get_func_name() << "\n";
+        }
+    }
     delete cur_ctx;
 	--ctx;
     cur_ctx = maps[ctx];

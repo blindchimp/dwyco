@@ -20,7 +20,6 @@
 #include "vc.h"
 #include "vcdeflt.h"
 #include "vcmap.h"
-#include "vcexcctx.h"
 #include "vcfundef.h"
 #include "vcfile.h"
 #include "dwgrows.h"
@@ -64,6 +63,7 @@
 #ifndef DWYCO_NO_UVSOCK
 #include "vcuvsock.h"
 #endif
+int pmatch(const char *pat, const char *str);
 
 // macos compiler seems fussy about this. seeing as this is a kluge
 // we'll just work around it for now.

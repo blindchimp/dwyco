@@ -94,10 +94,10 @@ void
 vc_cvar::raise_compile_error()
 {
 	vc exc("E:LH.COMPILE_ERROR");
-	VCArglist a;
-    a.append(exc);
-    a.append(vc(lexer->input_description().c_str()));
-	Vcmap->excraise(exc, &a);
+	vc args(VC_VECTOR);
+	args.append(exc);
+	args.append(vc(lexer->input_description().c_str()));
+	throw VcExc(exc, args);
 }
 
 vc_cvar::vc_cvar(const char *expr, int decrypt)

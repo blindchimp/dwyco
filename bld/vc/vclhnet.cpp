@@ -38,15 +38,14 @@ lh_socket_error(vc *vs)
         exc += ":LHNET.";
         exc += (const char *)v->errvc;
 
-		VCArglist a;
-        vc excstr(exc.c_str());
-        a.append(excstr);
+		vc excstr(exc.c_str());
+		vc args(VC_VECTOR);
+		args.append(excstr);
 		vc v2;
 		v2.attach(v);
-        a.append(v2);
-        a.append(v->excretval);
-		Vcmap->excraise(excstr, &a);
-		return VC_SOCKET_RESUME;
+		args.append(v2);
+		args.append(v->excretval);
+		throw VcExc(excstr, args);
 	}
 	return VC_SOCKET_BACKOUT;
 }
