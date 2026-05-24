@@ -50,7 +50,6 @@ set(SRCS
     vcdecom.cpp 
     vcdeflt.cpp 
     vcenco.cpp 
-    vcexcctx.cpp 
     vcfunc.cpp 
     vcfuncal.cpp 
     vcfunctx.cpp 

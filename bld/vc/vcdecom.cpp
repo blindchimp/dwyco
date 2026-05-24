@@ -321,18 +321,25 @@ vc_vector::stringrep(VcIO o) const
 void
 vc_vector::foreach(const vc& v, const vc& expr) const
 {
-	Vcmap->open_loop();
 	VcVecIter i(&vec);
 	++iterators;
-	for(;!i.eol();i.forward())
-	{
-		Vcmap->local_add(v, i.get());
-		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
+	try {
+		for(;!i.eol();i.forward())
+		{
+			Vcmap->local_add(v, i.get());
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
+		}
+	} catch (...) {
+		--iterators;
+		throw;
 	}
 	--iterators;
-	Vcmap->close_loop();
 }
 
 void
@@ -730,23 +737,29 @@ vc_map::stringrep(VcIO o) const
 void
 vc_map::foreach(const vc& v, const vc& expr) const
 {
-	Vcmap->open_loop();
 	VcMapIter i(&map);
 	++iterators;
-	for(; !i.eol(); i.forward())
-	{
-		// break out Dwassoc into a vector
-		DwAssocImp<vc,vc> a = i.get();
-		vc assoc(VC_VECTOR);
-		Vcmap->local_add(v, assoc);
-		assoc[0] = a.get_key();
-        assoc[1] = a.get_value();
-		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
+	try {
+		for(; !i.eol(); i.forward())
+		{
+			DwAssocImp<vc,vc> a = i.get();
+			vc assoc(VC_VECTOR);
+			Vcmap->local_add(v, assoc);
+			assoc[0] = a.get_key();
+			assoc[1] = a.get_value();
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
+		}
+	} catch (...) {
+		--iterators;
+		throw;
 	}
 	--iterators;
-	Vcmap->close_loop();
 }
 
 void
@@ -1025,19 +1038,26 @@ vc_list_set::stringrep(VcIO o) const
 void
 vc_list_set::foreach(const vc& v, const vc& expr) const
 {
-	Vcmap->open_loop();
 	DwListAIter<vc> i(&list);
 	vc e;
 	++iterators;
-	dwlista_foreach_iter(i, e, list)
-	{
-		Vcmap->local_add(v, e);
-		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
+	try {
+		dwlista_foreach_iter(i, e, list)
+		{
+			Vcmap->local_add(v, e);
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
+		}
+	} catch (...) {
+		--iterators;
+		throw;
 	}
 	--iterators;
-	Vcmap->close_loop();
 }
 
 void
@@ -1259,18 +1279,25 @@ vc_bag::stringrep(VcIO o) const
 void
 vc_bag::foreach(const vc& v, const vc& expr) const
 {
-	Vcmap->open_loop();
 	VcBagIter i(&set);
 	++iterators;
-	for(;!i.eol();i.forward())
-	{
-		Vcmap->local_add(v, i.get());
-		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
+	try {
+		for(;!i.eol();i.forward())
+		{
+			Vcmap->local_add(v, i.get());
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
+		}
+	} catch (...) {
+		--iterators;
+		throw;
 	}
 	--iterators;
-	Vcmap->close_loop();
 }
 
 void
@@ -1591,23 +1618,29 @@ vc_tree::printOn(VcIO outputStream)
 void
 vc_tree::foreach(const vc& v, const vc& expr) const
 {
-	Vcmap->open_loop();
 	VcTreeIter i(&tree);
 	++iterators;
-	for(; !i.eol(); i.forward())
-	{
-		// break out Dwassoc into a vector
-		DwAssocImp<vc,vc> a = i.get();
-		vc assoc(VC_VECTOR);
-		Vcmap->local_add(v, assoc);
-		assoc[0] = a.get_key();
-        assoc[1] = a.get_value();
-		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
+	try {
+		for(; !i.eol(); i.forward())
+		{
+			DwAssocImp<vc,vc> a = i.get();
+			vc assoc(VC_VECTOR);
+			Vcmap->local_add(v, assoc);
+			assoc[0] = a.get_key();
+			assoc[1] = a.get_value();
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
+		}
+	} catch (...) {
+		--iterators;
+		throw;
 	}
 	--iterators;
-	Vcmap->close_loop();
 }
 
 void

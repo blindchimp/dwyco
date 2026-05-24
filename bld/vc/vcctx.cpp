@@ -8,20 +8,18 @@
 */
 
 #include "vcfunctx.h"
-#include "vcexcctx.h"
 #include "vcctx.h"
 #include "vcmap.h"
 #include "vcio.h"
+#include "vctrt.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
 vcctx::vcctx() {
 	ctx = 0;
-	exc_backout = 0;
-	exc_doing_backouts = 0;
-	backout_handler = 0;
-	backout_ctx = 0;
+	exc_in_progress = 0;
 	dbg_backout = 0;
+	has_dhandler = 0;
 	maps[0] = new functx(313);
     cur_ctx = maps[0];
 }
@@ -67,22 +65,14 @@ vcctx::close_ctx()
 {
 	if(ctx <= 0)
 		oopanic("ctx underflow");
-	// call backout functions if we're backing out
-	if(exc_backout)
-	{
-		// now we start calling backout functions for the
-		// context being closed.
-		call_backouts_back_to(backout_handler);
-    }
+	if(exc_in_progress)
+		cur_ctx->eval_backouts();
     delete cur_ctx;
 	--ctx;
     cur_ctx = maps[ctx];
 #ifdef LHOBJ
-	// re-enable the previous object context in case it was
-	// disabled on entry.
     cur_ctx->enable_obj_ctx();
 #endif
-
 }
 
 #ifdef LHOBJ
@@ -206,131 +196,6 @@ vcctx::remove(const vc& v) const
 }
 
 
-[[noreturn]]
-void
-force_termination(const char *reason, const vc& excstr)
-{
-	VcError << reason << "(" << (const char *)excstr << ")\n";
-	oopanic("forced program termination.");
-}
-
-#ifdef VCDBG
-#include "vcdbg.h"
-class VcExcDebugNode : public VcDebugNode
-{
-public:
-	vc status;
-	vc exc_str;
-	
-    virtual void printOn(VcIO) ;
-    virtual void printOnBrief(VcIO);
-    virtual int has_brief();
-};
-
-void
-VcExcDebugNode::printOn(VcIO o)
-{
-	printOnBrief(o);
-}
-
-void
-VcExcDebugNode::printOnBrief(VcIO o)
-{
-	status.print_top(o);
-	o << ": ";
-	exc_str.print_top(o);
-	o << "\n";
-}
-
-int
-VcExcDebugNode::has_brief()
-{
-	return 1;
-}
-
-
-#endif
-void
-vcctx::excraise(const vc& str, VCArglist *al)
-{
-    char buf[1024];
-#ifdef VCDBG
-	VcExcDebugNode dbg;
-	dbg.exc_str = str;
-	dbg.status = "exception raised";
-#endif
-
-	if(exc_backout)
-	{
-        char foo[1024];
-        snprintf(foo, sizeof(foo), "raised %s: raise while backing out?", (const char *)str);
-		oopanic(foo);
-	}
-	if(exc_doing_backouts)
-	{
-        force_termination("Can't raise exception in backout expr", str);
-		/*NOTREACHED*/
-	 }
-	char level = ((const char *)str)[0];
-	for(int i = ctx; i >= 0; --i)
-	{
-		excctx *e;
-		excfun *handler;
-		if((e = maps[i]->exchandlerfind(str, handler)) != 0)
-		{
-			// found handler; disable and call backout function
-			// associated with it. Note: this might go
-			// recursive if another exception is raised in the
-			// handler function, so don't assume anything about
-			// the state of "this", ie. ctx might change...
-			//
-			handler->disable();
-			vc ret = (*handler)(al);
-			if(exc_backout)
-			{
-				// handler raised exception that wants to backout.
-				// we leave the handler disabled in this case
-				// since we know that it is not the one that is
-				// eventually going to be backed out to. it is the
-				// handler found when another exception has re-raised
-				// that is going to be used.
-                //
-				return;
-				}
-			handler->enable();
-			if(level == 'A' && ret != vc("backout"))
-            {
-                snprintf(buf, sizeof(buf), "Function cannot resume after exception %s", (const char *)str);
-            	USER_BOMB2(buf);
-            }
-			// handled ok, now start the backout process
-            // if requested.
-			// note: we might be able to do it all here,
-			// but that might leave other parts of the system
-			// confused. Instead, simply set a flag that tells
-			// other contexts that we're backing out, and that
-            // functions should be called accordingly.
-			//
-			if(ret == vc("backout"))
-			{
-				backout_ctx = e;
-                backout_handler = handler;
-				exc_backout = 1;
-				return;
-			}
-			// handler wants to resume
-
-            return;
-		}
-
-	}
-	// no handler found, perform default system action
-	if(level == 'W')
-		return;
-    snprintf(buf, sizeof(buf), "No handler found for %s", (const char *)str);
-	USER_BOMB2(buf);
-}
-
 void
 vcctx::dump(VcIO os) const
 {
@@ -382,64 +247,10 @@ vcctx::local_find(const vc& k) {
 }
 
 
-// exception handling support
-int
-vcctx::backed_out_to(excfun *handler) {
-	if(!exc_backout) return 0;
-	return handler == backout_handler;
-	//return cur_ctx->backed_out_to(handler);
-}
-
-excfun *
-vcctx::addhandler(const vc& pat, const vc& fun) {
-	return cur_ctx->addhandler(pat, fun);
-}
-
-excfun *
-vcctx::add_instant_backout_handler(const vc& pat) {
-	return cur_ctx->add_instant_backout_handler(pat);
-}
-
-void
-vcctx::add_default_handler(const vc& pat, const vc& fun) {
-	maps[0]->add_default_handler(pat, fun);
-	// maybe someday add local default handlers
-}
-
-void
-vcctx::drophandler(excfun *handler) {
-	cur_ctx->drop(handler);
-}
-
 void
 vcctx::addbackout(const vc& expr) {
 	cur_ctx->addbackout(expr);
 }
-
-void
-vcctx::call_backouts_back_to(excfun *handler) {
-	// we reset exc_backout so that the normal call
-	// processing flow is re-enabled while in the backout
-	// functions. note that raises are not allowed while
-	// processing a backout function (program termination
-	// results if this is attempted.
-	if(!exc_backout)
-		oopanic("backing out while not in backout-mode?");
-	exc_backout = 0;
-	exc_doing_backouts = 1;
-	cur_ctx->call_backouts_back_to(handler);
-	exc_doing_backouts = 0;
-	exc_backout = 1;
-}
-
-void
-vcctx::backout_done() { exc_backout = 0; }
-int
-vcctx::backout_in_progress() {return exc_backout;}
-void
-vcctx::set_handler_ret(const vc& v) { handler_ret = v; }
-vc
-vcctx::get_handler_ret() {return handler_ret; }
 
 //
 // debugging

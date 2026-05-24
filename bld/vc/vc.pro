@@ -48,9 +48,8 @@ vcdbg.cpp \
 vcdbl.cpp \
 vcdecom.cpp \
 vcdeflt.cpp \
-vcenco.cpp \
-vcexcctx.cpp \
-vcfunc.cpp \
+ vcenco.cpp \
+ vcfunc.cpp \
 vcfuncal.cpp \
 vcfunctx.cpp \
 vcfundef.cpp \

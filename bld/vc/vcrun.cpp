@@ -15,6 +15,9 @@
 
 #include "vc.h"
 #include "vcio.h"
+#include "vctrt.h"
+#include "vcmap.h"
+int pmatch(const char *, const char *);
 
 #undef new
 #include "vclex.h"
@@ -167,7 +170,27 @@ init_rct();
 	fclose(i);
 
     if(!translate)
-        (void)s->force_eval();
+    {
+        try {
+            (void)s->force_eval();
+        } catch (const VcRet&) {
+            VcError << "return outside function\n";
+        } catch (const VcBreak&) {
+            VcError << "break outside loop\n";
+        } catch (const VcExc& e) {
+            VcError << "Unhandled exception: " << (const char *)e.excstr << "\n";
+            if(Vcmap->has_dhandler &&
+               pmatch((const char *)Vcmap->dhandler_pat, (const char *)e.excstr))
+            {
+                VCArglist al;
+                al.append(e.excstr);
+                Vcmap->dhandler_fun(&al);
+            }
+            VcError << "Program terminated due to exception.\n";
+        } catch (const VcErr& e) {
+            VcError << "Runtime error: " << (const char *)e.err << "\n";
+        }
+    }
     else
     {
         vc top = s->translate(VcOutput);

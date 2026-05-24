@@ -20,7 +20,6 @@
 #include "vc.h"
 #include "vcdeflt.h"
 #include "vcmap.h"
-#include "vcexcctx.h"
 #include "vcfundef.h"
 #include "vcfile.h"
 #include "dwgrows.h"
@@ -1375,194 +1374,13 @@ do_exploded_funcall(vc fun, vc argvec)
 
 
 
-vc
-doexchandle(VCArglist *a)
-{
-	// setup up an exception handling context
-	// arg #1 is assumed to be the exceptions to be
-	// handled as a string that is an sh(1) regular expression.
-	//
-	// arg #2 is a function to be called in the
-	// raiser's context to handle the exception.
-	//
-	// arg #3 is an expr that is evaluated when an
-	// exception is backed-out to this handler. During
-	// a backout, this context's retval is assumed to
-	// contain return values from the handler that are
-	// transferred into this context (to the special
-	// variable __handler__ret).
-	//
-	// arg #4 is the expr to be executed ("try"-ed to use C++ parlance.)
-	//
-	// special note: exceptions raised during setup of handler
-	// context are handled by an enclosing context (if there is one.)
-	//
-	// implementation notes:
-	// There are several cases for dealing with backouts and handlers
-	//
-	// 1) no backouts or handlers set in function (no change.)
-	// 2) backouts but no handlers in function
-	//		on normal return, simply toss the backouts (done by
-	//		destructors in vcmap)
-	//		on backout, call backouts in reverse order (done by
-	//		vcmap when function context is closed.)
-	//
-	// 3) backouts set before single handler
-	//		on normal return, toss backouts and handlers (same as 2)
-	//		on backout
-	//			if handler is not chosen, toss handlers, but call backouts
-	//			if handler is chosen, call backouts up to the handler, and
-	//				then toss the handler. backouts set before the
-	//				the handler are still active.
-	//
-
-	vc estr = (*a)[0].eval();
-    CHECK_ANY_BO(vcnil);
-	if(estr.type() != VC_STRING)
-		USER_BOMB("exception identifiers must be strings.", vcnil);
-	excfun *handler = Vcmap->addhandler(estr, (*a)[1]);
-
-	vc ret = (*a)[3].force_eval();
-	if(Vcmap->backout_in_progress())
-		Vcmap->call_backouts_back_to(handler);
-	if(Vcmap->backed_out_to(handler))
-	{
-		// we're it...
-		// import the return value from the handler function
-		// and then do the exception expression.
-		Vcmap->backout_done();
-		handler->disable(); // no point in possible recursion here...
-		vc("__handler_ret").local_bind(Vcmap->get_handler_ret());
-		// note: since the handler return is a global, once
-		// we import it, eliminate the global reference so it will
-		// be removed properly
-		Vcmap->set_handler_ret(vcnil);
-		ret = (*a)[2].force_eval();
-	}
-	// drop the handler and return the value
-	Vcmap->drophandler(handler);
-	return ret;
-}
-
-vc
-doexchandle2(VCArglist *a)
-{
-	// setup up an exception handling context
-	// arg #1 is assumed to be the exceptions to be
-	// handled as a string that is an sh(1) regular expression.
-	//
-	// arg #2 is a function to be called in the
-	// raiser's context to handle the exception.
-	//
-	// arg #3 is an expr that is evaluated when an
-	// exception is backed-out to this handler. During
-	// a backout, this context's retval is assumed to
-	// contain return values from the handler that are
-	// transferred into this context (to the special
-	// variable __handler__ret).
-	//
-	// arg #4 is the expr to be executed ("try"-ed to use C++ parlance.)
-	//
-	// special note: exceptions raised during setup of handler
-	// context are handled by an enclosing context (if there is one.)
-	//
-	// implementation notes:
-	// There are several cases for dealing with backouts and handlers
-	//
-	// 1) no backouts or handlers set in function (no change.)
-	// 2) backouts but no handlers in function
-	//		on normal return, simply toss the backouts (done by
-	//		destructors in vcmap)
-	//		on backout, call backouts in reverse order (done by
-	//		vcmap when function context is closed.)
-	//
-	// 3) backouts set before single handler
-	//		on normal return, toss backouts and handlers (same as 2)
-	//		on backout
-	//			if handler is not chosen, toss handlers, but call backouts
-	//			if handler is chosen, call backouts up to the handler, and
-	//				then toss the handler. backouts set before the
-	//				the handler are still active.
-	//
-
-	vc estr = (*a)[0].eval();
-    CHECK_ANY_BO(vcnil);
-	if(estr.type() != VC_STRING)
-		USER_BOMB("exception identifiers must be strings.", vcnil);
-	// note: i changed this because in the past, the
-	// expr was just store away for later use, and then
-	// when the handler was selected after an excraise, the
-	// expr would be evaluated in the context of the *raise*,
-	// which is really confusing. now, the function that will be used
-	// is the one that is calculated at the time exchandle is called.
-	// not sure what i was thinking
-	// before...
-	vc hfun = (*a)[1].force_eval();
-	CHECK_ANY_BO(vcnil);
-	if(hfun.type() != VC_FUNC)
-	{
-		USER_BOMB("arg 2 (handler func) must evaluate to a function.", vcnil);
-	}
-	// previously, this was only evaled at the time
-	// the exception was selected and backed-out to...
-	// this can lead to problems where things may not
-	// exist at the time the raise call is made. so
-	// evaluate it once when the handler is set up in order
-	// to allow the user to set things up with existing
-	// bindings, then eval it again when we are backed-out to.
-	vc excexpr = (*a)[2].eval();
-	CHECK_ANY_BO(vcnil);
-	excfun *handler = Vcmap->addhandler(estr, hfun);
-
-	vc ret = (*a)[3].force_eval();
-	if(Vcmap->backout_in_progress())
-		Vcmap->call_backouts_back_to(handler);
-	if(Vcmap->backed_out_to(handler))
-	{
-		// we're it...
-		// import the return value from the handler function
-		// and then do the exception expression.
-		Vcmap->backout_done();
-		handler->disable(); // no point in possible recursion here...
-		vc("__handler_ret").local_bind(Vcmap->get_handler_ret());
-		// note: since the handler return is a global, once
-		// we import it, eliminate the global reference so it will
-		// be removed properly
-		Vcmap->set_handler_ret(vcnil);
-		ret = excexpr.force_eval();
-	}
-	// drop the handler and return the value
-	Vcmap->drophandler(handler);
-	return ret;
-}
+int pmatch(const char *, const char *);
 
 vc
 dotry(VCArglist *a)
 {
-	// a simplified version of
-	// the exchandle call.
-	// arg1 is the expr to be "try"-ed
-	// arg2 is exception string to match against, if there is no
-	// 	arg2, it is assumed to be "*"
-	// arg3 is the "catch" expr, that is evaluated when
-	// the exception is backed out.
-	// there is no "handler", it is always "backout".
-	// you can have multiple handlers, but in that case,
-	// all 3 args must be specified
-	// arg4 is the next exception string
-	// arg5 is the "catch"
-	// all the catch exprs are evaled first *then* the
-	// handlers are installed (this avoids cases where
-	// the eval of a catch expr causes an exception which
-	// would be handled in the same try)
-	//
-
-	// special cases:
-	// no args, just return nil
 	if(a->num_elems()  == 0)
 		return vcnil;
-	// one arg means assume * for handler, and empty catch function
-	// XXX FIX ME
 	if(a->num_elems() == 1)
 	{
 		return (*a)[0].force_eval();
@@ -1570,7 +1388,6 @@ dotry(VCArglist *a)
 	int catch_expr = -1;
 	DwVec<vc> excexprs;
 	DwVec<vc> estrs;
-	DwVecP<excfun> handlers;
 	if(a->num_elems() == 2)
 	{
 		estrs[0] = "*";
@@ -1579,13 +1396,11 @@ dotry(VCArglist *a)
 	else if(a->num_elems() >= 3)
 	{
 		estrs[0] = (*a)[1].eval();
-		CHECK_ANY_BO(vcnil);
 		if(estrs[0].type() != VC_STRING)
 			USER_BOMB("exception patterns must be strings.", vcnil);
 		catch_expr = 2;
 	}
 	excexprs[0] = (*a)[catch_expr].eval();
-	CHECK_ANY_BO(vcnil);
 	
 	int k = a->num_elems() - catch_expr - 1;
 	if(k & 1)
@@ -1597,104 +1412,85 @@ dotry(VCArglist *a)
 	for(i = 0; i < k; i += 2, ++hi)
 	{
 		estrs[hi] = (*a)[i + 3].eval();
-		CHECK_ANY_BO(vcnil);
 		if(estrs[hi].type() != VC_STRING)
 			USER_BOMB("exception patterns must be strings.", vcnil);
 		excexprs[hi] = (*a)[i + 4].eval();
-		CHECK_ANY_BO(vcnil);
 	}
 
-
-	// previously, this was only evaled at the time
-	// the exception was selected and backed-out to...
-	// this can lead to problems where things may not
-	// exist at the time the raise call is made. so
-	// evaluate it once when the handler is set up in order
-	// to allow the user to set things up with existing
-	// bindings, then eval it again when we are backed-out to.
 	int numhandlers = estrs.num_elems();
 	for(i = 0; i < numhandlers; ++i)
 	{
-		excfun *handler = Vcmap->add_instant_backout_handler(estrs[i]);
-		handlers[i] = handler;
+		Vcmap->push_handler(estrs[i], excexprs[i]);
 	}
 
-	vc ret = (*a)[0].force_eval();
-	if(Vcmap->backout_in_progress())
-	{
+	vc ret;
+	int nbo = Vcmap->cur_ctx_backouts();
+	try {
+		ret = (*a)[0].force_eval();
+	} catch (const VcExc& e) {
+		Vcmap->eval_cur_backouts_since(nbo);
+		Vcmap->clear_exc_in_progress();
+		int found = 0;
 		for(i = numhandlers - 1; i >= 0; --i)
 		{
-			Vcmap->call_backouts_back_to(handlers[i]);
-			if(Vcmap->backed_out_to(handlers[i]))
+			if(pmatch((const char *)estrs[i], (const char *)e.excstr))
 			{
-				// we're it...
-				// import the return value from the handler function
-				// and then do the exception expression.
-				Vcmap->backout_done();
-				handlers[i]->disable(); // no point in possible recursion here...
-				vc("__handler_ret").local_bind(Vcmap->get_handler_ret());
-				// note: since the handler return is a global, once
-				// we import it, eliminate the global reference so it will
-				// be removed properly
-				Vcmap->set_handler_ret(vcnil);
+				vc("__handler_ret").local_bind(vcnil);
 				ret = excexprs[i].force_eval();
+				found = 1;
 				break;
 			}
 		}
+		if(!found)
+		{
+			if(Vcmap->has_dhandler &&
+			   pmatch((const char *)Vcmap->dhandler_pat, (const char *)e.excstr))
+			{
+				VCArglist al;
+				al.append(e.excstr);
+				Vcmap->dhandler_fun(&al);
+				VcError << "Default handler executed, exiting.\n";
+				vc::exit();
+				::exit(1);
+			}
+			throw;
+		}
 	}
-	// drop the handlers and return the value
-	// note: only have to drop the first handler
-	// since this cleans up everything below it too
-	Vcmap->drophandler(handlers[0]);
+
+	for(i = 0; i < numhandlers; ++i)
+		Vcmap->pop_handler();
 	return ret;
 }
 
 vc
 doexcdhandle(vc estr, vc hfun)
 {
-// see note above regarding this change. also note
-// that we might be able to just remove the "DONT_EVAL"
-// attr set below and let the eval happen before the call.
 	estr = estr.eval();
-    CHECK_ANY_BO(vcnil);
 	hfun = hfun.eval();
-	CHECK_ANY_BO(vcnil);
 	if(hfun.type() != VC_FUNC)
 	{
 		USER_BOMB("arg 2 (handler func) must evaluate to a function.", vcnil);
 	}
-	Vcmap->add_default_handler(estr, hfun);
+	Vcmap->has_dhandler = 1;
+	Vcmap->dhandler_pat = estr;
+	Vcmap->dhandler_fun = hfun;
     return vcnil;
 }
 
 vc
 doexcraise(VCArglist *a)
 {
-	//
-	// raise an exception
-	//
-	// arg #1 is the exception identifier
-	// arg #2-n are arguments to the handler, if
-	// one can be found.
-
 	vc estr = (*a)[0];
 	if(estr.type() != VC_STRING)
 		USER_BOMB("exception identifiers must be strings.", vcnil);
-	Vcmap->excraise(estr, a);
-	return vcnil;
+	Vcmap->set_exc_in_progress();
+	throw VcExc(estr);
 }
 
 vc
 doexcbackout(vc expr)
 {
 	Vcmap->addbackout(expr);
-	return vcnil;
-}
-
-vc
-dosethandlerret(vc expr)
-{
-	Vcmap->set_handler_ret(expr);
 	return vcnil;
 }
 
@@ -1884,33 +1680,38 @@ doloop(vc var, vc lo, vc hi, vc expr)
     c->cur_idx = 0;
 #endif
     var = var.eval();
-    CHECK_ANY_BO(vcnil);
     if(var.type() != VC_STRING)
         USER_BOMB("for loop variable must be string", vcnil);
 #ifdef VCDBG
     c->cur_idx = 1;
 #endif
 	long l = lo.eval();
-    CHECK_ANY_BO(vcnil);
 #ifdef VCDBG
     c->cur_idx = 2;
 #endif
 	long h = hi.eval();
-    CHECK_ANY_BO(vcnil);
-
-    Vcmap->open_loop();
 
 	long i;
-	for(i = l; i <= h; ++i)
-	{
-		Vcmap->local_add(var, vc(i));
+	try {
+		for(i = l; i <= h; ++i)
+		{
+			Vcmap->local_add(var, vc(i));
 #ifdef VCDBG
-    c->cur_idx = 3;
+		c->cur_idx = 3;
 #endif
-		expr.eval();
-		CHECK_ANY_BO_LOOP;
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
+		}
+	} catch (VcBreak& b) {
+		// if break propagated past inner handler, propagate it
+		--b.lev;
+		if(b.lev > 0) throw;
 	}
-	Vcmap->close_loop();
 	Vcmap->local_add(var, vc(i));
 	return vcnil;
 }
@@ -1925,23 +1726,28 @@ dowhile(vc cond, vc expr)
 #endif
 	
 	vc a = cond.eval();
-    CHECK_ANY_BO(vcnil);
-	Vcmap->open_loop();
-	while(!a.is_nil())
-    {
+	try {
+		while(!a.is_nil())
+		{
 #ifdef VCDBG
-    c->cur_idx = 1;
+		c->cur_idx = 1;
 #endif
-		expr.eval();
-		if(Vcmap->unwind_in_progress())
-			break;
+			try {
+				expr.eval();
+			} catch (VcBreak& b) {
+				--b.lev;
+				if(b.lev > 0) throw;
+				break;
+			}
 #ifdef VCDBG
-    c->cur_idx = 0;
+		c->cur_idx = 0;
 #endif
-		a = cond.eval();
-		CHECK_ANY_BO_LOOP;
+			a = cond.eval();
+		}
+	} catch (VcBreak& b) {
+		--b.lev;
+		if(b.lev > 0) throw;
 	}
-	Vcmap->close_loop();
     return vcnil;
 }
 
@@ -1973,8 +1779,7 @@ doforeach(vc var, vc set, vc expr)
 vc
 doreturn(vc v)
 {
-	Vcmap->set_retval(v);
-	return v;
+	throw VcRet(v);
 }
 
 
@@ -1986,8 +1791,7 @@ dobreak(vc v)
 	long bl = (long)v;
 	if(bl < 0)
 		USER_BOMB("can't request negative break level", vcnil);
-	Vcmap->set_break_level(bl);
-	return vcnil;
+	throw VcBreak((int)bl);
 }
 
 vc
@@ -2600,16 +2404,8 @@ vc_file_error(vc *vf)
 	vc_file *v = (vc_file *)vf;
 	if(v->emode == EXCEPTIONS)
 	{
-		VCArglist a;
-        a.append(v->errvc);
-		vc v2;
-		v2.attach(v);
-        a.append(v2);
-        a.append(v->errvc1);
-        a.append(v->errvc2);
-		Vcmap->excraise(v->errvc, &a);
-		CHECK_ANY_BO(VC_FILE_BACKOUT);
-		return VC_FILE_RESUME;
+		Vcmap->set_exc_in_progress();
+		throw VcExc(v->errvc);
 	}
 	return VC_FILE_BACKOUT;
 }
@@ -3296,14 +3092,9 @@ vc::init_rest()
 	makefun("putkv", VC(doputkv, "putkv", VC_FUNC_BUILTIN_LEAF));
 
 	// exception handling
-	makefun("exchandle", VC(doexchandle, "exchandle", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
-	// new style, kept the old one so as not to break old code.
-	// see comments for details, differences are subtle.
-	makefun("exchandle2", VC(doexchandle2, "exchandle2", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 	makefun("try", VC(dotry, "try", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 	makefun("excdhandle", VC(doexcdhandle, "excdhandle", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 	makefun("excraise", VC(doexcraise, "excraise", VC_FUNC_BUILTIN_LEAF));
-	makefun("excset-handler-ret", VC(dosethandlerret, "excset-handler-ret", VC_FUNC_BUILTIN_LEAF));
 	makefun("excbackout", VC(doexcbackout, "excbackout", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 
 	// I/O

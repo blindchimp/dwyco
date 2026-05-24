@@ -214,11 +214,9 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 	gettimeofday(&t0, 0);
 #endif
 	vc ret = fundef.force_eval();
-	if(Vcmap->ret_in_progress())
 #ifndef LHPROF
-        return Vcmap->retval();
+        return ret;
 #else //LHPROF
-        ret = Vcmap->retval();
 	struct rusage r1;
 	getrusage(RUSAGE_SELF, &r1);
 	struct timeval t1;
@@ -238,8 +236,8 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 	total_real_time += n;
 	total_real_time2 += n * n;
 	hist_real_time.add_sample(n);
-#endif
 	return ret;
+#endif
 }
 
 

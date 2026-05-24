@@ -93,11 +93,9 @@ vc_cvar::flush_lookup_cache()
 void
 vc_cvar::raise_compile_error()
 {
-	vc exc("E:LH.COMPILE_ERROR");
-	VCArglist a;
-    a.append(exc);
-    a.append(vc(lexer->input_description().c_str()));
-	Vcmap->excraise(exc, &a);
+	vc exc("LH.COMPILE_ERROR");
+	Vcmap->set_exc_in_progress();
+	throw VcExc(exc);
 }
 
 vc_cvar::vc_cvar(const char *expr, int decrypt)

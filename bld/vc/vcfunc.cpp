@@ -11,6 +11,7 @@
 #include "vcfunc.h"
 #include "vcmap.h"
 #include "vcio.h"
+#include "vctrt.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfunc.cpp 1.45 1996/11/17 05:58:41 dwight Stable $";
 
 #ifdef LHPROF
@@ -133,7 +134,15 @@ vc_func::operator()(VCArglist *al) const
 {
 	do_function_initialize(al);
 	do_arg_setup(al);
-    vc retval = do_function_call(al);
+	vc retval;
+	try {
+		retval = do_function_call(al);
+	} catch (const VcRet& vcr) {
+		retval = vcr.retval;
+	} catch (...) {
+		do_function_finalize(al);
+		throw;
+	}
 	do_function_finalize(al);
 	return retval;
 }

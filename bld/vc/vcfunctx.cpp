@@ -9,7 +9,6 @@
 #include "vc.h"
 #include "vcmap.h"
 #include "vcfunctx.h"
-#include "vcexcctx.h"
 #include "vcfuncal.h"
 #include "vcobj.h"
 #include "vccvar.h"
@@ -24,9 +23,6 @@
 #endif
 
 functx::functx(int tsize) {
-	doing_ret = 0;
-	loop_ctrl = 0;
-	break_level = 0;
 	flush_on_close = 0;
 #ifdef PERFHACKS
 	map = new VMAP(tsize);
@@ -47,7 +43,7 @@ functx::functx(int tsize) {
 #else
     map = new VMAP(tsize);
 #endif
-	exc = 0;
+
 #ifdef LHOBJ
 	obj_ctx = 0;
 	obj_ctx_enabled = 0;
@@ -57,19 +53,12 @@ functx::functx(int tsize) {
 
 functx::~functx()
 {
-	// if any functions where bound in this context,
-	// we have to flush the entire cache since
-	// there may be function call objects that got
-	// bound to functions created in this context...
-
 	if(flush_on_close)
 		vc_funcall::flush_all_cache();
 #ifdef CACHE_LOOKUPS
 	vc_cvar::flush_lookup_cache();
 #endif
 	delete map;
-	if(exc != 0)
-		delete exc;
 }
 
 #ifdef LHOBJ
@@ -235,57 +224,38 @@ functx::contains(const vc& v) const
 }
 
 void
-functx::set_break_level(int n) {
-	break_level -= n;
-	if(break_level < 0)
-		USER_BOMB2("too many break levels requested");
-}
-
-
-// support for exception handling
-
-excfun *
-functx::addhandler(const vc& pat, const vc& fun) {
-	if(exc == 0) exc = new excctx(this);
-	return exc->add(pat, fun);
-}
-
-excfun *
-functx::add_instant_backout_handler(const vc& pat) {
-	if(exc == 0) exc = new excctx(this);
-	return exc->add_instant_backout(pat);
-}
-
-void
-functx::add_default_handler(const vc& pat, const vc& fun) {
-	if(exc == 0) exc = new excctx(this);
-	exc->add_default(pat, fun);
-}
-
-void
 functx::addbackout(const vc& expr) {
-	if(exc == 0) exc = new excctx(this);
-    exc->add(expr);
+    backouts.append(expr);
 }
 
-// search for handler in this context
-excctx *
-functx::exchandlerfind(const vc& estr, excfun*& handler_out) {
-	if(exc == 0) return 0;
-	if(exc->find(estr, handler_out))
-		return exc;
-	return 0;
-}
-
-int
-functx::backed_out_to(excfun *handler) {
-	if(exc == 0) return 0;
-	return exc->backed_out_to(handler);
-}
 void
-functx::drop(excfun *handler) {
-	if(exc == 0) return;
-	exc->drop(handler);
+functx::eval_backouts()
+{
+	for(int i = backouts.num_elems() - 1; i >= 0; --i)
+	{
+		try {
+			backouts[i].force_eval();
+		} catch(...) {
+			VcError << "Exception raised during backout evaluation, terminating.\n";
+			oopanic("forced program termination.");
+		}
+	}
+	backouts.set_size(0);
+}
+
+void
+functx::eval_backouts_since(int n)
+{
+	for(int i = backouts.num_elems() - 1; i >= n; --i)
+	{
+		try {
+			backouts[i].force_eval();
+		} catch(...) {
+			VcError << "Exception raised during backout evaluation, terminating.\n";
+			oopanic("forced program termination.");
+		}
+	}
+	backouts.set_size(n);
 }
 
 void
@@ -303,11 +273,5 @@ functx::dump(VcIO os) const
 
 }
 
-void
-functx::call_backouts_back_to(excfun *handler)
-{
-	if(exc == 0)
-    	return;
-	exc->unwindto(handler);
-}
+
 

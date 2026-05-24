@@ -13,10 +13,12 @@
 #include "vc.h"
 #include "dwvecp.h"
 #include "vcfunctx.h"
-//class functx;
-class excfun;
-class excctx;
 class vc_object;
+
+struct try_handler {
+	vc pattern;
+	vc catch_expr;
+};
 
 class vcctx
 {
@@ -24,13 +26,8 @@ private:
 	DwVecP<functx> maps;
 	int ctx;
     functx *cur_ctx;
-	
-	// exception handling
-	int exc_backout;
-    int exc_doing_backouts;
-	excfun *backout_handler;
-    excctx *backout_ctx;
-    vc handler_ret;
+
+	int exc_in_progress;
 
     // debugging
     int dbg_backout;
@@ -71,37 +68,32 @@ public:
 	void open_ctx(functx * = 0) ;
 	void close_ctx();
 
-	void set_retval(const vc& v) { cur_ctx->set_retval(v); }
-    int ret_in_progress() const { return cur_ctx->ret_in_progress(); }
-	vc retval() { return cur_ctx->get_retval(); }
-
-	void open_loop() {cur_ctx->open_loop();}
-	void close_loop() {cur_ctx->close_loop();}
-    int break_in_progress() const {return cur_ctx->break_in_progress();}
-	void set_break_level(int n) {cur_ctx->set_break_level(n);}
-
     int unwind_in_progress() const {
-		return ret_in_progress() ||
-			break_in_progress() ||
-			exc_backout || dbg_backout;
+		return dbg_backout;
 	}
 
 	// exception handling support
-	int backed_out_to(excfun *handler) ;
-
-	excfun *addhandler(const vc& pat, const vc& fun);
-	excfun *add_instant_backout_handler(const vc& pat);
-	void add_default_handler(const vc& pat, const vc& fun) ;
-	void drophandler(excfun *handler) ;
 	void addbackout(const vc& expr) ;
+	int cur_ctx_backouts() { return cur_ctx->num_backouts(); }
+	void eval_cur_backouts_since(int n) { cur_ctx->eval_backouts_since(n); }
+	void set_exc_in_progress() { exc_in_progress = 1; }
+	void clear_exc_in_progress() { exc_in_progress = 0; }
+	int exc_is_in_progress() const { return exc_in_progress; }
 
-	void call_backouts_back_to(excfun *handler);
-	void backout_done() ;
-	int backout_in_progress() ;
-	void set_handler_ret(const vc& v) ;
-	vc get_handler_ret() ;
+	// try handler stack
+	DwVec<try_handler> handler_stack;
+	void push_handler(const vc& pat, const vc& catch_expr) {
+		handler_stack.append(try_handler{pat, catch_expr});
+	}
+	void pop_handler() {
+		if(handler_stack.num_elems() > 0)
+			handler_stack.set_size(handler_stack.num_elems() - 1);
+	}
 
-	void excraise(const vc& str, VCArglist *al);
+	// default handler (excdhandle)
+	int has_dhandler;
+	vc dhandler_pat;
+	vc dhandler_fun;
 
 	//
 	// debugging

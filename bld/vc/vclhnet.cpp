@@ -45,9 +45,8 @@ lh_socket_error(vc *vs)
 		v2.attach(v);
         a.append(v2);
         a.append(v->excretval);
-		Vcmap->excraise(excstr, &a);
-		CHECK_ANY_BO(VC_SOCKET_BACKOUT);
-		return VC_SOCKET_RESUME;
+		Vcmap->set_exc_in_progress();
+		throw VcExc(excstr);
 	}
 	return VC_SOCKET_BACKOUT;
 }
