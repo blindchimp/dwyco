@@ -183,8 +183,24 @@ functx::get(const vc& key)
 int
 functx::find(const vc& key, vc& out) const
 {
-	if(map->find(key, out))
+	hashValueType h = key.hashValue();
+	int slot = h & (VAR_CACHE_SIZE - 1);
+	if(vc_cache.val[slot] && vc_cache.tag[slot] == h && vc_cache.key[slot] == key)
+	{
+		out = *vc_cache.val[slot];
 		return 1;
+	}
+	vc *wp = 0;
+	if(map->find(key, out, &wp))
+	{
+		if(wp)
+		{
+			vc_cache.tag[slot] = h;
+			vc_cache.key[slot] = key;
+			vc_cache.val[slot] = wp;
+		}
+		return 1;
+	}
 #ifdef LHOBJ
 	if(obj_ctx != 0 && obj_ctx_enabled)
 		return obj_ctx->find(key, out);
@@ -195,8 +211,24 @@ functx::find(const vc& key, vc& out) const
 int
 functx::find2(const vc& key, vc& out, vc*& wp) const
 {
-	if(map->find(key, out, &wp))
+	hashValueType h = key.hashValue();
+	int slot = h & (VAR_CACHE_SIZE - 1);
+	if(vc_cache.val[slot] && vc_cache.tag[slot] == h && vc_cache.key[slot] == key)
+	{
+		wp = vc_cache.val[slot];
+		out = *wp;
 		return 1;
+	}
+	if(map->find(key, out, &wp))
+	{
+		if(wp)
+		{
+			vc_cache.tag[slot] = h;
+			vc_cache.key[slot] = key;
+			vc_cache.val[slot] = wp;
+		}
+		return 1;
+	}
 #ifdef LHOBJ
 	if(obj_ctx != 0 && obj_ctx_enabled)
 		return obj_ctx->find(key, out);
@@ -211,10 +243,24 @@ functx::del(const vc& v) const
 	if(map->find(v, out) && out.type() == VC_FUNC)
 		vc_funcall::flush_all_cache();
 	map->del(v);
+	invalidate_cache(v);
 #ifdef CACHE_LOOKUPS
 	vc_cvar::flush_lookup_cache();
 #endif
 
+}
+
+void
+functx::invalidate_cache(const vc& key) const
+{
+	hashValueType h = key.hashValue();
+	int slot = h & (VAR_CACHE_SIZE - 1);
+	if(vc_cache.tag[slot] == h && vc_cache.key[slot] == key)
+	{
+		vc_cache.tag[slot] = 0;
+		vc_cache.key[slot] = vcnil;
+		vc_cache.val[slot] = 0;
+	}
 }
 
 int

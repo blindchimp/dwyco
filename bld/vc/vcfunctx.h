@@ -27,12 +27,24 @@ typedef DwMapRIter<vc,vc> VMAPIter;
 class vc_object;
 #include "dwvecp.h"
 
+#define VAR_CACHE_SIZE 8
+
 class functx
 {
 private:
 	VMAP *map;
 	int flush_on_close;
 	DwVec<vc> backouts;
+
+	struct VarCache {
+		hashValueType tag[VAR_CACHE_SIZE] = {};
+		vc key[VAR_CACHE_SIZE];
+		vc *val[VAR_CACHE_SIZE] = {};
+	};
+	mutable VarCache vc_cache;
+
+	void invalidate_cache(const vc& key) const;
+
 #ifdef LHOBJ
 	vc_object *obj_ctx;
 	int obj_ctx_enabled;
