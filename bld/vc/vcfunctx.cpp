@@ -22,6 +22,32 @@
 #include "dwmapr.h"
 #endif
 
+static long cache_hits;
+static long cache_misses;
+
+void
+functx::reset_cache_stats()
+{
+    cache_hits = 0;
+    cache_misses = 0;
+}
+
+void
+functx::print_cache_stats()
+{
+    long total = cache_hits + cache_misses;
+    if(total == 0)
+    {
+        VcOutput << "vcache: no lookups\n";
+        return;
+    }
+    long pct = (cache_hits * 100) / total;
+    VcOutput << "vcache: hits=" << cache_hits
+             << " misses=" << cache_misses
+             << " pct=" << pct
+             << "%\n";
+}
+
 functx::functx(int tsize) {
 	flush_on_close = 0;
 #ifdef PERFHACKS
@@ -185,18 +211,19 @@ functx::find(const vc& key, vc& out) const
 {
 	hashValueType h = key.hashValue();
 	int slot = h & (VAR_CACHE_SIZE - 1);
-	if(vc_cache.val[slot] && vc_cache.tag[slot] == h && vc_cache.key[slot] == key)
+	if(vc_cache.val[slot] && vc_cache.tag[slot] == h)
 	{
+		++cache_hits;
 		out = *vc_cache.val[slot];
 		return 1;
 	}
+	++cache_misses;
 	vc *wp = 0;
 	if(map->find(key, out, &wp))
 	{
 		if(wp)
 		{
 			vc_cache.tag[slot] = h;
-			vc_cache.key[slot] = key;
 			vc_cache.val[slot] = wp;
 		}
 		return 1;
@@ -213,18 +240,19 @@ functx::find2(const vc& key, vc& out, vc*& wp) const
 {
 	hashValueType h = key.hashValue();
 	int slot = h & (VAR_CACHE_SIZE - 1);
-	if(vc_cache.val[slot] && vc_cache.tag[slot] == h && vc_cache.key[slot] == key)
+	if(vc_cache.val[slot] && vc_cache.tag[slot] == h)
 	{
+		++cache_hits;
 		wp = vc_cache.val[slot];
 		out = *wp;
 		return 1;
 	}
+	++cache_misses;
 	if(map->find(key, out, &wp))
 	{
 		if(wp)
 		{
 			vc_cache.tag[slot] = h;
-			vc_cache.key[slot] = key;
 			vc_cache.val[slot] = wp;
 		}
 		return 1;
@@ -255,10 +283,9 @@ functx::invalidate_cache(const vc& key) const
 {
 	hashValueType h = key.hashValue();
 	int slot = h & (VAR_CACHE_SIZE - 1);
-	if(vc_cache.tag[slot] == h && vc_cache.key[slot] == key)
+	if(vc_cache.tag[slot] == h)
 	{
 		vc_cache.tag[slot] = 0;
-		vc_cache.key[slot] = vcnil;
 		vc_cache.val[slot] = 0;
 	}
 }

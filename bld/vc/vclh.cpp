@@ -21,6 +21,7 @@
 #include "vcdeflt.h"
 #include "vcmap.h"
 #include "vcfundef.h"
+#include "vcfunctx.h"
 #include "vcfile.h"
 #include "dwgrows.h"
 #include "vclhsys.h"
@@ -3381,6 +3382,7 @@ wrapper_init_spread_xml();
 void
 vc::exit()
 {
+	functx::print_cache_stats();
 	VcOutput.flush();
 	VcError.flush();
 	delete Vcmap;

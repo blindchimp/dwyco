@@ -27,7 +27,7 @@ typedef DwMapRIter<vc,vc> VMAPIter;
 class vc_object;
 #include "dwvecp.h"
 
-#define VAR_CACHE_SIZE 8
+#define VAR_CACHE_SIZE 16
 
 class functx
 {
@@ -38,7 +38,6 @@ private:
 
 	struct VarCache {
 		hashValueType tag[VAR_CACHE_SIZE] = {};
-		vc key[VAR_CACHE_SIZE];
 		vc *val[VAR_CACHE_SIZE] = {};
 	};
 	mutable VarCache vc_cache;
@@ -89,7 +88,10 @@ public:
 	//
 	// debugging
 	//
-	void dump(VcIO) const; 	
+	void dump(VcIO) const;
+
+	static void reset_cache_stats();
+	static void print_cache_stats();
 };
 
 #endif
