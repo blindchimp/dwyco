@@ -1714,12 +1714,7 @@ doloop(vc var, vc lo, vc hi, vc expr)
 #ifdef VCDBG
 		c->cur_idx = 3;
 #endif
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				if(b.lev > 1) throw;
-				break;
-			}
+			expr.eval();
 		}
 	} catch (VcBreak& b) {
 		--b.lev;
@@ -1745,12 +1740,7 @@ dowhile(vc cond, vc expr)
 #ifdef VCDBG
 		c->cur_idx = 1;
 #endif
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				if(b.lev > 1) throw;
-				break;
-			}
+			expr.eval();
 #ifdef VCDBG
 		c->cur_idx = 0;
 #endif

@@ -327,13 +327,12 @@ vc_vector::foreach(const vc& v, const vc& expr) const
 		for(;!i.eol();i.forward())
 		{
 			Vcmap->local_add(v, i.get());
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
-				break;
-			}
+			expr.eval();
+		}
+	} catch (VcBreak& b) {
+		if(--b.lev > 0) {
+			--iterators;
+			throw;
 		}
 	} catch (...) {
 		--iterators;
@@ -747,13 +746,12 @@ vc_map::foreach(const vc& v, const vc& expr) const
 			Vcmap->local_add(v, assoc);
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
-				break;
-			}
+			expr.eval();
+		}
+	} catch (VcBreak& b) {
+		if(--b.lev > 0) {
+			--iterators;
+			throw;
 		}
 	} catch (...) {
 		--iterators;
@@ -1045,13 +1043,12 @@ vc_list_set::foreach(const vc& v, const vc& expr) const
 		dwlista_foreach_iter(i, e, list)
 		{
 			Vcmap->local_add(v, e);
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
-				break;
-			}
+			expr.eval();
+		}
+	} catch (VcBreak& b) {
+		if(--b.lev > 0) {
+			--iterators;
+			throw;
 		}
 	} catch (...) {
 		--iterators;
@@ -1285,13 +1282,12 @@ vc_bag::foreach(const vc& v, const vc& expr) const
 		for(;!i.eol();i.forward())
 		{
 			Vcmap->local_add(v, i.get());
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
-				break;
-			}
+			expr.eval();
+		}
+	} catch (VcBreak& b) {
+		if(--b.lev > 0) {
+			--iterators;
+			throw;
 		}
 	} catch (...) {
 		--iterators;
@@ -1628,13 +1624,12 @@ vc_tree::foreach(const vc& v, const vc& expr) const
 			Vcmap->local_add(v, assoc);
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
-			try {
-				expr.eval();
-			} catch (VcBreak& b) {
-				--b.lev;
-				if(b.lev > 0) throw;
-				break;
-			}
+			expr.eval();
+		}
+	} catch (VcBreak& b) {
+		if(--b.lev > 0) {
+			--iterators;
+			throw;
 		}
 	} catch (...) {
 		--iterators;
