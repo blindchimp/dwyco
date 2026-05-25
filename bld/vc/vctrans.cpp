@@ -609,7 +609,7 @@ trans_dobreak(VCArglist *a, VcIO o)
 {
     o << "vc ret;";
     o << "vc lev = " << (*a)[0] << "();\n";
-    o << "throw VcBreak((int)lev);\n";
+    o << "int ilev = (int)lev; if(ilev > 0) throw VcBreak(ilev);\n";
     o << "return vcnil;";
     return vcnil;
 }
