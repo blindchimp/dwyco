@@ -1715,6 +1715,7 @@ doloop(vc var, vc lo, vc hi, vc expr)
 		c->cur_idx = 3;
 #endif
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 		}
 	} catch (VcBreak& b) {
 		--b.lev;
@@ -1741,6 +1742,7 @@ dowhile(vc cond, vc expr)
 		c->cur_idx = 1;
 #endif
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 #ifdef VCDBG
 		c->cur_idx = 0;
 #endif
@@ -1795,6 +1797,10 @@ dobreak(vc v)
 		USER_BOMB("can't request negative break level", vcnil);
 	if(bl == 0)
 		return vcnil;
+	if(bl == 1) {
+		Vcmap->set_break_one();
+		return vcnil;
+	}
 	throw VcBreak((int)bl);
 }
 

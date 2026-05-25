@@ -18,6 +18,7 @@
 vcctx::vcctx() {
 	ctx = 0;
 	exc_in_progress = 0;
+	break_one = 0;
 	dbg_backout = 0;
 	has_dhandler = 0;
 	maps[0] = new functx(313);

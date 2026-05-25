@@ -28,6 +28,7 @@ private:
     functx *cur_ctx;
 
 	int exc_in_progress;
+	int break_one;
 
     // debugging
     int dbg_backout;
@@ -79,6 +80,9 @@ public:
 	void set_exc_in_progress() { exc_in_progress = 1; }
 	void clear_exc_in_progress() { exc_in_progress = 0; }
 	int exc_is_in_progress() const { return exc_in_progress; }
+
+	void set_break_one() { break_one = 1; }
+	int check_break_one() { int r = break_one; break_one = 0; return r; }
 
 	// try handler stack
 	DwVec<try_handler> handler_stack;

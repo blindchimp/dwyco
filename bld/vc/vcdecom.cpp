@@ -328,6 +328,7 @@ vc_vector::foreach(const vc& v, const vc& expr) const
 		{
 			Vcmap->local_add(v, i.get());
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 		}
 	} catch (VcBreak& b) {
 		if(--b.lev > 0) {
@@ -747,6 +748,7 @@ vc_map::foreach(const vc& v, const vc& expr) const
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 		}
 	} catch (VcBreak& b) {
 		if(--b.lev > 0) {
@@ -1044,6 +1046,7 @@ vc_list_set::foreach(const vc& v, const vc& expr) const
 		{
 			Vcmap->local_add(v, e);
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 		}
 	} catch (VcBreak& b) {
 		if(--b.lev > 0) {
@@ -1283,6 +1286,7 @@ vc_bag::foreach(const vc& v, const vc& expr) const
 		{
 			Vcmap->local_add(v, i.get());
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 		}
 	} catch (VcBreak& b) {
 		if(--b.lev > 0) {
@@ -1625,6 +1629,7 @@ vc_tree::foreach(const vc& v, const vc& expr) const
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
 			expr.eval();
+			if(Vcmap->check_break_one()) break;
 		}
 	} catch (VcBreak& b) {
 		if(--b.lev > 0) {
