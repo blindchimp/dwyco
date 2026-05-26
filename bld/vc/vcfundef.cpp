@@ -162,20 +162,36 @@ vc_fundef::do_arg_setup(VCArglist *a) const
 				"more args than expected, extra args ignored.") << "\n";
 	}
 
-	for(int i = 0; i < n_formal_args; ++i)
 	{
-		Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
-	}
-	if(varadic)
-	{
-		// bundle up the trailing args into a special variable
-		// and lbind this into the function context.
-		vc trailing(VC_VECTOR);
-		int i;
-		int j;
-		for(i = n_formal_args, j = 0; i < n_call_args; ++i, ++j)
-			trailing[j] = (*a)[i];
-        Vcmap->local_add("__lh_varargs", trailing);
+		unsigned long fid = Vcmap->current_func_id();
+		int rec = Vcmap->is_recursive_call();
+		for(int i = 0; i < n_formal_args; ++i)
+		{
+			vc key = (*bindargs)[i];
+			vc val = (i >= n_call_args) ? vcnil : (*a)[i];
+			if(fid != 0 && !rec) {
+				key = vcctx::mangle_name(fid, key);
+				Vcmap->global_add(key, val);
+			} else {
+				Vcmap->local_add(key, val);
+			}
+		}
+		if(varadic)
+		{
+			// bundle up the trailing args into a special variable
+			// and lbind this into the function context.
+			vc trailing(VC_VECTOR);
+			int i;
+			int j;
+			for(i = n_formal_args, j = 0; i < n_call_args; ++i, ++j)
+				trailing[j] = (*a)[i];
+			if(fid != 0 && !rec) {
+				vc key = vcctx::mangle_name(fid, vc("__lh_varargs"));
+				Vcmap->global_add(key, trailing);
+			} else {
+				Vcmap->local_add("__lh_varargs", trailing);
+			}
+		}
 	}
 }
 
@@ -197,13 +213,17 @@ void
 vc_fundef::do_function_initialize(VCArglist *a) const
 {
 	vc_func::do_function_initialize(a);
-	Vcmap->push_func_id(func_id);
+	// constructs execute in the caller's context, so they don't
+	// get their own func_id for variable name mangling.
+	if(!is_construct)
+		Vcmap->push_func_id(func_id);
 }
 
 void
 vc_fundef::do_function_finalize(VCArglist *a) const
 {
-	Vcmap->pop_func_id();
+	if(!is_construct)
+		Vcmap->pop_func_id();
 	vc_func::do_function_finalize(a);
 }
 

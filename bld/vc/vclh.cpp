@@ -1854,7 +1854,25 @@ lbindfun(vc v1, vc v2)
 #ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
 	{
-		Vcmap->local_add(v1, v2);
+		// function values must remain findable by unmangled name
+		// (vc_funcall::eval() uses Vcmap->get() with unmangled name)
+		if(v2.type() == VC_FUNC || Vcmap->is_recursive_call())
+		{
+			Vcmap->local_add(v1, v2);
+		}
+		else
+		{
+			unsigned long fid = Vcmap->current_func_id();
+			if(fid != 0)
+			{
+				vc mangled = vcctx::mangle_name(fid, v1);
+				Vcmap->global_add(mangled, v2);
+			}
+			else
+			{
+				Vcmap->global_add(v1, v2);
+			}
+		}
 		return vcnil;
 	}
 #endif

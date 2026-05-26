@@ -49,13 +49,16 @@ vc_string::local_bind(const vc& v) const
 		USER_BOMB2("binding to zero length string not allowed");
 	unsigned long fid = Vcmap->current_func_id();
 	vc lhs(str);
-	if(fid != 0 && !Vcmap->is_recursive_call()) {
+	// function values must remain findable by unmangled name
+	// (vc_funcall::eval() uses Vcmap->get() with unmangled name)
+	if(!Vcmap->is_recursive_call() && fid != 0 && v.type() != VC_FUNC)
+	{
 		lhs = vcctx::mangle_name(fid, lhs);
 		Vcmap->global_add(lhs, v);
-	} else if(fid != 0 && Vcmap->is_recursive_call()) {
+	}
+	else
+	{
 		Vcmap->local_add(lhs, v);
-	} else {
-		Vcmap->global_add(lhs, v);
 	}
 }
 

@@ -209,7 +209,9 @@ vc_cvar::eval() const
 #endif
 				return *slot;
 			}
-			USER_BOMB("variable not bound", vcnil);
+			char buf[256];
+			snprintf(buf, sizeof(buf), "variable not bound: %s", (const char *)cached_atom);
+			USER_BOMB(buf, vcnil);
 		}
 
 		// first eval in non-recursive function: resolve and cache permanently
@@ -237,7 +239,9 @@ vc_cvar::eval() const
 #endif
 				return *slot;
 			}
-			USER_BOMB("variable not bound", vcnil);
+			char buf[256];
+			snprintf(buf, sizeof(buf), "variable not bound: %s", (const char *)cached_atom);
+			USER_BOMB(buf, vcnil);
 		}
 	}
 
