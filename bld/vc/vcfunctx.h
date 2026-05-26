@@ -39,6 +39,11 @@ private:
 	int base_init_in_progress;
 #endif
 
+	int doing_ret;
+	vc retval;
+	int break_level;
+	int loop_ctrl;
+
 public:
 	functx(int tsize = 1);
 	~functx();
@@ -53,6 +58,16 @@ public:
 	void eval_backouts() ;
 	int num_backouts() { return backouts.num_elems(); }
 	void eval_backouts_since(int n);
+
+	int ret_in_progress() const { return doing_ret; }
+	void set_retval(const vc& v) { doing_ret = 1; retval = v; }
+	vc get_retval() const { return retval; }
+	void clear_ret() { doing_ret = 0; retval = vcnil; }
+
+	int break_in_progress() const { return break_level > loop_ctrl; }
+	void set_break_level(int n) { break_level -= n; }
+	void open_loop() { ++loop_ctrl; }
+	void close_loop() { --loop_ctrl; }
 
 #ifdef LHOBJ
 	// augment function context with object context

@@ -70,8 +70,18 @@ public:
 	void close_ctx();
 
     int unwind_in_progress() const {
-		return dbg_backout;
+		return ret_in_progress() || break_in_progress() || exc_in_progress || dbg_backout;
 	}
+
+	int ret_in_progress() const { return cur_ctx->ret_in_progress(); }
+	void set_retval(const vc& v) { cur_ctx->set_retval(v); }
+	vc retval() const { return cur_ctx->get_retval(); }
+	void clear_ret() { cur_ctx->clear_ret(); }
+
+	int break_in_progress() const { return cur_ctx->break_in_progress(); }
+	void set_break_level(int n) { cur_ctx->set_break_level(n); }
+	void open_loop() { cur_ctx->open_loop(); }
+	void close_loop() { cur_ctx->close_loop(); }
 
 	// exception handling support
 	void addbackout(const vc& expr) ;

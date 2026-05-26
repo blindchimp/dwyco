@@ -12,20 +12,6 @@
 // translated LH program at run time.
 
 
-struct VcBreak
-{
-    VcBreak() {lev = -1;}
-    VcBreak(int i) {lev = i;}
-    int lev;
-
-};
-
-struct VcRet
-{
-    vc retval;
-    VcRet(const vc& val) {retval = val;}
-};
-
 // program error
 struct VcErr
 {

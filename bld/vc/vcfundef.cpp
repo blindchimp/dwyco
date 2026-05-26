@@ -214,6 +214,8 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 	gettimeofday(&t0, 0);
 #endif
 	vc ret = fundef.force_eval();
+	if(Vcmap->ret_in_progress())
+		return Vcmap->retval();
 #ifndef LHPROF
         return ret;
 #else //LHPROF

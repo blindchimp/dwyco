@@ -64,22 +64,9 @@ vc_trans_fundef::do_function_call(VCArglist *, int suppress_break) const
 {
     vc (*p)();
     p = (vc (*)())(long)tfundef;
-    try
-    {
-        return (*p)();
-    }
-    catch(const VcRet& vcr)
-    {
-        return vcr.retval;
-    }
-    catch(const VcExc& vce)
-    {
-        // note: here is where we would match against our handlers
-        // and call backouts (even if there is no match).
-        // if there is a match, eval the handler that matches.
-        // if there is no match re-throw
-    }
-    oopanic("unimplemented translation");
-    return vcnil;
+    vc ret = (*p)();
+    if(Vcmap->ret_in_progress())
+        return Vcmap->retval();
+    return ret;
 }
 

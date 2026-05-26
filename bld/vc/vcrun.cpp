@@ -173,10 +173,6 @@ init_rct();
     {
         try {
             (void)s->force_eval();
-        } catch (const VcRet&) {
-            VcError << "return outside function\n";
-        } catch (const VcBreak&) {
-            VcError << "break outside loop\n";
         } catch (const VcExc& e) {
             VcError << "Unhandled exception: " << (const char *)e.excstr << "\n";
             if(Vcmap->has_dhandler &&

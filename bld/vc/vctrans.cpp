@@ -515,8 +515,11 @@ trans_doloop(VCArglist *a, VcIO o)
     DwString tmpl("vc ret;long l = %1();\nlong h = %2();\nvc var = %3(); long i = l;\n");
     tmpl.arg((const char *)(*a)[1], (const char *)(*a)[2], (const char *)(*a)[0]);
 
-    DwString tmpl2("try {for(; i <= h; ++i) { Vcmap->local_add(var, vc(i)); %1(); } }\n"
-                   "catch(VcBreak& b) {--b.lev; if(b.lev > 0) throw; } Vcmap->local_add(var, vc(i)); return vcnil;\n");
+    DwString tmpl2("Vcmap->open_loop();\n"
+                   "for(; i <= h; ++i) { Vcmap->local_add(var, vc(i)); %1();\n"
+                   "if(Vcmap->break_in_progress() || Vcmap->ret_in_progress()) break; }\n"
+                   "Vcmap->close_loop();\n"
+                   "Vcmap->local_add(var, vc(i)); return vcnil;\n");
     tmpl2.arg((const char *)(*a)[3]);
 
     o << tmpl.c_str() << tmpl2.c_str();
@@ -540,10 +543,7 @@ trans_doforeach(VCArglist *a, VcIO o)
                 "vc ret;\n"
                 "vc var = %1();\n"
                 "vc set = %2();\n"
-                "try {\n"
                 "set.foreach(var, %3);\n"
-                "} catch (VcBreak& b) \n"
-                "{--b.lev; if(b.lev > 0) throw; }\n"
                 );
     tmpl.arg((const char *)(*a)[0], (const char *)(*a)[1], (const char *)cbname);
     //o << fecb.c_str() << tmpl.c_str();
@@ -588,17 +588,14 @@ vc
 trans_dowhile(VCArglist *a, VcIO o)
 {
     o << "vc ret;";
-    o << "try {\n";
+    o << "Vcmap->open_loop();\n";
     o << "vc cond = " << (*a)[0] << "();\n";
     o << "while(!cond.is_nil()) {\n";
     o << (*a)[1] << "();\n";
+    o << "if(Vcmap->break_in_progress() || Vcmap->ret_in_progress()) break;\n";
     o << "cond = " << (*a)[0] << "();\n";
     o << "}\n";
-    o << "}\n";
-    o << "catch(VcBreak& b) {\n";
-    o << "--b.lev;\n";
-    o << "if(b.lev > 0) { throw; }\n";
-    o << "}\n";
+    o << "Vcmap->close_loop();\n";
     o << "return vcnil;";
     return vcnil;
 
@@ -609,7 +606,7 @@ trans_dobreak(VCArglist *a, VcIO o)
 {
     o << "vc ret;";
     o << "vc lev = " << (*a)[0] << "();\n";
-    o << "int ilev = (int)lev; if(ilev > 0) throw VcBreak(ilev);\n";
+    o << "int ilev = (int)lev; if(ilev > 0) Vcmap->set_break_level(ilev);\n";
     o << "return vcnil;";
     return vcnil;
 }
@@ -619,7 +616,7 @@ trans_doreturn(VCArglist *a, VcIO o)
 {
     o << "vc ret;";
     o << "ret = " << (*a)[0] << "();\n";
-    o << "throw VcRet(ret);\n";
+    o << "Vcmap->set_retval(ret);\n";
     o << "return vcnil;";
     return vcnil;
 }

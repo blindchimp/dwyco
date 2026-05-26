@@ -1707,20 +1707,19 @@ doloop(vc var, vc lo, vc hi, vc expr)
 	long h = hi.eval();
 
 	long i;
-	try {
-		for(i = l; i <= h; ++i)
-		{
-			Vcmap->local_add(var, vc(i));
+	Vcmap->open_loop();
+	for(i = l; i <= h; ++i)
+	{
+		Vcmap->local_add(var, vc(i));
 #ifdef VCDBG
 		c->cur_idx = 3;
 #endif
-			expr.eval();
-			if(Vcmap->check_break_one()) break;
-		}
-	} catch (VcBreak& b) {
-		--b.lev;
-		if(b.lev > 0) throw;
+		expr.eval();
+		if(Vcmap->check_break_one()) break;
+		if(Vcmap->break_in_progress()) break;
+		if(Vcmap->ret_in_progress()) break;
 	}
+	Vcmap->close_loop();
 	Vcmap->local_add(var, vc(i));
 	return vcnil;
 }
@@ -1735,23 +1734,22 @@ dowhile(vc cond, vc expr)
 #endif
 	
 	vc a = cond.eval();
-	try {
-		while(!a.is_nil())
-		{
+	Vcmap->open_loop();
+	while(!a.is_nil())
+	{
 #ifdef VCDBG
 		c->cur_idx = 1;
 #endif
-			expr.eval();
-			if(Vcmap->check_break_one()) break;
+		expr.eval();
+		if(Vcmap->check_break_one()) break;
+		if(Vcmap->break_in_progress()) break;
+		if(Vcmap->ret_in_progress()) break;
 #ifdef VCDBG
 		c->cur_idx = 0;
 #endif
-			a = cond.eval();
-		}
-	} catch (VcBreak& b) {
-		--b.lev;
-		if(b.lev > 0) throw;
+		a = cond.eval();
 	}
+	Vcmap->close_loop();
     return vcnil;
 }
 
@@ -1783,7 +1781,8 @@ doforeach(vc var, vc set, vc expr)
 vc
 doreturn(vc v)
 {
-	throw VcRet(v);
+	Vcmap->set_retval(v);
+	return vcnil;
 }
 
 
@@ -1801,7 +1800,8 @@ dobreak(vc v)
 		Vcmap->set_break_one();
 		return vcnil;
 	}
-	throw VcBreak((int)bl);
+	Vcmap->set_break_level((int)bl);
+	return vcnil;
 }
 
 vc

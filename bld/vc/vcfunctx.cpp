@@ -24,6 +24,10 @@
 
 functx::functx(int tsize) {
 	flush_on_close = 0;
+	doing_ret = 0;
+	retval = vcnil;
+	break_level = 0;
+	loop_ctrl = 0;
 #ifdef PERFHACKS
 	map = new VMAP(tsize);
 	// the map we get here is a fast closed

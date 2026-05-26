@@ -329,11 +329,8 @@ vc_vector::foreach(const vc& v, const vc& expr) const
 			Vcmap->local_add(v, i.get());
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
-		}
-	} catch (VcBreak& b) {
-		if(--b.lev > 0) {
-			--iterators;
-			throw;
+			if(Vcmap->break_in_progress()) break;
+			if(Vcmap->ret_in_progress()) break;
 		}
 	} catch (...) {
 		--iterators;
@@ -749,11 +746,8 @@ vc_map::foreach(const vc& v, const vc& expr) const
 			assoc[1] = a.get_value();
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
-		}
-	} catch (VcBreak& b) {
-		if(--b.lev > 0) {
-			--iterators;
-			throw;
+			if(Vcmap->break_in_progress()) break;
+			if(Vcmap->ret_in_progress()) break;
 		}
 	} catch (...) {
 		--iterators;
@@ -1047,11 +1041,8 @@ vc_list_set::foreach(const vc& v, const vc& expr) const
 			Vcmap->local_add(v, e);
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
-		}
-	} catch (VcBreak& b) {
-		if(--b.lev > 0) {
-			--iterators;
-			throw;
+			if(Vcmap->break_in_progress()) break;
+			if(Vcmap->ret_in_progress()) break;
 		}
 	} catch (...) {
 		--iterators;
@@ -1287,11 +1278,8 @@ vc_bag::foreach(const vc& v, const vc& expr) const
 			Vcmap->local_add(v, i.get());
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
-		}
-	} catch (VcBreak& b) {
-		if(--b.lev > 0) {
-			--iterators;
-			throw;
+			if(Vcmap->break_in_progress()) break;
+			if(Vcmap->ret_in_progress()) break;
 		}
 	} catch (...) {
 		--iterators;
@@ -1630,11 +1618,8 @@ vc_tree::foreach(const vc& v, const vc& expr) const
 			assoc[1] = a.get_value();
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
-		}
-	} catch (VcBreak& b) {
-		if(--b.lev > 0) {
-			--iterators;
-			throw;
+			if(Vcmap->break_in_progress()) break;
+			if(Vcmap->ret_in_progress()) break;
 		}
 	} catch (...) {
 		--iterators;
