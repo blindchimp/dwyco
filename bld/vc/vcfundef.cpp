@@ -16,8 +16,10 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfundef.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 
+unsigned long vc_fundef::next_func_id = 1;
+
 vc_fundef::vc_fundef(const char *fname, VCArglist *a, int sty, int decrypt)
-    : vc_func(vc(fname), sty)
+    : vc_func(vc(fname), sty), func_id(next_func_id++)
 {
 	int nargs = a->num_elems();
     bindargs = new DwSVec<vc>;
@@ -56,13 +58,13 @@ vc_fundef::vc_fundef(const char *fname, VCArglist *a, int sty, int decrypt)
 	// otherwise, assume it was already compiled
 }
 
-vc_fundef::vc_fundef(int sty) : vc_func(vc("<<internal>>"), sty)
+vc_fundef::vc_fundef(int sty) : vc_func(vc("<<internal>>"), sty), func_id(next_func_id++)
 {
 	bindargs = 0;
 }
 
 vc_fundef::vc_fundef(vc fname, int sty) :
-    vc_func(fname, sty)
+    vc_func(fname, sty), func_id(next_func_id++)
 {
     bindargs = 0;
 }
@@ -190,6 +192,20 @@ subtimeval(struct timeval& t1, struct timeval& t0)
 		(t0.tv_sec + (double)t0.tv_usec / 1000000.0);
 }
 #endif
+
+void
+vc_fundef::do_function_initialize(VCArglist *a) const
+{
+	vc_func::do_function_initialize(a);
+	Vcmap->push_func_id(func_id);
+}
+
+void
+vc_fundef::do_function_finalize(VCArglist *a) const
+{
+	Vcmap->pop_func_id();
+	vc_func::do_function_finalize(a);
+}
 
 vc
 vc_fundef::do_function_call(VCArglist *, int suppress_break) const

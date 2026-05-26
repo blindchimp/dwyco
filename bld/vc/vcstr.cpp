@@ -47,8 +47,16 @@ vc_string::local_bind(const vc& v) const
 {
 	if(str[0] == '\0' && cached_len == 0)
 		USER_BOMB2("binding to zero length string not allowed");
+	unsigned long fid = Vcmap->current_func_id();
 	vc lhs(str);
-	Vcmap->local_add(lhs, v);
+	if(fid != 0 && !Vcmap->is_recursive_call()) {
+		lhs = vcctx::mangle_name(fid, lhs);
+		Vcmap->global_add(lhs, v);
+	} else if(fid != 0 && Vcmap->is_recursive_call()) {
+		Vcmap->local_add(lhs, v);
+	} else {
+		Vcmap->global_add(lhs, v);
+	}
 }
 
 void

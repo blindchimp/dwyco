@@ -27,6 +27,9 @@ private:
 	int ctx;
     functx *cur_ctx;
 
+	DwVec<unsigned long> func_id_stack;
+	DwVec<int> rec_depth;
+
 	int exc_in_progress;
 	int break_one;
 
@@ -75,6 +78,20 @@ public:
 	// searches context chain top-down for key, returns stable vc* pointer
 	// and which frame index the binding was found in.
 	int find_slot(const vc& key, vc*& wp, int& frame_idx) const;
+
+	// function ID tracking for name-mangled variable caching
+	void push_func_id(unsigned long fid);
+	void pop_func_id();
+	unsigned long current_func_id() const {
+		return func_id_stack.num_elems() > 0 ? func_id_stack[func_id_stack.num_elems() - 1] : 0;
+	}
+	int is_recursive_call() const {
+		return rec_depth.num_elems() > 0 && rec_depth[rec_depth.num_elems() - 1] > 0;
+	}
+	// direct lookup in global context only (skip context stack)
+	int global_find_slot(const vc& key, vc*& wp) const;
+
+	static vc mangle_name(unsigned long fid, const vc& name);
 
     int unwind_in_progress() const {
 		return dbg_backout;

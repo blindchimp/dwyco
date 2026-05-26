@@ -30,6 +30,8 @@ friend class vc_memberfun;
 friend vc dofunbuild(const char *, VCArglist *, int, int);
 
 protected:
+        static unsigned long next_func_id;
+        unsigned long func_id;
         DwSVec<vc> *bindargs;
 	
 	vc_fundef(int = VC_FUNC_NORMAL); // used for special function definitions (factories)
@@ -38,6 +40,8 @@ protected:
 	
 	virtual void do_arg_setup(VCArglist *) const;
     virtual vc do_function_call(VCArglist *, int suppress_break = 0) const;
+    virtual void do_function_initialize(VCArglist *) const;
+    virtual void do_function_finalize(VCArglist *) const;
 
 private:
 	vc fundef;

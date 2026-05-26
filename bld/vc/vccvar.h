@@ -124,7 +124,6 @@ private:
 	mutable int is_simple_var;
 	mutable vc cached_atom;			// variable name string
 	mutable vc *cached_slot;		// stable pointer to map slot
-	mutable unsigned long cached_frame_id;	// frame_id when cached
 
 
 	void bind(const vc& v) const ;

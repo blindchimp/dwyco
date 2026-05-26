@@ -258,6 +258,50 @@ vcctx::find_slot(const vc& key, vc*& wp, int& frame_idx) const
 	return 0;
 }
 
+void
+vcctx::push_func_id(unsigned long fid)
+{
+	// detect recursion: check if this fid is already active
+	int is_rec = 0;
+	for(int i = 0; i < func_id_stack.num_elems(); ++i) {
+		if(func_id_stack[i] == fid) { is_rec = 1; break; }
+	}
+	func_id_stack.append(fid);
+        rec_depth.append(is_rec ? (rec_depth.num_elems() > 0 ? rec_depth[rec_depth.num_elems() - 1] + 1 : 1) : 0);
+}
+
+void
+vcctx::pop_func_id()
+{
+	if(func_id_stack.num_elems() > 0)
+		func_id_stack.set_size(func_id_stack.num_elems() - 1);
+	if(rec_depth.num_elems() > 0)
+		rec_depth.set_size(rec_depth.num_elems() - 1);
+}
+
+int
+vcctx::global_find_slot(const vc& key, vc*& wp) const
+{
+	wp = 0;
+	vc out;
+	return maps[0]->find2(key, out, wp);
+}
+
+vc
+vcctx::mangle_name(unsigned long fid, const vc& name)
+{
+	const char *s = name.peek_str();
+	long len = name.len();
+	char prefix[64];
+	int plen = snprintf(prefix, sizeof(prefix), "__lh_%lu::", fid);
+	char *buf = new char[plen + len];
+	memcpy(buf, prefix, plen);
+	memcpy(buf + plen, s, len);
+	vc result(VC_BSTRING, buf, plen + len);
+	delete[] buf;
+	return result;
+}
+
 vc
 vcctx::local_find(const vc& k) {
 	return cur_ctx->get(k);

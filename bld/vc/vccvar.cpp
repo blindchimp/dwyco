@@ -92,7 +92,6 @@ vc_cvar::vc_cvar(const char *expr, int decrypt)
 	is_simple_var = 0;
 	cached_atom = vcnil;
 	cached_slot = 0;
-	cached_frame_id = 0;
 	// note: have to do this cuz lexer does decryption in
 	// place. also, gives us a chance to wipe the
 	// results of the decryption.
@@ -145,7 +144,6 @@ vc_cvar::vc_cvar(VcLexer *l)
 	is_simple_var = 0;
 	cached_atom = vcnil;
 	cached_slot = 0;
-	cached_frame_id = 0;
 	lexer = l;
     next_tok();
 	begin_scoord.init(lexer);
@@ -190,25 +188,57 @@ vc_cvar::eval() const
 
 	if(is_simple_var)
 	{
-		if(cached_slot && cached_frame_id == Vcmap->current_frame_id())
+		// fast path: permanently cached slot (non-recursive only)
+		if(cached_slot && !Vcmap->is_recursive_call())
 		{
 #ifdef VCDBG
 			clist[0].print();
 #endif
 			return *cached_slot;
 		}
-		vc* slot = 0;
-		int frame_idx;
-		if(Vcmap->find_slot(cached_atom, slot, frame_idx))
+
+		// recursive call: use dynamic context-stack lookup, no caching
+		if(Vcmap->is_recursive_call())
 		{
-			cached_slot = slot;
-			cached_frame_id = Vcmap->current_frame_id();
+			vc* slot = 0;
+			int frame_idx;
+			if(Vcmap->find_slot(cached_atom, slot, frame_idx))
+			{
 #ifdef VCDBG
-			clist[0].print();
+				clist[0].print();
 #endif
-			return *slot;
+				return *slot;
+			}
+			USER_BOMB("variable not bound", vcnil);
 		}
-		return vcnil;
+
+		// first eval in non-recursive function: resolve and cache permanently
+		{
+			unsigned long fid = Vcmap->current_func_id();
+			vc* slot = 0;
+			if(fid != 0)
+			{
+				vc mangled = vcctx::mangle_name(fid, cached_atom);
+				if(Vcmap->global_find_slot(mangled, slot))
+				{
+					cached_slot = slot;
+#ifdef VCDBG
+					clist[0].print();
+#endif
+					return *slot;
+				}
+			}
+			// fallback: check unmangled name (for gbind'd globals)
+			if(Vcmap->global_find_slot(cached_atom, slot))
+			{
+				cached_slot = slot;
+#ifdef VCDBG
+				clist[0].print();
+#endif
+				return *slot;
+			}
+			USER_BOMB("variable not bound", vcnil);
+		}
 	}
 
 	int expr_num = 0;
@@ -517,7 +547,6 @@ vc_cvar::vc_cvar()
 	is_simple_var = 0;
 	cached_atom = vcnil;
 	cached_slot = 0;
-	cached_frame_id = 0;
 }
 vc_cvar::vc_cvar(const vc_cvar& a)
 	: vc_list(a.vc_list),
@@ -528,7 +557,6 @@ vc_cvar::vc_cvar(const vc_cvar& a)
 	is_simple_var = 0;
 	cached_atom = vcnil;
 	cached_slot = 0;
-	cached_frame_id = 0;
 }
 
 void vc_cvar::bind(const vc& v) const {
