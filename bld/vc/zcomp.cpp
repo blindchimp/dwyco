@@ -123,7 +123,7 @@ decompress_dtor(void *ctx)
 }
 
 vc
-vclh_compression_open(vc level)
+vclh_compression_open(const vc& level)
 {
 	if(level.type() != VC_INT)
 	{
@@ -136,8 +136,9 @@ vclh_compression_open(vc level)
 }
 
 vc
-vclh_compression_close(vc ctx)
+vclh_compression_close(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
 	ctx.close();
 	return vctrue;
 }
@@ -152,8 +153,9 @@ vclh_decompression_open()
 }
 
 vc
-vclh_decompression_close(vc ctx)
+vclh_decompression_close(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
 	ctx.close();
 	return vctrue;
 }
@@ -177,7 +179,7 @@ run_dfilter(z_stream& z, const char *str, int len)
 }
 
 vc
-vclh_compress(vc ctx, vc str)
+vclh_compress(const vc& ctx, const vc& str)
 {
     z_stream *d = (z_stream *)(void *)ctx;
 	int n;
@@ -188,7 +190,7 @@ vclh_compress(vc ctx, vc str)
 }
 
 vc
-vclh_decompress(vc ctx, vc str)
+vclh_decompress(const vc& ctx, const vc& str)
 {
     z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *ds = run_dfilter(*d, (const char *)str, str.len());
@@ -198,8 +200,10 @@ vclh_decompress(vc ctx, vc str)
 }
 
 vc
-vclh_compress_xfer(vc ctx, vc v)
+vclh_compress_xfer(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
+	vc& v = (*a)[1];
 	vcxstream vcx((char *)0, (long)128 * 1024, vcxstream::CONTINUOUS);
 	long len;
 	vc_composite::new_dfs();
@@ -244,7 +248,7 @@ vclh_decompress_xfer(vc ctx, vc v, vc& out)
 }
 
 vc
-lh_decompress_xfer(vc ctx, vc v, vc out)
+lh_decompress_xfer(const vc& ctx, const vc& v, const vc& out)
 {
 	if(out.type() != VC_STRING)
 	{

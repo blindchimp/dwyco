@@ -52,8 +52,9 @@ lh_socket_error(vc *vs)
 }
 
 vc
-lh_horrible_hack(vc sock)
+lh_horrible_hack(VCArglist *a)
 {
+	vc& sock = (*a)[0];
 	if(sock.type() != VC_SOCKET)
 	{
 		USER_BOMB("arg to os_socket must be socket", vcnil);
@@ -63,8 +64,11 @@ lh_horrible_hack(vc sock)
 }
 
 vc
-lh_socket_from_os_handle(vc os_handle, vc protocol, vc listening)
+lh_socket_from_os_handle(VCArglist *a)
 {
+	vc& os_handle = (*a)[0];
+	vc& protocol = (*a)[1];
+	vc& listening = (*a)[2];
 	vc sock;
 	if(protocol.type() != VC_STRING ||
 		(protocol != vc("tcp") && protocol != vc("udp")))
@@ -95,8 +99,12 @@ lh_socket_from_os_handle(vc os_handle, vc protocol, vc listening)
 	return sock;
 }
 vc
-lh_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr)
+lh_socket(VCArglist *a)
 {
+	vc& protocol = (*a)[0];
+	vc& local_addr = (*a)[1];
+	vc& is_listen = (*a)[2];
+	vc& reuse_addr = (*a)[3];
 	vc sock;
 	static vc tcp("tcp");
 	static vc udp("udp");
@@ -120,16 +128,20 @@ lh_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr)
 }
 
 vc
-lh_sockclose(vc sock, vc how)
+lh_sockclose(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& how = (*a)[1];
 	vc v = sock.socket_close(how.is_nil() ? 0 : 1);
 	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
 vc
-lh_sockshutdown(vc sock, vc how)
+lh_sockshutdown(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& how = (*a)[1];
 	static vc r("r");
 	static vc w("w");
 	static vc rw("rw");
@@ -151,8 +163,10 @@ lh_sockshutdown(vc sock, vc how)
 }
 
 vc
-lh_accept(vc sock, vc peer_addr)
+lh_accept(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& peer_addr = (*a)[1];
 	vc tmp;
 	vc newsock = sock.socket_accept(tmp);
 	CHECK_ANY_BO(vcnil);
@@ -166,16 +180,22 @@ lh_accept(vc sock, vc peer_addr)
 }
 
 vc
-lh_connect(vc sock, vc remote_addr)
+lh_connect(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& remote_addr = (*a)[1];
 	vc v = sock.socket_connect(remote_addr);
 	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
 vc
-lh_poll(vc sock, vc whatfor, vc sec, vc usec)
+lh_poll(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& whatfor = (*a)[1];
+	vc& sec = (*a)[2];
+	vc& usec = (*a)[3];
 	if(whatfor.type() != VC_STRING)
 	{
 		USER_BOMB("polling arg must be [rwe]", vcnil);
@@ -570,8 +590,9 @@ lh_sockset_option(VCArglist *al)
 }
 
 vc
-lh_gethostbyname(vc hostname)
+lh_gethostbyname(VCArglist *a)
 {
+	vc& hostname = (*a)[0];
 	struct hostent *h;
 
 	if(hostname.type() != VC_STRING)
@@ -589,41 +610,47 @@ lh_gethostbyname(vc hostname)
 }
 
 vc 
-lh_sock_peer_addr(vc sock)
+lh_sock_peer_addr(VCArglist *a)
 {
+	vc& sock = (*a)[0];
 	return sock.socket_peer_addr();
 }
 
 vc
-lh_sock_local_addr(vc sock)
+lh_sock_local_addr(VCArglist *a)
 {
+	vc& sock = (*a)[0];
 	return sock.socket_local_addr();
 }
 
 vc
-lh_add_write_set(vc s)
+lh_add_write_set(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	s.socket_add_write_set();
 	return vctrue;
 }
 
 vc
-lh_add_read_set(vc s)
+lh_add_read_set(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	s.socket_add_read_set();
 	return vctrue;
 }
 
 vc
-lh_del_write_set(vc s)
+lh_del_write_set(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	s.socket_del_write_set();
 	return vctrue;
 }
 
 vc
-lh_del_read_set(vc s)
+lh_del_read_set(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	s.socket_del_read_set();
 	return vctrue;
 }

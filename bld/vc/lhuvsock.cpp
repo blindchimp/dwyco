@@ -54,7 +54,7 @@
 // maybe sometime if the callback this needed, i'll fill that in.
 
 vc
-lh_uv_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr)
+lh_uv_socket(const vc& protocol, const vc& local_addr, const vc& is_listen, const vc& reuse_addr)
 {
 	vc sock;
 	static vc tcp("tcp");
@@ -80,16 +80,20 @@ lh_uv_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr)
 }
 
 vc
-lh_uv_sockclose(vc sock, vc how)
+lh_uv_sockclose(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& how = (*a)[1];
 	vc v = sock.socket_close(how.is_nil() ? 0 : 1);
 	CHECK_ANY_BO(vcnil);
 	return v;
 }
 
 vc
-lh_uv_sockshutdown(vc sock, vc how)
+lh_uv_sockshutdown(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& how = (*a)[1];
 	static vc r("r");
 	static vc w("w");
 	static vc rw("rw");
@@ -111,8 +115,10 @@ lh_uv_sockshutdown(vc sock, vc how)
 
 
 vc
-lh_uv_connect(vc sock, vc remote_addr)
+lh_uv_connect(VCArglist *a)
 {
+	vc& sock = (*a)[0];
+	vc& remote_addr = (*a)[1];
 	vc v = sock.socket_connect(remote_addr);
 	CHECK_ANY_BO(vcnil);
 	return v;

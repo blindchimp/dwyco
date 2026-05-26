@@ -18,97 +18,97 @@
 // and accoutred with proper error handling.
 
 vc
-vcsqrt(vc v)
+vcsqrt(const vc& v)
 {
     return sqrt((double)v);
 }
 
 vc
-vcsin(vc v)
+vcsin(const vc& v)
 {
     return sin((double)v);
 }
 
 vc
-vccos(vc v)
+vccos(const vc& v)
 {
     return cos((double)v);
 }
 
 vc
-vctan(vc v)
+vctan(const vc& v)
 {
     return tan((double)v);
 }
 
 vc
-vcabs(vc v)
+vcabs(const vc& v)
 {
     return fabs((double)v);
 }
 
 vc
-vcexp(vc v)
+vcexp(const vc& v)
 {
     return exp((double)v);
 }
 
 vc
-vclog(vc v)
+vclog(const vc& v)
 {
     return log((double)v);
 }
 
 vc
-vclog10(vc v)
+vclog10(const vc& v)
 {
     return log10((double)v);
 }
 
 vc
-vcpow(vc v, vc p)
+vcpow(const vc& v, const vc& p)
 {
 	return pow((double)v, (double)p);
 }
 
 vc
-vcacos(vc v)
+vcacos(const vc& v)
 {
     return acos((double)v);
 }
 
 vc
-vcasin(vc v)
+vcasin(const vc& v)
 {
     return asin((double)v);
 }
 
 vc
-vcatan(vc v)
+vcatan(const vc& v)
 {
     return atan((double)v);
 }
 
 vc
-vcatan2(vc v1, vc v2)
+vcatan2(const vc& v1, const vc& v2)
 {
     return atan2((double)v1, (double)v2);
 }
 
 vc
-vcfloor(vc v)
+vcfloor(const vc& v)
 {
     return floor((double)v);
 }
 
 vc
-vcatof(vc v)
+vcatof(const vc& v)
 {
 	return atof(v);
 }
 
 vc
-vchypot(vc x, vc y)
+vchypot(const vc& x, const vc& y)
 {
     return hypot((double)x, (double)y);
 }
@@ -120,7 +120,7 @@ vcrand()
 }
 
 vc
-vcsrand(vc v)
+vcsrand(const vc& v)
 {
 	srand((int)v);
 	return vcnil;
@@ -128,7 +128,7 @@ vcsrand(vc v)
 
 #define fmm(funname, name, op, termsearch) \
 vc \
-vc##funname(vc vec, vc index) \
+vc##funname(const vc& vec, const vc& index) \
 { \
 	if(vec.type() != VC_VECTOR) \
 	{ \
@@ -163,7 +163,7 @@ fmm(findmax, "findmax", >, ;)
 
 #define fmm2(funname, name, op, termsearch) \
 vc \
-vc##funname(vc vec, vc val, vc index) \
+vc##funname(const vc& vec, const vc& val, const vc& index) \
 { \
 	if(vec.type() != VC_VECTOR) \
 	{ \
@@ -197,7 +197,7 @@ fmm2(findeq, "findeq", ==, break)
 fmm2(findne, "findne", !=, break)
 
 vc
-vclhsum(vc v)
+vclhsum(const vc& v)
 {
 	if(v.type() != VC_VECTOR)
 	{
@@ -211,7 +211,7 @@ vclhsum(vc v)
 }
 
 vc
-vclhsum2(vc v)
+vclhsum2(const vc& v)
 {
 	if(v.type() != VC_VECTOR)
 	{

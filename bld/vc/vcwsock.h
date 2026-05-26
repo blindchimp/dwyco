@@ -51,7 +51,7 @@ private:
 	static int thread_startup();
 	static int thread_shutoff();
 
-friend vc lh_horrible_hack(vc);
+friend vc lh_horrible_hack(VCArglist *a);
 
 protected:
 	vc_winsock(const vc_winsock&);

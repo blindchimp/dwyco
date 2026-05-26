@@ -11,10 +11,10 @@
 #define VCLHUVSOCK_H
 // socket interface based on libuv
 
-vc lh_uv_socket(vc protocol, vc local_addr, vc is_listen, vc reuse_addr);
-vc lh_uv_sockclose(vc sock, vc how);
-vc lh_uv_sockshutdown(vc sock, vc how);
-vc lh_uv_connect(vc sock, vc remote_addr);
+vc lh_uv_socket(const vc& protocol, const vc& local_addr, const vc& is_listen, const vc& reuse_addr);
+vc lh_uv_sockclose(VCArglist *a);
+vc lh_uv_sockshutdown(VCArglist *a);
+vc lh_uv_connect(VCArglist *a);
 vc lh_uv_poll();
 vc lh_uv_socksend(VCArglist *a);
 vc lh_uv_sockrecv(VCArglist *a);

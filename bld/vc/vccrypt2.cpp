@@ -45,7 +45,7 @@ using namespace Weak;
 class VCFileSource : public Source
 {
 public:
-    VCFileSource(vc f, int pumpAndClose=FALSE,
+    VCFileSource(const vc& f, int pumpAndClose=FALSE,
                BufferedTransformation *outQueue = new ByteQueue);
 	~VCFileSource();
 
@@ -60,7 +60,7 @@ class VCFileSink : public Sink
 {
 public:
 	~VCFileSink();
-    VCFileSink(vc f);
+    VCFileSink(const vc& f);
 
     void InputFinished();
     void Put(byte inByte)
@@ -80,7 +80,7 @@ private:
 #define VCF_BUFSIZE 1024
 
 
-VCFileSource::VCFileSource (vc f, int pumpAndClose, BufferedTransformation *outQueue)
+VCFileSource::VCFileSource (const vc& f, int pumpAndClose, BufferedTransformation *outQueue)
     : Source(outQueue), file(f)
 {
     if (pumpAndClose)
@@ -125,7 +125,7 @@ unsigned long VCFileSource::PumpAll()
     return total;
 }
 
-VCFileSink::VCFileSink(vc f)
+VCFileSink::VCFileSink(const vc& f)
     : file(f)
 {
 }
@@ -145,7 +145,7 @@ void VCFileSink::Put(const byte *inString, unsigned int length)
 }
 
 static vc
-hash_file(vc file, HashTransformation& h)
+hash_file(vc& file, HashTransformation& h)
 {
 	SecByteBlock buffer(VCF_BUFSIZE);
 	byte *d = new byte[h.DigestSize()];
@@ -169,8 +169,9 @@ hash_file(vc file, HashTransformation& h)
 }
 
 vc
-vclh_sha256(vc s)
+vclh_sha256(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
 		
@@ -197,8 +198,9 @@ vclh_sha256(vc s)
 // produced different output from the official "sha3_256". DO NOT USE THIS.
 // i leave it here in case there are scripts that used it i can't remember.
 vc
-vclh_sha3_256_keccak(vc s)
+vclh_sha3_256_keccak(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
     //user_warning("DO NOT USE THIS SHA3_256");
@@ -219,8 +221,9 @@ vclh_sha3_256_keccak(vc s)
 }
 
 vc
-vclh_sha3_256_std(vc s)
+vclh_sha3_256_std(VCArglist *a)
 {
+    vc& s = (*a)[0];
     if(s.type() != VC_STRING && s.type() != VC_FILE)
         USER_BOMB("first arg to SHA must be string or file", vcnil);
     //user_warning("DO NOT USE THIS SHA3_256");
@@ -241,8 +244,9 @@ vclh_sha3_256_std(vc s)
 }
 
 vc
-vclh_sha(vc s)
+vclh_sha(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
 		
@@ -262,8 +266,9 @@ vclh_sha(vc s)
 }
 
 vc
-vclh_md5(vc s)
+vclh_md5(VCArglist *a)
 {
+	vc& s = (*a)[0];
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to MD5 must be string or file", vcnil);
 		
@@ -283,7 +288,7 @@ vclh_md5(vc s)
 }
 
 vc
-vclh_base64_encode(vc s)
+vclh_base64_encode(const vc& s)
 {
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to base64-encode must be string or file", vcnil);
@@ -319,7 +324,7 @@ vclh_base64_encode(vc s)
 }
 
 vc
-vclh_base64_decode(vc s)
+vclh_base64_decode(const vc& s)
 {
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to base64-decode must be string or file", vcnil);
@@ -399,8 +404,10 @@ init_rng()
 }
 
 vc
-vclh_dh_init(vc dhparms_file, vc bits)
+vclh_dh_init(VCArglist *a)
 {
+	vc& dhparms_file = (*a)[0];
+	vc& bits = (*a)[1];
 	if(bits.is_nil())
 		bits = vc(2048);
 	if(bits.type() != VC_INT)
@@ -450,7 +457,7 @@ vclh_dh_init_std()
 }
 
 vc
-vclh_dsa_init(vc file)
+vclh_dsa_init(const vc& file)
 {
 	if(!Rng)
 		init_rng();
@@ -484,7 +491,7 @@ vclh_dsa_init(vc file)
 }
 
 vc
-vclh_dsa_save(vc priv_filename, vc pub_filename)
+vclh_dsa_save(const vc& priv_filename, const vc& pub_filename)
 {
 	PrivateKey& pvt = My_DSA_signer->AccessPrivateKey();
 	CryptoPP::HexEncoder he(new FileSink((const char *)priv_filename));
@@ -498,7 +505,7 @@ vclh_dsa_save(vc priv_filename, vc pub_filename)
 
 // use this before verifying signature
 vc
-vclh_dsa_pub_init(vc pub_filename)
+vclh_dsa_pub_init(const vc& pub_filename)
 {
 	delete My_DSA_signer;
 	My_DSA_signer = 0;
@@ -509,7 +516,7 @@ vclh_dsa_pub_init(vc pub_filename)
 }
 
 vc
-vclh_dsa_sign(vc m)
+vclh_dsa_sign(const vc& m)
 {
 	if(!My_DSA_signer || !Rng)
 	{
@@ -527,7 +534,7 @@ vclh_dsa_sign(vc m)
 }
 
 vc
-vclh_dsa_verify(vc m, vc sig)
+vclh_dsa_verify(const vc& m, const vc& sig)
 {
 	if(!My_DSA_verifier)
 	{
@@ -548,7 +555,7 @@ vclh_dsa_verify(vc m, vc sig)
 
 
 vc
-vclh_dh_save(vc filename)
+vclh_dh_save(const vc& filename)
 {
 	if(!MyDH)
 		USER_BOMB("DH not initialized", vcnil);
@@ -576,7 +583,7 @@ vclh_dh_setup()
 
 
 vc
-vclh_dh_agree(vc other_public)
+vclh_dh_agree(const vc& other_public)
 {
 	if(!MyDH || !Rng)
 		USER_BOMB("DH not initialized", vcnil);
@@ -607,7 +614,7 @@ static CBC_Mode<Blowfish>::Encryption *CBCe;
 static CBC_Mode<Blowfish>::Decryption *CBCd;
 
 vc
-lh_bf_init_key(vc key)
+lh_bf_init_key(const vc& key)
 {
 	// 80 bit blowfish
 	if(key.len() < 10)
@@ -643,7 +650,7 @@ lh_bf_init_key(vc key)
 }
 
 vc
-lh_bf_init_key_stream(vc key1, vc key2)
+lh_bf_init_key_stream(const vc& key1, const vc& key2)
 {
 	// 80 bit blowfish
 	if(key1.len() < 10 || key2.len() < 10)
@@ -678,7 +685,7 @@ lh_bf_init_key_stream(vc key1, vc key2)
 }
 
 vc
-lh_bf_init_key_cbc(vc key, vc iv)
+lh_bf_init_key_cbc(const vc& key, const vc& iv)
 {
 	// 80 bit blowfish
 	if(key.len() < 10)
@@ -723,7 +730,7 @@ lh_bf_init_key_cbc(vc key, vc iv)
 }
 
 vc
-lh_bf_init(vc other_public)
+lh_bf_init(const vc& other_public)
 {
 	if(other_public.is_nil())
 		return vcnil;
@@ -737,7 +744,7 @@ lh_bf_init(vc other_public)
 }
 
 static vc
-bf_filter(vc v, BufferedTransformation *f)
+bf_filter(const vc& v, BufferedTransformation *f)
 {
 	f->Put((const byte *)(const char *)v, v.len());
 	f->MessageEnd();
@@ -751,7 +758,7 @@ bf_filter(vc v, BufferedTransformation *f)
 
 
 static vc
-simple_filter(vc v, BufferedTransformation *f)
+simple_filter(const vc& v, BufferedTransformation *f)
 {
 	int n;
 	vc out(VC_VECTOR);
@@ -772,22 +779,23 @@ simple_filter(vc v, BufferedTransformation *f)
 }
 
 vc
-lh_bf_enc(vc v)
+lh_bf_enc(const vc& v)
 {
     Bef->Initialize();
 	return simple_filter(v, Bef);
 }
 
 vc
-lh_bf_dec(vc v)
+lh_bf_dec(const vc& v)
 {
     Bdf->Initialize();
 	return simple_filter(v, Bdf);
 }
 
 vc
-lh_bf_xfer_enc(vc v)
+lh_bf_xfer_enc(VCArglist *a)
 {
+	vc& v = (*a)[0];
 	vcxstream vcx((char *)0, (long)8192, vcxstream::CONTINUOUS);
 	long len;
 	vc_composite::new_dfs();
@@ -814,7 +822,7 @@ lh_bf_xfer_enc(vc v)
 }
 
 vc
-lh_bf_xfer_dec(vc v, vc out)
+lh_bf_xfer_dec(const vc& v, const vc& out)
 {
 	if(out.type() != VC_STRING)
 	{
@@ -828,7 +836,7 @@ lh_bf_xfer_dec(vc v, vc out)
 }
 
 vc
-bf_xfer_dec(vc v, vc& out)
+bf_xfer_dec(const vc& v, vc& out)
 {
 	if(v.type() != VC_VECTOR || v[0].type() != VC_STRING || v[0].len() != 8 ||
 		v[1].type() != VC_STRING || v[1].len() == 0)
@@ -867,7 +875,7 @@ bf_xfer_dec(vc v, vc& out)
 // for now, i'm going to comment it out, and maybe try porting it
 // up later.
 vc
-lh_dh_pubkey(vc pass)
+lh_dh_pubkey(const vc& pass)
 {
 	if(!MyDH || !Rng)
 		USER_BOMB("DH not initialized", vcnil);
@@ -882,7 +890,7 @@ lh_dh_pubkey(vc pass)
 }
 
 vc
-lh_dh_pubkey_enc(vc pub, vc plain)
+lh_dh_pubkey_enc(const vc& pub, const vc& plain)
 {
 	vc pubs = vclh_dh_setup();
 	vc key = vclh_dh_agree(pub);
@@ -908,7 +916,7 @@ lh_dh_pubkey_enc(vc pub, vc plain)
 }
 
 vc
-lh_dh_pubkey_dec(vc pass, vc cipher)
+lh_dh_pubkey_dec(const vc& pass, const vc& cipher)
 {
 	if(!pass.is_nil())
 	{
@@ -932,7 +940,7 @@ lh_dh_pubkey_dec(vc pass, vc cipher)
 }
 
 vc 
-lh_dh_pubkey_setup(vc pass)
+lh_dh_pubkey_setup(const vc& pass)
 {
 	vc exp = vclh_sha(pass);
 	const byte *b = (const byte *)(const char *)exp;
@@ -1057,14 +1065,15 @@ vclh_bf_open()
 }
 
 vc
-vclh_bf_close(vc ctx)
+vclh_bf_close(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
 	ctx.close();
 	return vctrue;
 }
 
 vc
-vclh_bf_init_key_stream_ctx(vc ctx, vc key1, vc key2)
+vclh_bf_init_key_stream_ctx(const vc& ctx, const vc& key1, const vc& key2)
 {
     bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
@@ -1081,7 +1090,7 @@ vclh_bf_init_key_stream_ctx(vc ctx, vc key1, vc key2)
 }
 
 vc
-vclh_bf_init_key_cbc_ctx(vc ctx, vc key, vc iv)
+vclh_bf_init_key_cbc_ctx(const vc& ctx, const vc& key, const vc& iv)
 {
     bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
@@ -1105,7 +1114,7 @@ vclh_bf_init_key_cbc_ctx(vc ctx, vc key, vc iv)
 }
 
 vc
-vclh_bf_enc_ctx(vc ctx, vc v)
+vclh_bf_enc_ctx(const vc& ctx, const vc& v)
 {
     bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
@@ -1117,7 +1126,7 @@ vclh_bf_enc_ctx(vc ctx, vc v)
 }
 
 vc
-vclh_bf_dec_ctx(vc ctx, vc v)
+vclh_bf_dec_ctx(const vc& ctx, const vc& v)
 {
     bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
@@ -1129,8 +1138,10 @@ vclh_bf_dec_ctx(vc ctx, vc v)
 }
 
 vc
-vclh_bf_xfer_enc_ctx(vc ctx, vc v)
+vclh_bf_xfer_enc_ctx(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
+	vc& v = (*a)[1];
     bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
@@ -1162,7 +1173,7 @@ vclh_bf_xfer_enc_ctx(vc ctx, vc v)
 }
 
 vc
-bf_xfer_dec_ctx(vc ctx, vc v, vc& out)
+bf_xfer_dec_ctx(const vc& ctx, const vc& v, vc& out)
 {
     bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
@@ -1206,7 +1217,7 @@ bf_xfer_dec_ctx(vc ctx, vc v, vc& out)
 }
 
 vc
-vclh_bf_xfer_dec_ctx(vc ctx, vc v, vc out)
+vclh_bf_xfer_dec_ctx(const vc& ctx, const vc& v, const vc& out)
 {
 	if(out.type() != VC_STRING)
 	{
@@ -1295,8 +1306,9 @@ vclh_encdec_open()
 }
 
 vc
-vclh_encdec_close(vc ctx)
+vclh_encdec_close(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
 	ctx.close();
 	return vctrue;
 }
@@ -1310,7 +1322,7 @@ vclh_encdec_close(vc ctx)
 // iv sent in here is ignored.
 // 
 vc
-vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
+vclh_encdec_init_key_ctx(const vc& ctx, const vc& key, const vc& iv)
 {
     encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b)
@@ -1342,7 +1354,7 @@ vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
 }
 
 vc
-vclh_encdec_enc_ctx(vc ctx, vc v)
+vclh_encdec_enc_ctx(const vc& ctx, const vc& v)
 {
     encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bef)
@@ -1355,7 +1367,7 @@ vclh_encdec_enc_ctx(vc ctx, vc v)
 }
 
 vc
-vclh_encdec_dec_ctx(vc ctx, vc v)
+vclh_encdec_dec_ctx(const vc& ctx, const vc& v)
 {
     encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bdf)
@@ -1368,8 +1380,10 @@ vclh_encdec_dec_ctx(vc ctx, vc v)
 }
 
 vc
-vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
+vclh_encdec_xfer_enc_ctx(VCArglist *a)
 {
+	vc& ctx = (*a)[0];
+	vc& v = (*a)[1];
     encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Be)
 	{
@@ -1402,7 +1416,7 @@ vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 }
 
 vc
-encdec_xfer_dec_ctx(vc ctx, vc v, vc& out, long mem_limit)
+encdec_xfer_dec_ctx(const vc& ctx, const vc& v, vc& out, long mem_limit)
 {
     encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bd)
@@ -1451,7 +1465,7 @@ encdec_xfer_dec_ctx(vc ctx, vc v, vc& out, long mem_limit)
 }
 
 vc
-vclh_encdec_xfer_dec_ctx(vc ctx, vc v, vc out)
+vclh_encdec_xfer_dec_ctx(const vc& ctx, const vc& v, const vc& out)
 {
 	if(out.type() != VC_STRING)
 	{

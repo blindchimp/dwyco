@@ -11,17 +11,17 @@
 #include "vc.h"
 #ifndef NO_VCCRYPTO
 
-vc udh_init(vc entropy);
-vc udh_gen_keys(vc udh_statics, vc entropy);
-vc udh_agree_auth(vc our_material, vc other_publics);
-vc udh_just_publics(vc);
-vc udh_new_static(vc entropy);
+vc udh_init(VCArglist *a);
+vc udh_gen_keys(VCArglist *a);
+vc udh_agree_auth(VCArglist *a);
+vc udh_just_publics(VCArglist *a);
+vc udh_new_static(VCArglist *a);
 vc dh_store_and_forward_material(vc other_pub, vc& session_key_out);
 vc dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out);
 vc dh_store_and_forward_get_key(vc sfpack, vc our_material);
 vc dh_store_and_forward_get_key2(vc sfpack, vc our_material);
-vc vclh_sf_material(vc other_pub, vc key_out);
-vc vclh_dh_store_and_forward_get_key(vc sfpack, vc our_material);
+vc vclh_sf_material(VCArglist *a);
+vc vclh_dh_store_and_forward_get_key(VCArglist *a);
 
 #define DH_STATIC_PUBLIC 0
 #define DH_STATIC_PRIVATE 1

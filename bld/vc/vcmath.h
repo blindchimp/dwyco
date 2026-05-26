@@ -10,30 +10,30 @@
 #define VCMATH_H
 // $Header: g:/dwight/repo/vc/rcs/vcmath.h 1.38 1998/06/17 17:21:57 dwight Exp $
 #ifndef NO_VCEVAL
-vc vcsqrt(vc v);
-vc vcsin(vc v);
-vc vccos(vc v);
-vc vctan(vc v);
-vc vcabs(vc v);
-vc vcexp(vc v);
-vc vclog(vc v);
-vc vclog10(vc v);
-vc vcpow(vc v, vc p);
-vc vcacos(vc v);
-vc vcasin(vc v);
-vc vcatan(vc v);
-vc vcatan2(vc v1, vc v2);
-vc vcfloor(vc v);
-vc vcatof(vc v);
-vc vchypot(vc x, vc y);
-vc vcfindmin(vc, vc);
-vc vcfindmax(vc, vc);
-vc vcfindeq(vc, vc, vc);
-vc vcfindne(vc, vc, vc);
-vc vclhsum(vc);
-vc vclhsum2(vc);
+vc vcsqrt(const vc& v);
+vc vcsin(const vc& v);
+vc vccos(const vc& v);
+vc vctan(const vc& v);
+vc vcabs(const vc& v);
+vc vcexp(const vc& v);
+vc vclog(const vc& v);
+vc vclog10(const vc& v);
+vc vcpow(const vc& v, const vc& p);
+vc vcacos(const vc& v);
+vc vcasin(const vc& v);
+vc vcatan(const vc& v);
+vc vcatan2(const vc& v1, const vc& v2);
+vc vcfloor(const vc& v);
+vc vcatof(const vc& v);
+vc vchypot(const vc& x, const vc& y);
+vc vcfindmin(const vc&, const vc&);
+vc vcfindmax(const vc&, const vc&);
+vc vcfindeq(const vc&, const vc&, const vc&);
+vc vcfindne(const vc&, const vc&, const vc&);
+vc vclhsum(const vc&);
+vc vclhsum2(const vc&);
 vc vcrand();
-vc vcsrand(vc);
+vc vcsrand(const vc&);
 #endif
 
 #endif

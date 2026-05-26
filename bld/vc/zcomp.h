@@ -9,16 +9,16 @@
 #ifndef ZCOMP_H
 #define ZCOMP_H
 
-vc vclh_compression_open(vc level);
-vc vclh_compression_close(vc ctx);
+vc vclh_compression_open(const vc& level);
+vc vclh_compression_close(VCArglist *a);
 vc vclh_decompression_open();
-vc vclh_decompression_close(vc ctx);
-vc vclh_compress(vc ctx, vc str);
-vc vclh_decompress(vc ctx, vc str);
+vc vclh_decompression_close(VCArglist *a);
+vc vclh_compress(const vc& ctx, const vc& str);
+vc vclh_decompress(const vc& ctx, const vc& str);
 vc vclh_decompress_xfer(vc ctx, vc v, vc& out);
-vc vclh_compress_xfer(vc ctx, vc v);
+vc vclh_compress_xfer(VCArglist *a);
 
-vc lh_decompress_xfer(vc ctx, vc v, vc out);
+vc lh_decompress_xfer(const vc& ctx, const vc& v, const vc& out);
 
 #endif
 

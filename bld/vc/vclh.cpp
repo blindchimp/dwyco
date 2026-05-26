@@ -284,8 +284,10 @@ extern int Gc_count;
 }
 
 vc
-doputfile(vc file, vc item)
+doputfile(VCArglist *a)
 {
+	vc& file = (*a)[0];
+	vc& item = (*a)[1];
 	vcxstream v(file);
 	long len;
 	vc_composite::new_dfs();
@@ -299,8 +301,10 @@ doputfile(vc file, vc item)
 }
 
 vc
-dogetfile(vc file, vc var)
+dogetfile(VCArglist *a)
 {
+	vc& file = (*a)[0];
+	vc& var = (*a)[1];
     if(var.type() != VC_STRING)
     {
         USER_BOMB("second arg to getfile must be string to bind to", vcnil);
@@ -324,7 +328,7 @@ dogetfile(vc file, vc var)
 
 #if 0
 vc
-dogetfile_test(vc file, vc var)
+dogetfile_test(const vc& file, const vc& var)
 {
 	if(var.type() != VC_STRING)
 	{
@@ -363,43 +367,53 @@ dogetfile_test(vc file, vc var)
 
 
 vc
-doappend(vc v1, vc v2)
+doappend(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
 	v1.append(v2);
 	return vcnil;
 }
 
 vc
-doprepend(vc v1, vc v2)
+doprepend(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
 	v1.prepend(v2);
 	return vcnil;
 }
 
 vc
-doaddset(vc v1, vc v2)
+doaddset(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
 	v1.add(v2);
 	return vcnil;
 }
 
 vc
-doremset(vc v1, vc v2)
+doremset(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
 	v1.del(v2);
     return vcnil;
 }
 
 vc
-doremset2(vc v1, vc v2)
+doremset2(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
 	if(v1.del(v2))
 		return vctrue;
     return vcnil;
 }
 
 vc
-docontains(vc v1, vc v2)
+docontains(const vc& v1, const vc& v2)
 {
 	if(v1.contains(v2))
 		return vctrue;
@@ -407,20 +421,23 @@ docontains(vc v1, vc v2)
 }
 
 vc
-doremlast(vc v1)
+doremlast(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
 	return v1.remove_last();
 }
 
 vc
-doremfirst(vc v1)
+doremfirst(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
 	return v1.remove_first();
 }
 
 vc
-doremfirst2(vc v1)
+doremfirst2(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
 	vc key;
 	vc val = v1.remove_first2(key);
 	vc v(VC_VECTOR);
@@ -430,7 +447,7 @@ doremfirst2(vc v1)
 }
 
 vc
-doempty(vc v)
+doempty(const vc& v)
 {
 	if(v.is_empty())
 		return vctrue;
@@ -438,28 +455,35 @@ doempty(vc v)
 }
 
 vc
-donumelems(vc v)
+donumelems(const vc& v)
 {
 	vc v2(v.num_elems());
 	return v2;
 }
 
 vc
-dogetindex(vc v1, vc v2)
+dogetindex(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
 	return v1[v2];
 }
 
 vc
-doputindex(vc v1, vc v2, vc v3)
+doputindex(VCArglist *a)
 {
+	vc& v1 = (*a)[0];
+	vc& v2 = (*a)[1];
+	vc& v3 = (*a)[2];
 	v1[v2] = v3;
 	return v3;
 }
 
 vc
-doget(vc set, vc key)
+doget(VCArglist *a)
 {
+	vc& set = (*a)[0];
+	vc& key = (*a)[1];
 	vc out;
 
 	if(set.find(key, out))
@@ -470,8 +494,11 @@ doget(vc set, vc key)
 
 
 vc
-doputkv(vc map, vc key, vc value)
+doputkv(VCArglist *a)
 {
+	vc& map = (*a)[0];
+	vc& key = (*a)[1];
+	vc& value = (*a)[2];
 	map.add_kv(key, value);
     return vcnil;
 }
@@ -723,7 +750,7 @@ create_tree(VCArglist *a)
 
 
 vc
-dostringrep(vc v)
+dostringrep(const vc& v)
 {
 	VcIOHackStr *o = new VcIOHackStr;
 
@@ -745,7 +772,7 @@ cpp_strndup(const char *s, int len)
 }
 
 vc
-doregex(vc v)
+doregex(const vc& v)
 {
 	vc v1(VC_REGEX, v);
 
@@ -1176,14 +1203,14 @@ doslambda(VCArglist *a)
 }
 
 vc
-dofunmeta(vc v)
+dofunmeta(const vc& v)
 {
 	return v.funmeta();
 }
 #endif
 
 vc
-dotype(vc v)
+dotype(const vc& v)
 {
 	switch(v.type())
 	{
@@ -1263,8 +1290,9 @@ dotype(vc v)
 // same as above, but always returns a string,
 // even for nil objects.
 vc
-dotype2(vc v)
+dotype2(VCArglist *a)
 {
+	vc& v = (*a)[0];
 	v = dotype(v);
 	if(v.is_nil())
 		return "nil";
@@ -1275,7 +1303,7 @@ dotype2(vc v)
 // this is a more detailed type function, useful for
 // wrapping other libs and stuff
 vc
-dotype3(vc v)
+dotype3(const vc& v)
 {
 	switch(v.type())
 	{
@@ -1361,7 +1389,7 @@ dotype3(vc v)
 
 #ifndef NO_VCEVAL
 vc
-do_exploded_funcall(vc fun, vc argvec)
+do_exploded_funcall(const vc& fun, const vc& argvec)
 {
 	VCArglist a;
 
@@ -1478,8 +1506,10 @@ dotry(VCArglist *a)
 }
 
 vc
-doexcdhandle(vc estr, vc hfun)
+doexcdhandle(VCArglist *a)
 {
+	vc& estr = (*a)[0];
+	vc& hfun = (*a)[1];
 	estr = estr.eval();
 	hfun = hfun.eval();
 	if(hfun.type() != VC_FUNC)
@@ -1503,8 +1533,9 @@ doexcraise(VCArglist *a)
 }
 
 vc
-doexcbackout(vc expr)
+doexcbackout(VCArglist *a)
 {
+	vc& expr = (*a)[0];
 	Vcmap->addbackout(expr);
 	return vcnil;
 }
@@ -1688,14 +1719,14 @@ docond(VCArglist *a)
 }
 
 vc
-doloop(vc var, vc lo, vc hi, vc expr)
+doloop(const vc& var, const vc& lo, const vc& hi, const vc& expr)
 {
 #ifdef VCDBG
     auto c = VcDbgInfo.get();
     c->cur_idx = 0;
 #endif
-    var = var.eval();
-    if(var.type() != VC_STRING)
+    vc var_copy = var.eval();
+    if(var_copy.type() != VC_STRING)
         USER_BOMB("for loop variable must be string", vcnil);
 #ifdef VCDBG
     c->cur_idx = 1;
@@ -1710,7 +1741,7 @@ doloop(vc var, vc lo, vc hi, vc expr)
 	Vcmap->open_loop();
 	for(i = l; i <= h; ++i)
 	{
-		Vcmap->local_add(var, vc(i));
+		Vcmap->local_add(var_copy, vc(i));
 #ifdef VCDBG
 		c->cur_idx = 3;
 #endif
@@ -1720,13 +1751,13 @@ doloop(vc var, vc lo, vc hi, vc expr)
 		if(Vcmap->ret_in_progress()) break;
 	}
 	Vcmap->close_loop();
-	Vcmap->local_add(var, vc(i));
+	Vcmap->local_add(var_copy, vc(i));
 	return vcnil;
 }
 
 
 vc
-dowhile(vc cond, vc expr)
+dowhile(const vc& cond, const vc& expr)
 {
 #ifdef VCDBG
     auto c = VcDbgInfo.get();
@@ -1755,7 +1786,7 @@ dowhile(vc cond, vc expr)
 
 
 vc
-doforeach(vc var, vc set, vc expr)
+doforeach(const vc& var, const vc& set, const vc& expr)
 {
 #ifdef VCDBG
     auto c = VcDbgInfo.get();
@@ -1779,7 +1810,7 @@ doforeach(vc var, vc set, vc expr)
 
 
 vc
-doreturn(vc v)
+doreturn(const vc& v)
 {
 	Vcmap->set_retval(v);
 	return vcnil;
@@ -1787,7 +1818,7 @@ doreturn(vc v)
 
 
 vc
-dobreak(vc v)
+dobreak(const vc& v)
 {
 	if(v.type() != VC_INT)
     	USER_BOMB("break level must be an integer", vcnil);
@@ -1805,37 +1836,37 @@ dobreak(vc v)
 }
 
 vc
-domod(vc v1, vc v2)
+domod(const vc& v1, const vc& v2)
 {
 	return v1 % v2;
 }
 
 vc
-dodiv(vc v1, vc v2)
+dodiv(const vc& v1, const vc& v2)
 {
 	return v1 / v2;
 }
 
 vc
-domul(vc v1, vc v2)
+domul(const vc& v1, const vc& v2)
 {
 	return v1 * v2;
 }
 
 vc
-doadd(vc v1, vc v2)
+doadd(const vc& v1, const vc& v2)
 {
 	return v1 + v2;
 }
 
 vc
-dosub(vc v1, vc v2)
+dosub(const vc& v1, const vc& v2)
 {
 	return v1 - v2;
 }
 
 vc
-bindfun(vc v1, vc v2)
+bindfun(const vc& v1, const vc& v2)
 {
 #ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
@@ -1849,7 +1880,7 @@ bindfun(vc v1, vc v2)
 }
 
 vc
-lbindfun(vc v1, vc v2)
+lbindfun(const vc& v1, const vc& v2)
 {
 #ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
@@ -1863,7 +1894,7 @@ lbindfun(vc v1, vc v2)
 }
 
 vc
-gbindfun(vc v1, vc v2)
+gbindfun(const vc& v1, const vc& v2)
 {
 #ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
@@ -1878,14 +1909,14 @@ gbindfun(vc v1, vc v2)
 
 #ifdef LHOBJ
 vc
-obindfun(vc v1, vc v2)
+obindfun(const vc& v1, const vc& v2)
 {
 	Vcmap->obj_bind(v1, v2);
 	return vcnil;
 }
 
 vc
-oboundfun(vc v)
+oboundfun(const vc& v)
 {
 	if(Vcmap->obj_contains(v))
 		return vctrue;
@@ -1893,14 +1924,14 @@ oboundfun(vc v)
 }
 
 vc
-oremovefun(vc v1)
+oremovefun(const vc& v1)
 {
 	Vcmap->obj_remove(v1);
 	return vcnil;
 }
 
 vc
-ofindfun(vc v1)
+ofindfun(const vc& v1)
 {
 	return Vcmap->obj_find(v1);
 }
@@ -1908,7 +1939,7 @@ ofindfun(vc v1)
 #endif
 
 vc
-boundfun(vc v)
+boundfun(const vc& v)
 {
 	if(Vcmap->contains(v))
 		return vctrue;
@@ -1916,7 +1947,7 @@ boundfun(vc v)
 }
 
 vc
-lboundfun(vc v)
+lboundfun(const vc& v)
 {
 	if(Vcmap->local_contains(v))
 		return vctrue;
@@ -1924,7 +1955,7 @@ lboundfun(vc v)
 }
 
 vc
-gboundfun(vc v)
+gboundfun(const vc& v)
 {
 	if(Vcmap->global_contains(v))
 		return vctrue;
@@ -1936,7 +1967,7 @@ gboundfun(vc v)
 // there is no way to tell (without calling "bound") whether
 // the return of nil is "not found" or "found but value is nil"
 vc
-findfun(vc v)
+findfun(const vc& v)
 {
 	vc out;
 	if(Vcmap->find(v, out))
@@ -1945,59 +1976,59 @@ findfun(vc v)
 }
 
 vc
-lfindfun(vc v)
+lfindfun(const vc& v)
 {
 	return Vcmap->local_find(v);
 }
 
 vc
-gfindfun(vc v)
+gfindfun(const vc& v)
 {
 	return Vcmap->global_find(v);
 }
 
 
 vc
-removefun(vc v1)
+removefun(const vc& v1)
 {
 	v1.bremove();
 	return vcnil;
 }
 
 vc
-lremovefun(vc v1)
+lremovefun(const vc& v1)
 {
 	v1.local_bremove();
 	return vcnil;
 }
 
 vc
-gremovefun(vc v1)
+gremovefun(const vc& v1)
 {
 	v1.global_bremove();
 	return vcnil;
 }
 
 vc
-evalfun(vc v)
+evalfun(const vc& v)
 {
 	return v.force_eval();
 }
 
 vc
-incrfun(vc v)
+incrfun(const vc& v)
 {
 	return v + vcone;
 }
 
 vc
-decrfun(vc v)
+decrfun(const vc& v)
 {
 	return v - vcone;
 }
 
 vc
-notfun(vc v)
+notfun(const vc& v)
 {
 	if(v.is_nil())
 		return vctrue;
@@ -2006,37 +2037,37 @@ notfun(vc v)
 
 
 vc
-eqfun(vc v1, vc v2)
+eqfun(const vc& v1, const vc& v2)
 {
 	return (v1 == v2) ? vctrue : vcnil;
 }
 
 vc
-lefun(vc v1, vc v2)
+lefun(const vc& v1, const vc& v2)
 {
 	return (v1 <= v2) ? vctrue : vcnil;
 }
 
 vc
-ltfun(vc v1, vc v2)
+ltfun(const vc& v1, const vc& v2)
 {
 	return (v1 < v2) ? vctrue : vcnil;
 }
 
 vc
-gtfun(vc v1, vc v2)
+gtfun(const vc& v1, const vc& v2)
 {
 	return (v1 > v2) ? vctrue : vcnil;
 }
 
 vc
-gefun(vc v1, vc v2)
+gefun(const vc& v1, const vc& v2)
 {
 	return (v1 >= v2) ? vctrue : vcnil;
 }
 
 vc
-nefun(vc v1, vc v2)
+nefun(const vc& v1, const vc& v2)
 {
 	return (v1 != v2) ? vctrue : vcnil;
 }
@@ -2096,48 +2127,48 @@ xorfun(VCArglist *a)
 // used that often, it isn't really crucial. if i did do the operators in the vc
 // class, it would get rid of the obnoxious VC_INT_TYPE thing...
 vc
-bnotfun(vc v)
+bnotfun(const vc& v)
 {
 	return vc(~(VC_INT_TYPE)v);
 }
 
 vc
-bxorfun(vc v1, vc v2)
+bxorfun(const vc& v1, const vc& v2)
 {
 	return vc((VC_INT_TYPE)v1 ^ (VC_INT_TYPE)v2);
 }
 
 vc
-borfun(vc v1, vc v2)
+borfun(const vc& v1, const vc& v2)
 {
 	return vc((VC_INT_TYPE)v1 | (VC_INT_TYPE)v2);
 }
 
 vc
-bandfun(vc v1, vc v2)
+bandfun(const vc& v1, const vc& v2)
 {
 	return vc((VC_INT_TYPE)v1 & (VC_INT_TYPE)v2);
 }
 
 vc
-blsrfun(vc v1, vc v2)
+blsrfun(const vc& v1, const vc& v2)
 {
 	return vc((VC_INT_TYPE)(((VC_UINT_TYPE)(VC_INT_TYPE)v1) >> (int)v2));
 }
 vc
-blslfun(vc v1, vc v2)
+blslfun(const vc& v1, const vc& v2)
 {
 	return vc((VC_INT_TYPE)(((VC_UINT_TYPE)(VC_INT_TYPE)v1) << (int)v2));
 }
 
 vc
-baslfun(vc v1, vc v2)
+baslfun(const vc& v1, const vc& v2)
 {
 	return vc(((VC_INT_TYPE)v1) << (int)v2);
 }
 
 vc
-basrfun(vc v1, vc v2)
+basrfun(const vc& v1, const vc& v2)
 {
 	return vc(((VC_INT_TYPE)v1) >> (int)v2);
 }
@@ -2154,8 +2185,9 @@ dogensym()
 }
 
 vc
-doprint(vc v)
+doprint(VCArglist *a)
 {
+	vc& v = (*a)[0];
 	v.print_top(VcOutput);
 	return vcnil;
 }
@@ -2176,8 +2208,9 @@ doflushall()
 }
 
 vc
-docontents_of(vc file)
+docontents_of(VCArglist *a)
 {
+	vc& file = (*a)[0];
 	if(file.type() != VC_FILE)
 		USER_BOMB("arg to contents-of must be file", vcnil);
 	DwGrowingString s;
@@ -2196,8 +2229,10 @@ docontents_of(vc file)
 }
 
 vc
-dofprint(vc file, vc item)
+dofprint(VCArglist *a)
 {
+	vc& file = (*a)[0];
+	vc& item = (*a)[1];
 	if(file.type() != VC_FILE)
 		USER_BOMB("first arg to fprint must be file", vcnil);
 	file << item;
@@ -2205,8 +2240,10 @@ dofprint(vc file, vc item)
 }
 
 vc
-dofread(vc file, vc len)
+dofread(VCArglist *a)
 {
+	vc& file = (*a)[0];
+	vc& len = (*a)[1];
 	if(file.type() != VC_FILE)
 		USER_BOMB("first arg must be file", vcnil);
 	if(len.type() != VC_INT)
@@ -2227,8 +2264,9 @@ dofread(vc file, vc len)
 }
 
 vc
-dofgets(vc file)
+dofgets(VCArglist *a)
 {
+	vc& file = (*a)[0];
 	if(file.type() != VC_FILE)
 		USER_BOMB("first arg must be file", vcnil);
 
@@ -2244,8 +2282,10 @@ dofgets(vc file)
 }
 
 vc
-dofputs(vc file, vc str)
+dofputs(VCArglist *a)
 {
+	vc& file = (*a)[0];
+	vc& str = (*a)[1];
 	if(file.type() != VC_FILE)
 		USER_BOMB("first arg must be file", vcnil);
 	if(str.type() != VC_STRING)
@@ -2263,8 +2303,9 @@ dofputs(vc file, vc str)
 // readline, except it doesn't strip the whitespace from the
 // beginning.
 vc
-doreadline2(vc file)
+doreadline2(VCArglist *a)
 {
+	vc& file = (*a)[0];
 	if(file.type() != VC_FILE)
 		USER_BOMB("first arg must be file", vcnil);
 
@@ -2305,8 +2346,9 @@ doreadline2(vc file)
 	return ret;
 }
 
+static
 vc
-doreadline(vc file)
+read_line_from(vc& file)
 {
 	if(file.type() != VC_FILE)
 		USER_BOMB("first arg must be file", vcnil);
@@ -2352,12 +2394,20 @@ doreadline(vc file)
 	return ret;
 }
 
+vc
+doreadline(VCArglist *a)
+{
+	vc& file = (*a)[0];
+	return read_line_from(file);
+}
+
 #ifndef NO_VCEVAL
 
 vc
-doreadatoms(vc file)
+doreadatoms(VCArglist *a)
 {
-	vc line = doreadline(file);
+	vc& file = (*a)[0];
+	vc line = read_line_from(file);
 	if(line.is_nil())
 		return vcnil;
 
@@ -2421,7 +2471,7 @@ vc_file_error(vc *vf)
 }
 
 vc
-doopenfile(vc filename, vc mode)
+doopenfile(const vc& filename, const vc& mode)
 {
 
 	vc nfile(VC_FILE);
@@ -2458,16 +2508,20 @@ doopenfile(vc filename, vc mode)
 }
 
 vc
-doclosefile(vc file)
+doclosefile(VCArglist *a)
 {
+	vc& file = (*a)[0];
 	file.close();
 	CHECK_ANY_BO(vcnil);
 	return vcnil;
 }
 
 vc
-doseekfile(vc file, vc pos, vc whence)
+doseekfile(VCArglist *a)
 {
+	vc& file = (*a)[0];
+	vc& pos = (*a)[1];
+	vc& whence = (*a)[2];
 	long lp = (long) pos;
     int w = SEEK_SET;
 	if(whence == vc("set"))
@@ -2488,7 +2542,7 @@ doseekfile(vc file, vc pos, vc whence)
 
 
 vc
-doexit(vc v)
+doexit(const vc& v)
 {
  	long ecode;
  	if(v.type() != VC_INT)
@@ -2505,7 +2559,7 @@ doexit(vc v)
 }
 
 vc
-docopy(vc v)
+docopy(const vc& v)
 {
 	return v.copy();
 }
@@ -2530,7 +2584,7 @@ doprog(VCArglist *)
 // right in the format string based on what kinda interpreter you
 // are using, which is bad. need a non-printf based formatter i think.
 vc
-vclh_fmt(vc item, vc fmt)
+vclh_fmt(const vc& item, const vc& fmt)
 {
 	char s[4096];
 	size_t len;
@@ -2599,7 +2653,7 @@ vclh_fmt(vc item, vc fmt)
 
 
 vc
-vclh_atol(vc s)
+vclh_atol(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't atol non-string", vcnil);
@@ -2608,7 +2662,7 @@ vclh_atol(vc s)
 }
 
 vc
-vclh_strlen(vc s)
+vclh_strlen(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't strlen a non-string", vcnil);
@@ -2616,8 +2670,11 @@ vclh_strlen(vc s)
 }
 
 vc
-vclh_substr(vc s, vc pos, vc len)
+vclh_substr(VCArglist *a)
 {
+	vc& s = (*a)[0];
+	vc& pos = (*a)[1];
+	vc& len = (*a)[2];
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't substr a non-string", vcnil);
 	if(pos.type() != VC_INT)
@@ -2633,13 +2690,13 @@ vclh_substr(vc s, vc pos, vc len)
 		USER_BOMB("len must be integer or \"end\"", vcnil);
 	if((int)len < 0 || (int)pos + (int)len > s.len())
 		USER_BOMB("pos + len out of range", vcnil);
-	const char *a = (const char *)s;
-	vc v(VC_BSTRING, a + (int)pos, (int)len);
+	const char *sp = (const char *)s;
+	vc v(VC_BSTRING, sp + (int)pos, (int)len);
 	return v;
 }
 
 vc
-vclh_strspn(vc s, vc accept_chars)
+vclh_strspn(const vc& s, const vc& accept_chars)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't strspn a non-string", vcnil);
@@ -2652,7 +2709,7 @@ vclh_strspn(vc s, vc accept_chars)
 }
 
 vc
-vclh_strcspn(vc s, vc accept_chars)
+vclh_strcspn(const vc& s, const vc& accept_chars)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't strcspn a non-string", vcnil);
@@ -2665,7 +2722,7 @@ vclh_strcspn(vc s, vc accept_chars)
 }
 
 vc
-vclh_strstr(vc s, vc tofind)
+vclh_strstr(const vc& s, const vc& tofind)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't strstr a non-string", vcnil);
@@ -2692,7 +2749,7 @@ vclh_strstr(vc s, vc tofind)
 extern "C" time_t parsedate(char *, void *);
 
 vc
-vclh_parsedate(vc s)
+vclh_parsedate(const vc& s)
 {
 	if(s.type() != VC_STRING)
 	{
@@ -2706,7 +2763,7 @@ vclh_parsedate(vc s)
 
 
 vc
-vclh_tolower(vc s)
+vclh_tolower(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't tolower a non-string", vcnil);
@@ -2722,8 +2779,9 @@ vclh_tolower(vc s)
 
 #endif
 vc
-vclh_serialize(vc v)
+vclh_serialize(VCArglist *a)
 {
+	vc& v = (*a)[0];
 	vcxstream vcx((char *)0, (long)128 * 1024, vcxstream::CONTINUOUS);
 	long len;
 	vc_composite::new_dfs();
@@ -2738,8 +2796,10 @@ vclh_serialize(vc v)
 }
 
 vc
-vclh_deserialize(vc v, vc out)
+vclh_deserialize(VCArglist *a)
 {
+	vc& v = (*a)[0];
+	vc& out = (*a)[1];
 	if(v.type() != VC_STRING)
 	{
 		USER_BOMB("first arg to deserialize must be a string", vcnil);
@@ -2770,7 +2830,7 @@ void dump_free();
  };
 
 vc
-vclh_to_hex(vc s)
+vclh_to_hex(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't to-hex a non-string", vcnil);
@@ -2798,7 +2858,7 @@ hexd(char a)
 }
 
 vc
-vclh_from_hex(vc s)
+vclh_from_hex(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't from-hex a non-string", vcnil);
@@ -2815,7 +2875,7 @@ vclh_from_hex(vc s)
 }
 
 vc
-vclh_uri_encode(vc s)
+vclh_uri_encode(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't uri-encode a non-string", vcnil);
@@ -2825,7 +2885,7 @@ vclh_uri_encode(vc s)
 }
 
 vc
-vclh_uri_decode(vc s)
+vclh_uri_decode(const vc& s)
 {
 	if(s.type() != VC_STRING)
 		USER_BOMB("can't uri-decode a non-string", vcnil);
@@ -2835,7 +2895,7 @@ vclh_uri_decode(vc s)
 }
 
 vc
-vclh_set_xferin_constraints(vc max_memory, vc max_depth, vc max_elements, vc max_element_len)
+vclh_set_xferin_constraints(const vc& max_memory, const vc& max_depth, const vc& max_elements, const vc& max_element_len)
 {
     if(max_memory.type() != VC_INT ||
             max_depth.type() != VC_INT ||
@@ -2863,7 +2923,7 @@ dodump()
 
 
 vc
-dosetdynamic(vc a)
+dosetdynamic(const vc& a)
 {
 #if 0
 	extern int LH_dynamic_binding;
@@ -2968,6 +3028,7 @@ makefun(const char *name, const vc& fun)
 
 #define VC(fun, nicename, attr) vc(fun, nicename, #fun, attr)
 #define VC2(fun, nicename, attr, trans) vc(fun, nicename, #fun, attr, trans)
+#define VCv(fun, nicename, attr) vc((VCFUNCPv)(fun), nicename, #fun, attr)
 void
 vc::init_rest()
 {
@@ -3111,15 +3172,15 @@ vc::init_rest()
 
     makefun("print", VC(doprint, "print", VC_FUNC_BUILTIN_LEAF));
 	makefun("fprint", VC(dofprint, "fprint", VC_FUNC_BUILTIN_LEAF));
-	makefun("readline", VC(doreadline, "readline", VC_FUNC_BUILTIN_LEAF));
-	makefun("readline2", VC(doreadline2, "readline2", VC_FUNC_BUILTIN_LEAF));
+	makefun("readline", VCv(doreadline, "readline", VC_FUNC_BUILTIN_LEAF));
+	makefun("readline2", VCv(doreadline2, "readline2", VC_FUNC_BUILTIN_LEAF));
 	makefun("readatoms", VC(doreadatoms, "readatoms", VC_FUNC_BUILTIN_LEAF));
-	makefun("contents-of", VC(docontents_of, "contents-of", VC_FUNC_BUILTIN_LEAF));
+	makefun("contents-of", VCv(docontents_of, "contents-of", VC_FUNC_BUILTIN_LEAF));
 	makefun("flush-std", VC(doflush, "flush-std", VC_FUNC_BUILTIN_LEAF));
     makefun("flush-all", VC(doflushall, "flush-all", VC_FUNC_BUILTIN_LEAF));
-	makefun("fgets", VC(dofgets, "fgets", VC_FUNC_BUILTIN_LEAF));
-	makefun("fputs", VC(dofputs, "fputs", VC_FUNC_BUILTIN_LEAF));
-	makefun("fread", VC(dofread, "fread", VC_FUNC_BUILTIN_LEAF));
+	makefun("fgets", VCv(dofgets, "fgets", VC_FUNC_BUILTIN_LEAF));
+	makefun("fputs", VCv(dofputs, "fputs", VC_FUNC_BUILTIN_LEAF));
+	makefun("fread", VCv(dofread, "fread", VC_FUNC_BUILTIN_LEAF));
 
 	// misc
 	
@@ -3132,7 +3193,7 @@ vc::init_rest()
 
 	// string stuff
 	makefun("strlen", VC(vclh_strlen, "strlen", VC_FUNC_BUILTIN_LEAF));
-	makefun("substr", VC(vclh_substr, "substr", VC_FUNC_BUILTIN_LEAF));
+	makefun("substr", VCv(vclh_substr, "substr", VC_FUNC_BUILTIN_LEAF));
     	makefun("tolower", VC(vclh_tolower, "tolower", VC_FUNC_BUILTIN_LEAF));
     	makefun("strspn", VC(vclh_strspn, "strspn", VC_FUNC_BUILTIN_LEAF));
     	makefun("strcspn", VC(vclh_strcspn, "strcspn", VC_FUNC_BUILTIN_LEAF));
@@ -3150,8 +3211,8 @@ vc::init_rest()
 	// files
 
 	makefun("openfile", VC(doopenfile, "openfile", VC_FUNC_BUILTIN_LEAF));
-	makefun("closefile", VC(doclosefile, "closefile", VC_FUNC_BUILTIN_LEAF));
-	makefun("seekfile", VC(doseekfile, "seekfile", VC_FUNC_BUILTIN_LEAF));
+	makefun("closefile", VCv(doclosefile, "closefile", VC_FUNC_BUILTIN_LEAF));
+	makefun("seekfile", VCv(doseekfile, "seekfile", VC_FUNC_BUILTIN_LEAF));
 
 	// debugging
 	makefun("backtrace", VC(dobacktrace, "backtrace", VC_FUNC_BUILTIN_LEAF));
@@ -3192,9 +3253,9 @@ vc::init_rest()
 
 #ifndef DWYCO_NO_UVSOCK
     makefun("uv-socket", VC(lh_uv_socket, "uv-socket", VC_FUNC_BUILTIN_LEAF));
-    makefun("uv-sockclose", VC(lh_uv_sockclose, "uv-sockclose", VC_FUNC_BUILTIN_LEAF));
-    makefun("uv-sockshutdown", VC(lh_uv_sockshutdown, "uv-sockshutdown", VC_FUNC_BUILTIN_LEAF));
-    makefun("uv-connect", VC(lh_uv_connect, "uv-connect", VC_FUNC_BUILTIN_LEAF));
+    makefun("uv-sockclose", VCv(lh_uv_sockclose, "uv-sockclose", VC_FUNC_BUILTIN_LEAF));
+    makefun("uv-sockshutdown", VCv(lh_uv_sockshutdown, "uv-sockshutdown", VC_FUNC_BUILTIN_LEAF));
+    makefun("uv-connect", VCv(lh_uv_connect, "uv-connect", VC_FUNC_BUILTIN_LEAF));
     makefun("uv-poll", VC(lh_uv_poll, "uv-poll", VC_FUNC_BUILTIN_LEAF));
     makefun("uv-socksend", VC(lh_uv_socksend, "uv-socksend", VC_FUNC_BUILTIN_LEAF));
     makefun("uv-sockrecv", VC(lh_uv_sockrecv, "uv-sockrecv", VC_FUNC_BUILTIN_LEAF));
@@ -3273,8 +3334,8 @@ vc::init_rest()
 	// saving/restoring xfer format 
 	makefun("putfile", VC(doputfile, "putfile", VC_FUNC_BUILTIN_LEAF));
     makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
-	makefun("serialize", VC(vclh_serialize, "serialize", VC_FUNC_BUILTIN_LEAF));
-	makefun("deserialize", VC(vclh_deserialize, "deserialize", VC_FUNC_BUILTIN_LEAF));
+	makefun("serialize", VCv(vclh_serialize, "serialize", VC_FUNC_BUILTIN_LEAF));
+	makefun("deserialize", VCv(vclh_deserialize, "deserialize", VC_FUNC_BUILTIN_LEAF));
 
 	makefun("uri-encode", VC(vclh_uri_encode, "uri-encode", VC_FUNC_BUILTIN_LEAF));
 	makefun("uri-decode", VC(vclh_uri_decode, "uri-decode", VC_FUNC_BUILTIN_LEAF));
@@ -3339,12 +3400,12 @@ vc::init_rest()
     makefun("UDH-sf-get-key", VC(vclh_dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
 #endif
 	makefun("GZ-compress-open", VC(vclh_compression_open, "GZ-compress-open", VC_FUNC_BUILTIN_LEAF));
-	makefun("GZ-compress-close", VC(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));
+	makefun("GZ-compress-close", VCv(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-decompress-open", VC(vclh_decompression_open, "GZ-decompress-open", VC_FUNC_BUILTIN_LEAF));
-	makefun("GZ-decompress-close", VC(vclh_decompression_close, "GZ-decompress-close", VC_FUNC_BUILTIN_LEAF));
+	makefun("GZ-decompress-close", VCv(vclh_decompression_close, "GZ-decompress-close", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-compress", VC(vclh_compress, "GZ-compress", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-decompress", VC(vclh_decompress, "GZ-decompress", VC_FUNC_BUILTIN_LEAF));
-	makefun("GZ-compress-xfer", VC(vclh_compress_xfer, "GZ-compress-xfer", VC_FUNC_BUILTIN_LEAF));
+	makefun("GZ-compress-xfer", VCv(vclh_compress_xfer, "GZ-compress-xfer", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-decompress-xfer", VC(lh_decompress_xfer, "GZ-decompress-xfer", VC_FUNC_BUILTIN_LEAF));
 
     makefun("set-xferin-constraints", VC(vclh_set_xferin_constraints, "set-xferin-constraints", VC_FUNC_BUILTIN_LEAF));

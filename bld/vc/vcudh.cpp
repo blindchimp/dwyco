@@ -116,8 +116,9 @@ sha(vc s)
 }
 
 vc
-udh_init(vc entropy)
+udh_init(VCArglist *a)
 {
+	vc& entropy = (*a)[0];
     //StringSource f2("3081870281810087CD83F01B8F1FD92BD5DD51A3D519C9675211F4364EB62278E2A711B830E2AEF8EE4C0B81A02CEBAD095F55A83B492B8C8A9F0EB22B3E298001D3F2070297D8EB54E806884BC7D8F2E00720C71DF4B30B18CBA6ABDFA202EAF3344D024BBD22E7416D255DAB105E55440712B436C60377A4BC231B4C1EA186BA003B0E1EBA2B020103", 1, new HexDecoder);
     // 2048 bit dh parameters, ca 2014
     StringSource f2(
@@ -140,8 +141,9 @@ udh_init(vc entropy)
 }
 
 vc
-udh_new_static(vc entropy)
+udh_new_static(VCArglist *a)
 {
+	vc& entropy = (*a)[0];
     // create a public static DH that can be stored in our profile
     // future connection setups can use to authenticate us.
 
@@ -159,8 +161,10 @@ udh_new_static(vc entropy)
 }
 
 vc
-udh_gen_keys(vc DH_static, vc entropy)
+udh_gen_keys(VCArglist *a)
 {
+	vc& DH_static = (*a)[0];
+	vc& entropy = (*a)[1];
     SecByteBlock eph_priv(UDH->EphemeralPrivateKeyLength());
     SecByteBlock eph_pub(UDH->EphemeralPublicKeyLength());
     if(entropy.type() == VC_STRING)
@@ -180,8 +184,9 @@ udh_gen_keys(vc DH_static, vc entropy)
 }
 
 vc
-udh_just_publics(vc keys)
+udh_just_publics(VCArglist *a)
 {
+	vc& keys = (*a)[0];
     vc ret(VC_VECTOR);
     ret[0] = vcnil;
     ret[1] = keys[1];
@@ -191,8 +196,10 @@ udh_just_publics(vc keys)
 }
 
 vc
-udh_agree_auth(vc our_material, vc other_publics)
+udh_agree_auth(VCArglist *a)
 {
+	vc& our_material = (*a)[0];
+	vc& other_publics = (*a)[1];
     // eventually make sure to check all the sizes on the keys with
     // what is setup in the current set of crypto objects, since some of these
     // presumably came from out in the wilderness
@@ -348,8 +355,10 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
 }
 
 vc
-vclh_sf_material(vc other_pub, vc key_out)
+vclh_sf_material(VCArglist *a)
 {
+	vc& other_pub = (*a)[0];
+	vc& key_out = (*a)[1];
     if(key_out.type() != VC_STRING)
     {
         USER_BOMB("second arg to SF-material must be a string to bind to", vcnil);
@@ -410,8 +419,10 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
 }
 
 vc
-vclh_dh_store_and_forward_get_key(vc sfpack, vc our_material)
+vclh_dh_store_and_forward_get_key(VCArglist *a)
 {
+	vc& sfpack = (*a)[0];
+	vc& our_material = (*a)[1];
     return dh_store_and_forward_get_key(sfpack, our_material);
 }
 
