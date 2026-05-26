@@ -515,8 +515,8 @@ trans_doloop(VCArglist *a, VcIO o)
     DwString tmpl("vc ret;long l = %1();\nlong h = %2();\nvc var = %3(); long i = l;\n");
     tmpl.arg((const char *)(*a)[1], (const char *)(*a)[2], (const char *)(*a)[0]);
 
-    DwString tmpl2("try {for(; i <= h; ++i) { Vcmap->local_add(var, vc(i)); %1(); } }\n"
-                   "catch(VcBreak& b) {--b.lev; if(b.lev > 0) throw; } Vcmap->local_add(var, vc(i)); return vcnil;\n");
+    DwString tmpl2("try {for(; i <= h; ++i) { var.local_bind(vc(i)); %1(); } }\n"
+                   "catch(VcBreak& b) {--b.lev; if(b.lev > 0) throw; } var.local_bind(vc(i)); return vcnil;\n");
     tmpl2.arg((const char *)(*a)[3]);
 
     o << tmpl.c_str() << tmpl2.c_str();
@@ -530,7 +530,7 @@ trans_doforeach(VCArglist *a, VcIO o)
     vc cbname = gensym();
     DwString fecb(
                 "static void %1(vc var, vc item) {\n"
-                "Vcmap->local_add(var, item);\n"
+                "var.local_bind(item);\n"
                 "%2();\n"
                 "}\n"
                 );

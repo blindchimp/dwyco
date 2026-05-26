@@ -1710,7 +1710,7 @@ doloop(vc var, vc lo, vc hi, vc expr)
 	try {
 		for(i = l; i <= h; ++i)
 		{
-			Vcmap->local_add(var, vc(i));
+			var.local_bind(vc(i));
 #ifdef VCDBG
 		c->cur_idx = 3;
 #endif
@@ -1721,7 +1721,7 @@ doloop(vc var, vc lo, vc hi, vc expr)
 		--b.lev;
 		if(b.lev > 0) throw;
 	}
-	Vcmap->local_add(var, vc(i));
+	var.local_bind(vc(i));
 	return vcnil;
 }
 

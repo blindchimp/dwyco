@@ -326,7 +326,7 @@ vc_vector::foreach(const vc& v, const vc& expr) const
 	try {
 		for(;!i.eol();i.forward())
 		{
-			Vcmap->local_add(v, i.get());
+			v.local_bind(i.get());
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
 		}
@@ -744,7 +744,7 @@ vc_map::foreach(const vc& v, const vc& expr) const
 		{
 			DwAssocImp<vc,vc> a = i.get();
 			vc assoc(VC_VECTOR);
-			Vcmap->local_add(v, assoc);
+			v.local_bind(assoc);
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
 			expr.eval();
@@ -1044,7 +1044,7 @@ vc_list_set::foreach(const vc& v, const vc& expr) const
 	try {
 		dwlista_foreach_iter(i, e, list)
 		{
-			Vcmap->local_add(v, e);
+			v.local_bind(e);
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
 		}
@@ -1284,7 +1284,7 @@ vc_bag::foreach(const vc& v, const vc& expr) const
 	try {
 		for(;!i.eol();i.forward())
 		{
-			Vcmap->local_add(v, i.get());
+			v.local_bind(i.get());
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
 		}
@@ -1625,7 +1625,7 @@ vc_tree::foreach(const vc& v, const vc& expr) const
 		{
 			DwAssocImp<vc,vc> a = i.get();
 			vc assoc(VC_VECTOR);
-			Vcmap->local_add(v, assoc);
+			v.local_bind(assoc);
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
 			expr.eval();
