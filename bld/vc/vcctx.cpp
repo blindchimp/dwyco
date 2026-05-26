@@ -242,6 +242,22 @@ vcctx::local_remove(const vc& k) {
 	cur_ctx->del(k);
 }
 
+int
+vcctx::find_slot(const vc& key, vc*& wp, int& frame_idx) const
+{
+	wp = 0;
+	for(int i = ctx; i >= 0; --i)
+	{
+		vc out;
+		if(maps[i]->find2(key, out, wp))
+		{
+			frame_idx = i;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 vc
 vcctx::local_find(const vc& k) {
 	return cur_ctx->get(k);

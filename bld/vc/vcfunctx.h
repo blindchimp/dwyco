@@ -33,6 +33,11 @@ private:
 	VMAP *map;
 	int flush_on_close;
 	DwVec<vc> backouts;
+	unsigned long frame_id;
+	static unsigned long next_frame_id;
+public:
+	unsigned long get_frame_id() const { return frame_id; }
+private:
 #ifdef LHOBJ
 	vc_object *obj_ctx;
 	int obj_ctx_enabled;

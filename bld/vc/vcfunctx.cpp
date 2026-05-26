@@ -16,13 +16,17 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfunctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
+unsigned long functx::next_frame_id = 1;
+
 #ifdef PERFHACKS
 #include "dwamap.h"
 #else
 #include "dwmapr.h"
 #endif
 
-functx::functx(int tsize) {
+functx::functx(int tsize)
+	: frame_id(next_frame_id++)
+{
 	flush_on_close = 0;
 #ifdef PERFHACKS
 	map = new VMAP(tsize);
@@ -55,9 +59,6 @@ functx::~functx()
 {
 	if(flush_on_close)
 		vc_funcall::flush_all_cache();
-#ifdef CACHE_LOOKUPS
-	vc_cvar::flush_lookup_cache();
-#endif
 	delete map;
 }
 
@@ -158,12 +159,7 @@ void
 functx::add(const vc& key, const vc& value) {
 	if(((const char *)key)[0] == '\0')
 		USER_BOMB2("can't bind to zero length string");
-	if(map->replace(key, value) == 0)
-	{
-#ifdef CACHE_LOOKUPS
-		vc_cvar::flush_lookup_cache();
-#endif
-	}
+	map->setval(key, value);
 	if(value.type() == VC_FUNC)
 	{
 		vc_funcall::flush_all_cache();
@@ -211,10 +207,6 @@ functx::del(const vc& v) const
 	if(map->find(v, out) && out.type() == VC_FUNC)
 		vc_funcall::flush_all_cache();
 	map->del(v);
-#ifdef CACHE_LOOKUPS
-	vc_cvar::flush_lookup_cache();
-#endif
-
 }
 
 int

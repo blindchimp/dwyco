@@ -69,6 +69,13 @@ public:
 	void open_ctx(functx * = 0) ;
 	void close_ctx();
 
+	// returns frame_id of current (topmost) context
+	unsigned long current_frame_id() const { return cur_ctx->get_frame_id(); }
+
+	// searches context chain top-down for key, returns stable vc* pointer
+	// and which frame index the binding was found in.
+	int find_slot(const vc& key, vc*& wp, int& frame_idx) const;
+
     int unwind_in_progress() const {
 		return dbg_backout;
 	}

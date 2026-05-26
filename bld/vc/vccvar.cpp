@@ -78,18 +78,6 @@ VcEvalDbgNode::printOn(VcIO os)
 
 int vc_cvar::error;
 
-#ifdef CACHE_LOOKUPS
-
-unsigned long vc_cvar::Lookup_cache_counter;
-void
-vc_cvar::flush_lookup_cache()
-{
-	if(++Lookup_cache_counter == 0)
-		oopanic("lookup cache wraparound");
-}
-
-#endif
-
 void
 vc_cvar::raise_compile_error()
 {
@@ -100,14 +88,11 @@ vc_cvar::raise_compile_error()
 
 vc_cvar::vc_cvar(const char *expr, int decrypt)
 {
-#ifdef PERFHACKS
-	nopf = 0;
-	use_cached_atom = 0;
-#endif
-#ifdef CACHE_LOOKUPS
-	range = 0;
-	time_cached = 0;
-#endif
+	is_simple_var_init = 0;
+	is_simple_var = 0;
+	cached_atom = vcnil;
+	cached_slot = 0;
+	cached_frame_id = 0;
 	// note: have to do this cuz lexer does decryption in
 	// place. also, gives us a chance to wipe the
 	// results of the decryption.
@@ -156,14 +141,11 @@ vc_cvar::vc_cvar(const char *expr, int decrypt)
 
 vc_cvar::vc_cvar(VcLexer *l)
 {
-#ifdef PERFHACKS
-	nopf = 0;
-	use_cached_atom = 0;
-#endif
-#ifdef CACHE_LOOKUPS
-	range = 0;
-	time_cached = 0;
-#endif
+	is_simple_var_init = 0;
+	is_simple_var = 0;
+	cached_atom = vcnil;
+	cached_slot = 0;
+	cached_frame_id = 0;
 	lexer = l;
     next_tok();
 	begin_scoord.init(lexer);
@@ -185,82 +167,49 @@ vc_cvar::~vc_cvar()
 {
 }
 
-#ifdef PERFHACKS
-// this hack short-cuts a lot of things for the common
-// case where there is a simple variable lookup 
-//
-int
-vc_cvar::performance_hack(vc& atom) const
-{
-	if(vc_list.num_elems() != 1)
-	{
-        nopf = 1;
-		return 0;
-	}
-	vc tmp = vc_list.get_first();
-	if(tmp.type() != VC_STRING)
-	{
-        nopf = 1;
-		return 0;
-	}
-    cached_atom = tmp;
-    use_cached_atom = 1;
-	if(dont_map)
-	{
-		atom = tmp;
-		return 1;
-	}
-#ifdef CACHE_LOOKUPS
-	if(range && time_cached >= Lookup_cache_counter)
-		atom = *range;
-	else
-	{
-		atom = Vcmap->get2(tmp, range);
-		time_cached = Lookup_cache_counter;
-	}
-#else
-	atom = Vcmap->get(tmp);
-#endif
-	return 1;
-}
-
-#endif
-
 vc
 vc_cvar::eval() const
 {
 	if(exp_error)
 		USER_BOMB("attempt to eval erroneous expression", vcnil);
 
-#ifdef PERFHACKS
-	if(!nopf)
+	// static binding for simple <x>
+	if(!is_simple_var_init)
 	{
-		if(use_cached_atom)
+		is_simple_var_init = 1;
+		if(!dont_map && !quoted && vc_list.num_elems() == 1)
 		{
-			if(dont_map)
-				return cached_atom;
-#ifdef CACHE_LOOKUPS
-			if(range && time_cached >= Lookup_cache_counter)
-				return *range;
-			else
+			vc tmp = vc_list.get_first();
+			if(tmp.type() == VC_STRING)
 			{
-				time_cached = Lookup_cache_counter;
-				return Vcmap->get2(cached_atom, range);
+				is_simple_var = 1;
+				cached_atom = tmp;
 			}
-#else
-			return Vcmap->get(cached_atom);
-#endif
 		}
-		vc atom;
-		if(performance_hack(atom))
-        {
-#ifdef VCDBG
-            clist[0].print();
-#endif
-			return atom;
-        }
 	}
+
+	if(is_simple_var)
+	{
+		if(cached_slot && cached_frame_id == Vcmap->current_frame_id())
+		{
+#ifdef VCDBG
+			clist[0].print();
 #endif
+			return *cached_slot;
+		}
+		vc* slot = 0;
+		int frame_idx;
+		if(Vcmap->find_slot(cached_atom, slot, frame_idx))
+		{
+			cached_slot = slot;
+			cached_frame_id = Vcmap->current_frame_id();
+#ifdef VCDBG
+			clist[0].print();
+#endif
+			return *slot;
+		}
+		return vcnil;
+	}
 
 	int expr_num = 0;
 	char *var_name = 0;
@@ -564,28 +513,22 @@ vc_cvar::vc_cvar()
 {
 	is_root = 0;
 	exp_error = 0;
-#ifdef CACHE_LOOKUPS
-	range = 0;
-	time_cached = 0;
-#endif
-#ifdef PERFHACKS
-	nopf = 0;
-	use_cached_atom = 0;
-#endif
+	is_simple_var_init = 0;
+	is_simple_var = 0;
+	cached_atom = vcnil;
+	cached_slot = 0;
+	cached_frame_id = 0;
 }
 vc_cvar::vc_cvar(const vc_cvar& a)
 	: vc_list(a.vc_list),
 	is_root(a.is_root),
 	exp_error(a.exp_error)
 {
-#ifdef CACHE_LOOKUPS
-	range = a.range;
-	time_cached = a.time_cached;
-#endif
-#ifdef PERFHACKS
-	nopf = 0;
-	use_cached_atom = 0;
-#endif
+	is_simple_var_init = 0;
+	is_simple_var = 0;
+	cached_atom = vcnil;
+	cached_slot = 0;
+	cached_frame_id = 0;
 }
 
 void vc_cvar::bind(const vc& v) const {

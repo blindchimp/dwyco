@@ -32,6 +32,12 @@ public:
     virtual int find(const D&, R& out, R** wp = 0) = 0;
     virtual void add(const D&, const R&) = 0;
     virtual int replace(const D&, const R&, R** wp = 0) = 0;
+    // in-place set: find existing and update value, or add new.
+    // pointer to value is stable across all operations.
+    // default delegates to replace for maps where replace is in-place.
+    virtual int setval(const D& key, const R& val, R** wp = 0) {
+        return replace(key, val, wp);
+    }
     virtual R get(const D&) = 0;
     virtual int del(const D&) = 0;
 

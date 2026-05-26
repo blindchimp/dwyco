@@ -119,22 +119,13 @@ private:
 	void syntax_err(const char *msg, vc_cvar_src_coord, vc_cvar_src_coord);
 	void raise_compile_error();
 
-#ifdef PERFHACKS
-	int performance_hack(vc&) const;
-	mutable int nopf;
-	mutable vc cached_atom;
-	mutable int use_cached_atom;
-#endif
-#ifdef CACHE_LOOKUPS
-	mutable vc *range;
-	mutable unsigned long time_cached;
-public:
-	static unsigned long Lookup_cache_counter;
+	// static binding cache for simple <x>
+	mutable int is_simple_var_init;
+	mutable int is_simple_var;
+	mutable vc cached_atom;			// variable name string
+	mutable vc *cached_slot;		// stable pointer to map slot
+	mutable unsigned long cached_frame_id;	// frame_id when cached
 
-public:
-	static void flush_lookup_cache();
-private:
-#endif
 
 	void bind(const vc& v) const ;
 	void local_bind(const vc& v) const ;

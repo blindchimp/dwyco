@@ -50,6 +50,7 @@ public:
     virtual int find(const D&, R& out, R** wp = 0) ;
     virtual void add(const D&, const R&) ;
     virtual int replace(const D&, const R&, R** wp = 0) ;
+    virtual int setval(const D&, const R&, R** wp = 0) ;
     virtual R get(const D&) ;
     virtual int del(const D&) ;
 
@@ -133,6 +134,18 @@ tcls::replace(const D& key, const R& val, R** wp)
         this->ruffled = 1;
     }
     return map->replace(key, val, wp);
+}
+
+thdr
+int
+tcls::setval(const D& key, const R& val, R** wp)
+{
+    if(map->over_threshold())
+    {
+        expand();
+        this->ruffled = 1;
+    }
+    return map->setval(key, val, wp);
 }
 
 thdr

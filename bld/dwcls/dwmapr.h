@@ -37,6 +37,10 @@ public:
     int find(const D&, R& out, R** wp = 0);
     void add(const D&, const R&);
     int replace(const D&, const R&, R** wp = 0);
+    // in-place set: updates existing entry's value or adds new.
+    // pointer to value is stable across all operations.
+    // returns 1 if replaced existing, 0 if new.
+    int setval(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
     void clear();
@@ -148,6 +152,24 @@ tcls::replace(const D& key, const R& value, R** wp)
         *wp = &wpa->ref_value();
     }
     return ret;
+}
+
+thdr
+int
+tcls::setval(const D& key, const R& value, R** wp)
+{
+    DwAssocImp<R,D> dai(value, key);
+    DwAssocImp<R,D> *wpa;
+    if(set.update(dai, &wpa))
+    {
+        if(wp)
+            *wp = &wpa->ref_value();
+        return 1;
+    }
+    set.add(dai, &wpa);
+    if(wp)
+        *wp = &wpa->ref_value();
+    return 0;
 }
 
 thdr

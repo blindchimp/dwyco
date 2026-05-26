@@ -68,6 +68,9 @@ public:
     int count_keys(const T&);
     // warning, this replaces *all* existing keys
     int replace(const T&, T** wp = 0);
+    // update in-place: finds existing entry and overwrites
+    // (pointer stable, no delete+realloc)
+    int update(const T&, T** wp = 0);
     void set_size(int);
     void clear();
     T get_by_iter(DwIter<DwBag<T>, T > *a) const {
@@ -194,6 +197,26 @@ DwBag<T>::replace(const T& key, T** wp)
     return ret;
 }
 
+// update in-place: finds existing entry by key and overwrites
+// its value in the linked list node. returns 1 if found (updated),
+// 0 if not found. pointer stability is guaranteed since no
+// delete+realloc occurs.
+template<class T>
+int
+DwBag<T>::update(const T& key, T** wp)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    if(table[hval] == 0)
+        return 0;
+    T out;
+    if(!table[hval]->exists(key, out))
+        return 0;
+    T* existing = table[hval]->nasty();
+    *existing = key;
+    if(wp)
+        *wp = existing;
+    return 1;
+}
 
 template<class T>
 int
