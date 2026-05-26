@@ -1841,6 +1841,18 @@ bindfun(vc v1, vc v2)
 #ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
 	{
+		if(Vcmap->func_id_stack.num_elems() > 0)
+		{
+			void *fid = Vcmap->func_id_stack[Vcmap->func_id_stack.num_elems() - 1];
+			char buf[64];
+			sprintf(buf, "__pin_%p_%s", fid, (const char*)v1);
+			vc mangled(buf);
+			if(Vcmap->pinmap.contains(mangled))
+			{
+				Vcmap->pinmap.replace(mangled, v2);
+				return vcnil;
+			}
+		}
 		Vcmap->add(v1, v2);
 		return vcnil;
 	}
@@ -1855,6 +1867,14 @@ lbindfun(vc v1, vc v2)
 #ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
 	{
+		if(Vcmap->func_id_stack.num_elems() > 0)
+		{
+			void *fid = Vcmap->func_id_stack[Vcmap->func_id_stack.num_elems() - 1];
+			char buf[64];
+			sprintf(buf, "__pin_%p_%s", fid, (const char*)v1);
+			vc mangled(buf);
+			Vcmap->pinmap.add(mangled, v2);
+		}
 		Vcmap->local_add(v1, v2);
 		return vcnil;
 	}

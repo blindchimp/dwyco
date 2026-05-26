@@ -181,16 +181,27 @@ DwBag<T>::del2(dwinternal_pos<T> p)
     return;
 }
 
-// warning: this version replaces *all* the existing keys
-//
 template<class T>
 int
 DwBag<T>::replace(const T& key, T** wp)
 {
     int ret = 0;
-    while(del(key))
-        ret = 1;
-    add(key, wp);
+    unsigned long hval = ::hash(key) % table_size;
+    if(table[hval] == 0)
+        return 0;
+    table[hval]->rewind();
+    for(int i = 0; i < table[hval]->num_elems(); ++i)
+    {
+        T* p = table[hval]->nasty();
+        if(p && table[hval]->search_fun(key, *p))
+        {
+            *p = key;
+            if(wp)
+                *wp = p;
+            ret = 1;
+        }
+        table[hval]->forward();
+    }
     return ret;
 }
 

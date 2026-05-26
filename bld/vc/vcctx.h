@@ -13,6 +13,7 @@
 #include "vc.h"
 #include "dwvecp.h"
 #include "vcfunctx.h"
+#include "dwmapr.h"
 class vc_object;
 
 struct try_handler {
@@ -98,6 +99,10 @@ public:
 	int has_dhandler;
 	vc dhandler_pat;
 	vc dhandler_fun;
+
+	// permanent variable pinning
+	DwMapR<vc, vc> pinmap;
+	DwVec<void *> func_id_stack;
 
 	//
 	// debugging

@@ -103,6 +103,7 @@ vc_cvar::vc_cvar(const char *expr, int decrypt)
 #ifdef PERFHACKS
 	nopf = 0;
 	use_cached_atom = 0;
+	pin_slot = 0;
 #endif
 #ifdef CACHE_LOOKUPS
 	range = 0;
@@ -159,6 +160,7 @@ vc_cvar::vc_cvar(VcLexer *l)
 #ifdef PERFHACKS
 	nopf = 0;
 	use_cached_atom = 0;
+	pin_slot = 0;
 #endif
 #ifdef CACHE_LOOKUPS
 	range = 0;
@@ -210,17 +212,42 @@ vc_cvar::performance_hack(vc& atom) const
 		atom = tmp;
 		return 1;
 	}
-#ifdef CACHE_LOOKUPS
-	if(range && time_cached >= Lookup_cache_counter)
-		atom = *range;
-	else
+
+	if(pin_slot)
 	{
-		atom = Vcmap->get2(tmp, range);
-		time_cached = Lookup_cache_counter;
+		atom = *pin_slot;
+		return 1;
 	}
-#else
-	atom = Vcmap->get(tmp);
-#endif
+
+	vc val;
+	if(Vcmap->func_id_stack.num_elems() > 0)
+	{
+		void *fid = Vcmap->func_id_stack[Vcmap->func_id_stack.num_elems() - 1];
+		char buf[64];
+		sprintf(buf, "__pin_%p_%s", fid, (const char*)tmp);
+		vc mangled(buf);
+		vc *wp = 0;
+		if(Vcmap->pinmap.find(mangled, val, &wp))
+		{
+			pin_slot = wp;
+			atom = val;
+			return 1;
+		}
+	}
+
+	val = Vcmap->get(tmp);
+	if(!val.is_nil() && Vcmap->func_id_stack.num_elems() > 0)
+	{
+		void *fid = Vcmap->func_id_stack[Vcmap->func_id_stack.num_elems() - 1];
+		char buf[64];
+		sprintf(buf, "__pin_%p_%s", fid, (const char*)tmp);
+		vc mangled(buf);
+		Vcmap->pinmap.add(mangled, val);
+		vc *wp = 0;
+		Vcmap->pinmap.find(mangled, val, &wp);
+		pin_slot = wp;
+	}
+	atom = val;
 	return 1;
 }
 
@@ -239,6 +266,8 @@ vc_cvar::eval() const
 		{
 			if(dont_map)
 				return cached_atom;
+			if(pin_slot)
+				return *pin_slot;
 #ifdef CACHE_LOOKUPS
 			if(range && time_cached >= Lookup_cache_counter)
 				return *range;

@@ -15,7 +15,8 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
-vcctx::vcctx() {
+vcctx::vcctx() : pinmap(313)
+{
 	ctx = 0;
 	exc_in_progress = 0;
 	break_one = 0;

@@ -124,6 +124,7 @@ private:
 	mutable int nopf;
 	mutable vc cached_atom;
 	mutable int use_cached_atom;
+	mutable vc *pin_slot;
 #endif
 #ifdef CACHE_LOOKUPS
 	mutable vc *range;

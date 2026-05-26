@@ -154,14 +154,20 @@ void
 vc_func::do_function_initialize(VCArglist *) const
 {
 	if(!is_construct)
+	{
 		Vcmap->open_ctx();
+		Vcmap->func_id_stack.append((void*)this);
+	}
 }
 
 void
 vc_func::do_function_finalize(VCArglist *)  const
 {
 	if(!is_construct)
+	{
 		Vcmap->close_ctx();
+		Vcmap->func_id_stack.set_size(Vcmap->func_id_stack.num_elems() - 1);
+	}
 }
 
 void
