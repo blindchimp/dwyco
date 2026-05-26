@@ -321,12 +321,23 @@ vc_vector::stringrep(VcIO o) const
 void
 vc_vector::foreach(const vc& v, const vc& expr) const
 {
+    unsigned long fid = Vcmap->current_func_id();
+    long use_mangle = !Vcmap->is_recursive_call() && fid != 0;
+    vc bind_name;
+    if(use_mangle)
+        bind_name = vcctx::mangle_name(fid, v);
+    else
+        bind_name = v;
+
 	VcVecIter i(&vec);
 	++iterators;
 	try {
 		for(;!i.eol();i.forward())
 		{
-			v.local_bind(i.get());
+			if(use_mangle)
+			    Vcmap->global_add(bind_name, i.get());
+			else
+			    Vcmap->local_add(bind_name, i.get());
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
 		}
@@ -737,6 +748,14 @@ vc_map::stringrep(VcIO o) const
 void
 vc_map::foreach(const vc& v, const vc& expr) const
 {
+    unsigned long fid = Vcmap->current_func_id();
+    long use_mangle = !Vcmap->is_recursive_call() && fid != 0;
+    vc bind_name;
+    if(use_mangle)
+        bind_name = vcctx::mangle_name(fid, v);
+    else
+        bind_name = v;
+
 	VcMapIter i(&map);
 	++iterators;
 	try {
@@ -744,7 +763,10 @@ vc_map::foreach(const vc& v, const vc& expr) const
 		{
 			DwAssocImp<vc,vc> a = i.get();
 			vc assoc(VC_VECTOR);
-			v.local_bind(assoc);
+			if(use_mangle)
+			    Vcmap->global_add(bind_name, assoc);
+			else
+			    Vcmap->local_add(bind_name, assoc);
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
 			expr.eval();
@@ -1038,13 +1060,24 @@ vc_list_set::stringrep(VcIO o) const
 void
 vc_list_set::foreach(const vc& v, const vc& expr) const
 {
+    unsigned long fid = Vcmap->current_func_id();
+    long use_mangle = !Vcmap->is_recursive_call() && fid != 0;
+    vc bind_name;
+    if(use_mangle)
+        bind_name = vcctx::mangle_name(fid, v);
+    else
+        bind_name = v;
+
 	DwListAIter<vc> i(&list);
 	vc e;
 	++iterators;
 	try {
 		dwlista_foreach_iter(i, e, list)
 		{
-			v.local_bind(e);
+			if(use_mangle)
+			    Vcmap->global_add(bind_name, e);
+			else
+			    Vcmap->local_add(bind_name, e);
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
 		}
@@ -1279,12 +1312,23 @@ vc_bag::stringrep(VcIO o) const
 void
 vc_bag::foreach(const vc& v, const vc& expr) const
 {
+    unsigned long fid = Vcmap->current_func_id();
+    long use_mangle = !Vcmap->is_recursive_call() && fid != 0;
+    vc bind_name;
+    if(use_mangle)
+        bind_name = vcctx::mangle_name(fid, v);
+    else
+        bind_name = v;
+
 	VcBagIter i(&set);
 	++iterators;
 	try {
 		for(;!i.eol();i.forward())
 		{
-			v.local_bind(i.get());
+			if(use_mangle)
+			    Vcmap->global_add(bind_name, i.get());
+			else
+			    Vcmap->local_add(bind_name, i.get());
 			expr.eval();
 			if(Vcmap->check_break_one()) break;
 		}
@@ -1618,6 +1662,14 @@ vc_tree::printOn(VcIO outputStream)
 void
 vc_tree::foreach(const vc& v, const vc& expr) const
 {
+    unsigned long fid = Vcmap->current_func_id();
+    long use_mangle = !Vcmap->is_recursive_call() && fid != 0;
+    vc bind_name;
+    if(use_mangle)
+        bind_name = vcctx::mangle_name(fid, v);
+    else
+        bind_name = v;
+
 	VcTreeIter i(&tree);
 	++iterators;
 	try {
@@ -1625,7 +1677,10 @@ vc_tree::foreach(const vc& v, const vc& expr) const
 		{
 			DwAssocImp<vc,vc> a = i.get();
 			vc assoc(VC_VECTOR);
-			v.local_bind(assoc);
+			if(use_mangle)
+			    Vcmap->global_add(bind_name, assoc);
+			else
+			    Vcmap->local_add(bind_name, assoc);
 			assoc[0] = a.get_key();
 			assoc[1] = a.get_value();
 			expr.eval();

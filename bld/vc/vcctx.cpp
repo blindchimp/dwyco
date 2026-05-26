@@ -291,15 +291,9 @@ vc
 vcctx::mangle_name(unsigned long fid, const vc& name)
 {
 	const char *s = name.peek_str();
-	long len = name.len();
-	char prefix[64];
-	int plen = snprintf(prefix, sizeof(prefix), "__lh_%lu::", fid);
-	char *buf = new char[plen + len];
-	memcpy(buf, prefix, plen);
-	memcpy(buf + plen, s, len);
-	vc result(VC_BSTRING, buf, plen + len);
-	delete[] buf;
-	return result;
+	char buf[256];
+	snprintf(buf, sizeof(buf), "__lh_%lu::%s", fid, s);
+	return vc(buf);
 }
 
 vc

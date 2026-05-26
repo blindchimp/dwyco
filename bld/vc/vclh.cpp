@@ -1700,6 +1700,14 @@ doloop(vc var, vc lo, vc hi, vc expr)
 #ifdef VCDBG
     c->cur_idx = 1;
 #endif
+    unsigned long fid = Vcmap->current_func_id();
+    long use_mangle = !Vcmap->is_recursive_call() && fid != 0;
+    vc bind_name;
+    if(use_mangle)
+        bind_name = vcctx::mangle_name(fid, var);
+    else
+        bind_name = var;
+
 	long l = lo.eval();
 #ifdef VCDBG
     c->cur_idx = 2;
@@ -1710,7 +1718,10 @@ doloop(vc var, vc lo, vc hi, vc expr)
 	try {
 		for(i = l; i <= h; ++i)
 		{
-			var.local_bind(vc(i));
+			if(use_mangle)
+			    Vcmap->global_add(bind_name, vc(i));
+			else
+			    Vcmap->local_add(bind_name, vc(i));
 #ifdef VCDBG
 		c->cur_idx = 3;
 #endif
@@ -1721,7 +1732,10 @@ doloop(vc var, vc lo, vc hi, vc expr)
 		--b.lev;
 		if(b.lev > 0) throw;
 	}
-	var.local_bind(vc(i));
+	if(use_mangle)
+	    Vcmap->global_add(bind_name, vc(i));
+	else
+	    Vcmap->local_add(bind_name, vc(i));
 	return vcnil;
 }
 
@@ -1851,7 +1865,6 @@ bindfun(vc v1, vc v2)
 vc
 lbindfun(vc v1, vc v2)
 {
-#ifdef PERFHACKS
 	if(v1.type() == VC_STRING)
 	{
 		// function values must remain findable by unmangled name
@@ -1875,7 +1888,6 @@ lbindfun(vc v1, vc v2)
 		}
 		return vcnil;
 	}
-#endif
 	v1.local_bind(v2);
 	return vcnil;
 }
