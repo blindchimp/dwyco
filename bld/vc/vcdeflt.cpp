@@ -9,6 +9,7 @@
 #include "vc.h"
 #include "vcdeflt.h"
 #include "vcmap.h"
+#include "vcnil.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcdeflt.cpp 1.52 1998/08/06 04:44:57 dwight Exp $";
 
 #ifdef OBJTRACK

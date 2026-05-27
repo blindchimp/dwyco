@@ -264,8 +264,8 @@ public:
 	vc(const vc& v);
 	notvirtual ~vc() ;
 	notvirtual vc& operator=(const vc& v);
-        vc(vc&& v);
-        vc& operator=(vc&& v);
+        vc(vc&& v) noexcept;
+        vc& operator=(vc&& v) noexcept;
         notvirtual int is_nil() const ;
 
 #endif
