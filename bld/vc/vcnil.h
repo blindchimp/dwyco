@@ -34,6 +34,7 @@
 class vc_nil : public vc_atomic
 {
 friend class vc;
+friend class vc_default;
 #ifdef USE_RCT
 friend void process_dec();
 friend void process_dec(void **);

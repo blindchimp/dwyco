@@ -73,6 +73,7 @@ vc_default::vc_default(int quot)
 {
 	ref_count = 1;
     quoted = quot;
+    rep = this;
 #ifdef VCDBG
 	break_tag = BREAK_NONE;
 #endif
@@ -96,9 +97,10 @@ vc_default::vc_default(int quot)
 //#endif
 //}
 
-#ifdef OBJTRACK
 vc_default::~vc_default()
 {
+    rep = vc_nil::vcnilrep;
+#ifdef OBJTRACK
 	if(rep != 0)
 		return;
 	TrackInfo tinfo;
@@ -107,8 +109,8 @@ vc_default::~vc_default()
 		::abort();
 	}
 	Objmap.del(serial);
-}
 #endif
+}
 
 vc
 vc_default::funmeta() const 

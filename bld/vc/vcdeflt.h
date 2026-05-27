@@ -32,11 +32,9 @@ public:
     vc_default(int quot);
 
     vc_default(const vc_default&) = delete;
-#ifdef OBJTRACK
 	virtual ~vc_default();
+#ifdef OBJTRACK
 	int serial;
-#else
-    virtual ~vc_default() = default;
 #endif
 
 	virtual vc_object *get_obj() const;
