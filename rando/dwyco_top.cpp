@@ -2714,8 +2714,13 @@ DwycoCore::delete_message(QString uid, QString mid)
     buid = QByteArray::fromHex(buid);
     if(dwyco_get_fav_msg(bmid.constData()))
         return 0;
-    return dwyco_delete_saved_message(buid.constData(), buid.length(), bmid.constData());
-
+    if(mlm)
+        mlm->cleanup_unviewed_for_mid(bmid);
+    int ret = dwyco_delete_saved_message(buid.constData(), buid.length(), bmid.constData());
+    update_unseen_from_db();
+    if(mlm)
+        mlm->invalidate_sent_to();
+    return ret;
 }
 
 int

@@ -163,6 +163,11 @@ decode_long2(char *buf, int len, int& error)
     int neg = 0;
     if(buf[0] == 0x2d)
     {
+        if(len == 1)
+        {
+            error = 1;
+            return -1;
+        }
         neg = 1;
     }
     for(int i = (neg ? 1 : 0); i < len; ++i)
@@ -188,7 +193,7 @@ decode_long2(char *buf, int len, int& error)
     }
     if(neg)
     {
-        if(l > ULONG_MAX / 2 + 1)
+        if(l > (unsigned long)LONG_MAX)
         {
             error = 1;
             return -1;
