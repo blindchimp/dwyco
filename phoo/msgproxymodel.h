@@ -36,6 +36,7 @@ public:
     Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_fav);
     Q_INVOKABLE void set_show_hidden(int);
     Q_INVOKABLE void set_show_trash(bool);
+    Q_INVOKABLE void set_show_video_only(int);
     Q_INVOKABLE void reload_model();
 
     Q_INVOKABLE void toggle_selected(QByteArray mid);
@@ -60,6 +61,7 @@ private:
     int filter_only_favs;
     int filter_show_hidden;
     bool filter_show_trash;
+    int filter_only_video;
 };
 
 

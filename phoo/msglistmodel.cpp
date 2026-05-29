@@ -242,6 +242,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_only_favs = 0;
     filter_show_hidden = 1;
     filter_show_trash = false;
+    filter_only_video = 0;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
@@ -578,6 +579,14 @@ msglist_model::set_show_trash(bool show_trash)
     Selected.clear();
 }
 
+void
+msglist_model::set_show_video_only(int show_video_only)
+{
+    filter_only_video = show_video_only;
+    invalidateFilter();
+    Selected.clear();
+}
+
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
@@ -600,6 +609,13 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     {
         QVariant is_fav = alm->data(alm->index(source_row, 0), IS_FAVORITE);
         if(is_fav.toInt() == 0)
+            return false;
+    }
+    if(filter_only_video)
+    {
+        QVariant has_vid = alm->data(alm->index(source_row, 0), HAS_VIDEO);
+        QVariant has_short = alm->data(alm->index(source_row, 0), HAS_SHORT_VIDEO);
+        if(has_vid.toInt() == 0 || has_short.toInt() == 1)
             return false;
     }
     if(filter_show_hidden == 0)
