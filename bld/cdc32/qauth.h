@@ -38,6 +38,8 @@ extern int Auth_remote;
 extern int Create_new_account;
 extern int Send_auth;
 extern void (*Entropy_display_callback)(int);
+extern vc Tox_sk;
+extern vc Tox_nospam;
 }
 
 #define ECHARGE 30

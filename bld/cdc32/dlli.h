@@ -508,6 +508,14 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_IDENT_TO_UID 40
 #define DWYCO_SE_SERVER_ATTR 41
 
+#define DWYCO_SE_TOX_FRIEND_REQUEST 50
+#define DWYCO_SE_TOX_MESSAGE 51
+#define DWYCO_SE_TOX_READ_RECEIPT 52
+#define DWYCO_SE_TOX_FRIEND_STATUS 53
+#define DWYCO_SE_TOX_FRIEND_NAME 54
+#define DWYCO_SE_TOX_FILE_REQUEST 55
+#define DWYCO_SE_TOX_FILE_CHUNK 56
+
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 #ifdef DWYCO_ASSHAT
@@ -2193,6 +2201,12 @@ int DWYCOEXPORT
 dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
+
+int DWYCOEXPORT dwyco_enable_tox(const char *tox_data_dir);
+int DWYCOEXPORT dwyco_tox_get_self_public_key(const char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_is_tox_uid(const char *uid, int len_uid);
+int DWYCOEXPORT dwyco_tox_add_friend(const char *tox_id, const char *msg);
+int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
 
 #ifdef __cplusplus
 }

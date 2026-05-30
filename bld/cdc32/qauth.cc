@@ -43,6 +43,8 @@ int Create_new_account;
 int Auth_remote;
 int Entropy_charge;
 void (*Entropy_display_callback)(int);
+vc Tox_sk;
+vc Tox_nospam;
 
 vc
 to_hex(const vc& s)
@@ -348,6 +350,10 @@ save_auth_info(vc id, vc server_key, const char *filename)
     v.add_kv("local_pw", "");
     v.add_kv("local_salt", "");
     v.add_kv("sk", server_key);
+    if(!Tox_sk.is_nil())
+        v.add_kv("tox_sk", Tox_sk);
+    if(!Tox_nospam.is_nil())
+        v.add_kv("tox_nospam", Tox_nospam);
     add_ck(v, id);
     save_info(v, filename);
 }
@@ -386,6 +392,8 @@ load_auth_info(vc& id, vc& server_key, const char *filename)
         v.add_kv("sk", server_key);
         save_info(v, filename);
     }
+    v.find("tox_sk", Tox_sk);
+    v.find("tox_nospam", Tox_nospam);
     goto ok;
 err:
     id = vcnil;

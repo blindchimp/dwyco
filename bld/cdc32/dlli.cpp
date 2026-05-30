@@ -323,6 +323,7 @@ using namespace CryptoPP;
 #include "autoup.h"
 #include "fnmod.h"
 #include "profiledb.h"
+#include "toxbridge.h"
 #include "callq.h"
 #include "mmcall.h"
 #include "calldll.h"
@@ -2189,6 +2190,7 @@ dwyco_service_channels(int *spin_out)
     poll_pipeline();
 #endif
     handle_deferred_msg_send();
+    tox_bridge_poll();
     se_process();
     crank_activity_timer();
     sync_call_setup();
@@ -5668,6 +5670,22 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
         return 0; // can't honor no forward with files
     }
     vc vuid = vc(VC_BSTRING, uid, len_uid);
+
+    // route to tox bridge if this is a tox contact
+    if(dwyco::tox_bridge_is_tox_uid(vuid))
+    {
+        uint32_t fn;
+        if(!dwyco::tox_pseudo_uid_to_friend_number(vuid, &fn))
+            return 0;
+        vc text_vc(VC_BSTRING, text, len_text);
+        int ret = dwyco::tox_bridge_send_message(fn, text_vc, 0);
+        if(pers_id_out)
+            *pers_id_out = "";
+        if(len_pers_id_out)
+            *len_pers_id_out = 0;
+        return ret;
+    }
+
     vc v(VC_VECTOR);
     if(!m->limited_forward)
         v.append(vuid);
@@ -9547,6 +9565,48 @@ map_external_gv(ValidPtr , int )
 void
 set_audio_status(int)
 {
+}
+
+DWYCOEXPORT
+int
+dwyco_enable_tox(const char *tox_data_dir)
+{
+    return dwyco::tox_bridge_init("toxd", tox_data_dir);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_self_public_key(const char **out, int *len_out)
+{
+    return dwyco::tox_bridge_get_self_public_key(out, len_out);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_is_tox_uid(const char *uid, int len_uid)
+{
+    return dwyco::tox_bridge_is_tox_uid(vc(VC_BSTRING, uid, len_uid)) ? 1 : 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_add_friend(const char *tox_id, const char *msg)
+{
+    vc addr(VC_BSTRING, tox_id, (long)strlen(tox_id));
+    vc msg_vc(VC_STRING, msg);
+    return dwyco::tox_bridge_friend_add(addr, msg_vc);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_friend_list(DWYCO_LIST *list_out)
+{
+    vc fl = dwyco::tox_bridge_get_friend_list_vc();
+    if(fl.is_nil())
+        return 0;
+    if(list_out)
+        *list_out = (DWYCO_LIST)new vc(fl);
+    return 1;
 }
 
 void

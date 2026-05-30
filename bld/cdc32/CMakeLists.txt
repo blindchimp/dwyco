@@ -219,6 +219,7 @@ add_library(cdc32 OBJECT
 	upnp.cpp 
 	aqkey.cpp 
 	netlog.cpp
+        toxbridge.cpp
         sqlite3.c
         ${EXTRA_FILES}
 )

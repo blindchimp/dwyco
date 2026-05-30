@@ -60,6 +60,23 @@ struct Sql : public SimpleSql
                    "time integer "
                    ")"
                    );
+        sql_simple("create table if not exists tox_contacts ("
+                   "pseudo_uid text collate nocase primary key not null, "
+                   "tox_public_key blob not null, "
+                   "tox_nospam integer, "
+                   "name text, "
+                   "status text, "
+                   "time integer"
+                   ")");
+        sql_simple("create table if not exists tox_pending_requests ("
+                   "tox_public_key blob primary key not null, "
+                   "message text, "
+                   "time integer"
+                   ")");
+        sql_simple("create table if not exists tox_pseudo_uid_seq ("
+                   "seq integer primary key not null, "
+                   "tox_public_key blob not null"
+                   ")");
 
     }
 
