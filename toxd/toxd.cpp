@@ -8,6 +8,7 @@
 #include <sys/file.h>
 #include <arpa/inet.h>
 #include <tox/tox.h>
+#include <sodium.h>
 
 #include "vc.h"
 #include "vccomp.h"
@@ -29,10 +30,16 @@
 #define LOCK_FILE "toxd.lock"
 
 static const char *bootstrap_nodes[] = {
-    "116.202.120.166:33445:8E7D0A85927645ED1633971B7D22A1B7B396F0E97B22E38C9CD86C8C78E6F9DE",
-    "85.143.221.42:33445:DA4E4F2C0D35E9AD2C699F067F2C0A8F4D8E5F6B7A3C9D0E1F2A3B4C5D6E7F80",
-    "2a0b:f4c0:16b:3::1:33445:8E7D0A85927645ED1633971B7D22A1B7B396F0E97B22E38C9CD86C8C78E6F9DE",
-    "tox.init.sx:33445:DA4E4F2C0D35E9AD2C699F067F2C0A8F4D8E5F6B7A3C9D0E1F2A3B4C5D6E7F80"
+    "144.217.167.73:33445:7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C",
+    "tox.abilinski.com:33445:10C00EB250C3233E343E2AEBA07115A5C28920E9C8D29492F6D00B29049EDC7E",
+    "198.199.98.108:33445:BEF0CFB37AF874BD17B9A8F9FE64C75521DB95A37D33C5BDB00E9CF58659C04F",
+    "tox.kurnevsky.net:33445:82EF82BA33445A1F91A7DB27189ECFC0C013E06E3DA71F588ED692BED625EC23",
+    "205.185.115.131:53:3091C6BEB2A993F1C6300C16549FABA67098FF3D62C6D253828B531470B53D68",
+    "46.101.197.175:33445:CD133B521159541FB1D326DE9850F5E56A6C724B5B8E5EB5CD8D950408E95707",
+    "tox.initramfs.io:33445:3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25",
+    "tox.plastiras.org:33445:8E8B63299B3D520FB377FE5100E65E3322F7AE5B20A0ACED2981769FC5B43725",
+    "tox.hidemybits.com:443:5D57B95EE4A7F37BA031DAD0CBD9510A9C96FFE09C1CE24A9C33746F39817D6E",
+    "tox.libre.tw:33445:1CEEA650D5DDA858EA6AF6CEA79FEAF022F9C2B8295EE3716E2785C81DD09152",
 };
 
 struct ToxdState {
@@ -41,6 +48,14 @@ struct ToxdState {
     int reqid_counter;
     char data_dir[1024];
 };
+
+[[noreturn]]
+void
+oopanic(const char *a)
+{
+    perror(a);
+    ::abort();
+}
 
 static int
 read_all(int fd, char *buf, int len)
@@ -87,8 +102,8 @@ write_msg(int fd, vc msg)
         os.close(vcxstream::DISCARD);
         return;
     }
-    if(!os.close(vcxstream::FLUSH))
-        return;
+    //if(!os.close(vcxstream::FLUSH))
+    //    return;
     const char *buf;
     long len;
     os.cur_buf(buf, len);
@@ -184,7 +199,7 @@ static void
 tox_bootstrap(Tox *tox)
 {
     int n = sizeof(bootstrap_nodes) / sizeof(bootstrap_nodes[0]);
-    for(int i = 0; i < n && i < 4; ++i) {
+    for(int i = 0; i < n; ++i) {
         const char *s = bootstrap_nodes[i];
         char addr[256];
         int port;
@@ -192,7 +207,7 @@ tox_bootstrap(Tox *tox)
         if(sscanf(s, "%255[^:]:%d:%64s", addr, &port, pubkey_hex) != 3)
             continue;
         uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
-        if(tox_pubkey_from_string(pubkey, pubkey_hex, NULL))
+        if(sodium_hex2bin(pubkey, sizeof(pubkey), pubkey_hex, strlen(pubkey_hex), NULL, NULL, NULL))
             continue;
         Tox_Err_Bootstrap err;
         tox_bootstrap(tox, addr, (uint16_t)port, pubkey, &err);
@@ -278,6 +293,15 @@ toxd_on_file_recv_chunk(Tox *tox, uint32_t fn, uint32_t fnum,
 }
 
 static void
+toxd_on_self_connection_status(Tox *tox, Tox_Connection status, void *ud)
+{
+    (void)ud;
+    vc args(VC_VECTOR);
+    args.append(vc(status == TOX_CONNECTION_NONE ? "offline" : status == TOX_CONNECTION_TCP ? "tcp" : "udp"));
+    send_event(STDOUT_FILENO, "self_connection_status", args);
+}
+
+static void
 toxd_on_connection_status(Tox *tox, uint32_t fn, Tox_Connection status, void *ud)
 {
     ToxdState *s = (ToxdState *)ud;
@@ -318,41 +342,6 @@ toxd_on_friend_status_message(Tox *tox, uint32_t fn, const uint8_t *msg,
 }
 
 static void
-load_or_create_tox(ToxdState *s)
-{
-    char save_path[1024];
-    snprintf(save_path, sizeof(save_path), "%s/%s", s->data_dir, SAVE_FILE);
-
-    struct Tox_Options opts;
-    tox_options_default(&opts);
-
-    FILE *f = fopen(save_path, "rb");
-    if(f) {
-        fseek(f, 0, SEEK_END);
-        long sz = ftell(f);
-        rewind(f);
-        if(sz > 0 && sz < 10 * 1024 * 1024) {
-            uint8_t *data = (uint8_t *)malloc((size_t)sz);
-            if(fread(data, 1, (size_t)sz, f) == (size_t)sz) {
-                opts.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
-                opts.savedata_data = data;
-                opts.savedata_length = (size_t)sz;
-            }
-            free(data);
-        }
-        fclose(f);
-    }
-
-    Tox_Err_New err;
-    s->tox = tox_new(&opts, &err);
-    if(!s->tox) {
-        tox_options_default(&opts);
-        opts.savedata_type = TOX_SAVEDATA_TYPE_NONE;
-        s->tox = tox_new(&opts, &err);
-    }
-}
-
-static void
 save_tox_state(ToxdState *s)
 {
     char save_path[1024];
@@ -374,6 +363,62 @@ save_tox_state(ToxdState *s)
 }
 
 static void
+load_or_create_tox(ToxdState *s)
+{
+    char save_path[1024];
+    snprintf(save_path, sizeof(save_path), "%s/%s", s->data_dir, SAVE_FILE);
+
+    struct Tox_Options opts;
+    tox_options_default(&opts);
+
+    uint8_t *savedata = NULL;
+    size_t savedata_sz = 0;
+    FILE *f = fopen(save_path, "rb");
+    if(f) {
+        fseek(f, 0, SEEK_END);
+        long sz = ftell(f);
+        rewind(f);
+        if(sz > 0 && sz < 10 * 1024 * 1024) {
+            savedata = (uint8_t *)malloc((size_t)sz);
+            if(fread(savedata, 1, (size_t)sz, f) == (size_t)sz) {
+                savedata_sz = (size_t)sz;
+            } else {
+                free(savedata);
+                savedata = NULL;
+            }
+        }
+        fclose(f);
+    }
+
+    if(savedata) {
+        opts.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
+        opts.savedata_data = savedata;
+        opts.savedata_length = savedata_sz;
+    }
+
+    Tox_Err_New err;
+    s->tox = tox_new(&opts, &err);
+    if(savedata)
+        free(savedata);
+    if(!s->tox) {
+        tox_options_default(&opts);
+        opts.savedata_type = TOX_SAVEDATA_TYPE_NONE;
+        s->tox = tox_new(&opts, &err);
+    }
+
+    if(s->tox) {
+        uint8_t address[TOX_ADDRESS_SIZE];
+        tox_self_get_address(s->tox, address);
+        char hex[TOX_ADDRESS_SIZE * 2 + 1];
+        sodium_bin2hex(hex, sizeof(hex), address, TOX_ADDRESS_SIZE);
+        fprintf(stderr, "toxd: %s %s\n", savedata ? "loaded" : "created", hex);
+
+        if(!savedata)
+            save_tox_state(s);
+    }
+}
+
+static void
 register_callbacks(Tox *tox)
 {
     tox_callback_friend_request(tox, toxd_on_friend_request);
@@ -382,6 +427,7 @@ register_callbacks(Tox *tox)
     tox_callback_file_recv(tox, toxd_on_file_recv);
     tox_callback_file_recv_chunk(tox, toxd_on_file_recv_chunk);
     tox_callback_friend_connection_status(tox, toxd_on_connection_status);
+    tox_callback_self_connection_status(tox, toxd_on_self_connection_status);
     tox_callback_friend_name(tox, toxd_on_friend_name);
     tox_callback_friend_status_message(tox, toxd_on_friend_status_message);
 }
@@ -642,15 +688,32 @@ handle_rpc_request(ToxdState *s, const vc &req)
 }
 
 static int
+ensure_parent_dirs(char *path)
+{
+    for(char *p = path + 1; *p; p++) {
+        if(*p == '/') {
+            *p = '\0';
+            if(mkdir(path, 0700) < 0 && errno != EEXIST)
+                return 0;
+            *p = '/';
+        }
+    }
+    return 1;
+}
+
+static int
 ensure_data_dir(const char *dir)
 {
     struct stat st;
-    if(stat(dir, &st) == 0) {
-        if(S_ISDIR(st.st_mode))
-            return 1;
+    if(stat(dir, &st) == 0)
+        return S_ISDIR(st.st_mode);
+
+    char *p = strdup(dir);
+    if(!p)
         return 0;
-    }
-    return mkdir(dir, 0700) == 0;
+    int ok = ensure_parent_dirs(p) && (mkdir(p, 0700) == 0 || errno == EEXIST);
+    free(p);
+    return ok;
 }
 
 int
@@ -692,7 +755,7 @@ main(int argc, char **argv)
         return 1;
 
     register_callbacks(state.tox);
-    tox_self_set_name(state.tox, (const uint8_t *)"dwyco-tox", 9, NULL);
+    tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
     tox_bootstrap(state.tox);
 
     while(!state.shutdown) {

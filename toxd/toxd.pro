@@ -7,19 +7,22 @@ include(../$$DWYCO_CONFDIR/conf.pri)
 INCLUDEPATH += $${PWD}/../bld/vc
 INCLUDEPATH += $${PWD}/../bld/dwcls
 INCLUDEPATH += $${PWD}/../bld/kazlib
-INCLUDEPATH += /opt/homebrew/include
+
 
 SOURCES += \
     toxd.cpp
 
 macx-* {
+INCLUDEPATH += /opt/homebrew/include
+#QMAKE_LFLAGS += /opt/homebrew/lib
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/vc/libvc.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
--ltoxcore \
--lsodium \
+$${D}/jenkins/libjenkins.a \
+/opt/homebrew/lib/libtoxcore.a \
+/opt/homebrew/lib/libsodium.a \
 -lpthread
 }
 
