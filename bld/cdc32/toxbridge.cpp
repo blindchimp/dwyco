@@ -82,8 +82,8 @@ write_msg(int fd, vc msg)
         os.close(vcxstream::DISCARD);
         return 0;
     }
-    if(!os.close(vcxstream::FLUSH))
-        return 0;
+    //if(!os.close(vcxstream::FLUSH))
+    //    return 0;
     const char *buf;
     long len;
     os.cur_buf(buf, len);
@@ -230,6 +230,12 @@ process_tox_event(const vc &ev)
         vc name = args[4];
         (void)kind;
         se_emit(SE_TOX_FILE_REQUEST, vc((int)fn), vc((int)fnum), name, vc((long long)size));
+
+    } else if(strcmp(type, "self_connection_status") == 0 && args.num_elems() >= 1) {
+        vc status = args[0];
+        GRTLOG("tox: self connection status ", 0, 0);
+        GRTLOG((const char *)status, status.len(), 0);
+        se_emit(SE_TOX_SELF_CONNECTION_STATUS, status);
 
     } else if(strcmp(type, "file_chunk") == 0 && args.num_elems() >= 4) {
         uint32_t fn = (uint32_t)(int)args[0];

@@ -91,6 +91,7 @@ enum dwyco_sys_event {
     SE_TOX_FRIEND_NAME,
     SE_TOX_FILE_REQUEST,
     SE_TOX_FILE_CHUNK,
+    SE_TOX_SELF_CONNECTION_STATUS,
 };
 
 // at this point, the id can be a uid or a mid
