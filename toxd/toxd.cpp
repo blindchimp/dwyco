@@ -732,6 +732,25 @@ handle_ping(ToxdState *s, vc params, int reqid)
 }
 
 static void
+handle_friend_list(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "friend_list", reqid, params);
+    uint32_t n = tox_self_get_friend_list_size(s->tox);
+    vc friends(VC_VECTOR);
+    for(uint32_t i = 0; i < n; ++i) {
+        uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+        if(tox_friend_get_public_key(s->tox, i, pubkey, NULL)) {
+            vc entry(VC_MAP, "", 2);
+            entry.add_kv("pubkey", vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE));
+            friends.append(entry);
+        }
+    }
+    vc result(VC_MAP, "", 2);
+    result.add_kv("friends", friends);
+    send_response(STDOUT_FILENO, reqid, result);
+}
+
+static void
 handle_shutdown(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "shutdown", reqid, params);
@@ -766,6 +785,8 @@ handle_rpc_request(ToxdState *s, const vc &req)
         handle_file_send_data(s, params, reqid);
     else if(strcmp(method, "file_accept") == 0)
         handle_file_accept(s, params, reqid);
+    else if(strcmp(method, "friend_list") == 0)
+        handle_friend_list(s, params, reqid);
     else if(strcmp(method, "ping") == 0)
         handle_ping(s, params, reqid);
     else if(strcmp(method, "shutdown") == 0)
