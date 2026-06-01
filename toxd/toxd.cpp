@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <poll.h>
 #include <errno.h>
@@ -13,6 +14,7 @@
 #include "vc.h"
 #include "vccomp.h"
 #include "vcxstrm.h"
+#include "vcio.h"
 
 #define RPCM_METHOD 0
 #define RPCM_PARAMS 1
@@ -48,7 +50,10 @@ struct ToxdState {
     int reqid_counter;
     char data_dir[1024];
     FILE *log_file;
+    int bootstrapped;
 };
+
+FILE *lf;
 
 [[noreturn]]
 void
@@ -64,6 +69,10 @@ read_all(int fd, char *buf, int len)
     int total = 0;
     while(total < len) {
         int n = (int)read(fd, buf + total, (size_t)(len - total));
+        fprintf(lf, "piss! %d", n);
+        fwrite(buf + total, n, 1, lf);
+        fprintf(lf, "\nepiss\n");
+
         if(n <= 0) {
             if(n == 0)
                 return total;
@@ -222,11 +231,40 @@ pubkey_to_vc(const uint8_t *pk)
 }
 
 static void
+log_printf(ToxdState *s, const char *fmt, ...)
+{
+    if(!s || !s->log_file)
+        return;
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(s->log_file, fmt, ap);
+    va_end(ap);
+    fputc('\n', s->log_file);
+    fflush(s->log_file);
+}
+
+static void
+log_cmd(ToxdState *s, const char *method, int reqid,  vc params)
+{
+    if(!s || !s->log_file)
+        return;
+    fprintf(s->log_file, "[cmd] %s reqid=%d", method, reqid);
+    if(!params.is_nil() && params.num_elems() > 0) {
+        VcIOHackStr buf;
+        params.printOn(buf);
+        fprintf(s->log_file, " params=%.*s", buf.pcount(), buf.ref_str());
+    }
+    fputc('\n', s->log_file);
+    fflush(s->log_file);
+}
+
+static void
 toxd_on_friend_request(Tox *tox, const uint8_t *pubkey, const uint8_t *msg,
                        size_t len, void *ud)
 {
     (void)tox;
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] friend_request msg=%.*s", (int)len, (const char *)msg);
     vc args(VC_VECTOR);
     args.append(pubkey_to_vc(pubkey));
     args.append(vc(VC_STRING, (const char *)msg, (long)len));
@@ -239,6 +277,9 @@ toxd_on_friend_message(Tox *tox, uint32_t fn, Tox_Message_Type type,
 {
     (void)tox;
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] friend_message fn=%u type=%s msg=%.*s", fn,
+               type == TOX_MESSAGE_TYPE_ACTION ? "action" : "normal",
+               (int)len, (const char *)msg);
     uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
     tox_friend_get_public_key(tox, fn, pubkey, NULL);
     vc args(VC_VECTOR);
@@ -254,6 +295,7 @@ toxd_on_friend_read_receipt(Tox *tox, uint32_t fn, uint32_t mid, void *ud)
 {
     (void)tox;
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] read_receipt fn=%u mid=%u", fn, mid);
     vc args(VC_VECTOR);
     args.append(vc((int)fn));
     args.append(vc((int)mid));
@@ -266,6 +308,8 @@ toxd_on_file_recv(Tox *tox, uint32_t fn, uint32_t fnum, uint32_t kind,
 {
     (void)tox;
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] file_request fn=%u fnum=%u kind=%u size=%llu name=%.*s",
+               fn, fnum, kind, (unsigned long long)size, (int)nlen, (const char *)name);
     vc args(VC_VECTOR);
     args.append(vc((int)fn));
     args.append(vc((int)fnum));
@@ -281,6 +325,8 @@ toxd_on_file_recv_chunk(Tox *tox, uint32_t fn, uint32_t fnum,
 {
     (void)tox;
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] file_chunk fn=%u fnum=%u pos=%llu len=%zu",
+               fn, fnum, (unsigned long long)pos, len);
     vc args(VC_VECTOR);
     args.append(vc((int)fn));
     args.append(vc((int)fnum));
@@ -296,7 +342,9 @@ toxd_on_file_recv_chunk(Tox *tox, uint32_t fn, uint32_t fnum,
 static void
 toxd_on_self_connection_status(Tox *tox, Tox_Connection status, void *ud)
 {
-    (void)ud;
+    ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] self_connection_status %s",
+               status == TOX_CONNECTION_NONE ? "offline" : status == TOX_CONNECTION_TCP ? "tcp" : "udp");
     vc args(VC_VECTOR);
     args.append(vc(status == TOX_CONNECTION_NONE ? "offline" : status == TOX_CONNECTION_TCP ? "tcp" : "udp"));
     send_event(STDOUT_FILENO, "self_connection_status", args);
@@ -306,6 +354,8 @@ static void
 toxd_on_connection_status(Tox *tox, uint32_t fn, Tox_Connection status, void *ud)
 {
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] friend_connection_status fn=%u %s", fn,
+               status == TOX_CONNECTION_NONE ? "offline" : "online");
     uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
     tox_friend_get_public_key(tox, fn, pubkey, NULL);
     vc args(VC_VECTOR);
@@ -319,6 +369,7 @@ static void
 toxd_on_friend_name(Tox *tox, uint32_t fn, const uint8_t *name, size_t len, void *ud)
 {
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] friend_name fn=%u name=%.*s", fn, (int)len, (const char *)name);
     uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
     tox_friend_get_public_key(tox, fn, pubkey, NULL);
     vc args(VC_VECTOR);
@@ -333,6 +384,7 @@ toxd_on_friend_status_message(Tox *tox, uint32_t fn, const uint8_t *msg,
                               size_t len, void *ud)
 {
     ToxdState *s = (ToxdState *)ud;
+    log_printf(s, "[cb] friend_status_message fn=%u msg=%.*s", fn, (int)len, (const char *)msg);
     uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
     tox_friend_get_public_key(tox, fn, pubkey, NULL);
     vc args(VC_VECTOR);
@@ -391,7 +443,7 @@ load_or_create_tox(ToxdState *s)
         snprintf(log_path, sizeof(log_path), "%s/tox.log", home);
     else
         snprintf(log_path, sizeof(log_path), "tox.log");
-    s->log_file = fopen(log_path, "a");
+    lf = s->log_file = fopen(log_path, "a");
     if(s->log_file) {
         opts.log_callback = tox_write_log;
         opts.log_user_data = s->log_file;
@@ -461,7 +513,7 @@ register_callbacks(Tox *tox)
 static void
 handle_generate_keypair(ToxdState *s, vc params, int reqid)
 {
-    (void)params;
+    log_cmd(s, "generate_keypair", reqid, params);
     uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
     tox_self_get_public_key(s->tox, pubkey);
     uint8_t address[TOX_ADDRESS_SIZE];
@@ -476,7 +528,7 @@ handle_generate_keypair(ToxdState *s, vc params, int reqid)
 static void
 handle_get_address(ToxdState *s, vc params, int reqid)
 {
-    (void)params;
+    log_cmd(s, "get_address", reqid, params);
     uint8_t address[TOX_ADDRESS_SIZE];
     tox_self_get_address(s->tox, address);
 
@@ -488,6 +540,7 @@ handle_get_address(ToxdState *s, vc params, int reqid)
 static void
 handle_friend_add(ToxdState *s, vc params, int reqid)
 {
+    log_cmd(s, "friend_add", reqid, params);
     vc addr_vc;
     vc msg_vc;
     if(!params.find("address", addr_vc) || !params.find("message", msg_vc)) {
@@ -531,6 +584,7 @@ handle_friend_add(ToxdState *s, vc params, int reqid)
 static void
 handle_friend_delete(ToxdState *s, vc params, int reqid)
 {
+    log_cmd(s, "friend_delete", reqid, params);
     vc fn_vc;
     if(!params.find("friend_number", fn_vc)) {
         send_error(STDOUT_FILENO, reqid, "missing friend_number");
@@ -550,6 +604,7 @@ handle_friend_delete(ToxdState *s, vc params, int reqid)
 static void
 handle_message_send(ToxdState *s, vc params, int reqid)
 {
+    log_cmd(s, "message_send", reqid, params);
     vc fn_vc, text_vc, type_vc;
     if(!params.find("friend_number", fn_vc) || !params.find("text", text_vc)) {
         send_error(STDOUT_FILENO, reqid, "missing friend_number or text");
@@ -580,9 +635,9 @@ handle_message_send(ToxdState *s, vc params, int reqid)
 static void
 handle_file_send(ToxdState *s, vc params, int reqid)
 {
+    log_cmd(s, "file_send", reqid, params);
     vc fn_vc, name_vc;
     vc size_vc;
-    (void)s;
     if(!params.find("friend_number", fn_vc) || !params.find("name", name_vc) ||
        !params.find("size", size_vc)) {
         send_error(STDOUT_FILENO, reqid, "missing friend_number, name, or size");
@@ -615,6 +670,7 @@ handle_file_send(ToxdState *s, vc params, int reqid)
 static void
 handle_file_send_data(ToxdState *s, vc params, int reqid)
 {
+    log_cmd(s, "file_send_data", reqid, params);
     vc fn_vc, fnum_vc, pos_vc, data_vc;
     if(!params.find("friend_number", fn_vc) || !params.find("file_number", fnum_vc) ||
        !params.find("pos", pos_vc) || !params.find("data", data_vc)) {
@@ -645,6 +701,7 @@ handle_file_send_data(ToxdState *s, vc params, int reqid)
 static void
 handle_file_accept(ToxdState *s, vc params, int reqid)
 {
+    log_cmd(s, "file_accept", reqid, params);
     vc fn_vc, fnum_vc;
     if(!params.find("friend_number", fn_vc) || !params.find("file_number", fnum_vc)) {
         send_error(STDOUT_FILENO, reqid, "missing friend_number or file_number");
@@ -665,8 +722,7 @@ handle_file_accept(ToxdState *s, vc params, int reqid)
 static void
 handle_ping(ToxdState *s, vc params, int reqid)
 {
-    (void)s;
-    (void)params;
+    log_cmd(s, "ping", reqid, params);
     vc result(VC_MAP, "", 2);
     result.add_kv("pong", vc(1));
     send_response(STDOUT_FILENO, reqid, result);
@@ -675,7 +731,7 @@ handle_ping(ToxdState *s, vc params, int reqid)
 static void
 handle_shutdown(ToxdState *s, vc params, int reqid)
 {
-    (void)params;
+    log_cmd(s, "shutdown", reqid, params);
     save_tox_state(s);
     send_response(STDOUT_FILENO, reqid, vcnil);
     s->shutdown = 1;
@@ -688,6 +744,8 @@ handle_rpc_request(ToxdState *s, const vc &req)
     vc params = req[RPCM_PARAMS];
     int reqid = (int)req[RPCM_REQID];
     const char *method = (const char *)method_vc;
+
+    log_printf(s, "[cmd] request method=%s reqid=%d", method, reqid);
 
     if(strcmp(method, "generate_keypair") == 0)
         handle_generate_keypair(s, params, reqid);
@@ -777,14 +835,16 @@ main(int argc, char **argv)
     }
 
     load_or_create_tox(&state);
+    log_printf(&state, "FUCK!");
     if(!state.tox)
         return 1;
 
     register_callbacks(state.tox);
     tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
-    tox_bootstrap(state.tox);
 
     while(!state.shutdown) {
+        log_printf(&state, "SHIT!");
+
         int interval = tox_iteration_interval(state.tox);
         struct pollfd pfd;
         pfd.fd = STDIN_FILENO;
@@ -806,7 +866,14 @@ main(int argc, char **argv)
         }
 
         tox_iterate(state.tox, &state);
+
+        if(!state.bootstrapped) {
+            tox_bootstrap(state.tox);
+            state.bootstrapped = 1;
+        }
     }
+    log_printf(&state, "DUMP!");
+
 
     save_tox_state(&state);
     tox_kill(state.tox);
