@@ -246,6 +246,10 @@ process_tox_event(const vc &ev)
         vc data = args[3];
         se_emit(SE_TOX_FILE_CHUNK, vc((int)fn), vc((int)fnum),
                 vc((long long)pos), data);
+
+    } else if(strcmp(type, "ready") == 0) {
+        GRTLOG("tox: ready", 0, 0);
+        se_emit(SE_TOX_READY, vcnil);
     }
 }
 
@@ -375,12 +379,6 @@ tox_bridge_init(const char *toxd_path, const char *data_dir)
     Toxd_stdin = stdin_pipe[1];
     Toxd_stdout = stdout_pipe[0];
     Active = 1;
-
-    vc result;
-    if(!toxd_rpc_call(vc("ping"), vc(VC_MAP, "", 0), result, 5000)) {
-        tox_bridge_shutdown();
-        return 0;
-    }
 
     GRTLOG("tox bridge: initialized, pid=", Toxd_pid, 0);
     return 1;

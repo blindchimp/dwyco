@@ -91,6 +91,8 @@ write_all(int fd, const char *buf, int len)
     int total = 0;
     while(total < len) {
         int n = (int)write(fd, buf + total, (size_t)(len - total));
+        fprintf(lf, "wpiss! %d", n);
+        fwrite(buf + total, n, 1, lf);
         if(n <= 0) {
             if(errno == EINTR)
                 continue;
@@ -435,6 +437,7 @@ load_or_create_tox(ToxdState *s)
     snprintf(save_path, sizeof(save_path), "%s/%s", s->data_dir, SAVE_FILE);
 
     struct Tox_Options opts;
+    memset(&opts, 0, sizeof(opts));
     tox_options_default(&opts);
 
     const char *home = getenv("HOME");
@@ -841,6 +844,8 @@ main(int argc, char **argv)
 
     register_callbacks(state.tox);
     tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
+
+    send_event(STDOUT_FILENO, "ready", vc(VC_MAP, "", 0));
 
     while(!state.shutdown) {
         log_printf(&state, "SHIT!");
