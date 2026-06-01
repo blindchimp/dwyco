@@ -47,6 +47,7 @@ struct ToxdState {
     int shutdown;
     int reqid_counter;
     char data_dir[1024];
+    FILE *log_file;
 };
 
 [[noreturn]]
@@ -363,6 +364,19 @@ save_tox_state(ToxdState *s)
 }
 
 static void
+tox_write_log(Tox *tox, Tox_Log_Level level, const char *file,
+              uint32_t line, const char *func, const char *message,
+              void *user_data)
+{
+    FILE *lf = (FILE *)user_data;
+    if(lf) {
+        fprintf(lf, "[%s] %s:%u (%s): %s\n",
+                tox_log_level_to_string(level), file, line, func, message);
+        fflush(lf);
+    }
+}
+
+static void
 load_or_create_tox(ToxdState *s)
 {
     char save_path[1024];
@@ -370,6 +384,18 @@ load_or_create_tox(ToxdState *s)
 
     struct Tox_Options opts;
     tox_options_default(&opts);
+
+    const char *home = getenv("HOME");
+    char log_path[1024];
+    if(home)
+        snprintf(log_path, sizeof(log_path), "%s/tox.log", home);
+    else
+        snprintf(log_path, sizeof(log_path), "tox.log");
+    s->log_file = fopen(log_path, "a");
+    if(s->log_file) {
+        opts.log_callback = tox_write_log;
+        opts.log_user_data = s->log_file;
+    }
 
     uint8_t *savedata = NULL;
     size_t savedata_sz = 0;
@@ -786,5 +812,7 @@ main(int argc, char **argv)
     tox_kill(state.tox);
     close(lock_fd);
     unlink(lock_path);
+    if(state.log_file)
+        fclose(state.log_file);
     return 0;
 }
