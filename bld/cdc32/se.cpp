@@ -86,6 +86,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_TOX_FILE_CHUNK,
     DWYCO_SE_TOX_SELF_CONNECTION_STATUS,
     DWYCO_SE_TOX_READY,
+    DWYCO_SE_TOX_CRASHED,
 };
 
 void
@@ -511,6 +512,16 @@ se_process()
             break;
 
         case SE_TOX_READY:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_CRASHED:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            0, 0,

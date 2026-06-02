@@ -37,6 +37,31 @@ static pid_t Toxd_pgid;
 // forward declaration
 static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
 
+struct toxd_error {};
+
+static void
+handle_toxd_crash()
+{
+    GRTLOG("tox bridge: toxd crashed", 0, 0);
+    se_emit(SE_TOX_CRASHED, vcnil);
+    if(Toxd_stdin >= 0) {
+        close(Toxd_stdin);
+        Toxd_stdin = -1;
+    }
+    if(Toxd_stdout >= 0) {
+        close(Toxd_stdout);
+        Toxd_stdout = -1;
+    }
+    if(Toxd_pid > 0) {
+        kill(Toxd_pid, SIGKILL);
+        int status;
+        waitpid(Toxd_pid, &status, WNOHANG);
+        Toxd_pid = 0;
+    }
+    Active = 0;
+    Pending_responses = vcnil;
+}
+
 static int
 read_all(int fd, char *buf, int len)
 {
@@ -45,10 +70,10 @@ read_all(int fd, char *buf, int len)
         int n = (int)read(fd, buf + total, (size_t)(len - total));
         if(n <= 0) {
             if(n == 0)
-                return total;
+                throw toxd_error();
             if(errno == EINTR)
                 continue;
-            return -1;
+            throw toxd_error();
         }
         total += n;
     }
@@ -64,7 +89,7 @@ write_all(int fd, const char *buf, int len)
         if(n <= 0) {
             if(errno == EINTR)
                 continue;
-            return -1;
+            throw toxd_error();
         }
         total += n;
     }
@@ -76,22 +101,18 @@ write_msg(int fd, vc msg)
 {
     vcxstream os(0, 2048, vcxstream::CONTINUOUS);
     if(!os.open(vcxstream::WRITEABLE, vcxstream::ATOMIC))
-        return 0;
+        throw toxd_error();
     vc_composite::new_dfs();
     if(msg.xfer_out(os) < 0) {
         os.close(vcxstream::DISCARD);
-        return 0;
+        throw toxd_error();
     }
-    //if(!os.close(vcxstream::FLUSH))
-    //    return 0;
     const char *buf;
     long len;
     os.cur_buf(buf, len);
     uint32_t nlen = htonl((uint32_t)len);
-    if(write_all(fd, (const char *)&nlen, 4) != 4)
-        return 0;
-    if(write_all(fd, buf, len) != (int)len)
-        return 0;
+    write_all(fd, (const char *)&nlen, 4);
+    write_all(fd, buf, len);
     return 1;
 }
 
@@ -99,25 +120,26 @@ static vc
 read_msg(int fd)
 {
     uint32_t nlen;
-    if(read_all(fd, (char *)&nlen, 4) != 4)
-        return vcnil;
+    read_all(fd, (char *)&nlen, 4);
     long len = (long)ntohl(nlen);
     if(len <= 0 || len > 1024 * 1024)
-        return vcnil;
+        throw toxd_error();
     char *buf = new char[len];
-    if(read_all(fd, buf, (int)len) != (int)len) {
+    try {
+        read_all(fd, buf, (int)len);
+    } catch(...) {
         delete[] buf;
-        return vcnil;
+        throw;
     }
     vcxstream is(buf, len, vcxstream::FIXED);
     if(!is.open(vcxstream::READABLE)) {
         delete[] buf;
-        return vcnil;
+        throw toxd_error();
     }
     vc msg;
     if(msg.xfer_in(is) < 0) {
         delete[] buf;
-        return vcnil;
+        throw toxd_error();
     }
     delete[] buf;
     return msg;
@@ -261,17 +283,27 @@ read_pending_events(int fd)
     pfd.events = POLLIN;
     int count = 0;
 
-    while(poll(&pfd, 1, 0) > 0 && (pfd.revents & POLLIN)) {
-        vc msg = read_msg(fd);
-        if(msg.is_nil())
-            break;
-        if(is_event(msg)) {
-            process_tox_event(msg);
-            ++count;
-        } else if(is_response(msg)) {
-            if(!Pending_responses.is_nil())
-                Pending_responses.append(msg);
+    try {
+        int ret;
+        while(true) {
+            do {
+                ret = poll(&pfd, 1, 0);
+            } while(ret < 0 && errno == EINTR);
+            if(ret < 0)
+                throw toxd_error();
+            if(ret == 0 || !(pfd.revents & POLLIN))
+                break;
+            vc msg = read_msg(fd);
+            if(is_event(msg)) {
+                process_tox_event(msg);
+                ++count;
+            } else if(is_response(msg)) {
+                if(!Pending_responses.is_nil())
+                    Pending_responses.append(msg);
+            }
         }
+    } catch(toxd_error&) {
+        handle_toxd_crash();
     }
     return count;
 }
@@ -284,16 +316,17 @@ read_response(int fd, int reqid, vc &result_out, int timeout_ms)
         struct pollfd pfd;
         pfd.fd = fd;
         pfd.events = POLLIN;
-        int ret = poll(&pfd, 1, 50);
+        int ret;
+        do {
+            ret = poll(&pfd, 1, 50);
+        } while(ret < 0 && errno == EINTR);
         if(ret < 0)
-            return 0;
+            throw toxd_error();
         if(ret == 0) {
             elapsed += 50;
             continue;
         }
         vc msg = read_msg(fd);
-        if(msg.is_nil())
-            return 0;
         if(is_event(msg)) {
             process_tox_event(msg);
             continue;
@@ -311,25 +344,29 @@ read_response(int fd, int reqid, vc &result_out, int timeout_ms)
 static int
 toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms)
 {
-    if(Toxd_stdin < 0)
+    try {
+        if(Toxd_stdin < 0)
+            return 0;
+
+        int reqid = ++Reqid_counter;
+        vc req(VC_VECTOR);
+        req.append(method);
+        req.append(params);
+        req.append(vc(reqid));
+
+        write_msg(Toxd_stdin, req);
+
+        if(!read_response(Toxd_stdout, reqid, result_out, timeout_ms))
+            return 0;
+
+        if(result_out.type() == VC_STRING)
+            return 0;
+
+        return 1;
+    } catch(toxd_error&) {
+        handle_toxd_crash();
         return 0;
-
-    int reqid = ++Reqid_counter;
-    vc req(VC_VECTOR);
-    req.append(method);
-    req.append(params);
-    req.append(vc(reqid));
-
-    if(!write_msg(Toxd_stdin, req))
-        return 0;
-
-    if(!read_response(Toxd_stdout, reqid, result_out, timeout_ms))
-        return 0;
-
-    if(result_out.type() == VC_STRING)
-        return 0;
-
-    return 1;
+    }
 }
 
 int
