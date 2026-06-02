@@ -37,7 +37,10 @@ static pid_t Toxd_pgid;
 // forward declaration
 static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
 
-struct toxd_error {};
+struct toxd_error {
+    DwString error;
+    toxd_error(const DwString& e) : error(e) {}
+};
 
 static void
 handle_toxd_crash()
@@ -70,10 +73,10 @@ read_all(int fd, char *buf, int len)
         int n = (int)read(fd, buf + total, (size_t)(len - total));
         if(n <= 0) {
             if(n == 0)
-                throw toxd_error();
+                throw toxd_error(DwString("toxd read eof"));
             if(errno == EINTR)
                 continue;
-            throw toxd_error();
+            throw toxd_error(DwString(strerror(errno)));
         }
         total += n;
     }
@@ -89,7 +92,7 @@ write_all(int fd, const char *buf, int len)
         if(n <= 0) {
             if(errno == EINTR)
                 continue;
-            throw toxd_error();
+            throw toxd_error(DwString(strerror(errno)));
         }
         total += n;
     }
@@ -101,11 +104,11 @@ write_msg(int fd, vc msg)
 {
     vcxstream os(0, 2048, vcxstream::CONTINUOUS);
     if(!os.open(vcxstream::WRITEABLE, vcxstream::ATOMIC))
-        throw toxd_error();
+        throw toxd_error(DwString("write_msg open failed"));
     vc_composite::new_dfs();
     if(msg.xfer_out(os) < 0) {
         os.close(vcxstream::DISCARD);
-        throw toxd_error();
+        throw toxd_error(DwString("write_msg xfer failed"));
     }
     const char *buf;
     long len;
@@ -122,8 +125,8 @@ read_msg(int fd)
     uint32_t nlen;
     read_all(fd, (char *)&nlen, 4);
     long len = (long)ntohl(nlen);
-    if(len <= 0 || len > 1024 * 1024)
-        throw toxd_error();
+    if(len < 2 || len > 1024)
+        throw toxd_error(DwString("read_msg invalid length"));
     char *buf = new char[len];
     try {
         read_all(fd, buf, (int)len);
@@ -134,12 +137,12 @@ read_msg(int fd)
     vcxstream is(buf, len, vcxstream::FIXED);
     if(!is.open(vcxstream::READABLE)) {
         delete[] buf;
-        throw toxd_error();
+        throw toxd_error(DwString("read_msg stream open failed"));
     }
     vc msg;
     if(msg.xfer_in(is) < 0) {
         delete[] buf;
-        throw toxd_error();
+        throw toxd_error(DwString("read_msg xfer failed"));
     }
     delete[] buf;
     return msg;
@@ -290,7 +293,7 @@ read_pending_events(int fd)
                 ret = poll(&pfd, 1, 0);
             } while(ret < 0 && errno == EINTR);
             if(ret < 0)
-                throw toxd_error();
+                throw toxd_error(DwString(strerror(errno)));
             if(ret == 0 || !(pfd.revents & POLLIN))
                 break;
             vc msg = read_msg(fd);
@@ -321,7 +324,7 @@ read_response(int fd, int reqid, vc &result_out, int timeout_ms)
             ret = poll(&pfd, 1, 50);
         } while(ret < 0 && errno == EINTR);
         if(ret < 0)
-            throw toxd_error();
+            throw toxd_error(DwString(strerror(errno)));
         if(ret == 0) {
             elapsed += 50;
             continue;
