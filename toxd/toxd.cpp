@@ -32,7 +32,8 @@
 #define SAVE_FILE "tox_save.tox"
 #define LOCK_FILE "toxd.lock"
 
-static const char *bootstrap_nodes[] = {
+static const char *bootstrap_nodes[] =
+{
     "144.217.167.73:33445:7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C",
     "tox.abilinski.com:33445:10C00EB250C3233E343E2AEBA07115A5C28920E9C8D29492F6D00B29049EDC7E",
     "198.199.98.108:33445:BEF0CFB37AF874BD17B9A8F9FE64C75521DB95A37D33C5BDB00E9CF58659C04F",
@@ -45,7 +46,8 @@ static const char *bootstrap_nodes[] = {
     "tox.libre.tw:33445:1CEEA650D5DDA858EA6AF6CEA79FEAF022F9C2B8295EE3716E2785C81DD09152",
 };
 
-struct ToxdState {
+struct ToxdState
+{
     Tox *tox;
     int shutdown;
     int reqid_counter;
@@ -58,8 +60,8 @@ FILE *lf;
 
 struct toxd_error
 {
-	DwString error;
-	toxd_error(const DwString& e) : error(e) {}
+    DwString error;
+    toxd_error(const DwString& e) : error(e) {}
 };
 
 [[noreturn]]
@@ -74,13 +76,15 @@ static int
 read_all(int fd, char *buf, int len)
 {
     int total = 0;
-    while(total < len) {
+    while(total < len)
+    {
         int n = (int)read(fd, buf + total, (size_t)(len - total));
         fprintf(lf, "piss! %d", n);
         fwrite(buf + total, n, 1, lf);
         fprintf(lf, "\nepiss\n");
 
-        if(n <= 0) {
+        if(n <= 0)
+        {
             if(n == 0)
                 return total;
             if(errno == EINTR)
@@ -96,11 +100,13 @@ static int
 write_all(int fd, const char *buf, int len)
 {
     int total = 0;
-    while(total < len) {
+    while(total < len)
+    {
         int n = (int)write(fd, buf + total, (size_t)(len - total));
         fprintf(lf, "wpiss! %d", n);
         fwrite(buf + total, n, 1, lf);
-        if(n <= 0) {
+        if(n <= 0)
+        {
             if(errno == EINTR)
                 continue;
             throw toxd_error(strerror(errno));
@@ -117,7 +123,8 @@ write_msg(int fd, vc msg)
     if(!os.open(vcxstream::WRITEABLE, vcxstream::ATOMIC))
         throw toxd_error("open serial");
     vc_composite::new_dfs();
-    if(msg.xfer_out(os) < 0) {
+    if(msg.xfer_out(os) < 0)
+    {
         os.close(vcxstream::DISCARD);
         throw toxd_error("xfer_out");
     }
@@ -141,17 +148,20 @@ read_msg(int fd)
     if(len <= 2 || len > 1024)
         return vcnil;
     char *buf = new char[len];
-    if(read_all(fd, buf, (int)len) != (int)len) {
+    if(read_all(fd, buf, (int)len) != (int)len)
+    {
         delete[] buf;
         return vcnil;
     }
     vcxstream is(buf, len, vcxstream::FIXED);
-    if(!is.open(vcxstream::READABLE)) {
+    if(!is.open(vcxstream::READABLE))
+    {
         delete[] buf;
         throw toxd_error("open stream in");
     }
     vc msg;
-    if(msg.xfer_in(is) < 0) {
+    if(msg.xfer_in(is) < 0)
+    {
         delete[] buf;
         throw toxd_error("xfer_in");
     }
@@ -218,7 +228,8 @@ static void
 tox_bootstrap(Tox *tox)
 {
     int n = sizeof(bootstrap_nodes) / sizeof(bootstrap_nodes[0]);
-    for(int i = 0; i < n; ++i) {
+    for(int i = 0; i < n; ++i)
+    {
         const char *s = bootstrap_nodes[i];
         char addr[256];
         int port;
@@ -258,7 +269,8 @@ log_cmd(ToxdState *s, const char *method, int reqid,  vc params)
     if(!s || !s->log_file)
         return;
     fprintf(s->log_file, "[cmd] %s reqid=%d", method, reqid);
-    if(!params.is_nil() && params.num_elems() > 0) {
+    if(!params.is_nil() && params.num_elems() > 0)
+    {
         VcIOHackStr buf;
         params.printOn(buf);
         fprintf(s->log_file, " params=%.*s", buf.pcount(), buf.ref_str());
@@ -340,9 +352,12 @@ toxd_on_file_recv_chunk(Tox *tox, uint32_t fn, uint32_t fnum,
     args.append(vc((int)fn));
     args.append(vc((int)fnum));
     args.append(vc((long long)pos));
-    if(data && len) {
+    if(data && len)
+    {
         args.append(vc(VC_BSTRING, (const char *)data, (long)len));
-    } else {
+    }
+    else
+    {
         args.append(vcnil);
     }
     send_event(STDOUT_FILENO, "file_chunk", args);
@@ -416,7 +431,8 @@ save_tox_state(ToxdState *s)
     tox_get_savedata(s->tox, data);
 
     FILE *f = fopen(tmp_path, "wb");
-    if(f) {
+    if(f)
+    {
         fwrite(data, 1, sz, f);
         fclose(f);
         rename(tmp_path, save_path);
@@ -430,7 +446,8 @@ tox_write_log(Tox *tox, Tox_Log_Level level, const char *file,
               void *user_data)
 {
     FILE *lf = (FILE *)user_data;
-    if(lf) {
+    if(lf)
+    {
         fprintf(lf, "[%s] %s:%u (%s): %s\n",
                 tox_log_level_to_string(level), file, line, func, message);
         fflush(lf);
@@ -454,7 +471,8 @@ load_or_create_tox(ToxdState *s)
     else
         snprintf(log_path, sizeof(log_path), "tox.log");
     lf = s->log_file = fopen(log_path, "a");
-    if(s->log_file) {
+    if(s->log_file)
+    {
         opts.log_callback = tox_write_log;
         opts.log_user_data = s->log_file;
     }
@@ -462,15 +480,20 @@ load_or_create_tox(ToxdState *s)
     uint8_t *savedata = NULL;
     size_t savedata_sz = 0;
     FILE *f = fopen(save_path, "rb");
-    if(f) {
+    if(f)
+    {
         fseek(f, 0, SEEK_END);
         long sz = ftell(f);
         rewind(f);
-        if(sz > 0 && sz < 10 * 1024 * 1024) {
+        if(sz > 0 && sz < 10 * 1024 * 1024)
+        {
             savedata = (uint8_t *)malloc((size_t)sz);
-            if(fread(savedata, 1, (size_t)sz, f) == (size_t)sz) {
+            if(fread(savedata, 1, (size_t)sz, f) == (size_t)sz)
+            {
                 savedata_sz = (size_t)sz;
-            } else {
+            }
+            else
+            {
                 free(savedata);
                 savedata = NULL;
             }
@@ -478,7 +501,8 @@ load_or_create_tox(ToxdState *s)
         fclose(f);
     }
 
-    if(savedata) {
+    if(savedata)
+    {
         opts.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
         opts.savedata_data = savedata;
         opts.savedata_length = savedata_sz;
@@ -488,13 +512,15 @@ load_or_create_tox(ToxdState *s)
     s->tox = tox_new(&opts, &err);
     if(savedata)
         free(savedata);
-    if(!s->tox) {
+    if(!s->tox)
+    {
         tox_options_default(&opts);
         opts.savedata_type = TOX_SAVEDATA_TYPE_NONE;
         s->tox = tox_new(&opts, &err);
     }
 
-    if(s->tox) {
+    if(s->tox)
+    {
         uint8_t address[TOX_ADDRESS_SIZE];
         tox_self_get_address(s->tox, address);
         char hex[TOX_ADDRESS_SIZE * 2 + 1];
@@ -553,11 +579,13 @@ handle_friend_add(ToxdState *s, vc params, int reqid)
     log_cmd(s, "friend_add", reqid, params);
     vc addr_vc;
     vc msg_vc;
-    if(!params.find("address", addr_vc) || !params.find("message", msg_vc)) {
+    if(!params.find("address", addr_vc) || !params.find("message", msg_vc))
+    {
         send_error(STDOUT_FILENO, reqid, "missing address or message");
         return;
     }
-    if(addr_vc.len() != TOX_ADDRESS_SIZE) {
+    if(addr_vc.len() != TOX_ADDRESS_SIZE)
+    {
         send_error(STDOUT_FILENO, reqid, "invalid address length");
         return;
     }
@@ -569,17 +597,34 @@ handle_friend_add(ToxdState *s, vc params, int reqid)
 
     Tox_Err_Friend_Add err;
     uint32_t fn = tox_friend_add(s->tox, addr, msg, mlen, &err);
-    if(err != TOX_ERR_FRIEND_ADD_OK) {
+    if(err != TOX_ERR_FRIEND_ADD_OK)
+    {
         const char *estr = "unknown error";
-        switch(err) {
-        case TOX_ERR_FRIEND_ADD_TOO_LONG: estr = "message too long"; break;
-        case TOX_ERR_FRIEND_ADD_NO_MESSAGE: estr = "no message"; break;
-        case TOX_ERR_FRIEND_ADD_OWN_KEY: estr = "own key"; break;
-        case TOX_ERR_FRIEND_ADD_ALREADY_SENT: estr = "already sent"; break;
-        case TOX_ERR_FRIEND_ADD_BAD_CHECKSUM: estr = "bad checksum"; break;
-        case TOX_ERR_FRIEND_ADD_SET_NEW_NOSPAM: estr = "set new nospam"; break;
-        case TOX_ERR_FRIEND_ADD_MALLOC: estr = "malloc failed"; break;
-        default: break;
+        switch(err)
+        {
+        case TOX_ERR_FRIEND_ADD_TOO_LONG:
+            estr = "message too long";
+            break;
+        case TOX_ERR_FRIEND_ADD_NO_MESSAGE:
+            estr = "no message";
+            break;
+        case TOX_ERR_FRIEND_ADD_OWN_KEY:
+            estr = "own key";
+            break;
+        case TOX_ERR_FRIEND_ADD_ALREADY_SENT:
+            estr = "already sent";
+            break;
+        case TOX_ERR_FRIEND_ADD_BAD_CHECKSUM:
+            estr = "bad checksum";
+            break;
+        case TOX_ERR_FRIEND_ADD_SET_NEW_NOSPAM:
+            estr = "set new nospam";
+            break;
+        case TOX_ERR_FRIEND_ADD_MALLOC:
+            estr = "malloc failed";
+            break;
+        default:
+            break;
         }
         send_error(STDOUT_FILENO, reqid, estr);
         return;
@@ -596,14 +641,16 @@ handle_friend_delete(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "friend_delete", reqid, params);
     vc fn_vc;
-    if(!params.find("friend_number", fn_vc)) {
+    if(!params.find("friend_number", fn_vc))
+    {
         send_error(STDOUT_FILENO, reqid, "missing friend_number");
         return;
     }
     uint32_t fn = (uint32_t)(int)fn_vc;
     Tox_Err_Friend_Delete err;
     tox_friend_delete(s->tox, fn, &err);
-    if(err != TOX_ERR_FRIEND_DELETE_OK) {
+    if(err != TOX_ERR_FRIEND_DELETE_OK)
+    {
         send_error(STDOUT_FILENO, reqid, "friend not found");
         return;
     }
@@ -616,13 +663,15 @@ handle_message_send(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "message_send", reqid, params);
     vc fn_vc, text_vc, type_vc;
-    if(!params.find("friend_number", fn_vc) || !params.find("text", text_vc)) {
+    if(!params.find("friend_number", fn_vc) || !params.find("text", text_vc))
+    {
         send_error(STDOUT_FILENO, reqid, "missing friend_number or text");
         return;
     }
     uint32_t fn = (uint32_t)(int)fn_vc;
     Tox_Message_Type mtype = TOX_MESSAGE_TYPE_NORMAL;
-    if(!params.find("type", type_vc)) {
+    if(!params.find("type", type_vc))
+    {
         if(type_vc == vc("action"))
             mtype = TOX_MESSAGE_TYPE_ACTION;
     }
@@ -632,7 +681,8 @@ handle_message_send(ToxdState *s, vc params, int reqid)
 
     Tox_Err_Friend_Send_Message err;
     uint32_t mid = tox_friend_send_message(s->tox, fn, mtype, msg, mlen, &err);
-    if(err != TOX_ERR_FRIEND_SEND_MESSAGE_OK) {
+    if(err != TOX_ERR_FRIEND_SEND_MESSAGE_OK)
+    {
         send_error(STDOUT_FILENO, reqid, "send failed");
         return;
     }
@@ -649,7 +699,8 @@ handle_file_send(ToxdState *s, vc params, int reqid)
     vc fn_vc, name_vc;
     vc size_vc;
     if(!params.find("friend_number", fn_vc) || !params.find("name", name_vc) ||
-       !params.find("size", size_vc)) {
+            !params.find("size", size_vc))
+    {
         send_error(STDOUT_FILENO, reqid, "missing friend_number, name, or size");
         return;
     }
@@ -667,7 +718,8 @@ handle_file_send(ToxdState *s, vc params, int reqid)
 
     Tox_Err_File_Send err;
     uint32_t fnum = tox_file_send(s->tox, fn, kind, fsize, NULL, fname, fnlen, &err);
-    if(err != TOX_ERR_FILE_SEND_OK) {
+    if(err != TOX_ERR_FILE_SEND_OK)
+    {
         send_error(STDOUT_FILENO, reqid, "file send failed");
         return;
     }
@@ -683,7 +735,8 @@ handle_file_send_data(ToxdState *s, vc params, int reqid)
     log_cmd(s, "file_send_data", reqid, params);
     vc fn_vc, fnum_vc, pos_vc, data_vc;
     if(!params.find("friend_number", fn_vc) || !params.find("file_number", fnum_vc) ||
-       !params.find("pos", pos_vc) || !params.find("data", data_vc)) {
+            !params.find("pos", pos_vc) || !params.find("data", data_vc))
+    {
         send_error(STDOUT_FILENO, reqid, "missing required params");
         return;
     }
@@ -694,14 +747,18 @@ handle_file_send_data(ToxdState *s, vc params, int reqid)
         pos = (uint64_t)(long long)pos_vc;
 
     Tox_Err_File_Send_Chunk err;
-    if(data_vc.is_nil() || data_vc.len() == 0) {
+    if(data_vc.is_nil() || data_vc.len() == 0)
+    {
         tox_file_send_chunk(s->tox, fn, fnum, pos, NULL, 0, &err);
-    } else {
+    }
+    else
+    {
         const uint8_t *data = (const uint8_t *)(const char *)data_vc;
         size_t dlen = (size_t)data_vc.len();
         tox_file_send_chunk(s->tox, fn, fnum, pos, data, dlen, &err);
     }
-    if(err != TOX_ERR_FILE_SEND_CHUNK_OK) {
+    if(err != TOX_ERR_FILE_SEND_CHUNK_OK)
+    {
         send_error(STDOUT_FILENO, reqid, "file chunk send failed");
         return;
     }
@@ -713,7 +770,8 @@ handle_file_accept(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "file_accept", reqid, params);
     vc fn_vc, fnum_vc;
-    if(!params.find("friend_number", fn_vc) || !params.find("file_number", fnum_vc)) {
+    if(!params.find("friend_number", fn_vc) || !params.find("file_number", fnum_vc))
+    {
         send_error(STDOUT_FILENO, reqid, "missing friend_number or file_number");
         return;
     }
@@ -722,7 +780,8 @@ handle_file_accept(ToxdState *s, vc params, int reqid)
 
     Tox_Err_File_Control err;
     tox_file_control(s->tox, fn, fnum, TOX_FILE_CONTROL_RESUME, &err);
-    if(err != TOX_ERR_FILE_CONTROL_OK) {
+    if(err != TOX_ERR_FILE_CONTROL_OK)
+    {
         send_error(STDOUT_FILENO, reqid, "file accept failed");
         return;
     }
@@ -744,9 +803,11 @@ handle_friend_list(ToxdState *s, vc params, int reqid)
     log_cmd(s, "friend_list", reqid, params);
     uint32_t n = tox_self_get_friend_list_size(s->tox);
     vc friends(VC_VECTOR);
-    for(uint32_t i = 0; i < n; ++i) {
+    for(uint32_t i = 0; i < n; ++i)
+    {
         uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
-        if(tox_friend_get_public_key(s->tox, i, pubkey, NULL)) {
+        if(tox_friend_get_public_key(s->tox, i, pubkey, NULL))
+        {
             vc entry(VC_MAP, "", 2);
             entry.add_kv("pubkey", vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE));
             friends.append(entry);
@@ -805,8 +866,10 @@ handle_rpc_request(ToxdState *s, const vc &req)
 static int
 ensure_parent_dirs(char *path)
 {
-    for(char *p = path + 1; *p; p++) {
-        if(*p == '/') {
+    for(char *p = path + 1; *p; p++)
+    {
+        if(*p == '/')
+        {
             *p = '\0';
             if(mkdir(path, 0700) < 0 && errno != EEXIST)
                 return 0;
@@ -838,13 +901,16 @@ main(int argc, char **argv)
     memset(&state, 0, sizeof(state));
 
     const char *data_dir = getenv(DATA_DIR_ENV);
-    if(!data_dir) {
+    if(!data_dir)
+    {
         const char *home = getenv("HOME");
         if(home)
             snprintf(state.data_dir, sizeof(state.data_dir), "%s/%s", home, DEFAULT_DATA_DIR);
         else
             snprintf(state.data_dir, sizeof(state.data_dir), DEFAULT_DATA_DIR);
-    } else {
+    }
+    else
+    {
         snprintf(state.data_dir, sizeof(state.data_dir), "%s", data_dir);
     }
 
@@ -860,7 +926,8 @@ main(int argc, char **argv)
     int lock_fd = open(lock_path, O_CREAT | O_RDWR, 0644);
     if(lock_fd < 0)
         return 1;
-    if(flock(lock_fd, LOCK_EX | LOCK_NB) < 0) {
+    if(flock(lock_fd, LOCK_EX | LOCK_NB) < 0)
+    {
         close(lock_fd);
         return 1;
     }
@@ -876,30 +943,36 @@ main(int argc, char **argv)
     {
         send_event(STDOUT_FILENO, "ready", vc(VC_MAP, "", 0));
 
-        while(!state.shutdown) {
+        while(!state.shutdown)
+        {
             int interval = tox_iteration_interval(state.tox);
             struct pollfd pfd;
             pfd.fd = STDIN_FILENO;
             pfd.events = POLLIN;
             int ret = poll(&pfd, 1, interval < 50 ? 50 : interval);
 
-            if(ret > 0 && (pfd.revents & POLLIN)) {
+            if(ret > 0 && (pfd.revents & POLLIN))
+            {
                 vc req = read_msg(STDIN_FILENO);
-                if(!req.is_nil()) {
+                if(!req.is_nil())
+                {
                     if(is_response(req))
                         continue;
                     if(is_event(req))
                         continue;
                     if(req.type() == VC_VECTOR && req.num_elems() >= 3)
                         handle_rpc_request(&state, req);
-                } else {
+                }
+                else
+                {
                     break;
                 }
             }
 
             tox_iterate(state.tox, &state);
 
-            if(!state.bootstrapped) {
+            if(!state.bootstrapped)
+            {
                 tox_bootstrap(state.tox);
                 state.bootstrapped = 1;
             }
