@@ -189,7 +189,7 @@ process_tox_event(const vc &ev)
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         GRTLOG("tox: friend request from ", 0, 0);
         GRTLOGVC(pseudo);
-        se_emit(SE_TOX_FRIEND_REQUEST, pseudo, msg);
+        se_emit(SE_TOX_FRIEND_REQUEST, pseudo, msg, pubkey);
 
     } else if(strcmp(type, "message") == 0 && args.num_elems() >= 4) {
         uint32_t fn = (uint32_t)(int)args[0];
@@ -499,6 +499,15 @@ tox_bridge_friend_add(const vc &address, const vc &message)
     params.add_kv("message", message);
     vc result;
     return toxd_rpc_call(vc("friend_add"), params, result, 10000);
+}
+
+int
+tox_bridge_friend_add_norequest(const vc &pubkey)
+{
+    vc params(VC_MAP, "", 2);
+    params.add_kv("pubkey", pubkey);
+    vc result;
+    return toxd_rpc_call(vc("friend_add_norequest"), params, result, 10000);
 }
 
 int

@@ -9599,6 +9599,14 @@ dwyco_tox_add_friend(const char *tox_id, const char *msg)
 
 DWYCOEXPORT
 int
+dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len)
+{
+    vc pk(VC_BSTRING, pubkey, (long)pubkey_len);
+    return dwyco::tox_bridge_friend_add_norequest(pk);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_get_friend_list(DWYCO_LIST *list_out)
 {
     vc fl = dwyco::tox_bridge_get_friend_list_vc();

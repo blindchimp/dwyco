@@ -450,6 +450,14 @@ se_process()
             break;
 
         case SE_TOX_FRIEND_REQUEST:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][2], Se_q[i][2].len(),
+                                           DWYCO_TYPE_STRING, (const char *)Se_q[i][3], Se_q[i][3].len(),
+                                           0, 0
+                                          );
+            break;
         case SE_TOX_FRIEND_STATUS:
         case SE_TOX_FRIEND_NAME:
             (*dwyco_system_event_callback)(api_cmd,

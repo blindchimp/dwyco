@@ -518,6 +518,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_TOX_SELF_CONNECTION_STATUS 57
 #define DWYCO_SE_TOX_READY 58
 
+int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 #ifdef DWYCO_ASSHAT

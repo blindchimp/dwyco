@@ -664,6 +664,9 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         }
         break;
     }
+    case DWYCO_SE_TOX_FRIEND_REQUEST:
+        dwyco_tox_accept_friend_request(val, len_val);
+        break;
     default:
         break;
     }
@@ -1993,6 +1996,7 @@ DwycoCore::init()
     if(!dwyco_init())
         ::abort();
     setup_emergency_servers();
+    dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");

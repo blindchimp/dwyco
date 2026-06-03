@@ -111,7 +111,7 @@ write_all(int fd, const char *buf, int len)
     while(total < len)
     {
         int n = (int)write(fd, buf + total, (size_t)(len - total));
-        fprintf(lf, "wpiss! %d", n);
+        fprintf(lf, "write n= %d\n", n);
         fwrite(buf + total, n, 1, lf);
         if(n <= 0)
         {
@@ -645,6 +645,65 @@ handle_friend_add(ToxdState *s, vc params, int reqid)
 }
 
 static void
+handle_friend_add_norequest(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "friend_add_norequest", reqid, params);
+    vc pk_vc;
+    if(!params.find("pubkey", pk_vc))
+    {
+        send_error(STDOUT_FILENO, reqid, "missing pubkey");
+        return;
+    }
+    if(pk_vc.len() != TOX_PUBLIC_KEY_SIZE)
+    {
+        send_error(STDOUT_FILENO, reqid, "invalid pubkey length");
+        return;
+    }
+
+    Tox_Public_Key pk;
+    memcpy(pk, (const char *)pk_vc, TOX_PUBLIC_KEY_SIZE);
+    Tox_Err_Friend_Add err;
+    uint32_t fn = tox_friend_add_norequest(s->tox, pk, &err);
+    if(err != TOX_ERR_FRIEND_ADD_OK)
+    {
+        const char *estr = "unknown error";
+        switch(err)
+        {
+        case TOX_ERR_FRIEND_ADD_TOO_LONG:
+            estr = "message too long";
+            break;
+        case TOX_ERR_FRIEND_ADD_NO_MESSAGE:
+            estr = "no message";
+            break;
+        case TOX_ERR_FRIEND_ADD_OWN_KEY:
+            estr = "own key";
+            break;
+        case TOX_ERR_FRIEND_ADD_ALREADY_SENT:
+            estr = "already sent";
+            break;
+        case TOX_ERR_FRIEND_ADD_BAD_CHECKSUM:
+            estr = "bad checksum";
+            break;
+        case TOX_ERR_FRIEND_ADD_SET_NEW_NOSPAM:
+            estr = "set new nospam";
+            break;
+        case TOX_ERR_FRIEND_ADD_MALLOC:
+            estr = "malloc failed";
+            break;
+        default:
+            break;
+        }
+        send_error(STDOUT_FILENO, reqid, estr);
+        return;
+    }
+
+    vc result(VC_MAP, "", 2);
+    result.add_kv("friend_number", vc((int)fn));
+    send_response(STDOUT_FILENO, reqid, result);
+    save_tox_state(s);
+}
+
+static void
 handle_friend_delete(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "friend_delete", reqid, params);
@@ -851,6 +910,8 @@ handle_rpc_request(ToxdState *s, const vc &req)
         handle_get_address(s, params, reqid);
     else if(strcmp(method, "friend_add") == 0)
         handle_friend_add(s, params, reqid);
+    else if(strcmp(method, "friend_add_norequest") == 0)
+        handle_friend_add_norequest(s, params, reqid);
     else if(strcmp(method, "friend_delete") == 0)
         handle_friend_delete(s, params, reqid);
     else if(strcmp(method, "message_send") == 0)

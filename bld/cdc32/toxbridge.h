@@ -19,6 +19,7 @@ vc tox_bridge_get_pubkey();
 
 // contact management
 int tox_bridge_friend_add(const vc &address, const vc &message);
+int tox_bridge_friend_add_norequest(const vc &pubkey);
 int tox_bridge_friend_delete(uint32_t friend_number);
 
 // messaging
