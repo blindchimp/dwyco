@@ -15,6 +15,7 @@
 #include "vccomp.h"
 #include "vcxstrm.h"
 #include "vcio.h"
+#include "dwstr.h"
 
 #define RPCM_METHOD 0
 #define RPCM_PARAMS 1
@@ -55,6 +56,12 @@ struct ToxdState {
 
 FILE *lf;
 
+struct toxd_error
+{
+	DwString error;
+	toxd_error(const DwString& e) : error(e) {}
+};
+
 [[noreturn]]
 void
 oopanic(const char *a)
@@ -78,7 +85,7 @@ read_all(int fd, char *buf, int len)
                 return total;
             if(errno == EINTR)
                 continue;
-            return -1;
+            throw toxd_error(strerror(errno));
         }
         total += n;
     }
@@ -96,7 +103,7 @@ write_all(int fd, const char *buf, int len)
         if(n <= 0) {
             if(errno == EINTR)
                 continue;
-            return -1;
+            throw toxd_error(strerror(errno));
         }
         total += n;
     }
@@ -108,11 +115,11 @@ write_msg(int fd, vc msg)
 {
     vcxstream os(0, 2048, vcxstream::CONTINUOUS);
     if(!os.open(vcxstream::WRITEABLE, vcxstream::ATOMIC))
-        return;
+        throw toxd_error("open serial");
     vc_composite::new_dfs();
     if(msg.xfer_out(os) < 0) {
         os.close(vcxstream::DISCARD);
-        return;
+        throw toxd_error("xfer_out");
     }
     //if(!os.close(vcxstream::FLUSH))
     //    return;
@@ -131,7 +138,7 @@ read_msg(int fd)
     if(read_all(fd, (char *)&nlen, 4) != 4)
         return vcnil;
     long len = (long)ntohl(nlen);
-    if(len <= 0 || len > 1024 * 1024)
+    if(len <= 2 || len > 1024)
         return vcnil;
     char *buf = new char[len];
     if(read_all(fd, buf, (int)len) != (int)len) {
@@ -141,12 +148,12 @@ read_msg(int fd)
     vcxstream is(buf, len, vcxstream::FIXED);
     if(!is.open(vcxstream::READABLE)) {
         delete[] buf;
-        return vcnil;
+        throw toxd_error("open stream in");
     }
     vc msg;
     if(msg.xfer_in(is) < 0) {
         delete[] buf;
-        return vcnil;
+        throw toxd_error("xfer_in");
     }
     delete[] buf;
     return msg;
@@ -865,39 +872,44 @@ main(int argc, char **argv)
 
     register_callbacks(state.tox);
     tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
+    try
+    {
+        send_event(STDOUT_FILENO, "ready", vc(VC_MAP, "", 0));
 
-    send_event(STDOUT_FILENO, "ready", vc(VC_MAP, "", 0));
+        while(!state.shutdown) {
+            int interval = tox_iteration_interval(state.tox);
+            struct pollfd pfd;
+            pfd.fd = STDIN_FILENO;
+            pfd.events = POLLIN;
+            int ret = poll(&pfd, 1, interval < 50 ? 50 : interval);
 
-    while(!state.shutdown) {
-        log_printf(&state, "SHIT!");
+            if(ret > 0 && (pfd.revents & POLLIN)) {
+                vc req = read_msg(STDIN_FILENO);
+                if(!req.is_nil()) {
+                    if(is_response(req))
+                        continue;
+                    if(is_event(req))
+                        continue;
+                    if(req.type() == VC_VECTOR && req.num_elems() >= 3)
+                        handle_rpc_request(&state, req);
+                } else {
+                    break;
+                }
+            }
 
-        int interval = tox_iteration_interval(state.tox);
-        struct pollfd pfd;
-        pfd.fd = STDIN_FILENO;
-        pfd.events = POLLIN;
-        int ret = poll(&pfd, 1, interval < 50 ? 50 : interval);
+            tox_iterate(state.tox, &state);
 
-        if(ret > 0 && (pfd.revents & POLLIN)) {
-            vc req = read_msg(STDIN_FILENO);
-            if(!req.is_nil()) {
-                if(is_response(req))
-                    continue;
-                if(is_event(req))
-                    continue;
-                if(req.type() == VC_VECTOR && req.num_elems() >= 3)
-                    handle_rpc_request(&state, req);
-            } else {
-                break;
+            if(!state.bootstrapped) {
+                tox_bootstrap(state.tox);
+                state.bootstrapped = 1;
             }
         }
-
-        tox_iterate(state.tox, &state);
-
-        if(!state.bootstrapped) {
-            tox_bootstrap(state.tox);
-            state.bootstrapped = 1;
-        }
     }
+    catch(const toxd_error& e)
+    {
+        log_printf(&state, "io error: %s", e.error.c_str());
+    }
+
     log_printf(&state, "DUMP!");
 
 
