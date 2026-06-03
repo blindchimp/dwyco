@@ -1034,10 +1034,15 @@ Page {
     }
     onVisibleChanged: {
         multiselect_mode = false
-        if(inh_block_warning === 0 && core.get_ignore(to_uid) !== 0) {
-            warn.visible = true
-        } else {
-            warn.visible = false
+        if(visible) {
+            themsglist.set_filter(1, 1, -1, 0)
+            themsglist.set_show_video_only(0)
+            themsglist.tag = ""
+            if(inh_block_warning === 0 && core.get_ignore(to_uid) !== 0) {
+                warn.visible = true
+            } else {
+                warn.visible = false
+            }
         }
     }
 
