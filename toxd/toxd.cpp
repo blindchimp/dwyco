@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <tox/tox.h>
 #include <sodium.h>
+#include <signal.h>
 
 #include "vc.h"
 #include "vccomp.h"
@@ -70,6 +71,13 @@ oopanic(const char *a)
 {
     perror(a);
     ::abort();
+}
+
+[[noreturn]]
+static void
+watchdog_handler(int)
+{
+    _exit(1);
 }
 
 static int
@@ -939,6 +947,12 @@ main(int argc, char **argv)
 
     register_callbacks(state.tox);
     tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = watchdog_handler;
+    sigaction(SIGALRM, &sa, NULL);
+
     try
     {
         send_event(STDOUT_FILENO, "ready", vc(VC_MAP, "", 0));
@@ -953,23 +967,27 @@ main(int argc, char **argv)
 
             if(ret > 0 && (pfd.revents & POLLIN))
             {
+                alarm(1);
                 vc req = read_msg(STDIN_FILENO);
                 if(!req.is_nil())
                 {
                     if(is_response(req))
-                        continue;
+                    { alarm(0); continue; }
                     if(is_event(req))
-                        continue;
+                    { alarm(0); continue; }
                     if(req.type() == VC_VECTOR && req.num_elems() >= 3)
                         handle_rpc_request(&state, req);
                 }
                 else
                 {
-                    break;
+                    alarm(0); break;
                 }
+                alarm(0);
             }
 
+            alarm(1);
             tox_iterate(state.tox, &state);
+            alarm(0);
 
             if(!state.bootstrapped)
             {
