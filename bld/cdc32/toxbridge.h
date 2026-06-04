@@ -2,8 +2,24 @@
 #define TOXBRIDGE_H
 
 #include "vc.h"
+#include "ser.h"
+#include "simplesql.h"
 
 namespace dwyco {
+
+class ToxQueue : public SimpleSql
+{
+public:
+    ToxQueue();
+    void init_schema(const DwString&);
+    int enqueue(const vc &qqm_blob, uint32_t fn, const vc &local_mid);
+    vc dequeue(uint32_t *fn_out, vc *local_mid_out, int64_t *row_id);
+    int mark_inprogress(int64_t row_id, uint32_t tox_mid);
+    int mark_sent(int64_t row_id);
+    int mark_failed(int64_t row_id);
+    vc load_qqm_blob(int64_t row_id);
+    void recover_inprogress();
+};
 
 // NOTE: for this API, identifiers and addresses are all
 // binary strings. there is no hex encoding.
@@ -26,7 +42,9 @@ int tox_bridge_friend_add_norequest(const vc &pubkey);
 int tox_bridge_friend_delete(uint32_t friend_number);
 
 // messaging
-int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action);
+int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0);
+int tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_action);
+void tox_bridge_send_queued();
 
 // file transfer
 int tox_bridge_file_send(uint32_t friend_number, const vc &name, uint64_t size);

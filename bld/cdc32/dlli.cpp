@@ -5674,11 +5674,8 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
     // route to tox bridge if this is a tox contact
     if(dwyco::tox_bridge_is_tox_uid(vuid))
     {
-        uint32_t fn;
-        if(!dwyco::tox_pseudo_uid_to_friend_number(vuid, &fn))
-            return 0;
         vc text_vc(VC_BSTRING, text, len_text);
-        int ret = dwyco::tox_bridge_send_message(fn, text_vc, 0);
+        int ret = dwyco::tox_bridge_send_message_by_uid(vuid, text_vc, 0);
         if(pers_id_out)
             *pers_id_out = "";
         if(len_pers_id_out)
