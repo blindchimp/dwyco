@@ -5,6 +5,9 @@
 
 namespace dwyco {
 
+// NOTE: for this API, identifiers and addresses are all
+// binary strings. there is no hex encoding.
+
 // tox bridge lifecycle
 int tox_bridge_init(const char *toxd_path, const char *data_dir);
 void tox_bridge_shutdown();
@@ -41,7 +44,8 @@ void tox_bridge_rebuild_friend_cache();
 
 // convenience wrappers for dlli
 int tox_bridge_is_tox_uid(const vc &uid);
-int tox_bridge_get_self_public_key(const char **out, int *len_out);
+// must call dwyco_free_array on returned pointer
+int tox_bridge_get_self_public_key(char **out, int *len_out);
 vc tox_bridge_get_friend_list_vc();
 
 }

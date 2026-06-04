@@ -135,7 +135,7 @@ static vc In_progress;
 
 
 
-static int64_t Logical_clock;
+int64_t Logical_clock;
 
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
@@ -3204,7 +3204,7 @@ delete_attachment2(vc user_id, vc attachment_name)
 }
 
 
-static vc
+vc
 date_vector()
 {
     vc v(VC_VECTOR);

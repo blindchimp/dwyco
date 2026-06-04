@@ -9571,12 +9571,12 @@ DWYCOEXPORT
 int
 dwyco_enable_tox(const char *tox_data_dir)
 {
-    return dwyco::tox_bridge_init("toxd", tox_data_dir);
+    return dwyco::tox_bridge_init("/Users/dwight/toxd", tox_data_dir);
 }
 
 DWYCOEXPORT
 int
-dwyco_tox_get_self_public_key(const char **out, int *len_out)
+dwyco_tox_get_self_public_key(char **out, int *len_out)
 {
     return dwyco::tox_bridge_get_self_public_key(out, len_out);
 }
@@ -9590,11 +9590,11 @@ dwyco_tox_is_tox_uid(const char *uid, int len_uid)
 
 DWYCOEXPORT
 int
-dwyco_tox_add_friend(const char *tox_id, const char *msg)
+dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg)
 {
-    vc addr(VC_BSTRING, tox_id, (long)strlen(tox_id));
+    vc addr_vc(VC_BSTRING, addr, (long)addr_len);
     vc msg_vc(VC_STRING, msg);
-    return dwyco::tox_bridge_friend_add(addr, msg_vc);
+    return dwyco::tox_bridge_friend_add(addr_vc, msg_vc);
 }
 
 DWYCOEXPORT

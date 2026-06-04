@@ -13,6 +13,7 @@
 #include "vccomp.h"
 #include "dwrtlog.h"
 #include "se.h"
+#include "qmsg.h"
 
 #define RPCM_METHOD 0
 #define RPCM_PARAMS 1
@@ -201,26 +202,34 @@ process_tox_event(const vc &ev)
         GRTLOG("tox: message from fn ", (int)fn, 0);
         GRTLOGVC(pseudo);
 
-        vc mid(VC_BSTRING, "tox:", 4);
-        vc hex_pseudo = to_hex(pseudo);
-        mid.append(hex_pseudo);
-        mid.append(":");
-        vc seq(VC_BSTRING, (const char *)pseudo, 4);
-        mid.append(to_hex(seq));
-
         vc body(VC_VECTOR);
-        body.append(mid);
-        body.append(pseudo);
-        body.append(vcnil);
-        body.append(vc((long long)time(0)));
-        body.append(vc(0));
-        body.append(vcnil);
-        body.append(vcnil);
-        body.append(vcnil);
-        body.append(text);
-        body.append(vcnil);
+        body[QQM_BODY_FROM] = pseudo;
+        body[QQM_BODY_TEXT_do_not_use] = vcnil;
+        body[QQM_BODY_ATTACHMENT] = vcnil;
+        body[QQM_BODY_DATE] = date_vector();
+        body[QQM_BODY_AUTH_VEC] = vcnil;
+        body[QQM_BODY_FORWARDED_BODY] = vcnil;
+        body[QQM_BODY_NEW_TEXT] = text;
+        body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
+        body[QQM_BODY_SPECIAL_TYPE] = vcnil;
+        body[QQM_BODY_NO_FORWARD] = vcnil;
+        body[QQM_BODY_FILE_ATTACHMENT] = vcnil;
+        body[QQM_BODY_DHSF] = vcnil;
+        body[QQM_BODY_EMSG] = vcnil;
+        body[QQM_BODY_ESTIMATED_SIZE] = vcnil;
+        body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
+        body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
+        body[QQM_BODY_FROM_GROUP] = vcnil;
 
-        se_emit(SE_TOX_MESSAGE, pseudo, body, msg_type);
+        vc qqm(VC_VECTOR);
+        qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+        qqm[QQM_RECIP_VEC][0] = My_UID;
+        qqm[QQM_MSG_VEC] = body;
+        qqm[QQM_LOCAL_ID] = to_hex(gen_id());
+
+        store_direct(0, qqm, 0);
+
+        se_emit(SE_TOX_MESSAGE, pseudo);
 
     } else if(strcmp(type, "read_receipt") == 0 && args.num_elems() >= 2) {
         uint32_t fn = (uint32_t)(int)args[0];
@@ -246,6 +255,7 @@ process_tox_event(const vc &ev)
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
 
     } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
+        return;
         uint32_t fn = (uint32_t)(int)args[0];
         uint32_t fnum = (uint32_t)(int)args[1];
         uint32_t kind = (uint32_t)(int)args[2];
@@ -620,13 +630,16 @@ tox_bridge_is_tox_uid(const vc &uid)
 }
 
 int
-tox_bridge_get_self_public_key(const char **out, int *len_out)
+tox_bridge_get_self_public_key(char **out, int *len_out)
 {
     vc pk = tox_bridge_get_pubkey();
     if(pk.is_nil())
         return 0;
     if(out)
-        *out = (const char *)pk;
+    {
+        *out = new char[pk.len()];
+        memcpy(*out, (const char *)pk, pk.len());
+    }
     if(len_out)
         *len_out = pk.len();
     return 1;

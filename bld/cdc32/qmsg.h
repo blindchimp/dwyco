@@ -46,6 +46,8 @@ int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
 
+extern int64_t Logical_clock;
+vc date_vector();
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
