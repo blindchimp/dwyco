@@ -243,10 +243,13 @@ process_tox_event(const vc &ev)
         GRTLOG("tox: read receipt for mid ", (int)mid, 0);
         if(Tox_q)
         {
+            vc pseudo;
+            if(!tox_friend_number_to_pseudo_uid(fn, pseudo))
+                pseudo = vcnil;
             vc res = Tox_q->sql_simple(
                 "SELECT id, local_mid, qqm_blob FROM tox_outbox "
-                "WHERE friend_number=?1 AND tox_mid=?2 AND status=1",
-                vc((int)fn), vc((int)mid));
+                "WHERE recipient_pseudo=?1 AND tox_mid=?2 AND status=1",
+                pseudo, vc((int)mid));
             if(!res.is_nil() && res.num_elems() > 0)
             {
                 vc row = res[0];
@@ -639,9 +642,13 @@ tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out)
             vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
             if(pseudo == pseudo_uid)
             {
-                if(fn_out)
-                    *fn_out = (uint32_t)i;
-                return 1;
+                vc fnum;
+                if(entry.find("friend_number", fnum) && fnum.type() == VC_INT)
+                {
+                    if(fn_out)
+                        *fn_out = (uint32_t)(int)fnum;
+                    return 1;
+                }
             }
         }
     }
@@ -653,14 +660,22 @@ tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out)
 {
     if(Friend_cache.is_nil())
         tox_bridge_rebuild_friend_cache();
-    if((int)fn >= Friend_cache.num_elems())
-        return 0;
-    vc entry = Friend_cache[(int)fn];
-    vc pubkey;
-    if(!entry.find("pubkey", pubkey))
-        return 0;
-    pseudo_uid_out = tox_pubkey_to_pseudo_uid(pubkey);
-    return 1;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc fnum;
+        if(entry.find("friend_number", fnum) && fnum == vc((int)fn))
+        {
+            vc pubkey;
+            if(entry.find("pubkey", pubkey))
+                pseudo_uid_out = tox_pubkey_to_pseudo_uid(pubkey);
+            else
+                pseudo_uid_out = vcnil;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 
@@ -677,7 +692,7 @@ tox_bridge_rebuild_friend_cache()
     if(result.find("friends", fl) && fl.type() == VC_VECTOR)
     {
         Friend_cache = fl;
-        GRTLOG("tox bridge: rebuilt friend cache, count=", Friend_cache.num_elems(), 0);
+        GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);
     }
 }
 
@@ -735,7 +750,7 @@ ToxQueue::init_schema(const DwString&)
     sql_simple("CREATE TABLE IF NOT EXISTS tox_outbox ("
                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                "qqm_blob BLOB, "
-               "friend_number INTEGER, "
+               "recipient_pseudo BLOB, "
                "status INTEGER DEFAULT 0, "
                "tox_mid INTEGER, "
                "local_mid TEXT, "
@@ -743,24 +758,24 @@ ToxQueue::init_schema(const DwString&)
 }
 
 int
-ToxQueue::enqueue(const vc &qqm_blob, uint32_t fn, const vc &local_mid)
+ToxQueue::enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid)
 {
-    vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, friend_number, status, local_mid) "
+    vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, recipient_pseudo, status, local_mid) "
                         "VALUES (?1, ?2, 0, ?3)",
-                        qqm_blob, vc((int)fn), local_mid);
+                        qqm_blob, recipient_pseudo, local_mid);
     return !res.is_nil();
 }
 
 vc
-ToxQueue::dequeue(uint32_t *fn_out, vc *local_mid_out, int64_t *row_id)
+ToxQueue::dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id)
 {
-    vc res = sql_simple("SELECT id, friend_number, local_mid FROM tox_outbox "
+    vc res = sql_simple("SELECT id, recipient_pseudo, local_mid FROM tox_outbox "
                         "WHERE status=0 ORDER BY id LIMIT 1");
     if(res.is_nil() || res.num_elems() == 0)
         return vcnil;
     vc row = res[0];
     if(row_id) *row_id = (int64_t)(long long)row[0];
-    if(fn_out) *fn_out = (uint32_t)(int)row[1];
+    if(recipient_pseudo_out) *recipient_pseudo_out = row[1];
     if(local_mid_out) *local_mid_out = row[2];
     return vctrue;
 }
@@ -840,7 +855,7 @@ tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_acti
     qqm[QQM_MSG_VEC] = body;
     qqm[QQM_LOCAL_ID] = local_mid;
     vc blob = serialize(qqm);
-    return Tox_q->enqueue(blob, fn, local_mid);
+    return Tox_q->enqueue(blob, pseudo_uid, local_mid);
 }
 
 void
@@ -848,11 +863,17 @@ tox_bridge_send_queued()
 {
     if(!Tox_q)
         return;
-    uint32_t fn;
+    vc recipient_pseudo;
     vc local_mid;
     int64_t row_id = -1;
-    if(Tox_q->dequeue(&fn, &local_mid, &row_id).is_nil())
+    if(Tox_q->dequeue(&recipient_pseudo, &local_mid, &row_id).is_nil())
         return;
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(recipient_pseudo, &fn))
+    {
+        Tox_q->mark_failed(row_id);
+        return;
+    }
     vc qqm_blob = Tox_q->load_qqm_blob(row_id);
     if(qqm_blob.is_nil())
     {
@@ -866,6 +887,12 @@ tox_bridge_send_queued()
     uint32_t tox_mid;
     if(tox_bridge_send_message(fn, text, 0, &tox_mid))
         Tox_q->mark_inprogress(row_id, tox_mid);
+    else
+    {
+        // note: these failures might be transient, it is hard to
+        // tell when the toxcore decides its "permanent fail"
+        Tox_q->mark_failed(row_id);
+    }
 }
 
 }

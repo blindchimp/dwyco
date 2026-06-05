@@ -11,6 +11,7 @@
 #include <tox/tox.h>
 #include <sodium.h>
 #include <signal.h>
+#include <vector>
 
 #include "vc.h"
 #include "vccomp.h"
@@ -871,13 +872,17 @@ handle_friend_list(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "friend_list", reqid, params);
     uint32_t n = tox_self_get_friend_list_size(s->tox);
+    std::vector<uint32_t> friend_list(n);
+    tox_self_get_friend_list(s->tox, friend_list.data());
     vc friends(VC_VECTOR);
     for(uint32_t i = 0; i < n; ++i)
     {
+        uint32_t fn = friend_list[i];
         uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
-        if(tox_friend_get_public_key(s->tox, i, pubkey, NULL))
+        if(tox_friend_get_public_key(s->tox, fn, pubkey, NULL))
         {
-            vc entry(VC_MAP, "", 2);
+            vc entry(VC_MAP, "", 4);
+            entry.add_kv("friend_number", vc((int)fn));
             entry.add_kv("pubkey", vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE));
             friends.append(entry);
         }
