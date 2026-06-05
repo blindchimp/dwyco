@@ -6,6 +6,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <signal.h>
+#include <time.h>
 
 #include "toxbridge.h"
 #include "qauth.h"
@@ -43,9 +44,13 @@ static int Active;
 static pid_t Toxd_pgid;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
+static DwString Restart_toxd_path;
+static DwString Restart_data_dir;
+static time_t Last_restart_time;
 
 // forward declaration
 static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
+static int restart_toxd();
 
 struct toxd_error {
     DwString error;
@@ -426,6 +431,13 @@ tox_bridge_init(const char *toxd_path, const char *data_dir)
     if(Active)
         return 1;
 
+    Restart_toxd_path = toxd_path;
+    if(data_dir)
+        Restart_data_dir = data_dir;
+    else
+        Restart_data_dir = DwString();
+    Last_restart_time = 0;
+
     if(access(toxd_path, X_OK) != 0) {
         GRTLOG("tox bridge: toxd not found at ", 0, 0);
         GRTLOG(toxd_path, 0, 0);
@@ -522,12 +534,85 @@ tox_queue()
     return Tox_q;
 }
 
+static int
+restart_toxd()
+{
+    time_t now = time(0);
+    if(now - Last_restart_time < 5)
+        return 0;
+    Last_restart_time = now;
+
+    if(Restart_toxd_path.length() == 0)
+        return 0;
+    if(access(Restart_toxd_path.c_str(), X_OK) != 0)
+        return 0;
+
+    if(Toxd_stdin >= 0) { close(Toxd_stdin); Toxd_stdin = -1; }
+    if(Toxd_stdout >= 0) { close(Toxd_stdout); Toxd_stdout = -1; }
+    if(Toxd_pid > 0) {
+        kill(Toxd_pid, SIGKILL);
+        int status;
+        waitpid(Toxd_pid, &status, WNOHANG);
+        Toxd_pid = 0;
+    }
+
+    int stdin_pipe[2];
+    int stdout_pipe[2];
+    if(pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
+        return 0;
+
+    Toxd_pid = fork();
+    if(Toxd_pid < 0) {
+        close(stdin_pipe[0]); close(stdin_pipe[1]);
+        close(stdout_pipe[0]); close(stdout_pipe[1]);
+        return 0;
+    }
+
+    if(Toxd_pid == 0) {
+        close(stdin_pipe[1]);
+        close(stdout_pipe[0]);
+        dup2(stdin_pipe[0], STDIN_FILENO);
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        close(stdin_pipe[0]);
+        close(stdout_pipe[1]);
+        if(Restart_data_dir.length() > 0)
+            setenv("DWYCO_TOX_DATA", Restart_data_dir.c_str(), 1);
+        execl(Restart_toxd_path.c_str(), Restart_toxd_path.c_str(), (char *)NULL);
+        _exit(1);
+    }
+
+    close(stdin_pipe[0]);
+    close(stdout_pipe[1]);
+    Toxd_stdin = stdin_pipe[1];
+    Toxd_stdout = stdout_pipe[0];
+    Active = 1;
+    Pending_responses = vcnil;
+    Reqid_counter = 0;
+
+    if(Tox_q)
+        Tox_q->recover_inprogress();
+
+    GRTLOG("tox bridge: restarted, pid=", Toxd_pid, 0);
+    return 1;
+}
+
 void
 tox_bridge_poll()
 {
     if(!Active)
+    {
+        if(Tox_q)
+            restart_toxd();
         return;
+    }
     read_pending_events(Toxd_stdout);
+
+    // reset stale in-progress messages so they get retried
+    // (handles lost read receipts and toxd restarts)
+    if(Tox_q)
+        Tox_q->sql_simple("UPDATE tox_outbox SET status=0 "
+                           "WHERE status=1 AND created_at < strftime('%s','now') - 30");
+
     tox_bridge_send_queued();
 }
 
@@ -801,7 +886,8 @@ ToxQueue::dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id)
 int
 ToxQueue::mark_inprogress(int64_t row_id, uint32_t tox_mid)
 {
-    vc res = sql_simple("UPDATE tox_outbox SET status=1, tox_mid=?2 "
+    vc res = sql_simple("UPDATE tox_outbox SET status=1, tox_mid=?2, "
+                        "created_at=strftime('%s','now') "
                         "WHERE id=?1",
                         vc((long long)row_id), vc((int)tox_mid));
     return !res.is_nil();
@@ -952,12 +1038,12 @@ tox_bridge_send_queued()
     deserialize(qqm_blob, qqm);
     vc body = qqm[QQM_MSG_VEC];
     vc text = body[QQM_BODY_NEW_TEXT];
-    uint32_t tox_mid;
+    uint32_t tox_mid = 0;
     int tox_error = -1;
     int ret = tox_bridge_send_message(fn, text, 0, &tox_mid, &tox_error);
     if(ret == 1 || (ret == 0 && tox_error == TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED))
     {
-        // toxcore accepted the message (sent immediately or queued internally)
+        // toxcore accepted the message (friend offline, will deliver later)
         Tox_q->mark_inprogress(row_id, tox_mid);
     }
     else if(ret == 0)
@@ -967,7 +1053,14 @@ tox_bridge_send_queued()
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         GRTLOG("tox: send permanent failure, error=", tox_error, 0);
     }
-    // ret == -1: RPC transport failure, leave as status=0 to retry on next poll
+    else
+    {
+        // RPC transport failure: mark in-progress so we don't re-dequeue
+        // on the next poll and spam the recipient.  The stale-timeout in
+        // tox_bridge_poll (30 s) will reset stuck entries to status=0
+        // for retry.
+        Tox_q->mark_inprogress(row_id, tox_mid);
+    }
 }
 
 }
