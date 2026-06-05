@@ -29,6 +29,9 @@
 #define EV_TYPE 0
 #define EV_ARGS 1
 
+// toxcore error codes — only the ones we check on the bridge side
+#define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
+
 namespace dwyco {
 
 static int Toxd_pid;
@@ -575,7 +578,7 @@ tox_bridge_friend_delete(uint32_t friend_number)
 }
 
 int
-tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out)
+tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out, int *tox_error_out)
 {
     vc params(VC_MAP, "", 6);
     params.add_kv("friend_number", vc((int)friend_number));
@@ -583,7 +586,16 @@ tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, u
     params.add_kv("type", vc(is_action ? "action" : "normal"));
     vc result;
     if(!toxd_rpc_call(vc("message_send"), params, result, 10000))
-        return 0;
+        return -1;
+    if(tox_error_out)
+    {
+        vc ec;
+        if(result.find("tox_error", ec))
+        {
+            *tox_error_out = (int)ec;
+            return 0;
+        }
+    }
     if(mid_out)
     {
         vc mid_vc;
@@ -872,12 +884,14 @@ tox_bridge_send_queued()
     if(!tox_pseudo_uid_to_friend_number(recipient_pseudo, &fn))
     {
         Tox_q->mark_failed(row_id);
+        se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         return;
     }
     vc qqm_blob = Tox_q->load_qqm_blob(row_id);
     if(qqm_blob.is_nil())
     {
         Tox_q->mark_failed(row_id);
+        se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         return;
     }
     vc qqm;
@@ -885,14 +899,21 @@ tox_bridge_send_queued()
     vc body = qqm[QQM_MSG_VEC];
     vc text = body[QQM_BODY_NEW_TEXT];
     uint32_t tox_mid;
-    if(tox_bridge_send_message(fn, text, 0, &tox_mid))
-        Tox_q->mark_inprogress(row_id, tox_mid);
-    else
+    int tox_error = -1;
+    int ret = tox_bridge_send_message(fn, text, 0, &tox_mid, &tox_error);
+    if(ret == 1 || (ret == 0 && tox_error == TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED))
     {
-        // note: these failures might be transient, it is hard to
-        // tell when the toxcore decides its "permanent fail"
-        Tox_q->mark_failed(row_id);
+        // toxcore accepted the message (sent immediately or queued internally)
+        Tox_q->mark_inprogress(row_id, tox_mid);
     }
+    else if(ret == 0)
+    {
+        // permanent failure
+        Tox_q->mark_failed(row_id);
+        se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+        GRTLOG("tox: send permanent failure, error=", tox_error, 0);
+    }
+    // ret == -1: RPC transport failure, leave as status=0 to retry on next poll
 }
 
 }

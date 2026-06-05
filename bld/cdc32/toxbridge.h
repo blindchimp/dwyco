@@ -42,7 +42,7 @@ int tox_bridge_friend_add_norequest(const vc &pubkey);
 int tox_bridge_friend_delete(uint32_t friend_number);
 
 // messaging
-int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0);
+int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0, int *tox_error_out = 0);
 int tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_action);
 void tox_bridge_send_queued();
 

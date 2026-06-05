@@ -753,7 +753,9 @@ handle_message_send(ToxdState *s, vc params, int reqid)
     uint32_t mid = tox_friend_send_message(s->tox, fn, mtype, msg, mlen, &err);
     if(err != TOX_ERR_FRIEND_SEND_MESSAGE_OK)
     {
-        send_error(STDOUT_FILENO, reqid, "send failed");
+        vc result(VC_MAP, "", 2);
+        result.add_kv("tox_error", vc((int)err));
+        send_response(STDOUT_FILENO, reqid, result);
         return;
     }
 
