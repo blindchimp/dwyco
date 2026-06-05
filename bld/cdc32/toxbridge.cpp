@@ -516,6 +516,12 @@ tox_bridge_is_active()
     return Active;
 }
 
+ToxQueue *
+tox_queue()
+{
+    return Tox_q;
+}
+
 void
 tox_bridge_poll()
 {
@@ -831,6 +837,54 @@ void
 ToxQueue::recover_inprogress()
 {
     sql_simple("UPDATE tox_outbox SET status=0 WHERE status=1");
+}
+
+vc
+ToxQueue::get_qd_msgs(const vc &pseudo_uid)
+{
+    vc ret(VC_VECTOR);
+    vc rows;
+    if(pseudo_uid.is_nil())
+        rows = sql_simple("SELECT local_mid, recipient_pseudo, qqm_blob "
+                          "FROM tox_outbox WHERE status IN (0,1,3) ORDER BY id");
+    else
+        rows = sql_simple("SELECT local_mid, recipient_pseudo, qqm_blob "
+                          "FROM tox_outbox WHERE recipient_pseudo=?1 "
+                          "AND status IN (0,1,3) ORDER BY id",
+                          pseudo_uid);
+    if(rows.is_nil())
+        return ret;
+    int n = rows.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc row = rows[i];
+        vc local_mid = row[0];
+        vc recipient = row[1];
+        vc blob = row[2];
+        vc qqm;
+        deserialize(blob, qqm);
+        vc v(VC_VECTOR);
+        v[0] = recipient;
+        v[1] = local_mid;
+        v[2] = qqm[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
+        v[3] = qqm[QQM_MSG_VEC][QQM_BODY_ATTACHMENT];
+        v[4] = qqm[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
+        ret.append(v);
+    }
+    return ret;
+}
+
+vc
+ToxQueue::load_qd_body(const vc &local_mid)
+{
+    vc res = sql_simple("SELECT qqm_blob FROM tox_outbox WHERE local_mid=?1",
+                        local_mid);
+    if(res.is_nil() || res.num_elems() == 0)
+        return vcnil;
+    vc blob = res[0][0];
+    vc qqm;
+    deserialize(blob, qqm);
+    return direct_to_body2(qqm[QQM_MSG_VEC]);
 }
 
 int

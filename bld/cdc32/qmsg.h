@@ -153,6 +153,7 @@ DwString simple_diagnostics();
 vc gen_hash(DwString filename);
 vc direct_to_body(vc msgid, vc &uid_out);
 vc direct_to_body2(vc dm);
+void sort_on_time(vc vec, int field);
 int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
 int pal_user(vc u);

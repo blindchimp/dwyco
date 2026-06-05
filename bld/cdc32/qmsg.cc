@@ -3921,7 +3921,6 @@ load_qb(const DwString& dir, const DwString& pers_id)
     return vcnil;
 }
 
-static
 void
 sort_on_time(vc vec, int field)
 {

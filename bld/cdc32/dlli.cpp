@@ -6501,6 +6501,22 @@ dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid)
         buid = vc(VC_BSTRING, uid, len_uid);
 
     ret = load_qd_msgs(buid, 0);
+
+    // append tox queued/in-progress/failed messages
+    if(tox_bridge_is_active())
+    {
+        dwyco::ToxQueue *tq = tox_queue();
+        if(tq)
+        {
+            vc tox_msgs = tq->get_qd_msgs(buid);
+            int n = tox_msgs.num_elems();
+            for(int i = 0; i < n; ++i)
+                ret.append(tox_msgs[i]);
+        }
+    }
+
+    sort_on_time(ret, 2);
+
     *list_out = (DWYCO_QD_MSG_LIST)&ret;
 
 }
@@ -6510,9 +6526,15 @@ int
 dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, int len_pers_id)
 {
     vc pid(VC_BSTRING, pers_id, len_pers_id);
-    if(!is_pers_id((const char *)pid))
-        return 0;
-    vc b = load_qd_to_body(pid);
+    vc b;
+    if(is_pers_id((const char *)pid))
+        b = load_qd_to_body(pid);
+    if(b.is_nil() && tox_bridge_is_active())
+    {
+        dwyco::ToxQueue *tq = tox_queue();
+        if(tq)
+            b = tq->load_qd_body(pid);
+    }
     if(b.is_nil())
         return 0;
     GRTLOG("qd msg", 0, 0);
