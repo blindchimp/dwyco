@@ -347,7 +347,10 @@ toxd_on_file_recv(Tox *tox, uint32_t fn, uint32_t fnum, uint32_t kind,
     args.append(vc((int)fnum));
     args.append(vc((int)kind));
     args.append(vc((long long)size));
-    args.append(vc(VC_STRING, (const char *)name, (long)nlen));
+    if(name && nlen > 0)
+        args.append(vc(VC_BSTRING, (const char *)name, (long)nlen));
+    else
+        args.append(vcnil);
     send_event(STDOUT_FILENO, "file_request", args);
 }
 
@@ -1017,6 +1020,8 @@ main(int argc, char **argv)
 
     register_callbacks(state.tox);
     tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
+
+    signal(SIGPIPE, SIG_IGN);
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));

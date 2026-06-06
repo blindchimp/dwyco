@@ -386,16 +386,19 @@ process_tox_event(const vc &ev)
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
 
     } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
-        return;
         uint32_t fn = (uint32_t)(int)args[0];
         uint32_t fnum = (uint32_t)(int)args[1];
         uint32_t kind = (uint32_t)(int)args[2];
+        (void)kind;
         uint64_t size = 0;
         if(args[3].type() == VC_INT)
             size = (uint64_t)(long long)args[3];
         vc name = args[4];
-        (void)kind;
-        se_emit(SE_TOX_FILE_REQUEST, vc((int)fn), vc((int)fnum), name, vc((long long)size));
+        vc pseudo;
+        if(tox_friend_number_to_pseudo_uid(fn, pseudo))
+        {
+            se_emit(SE_TOX_FILE_REQUEST, pseudo, vc((int)fnum), name, vc((long long)size));
+        }
 
     } else if(strcmp(type, "self_connection_status") == 0 && args.num_elems() >= 1) {
         vc status = args[0];
@@ -735,7 +738,7 @@ tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out)
             if(entry.find("pubkey", pubkey))
                 pseudo_uid_out = tox_pubkey_to_pseudo_uid(pubkey);
             else
-                pseudo_uid_out = vcnil;
+                return 0;
             return 1;
         }
     }
