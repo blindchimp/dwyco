@@ -39,46 +39,23 @@ static int Toxd_pid;
 static int Toxd_stdin = -1;
 static int Toxd_stdout = -1;
 static int Reqid_counter;
-static vc Pending_responses;
-static int Active;
-static pid_t Toxd_pgid;
+static int Started;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
-static DwString Restart_toxd_path;
-static DwString Restart_data_dir;
-static time_t Last_restart_time;
+static DwString Toxd_path;
+static DwString Data_dir;
 
-// forward declaration
+// forward declarations
 static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
-static int restart_toxd();
+static int toxd_start();
+static void toxd_stop();
 
 struct toxd_error {
     DwString error;
     toxd_error(const DwString& e) : error(e) {}
 };
 
-static void
-handle_toxd_crash()
-{
-    GRTLOG("tox bridge: toxd crashed", 0, 0);
-    se_emit(SE_TOX_CRASHED, vcnil);
-    if(Toxd_stdin >= 0) {
-        close(Toxd_stdin);
-        Toxd_stdin = -1;
-    }
-    if(Toxd_stdout >= 0) {
-        close(Toxd_stdout);
-        Toxd_stdout = -1;
-    }
-    if(Toxd_pid > 0) {
-        kill(Toxd_pid, SIGKILL);
-        int status;
-        waitpid(Toxd_pid, &status, WNOHANG);
-        Toxd_pid = 0;
-    }
-    Active = 0;
-    Pending_responses = vcnil;
-}
+
 
 static int
 read_all(int fd, char *buf, int len)
@@ -189,6 +166,117 @@ tox_pubkey_to_pseudo_uid(const vc &pubkey)
     if(pubkey.len() < 10)
         return vcnil;
     return vc(VC_BSTRING, (const char *)pubkey, 10);
+}
+
+static void
+toxd_stop()
+{
+    if(Toxd_pid <= 0 && Toxd_stdin < 0 && Toxd_stdout < 0)
+        return;
+
+    if(Toxd_stdin >= 0) {
+        close(Toxd_stdin);
+        Toxd_stdin = -1;
+    }
+
+    if(Toxd_pid > 0) {
+        int status;
+        if(waitpid(Toxd_pid, &status, WNOHANG) == 0) {
+            kill(Toxd_pid, SIGKILL);
+            waitpid(Toxd_pid, NULL, 0);
+        }
+        Toxd_pid = 0;
+    }
+
+    if(Toxd_stdout >= 0) {
+        close(Toxd_stdout);
+        Toxd_stdout = -1;
+    }
+
+    Started = 0;
+}
+
+static int
+toxd_start()
+{
+    if(Started || Toxd_pid > 0)
+        return 1;
+
+    if(access(Toxd_path.c_str(), X_OK) != 0) {
+        GRTLOG("tox bridge: toxd not found at ", 0, 0);
+        GRTLOG(Toxd_path.c_str(), 0, 0);
+        return 0;
+    }
+
+    int stdin_pipe[2];
+    int stdout_pipe[2];
+
+    if(pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
+        return 0;
+
+    Toxd_pid = fork();
+    if(Toxd_pid < 0) {
+        close(stdin_pipe[0]); close(stdin_pipe[1]);
+        close(stdout_pipe[0]); close(stdout_pipe[1]);
+        return 0;
+    }
+
+    if(Toxd_pid == 0) {
+        close(stdin_pipe[1]);
+        close(stdout_pipe[0]);
+        dup2(stdin_pipe[0], STDIN_FILENO);
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        close(stdin_pipe[0]);
+        close(stdout_pipe[1]);
+
+        if(Data_dir.length() > 0)
+            setenv("DWYCO_TOX_DATA", Data_dir.c_str(), 1);
+
+        execl(Toxd_path.c_str(), Toxd_path.c_str(), (char *)NULL);
+        _exit(1);
+    }
+
+    close(stdin_pipe[0]);
+    close(stdout_pipe[1]);
+    Toxd_stdin = stdin_pipe[1];
+    Toxd_stdout = stdout_pipe[0];
+
+    int ready = 0;
+    try {
+        int timeout = 10000;
+        int elapsed = 0;
+        while(elapsed < timeout) {
+            struct pollfd pfd;
+            pfd.fd = Toxd_stdout;
+            pfd.events = POLLIN;
+            int ret;
+            do {
+                ret = poll(&pfd, 1, 50);
+            } while(ret < 0 && errno == EINTR);
+            if(ret < 0)
+                throw toxd_error(DwString(strerror(errno)));
+            if(ret == 0) {
+                elapsed += 50;
+                continue;
+            }
+            vc msg = read_msg(Toxd_stdout);
+            if(is_event(msg) && strcmp((const char *)msg[EV_TYPE], "ready") == 0) {
+                ready = 1;
+                break;
+            }
+        }
+    } catch(toxd_error&) {
+    }
+
+    if(!ready) {
+        toxd_stop();
+        return 0;
+    }
+
+    Started = 1;
+    Reqid_counter = 0;
+    GRTLOG("tox bridge: started, pid=", Toxd_pid, 0);
+    return 1;
 }
 
 static void
@@ -353,13 +441,11 @@ read_pending_events(int fd)
             if(is_event(msg)) {
                 process_tox_event(msg);
                 ++count;
-            } else if(is_response(msg)) {
-                if(!Pending_responses.is_nil())
-                    Pending_responses.append(msg);
             }
         }
     } catch(toxd_error&) {
-        handle_toxd_crash();
+        se_emit(SE_TOX_CRASHED, vcnil);
+        toxd_stop();
     }
     return count;
 }
@@ -391,8 +477,6 @@ read_response(int fd, int reqid, vc &result_out, int timeout_ms)
             result_out = msg[RPCM_RESULT];
             return 1;
         }
-        if(!Pending_responses.is_nil())
-            Pending_responses.append(msg);
     }
     return 0;
 }
@@ -401,7 +485,7 @@ static int
 toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms)
 {
     try {
-        if(Toxd_stdin < 0)
+        if(!Started)
             return 0;
 
         int reqid = ++Reqid_counter;
@@ -420,7 +504,8 @@ toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms
 
         return 1;
     } catch(toxd_error&) {
-        handle_toxd_crash();
+        se_emit(SE_TOX_CRASHED, vcnil);
+        toxd_stop();
         return 0;
     }
 }
@@ -428,88 +513,30 @@ toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms
 int
 tox_bridge_init(const char *toxd_path, const char *data_dir)
 {
-    if(Active)
+    if(Started)
         return 1;
 
-    Restart_toxd_path = toxd_path;
+    Toxd_path = toxd_path;
     if(data_dir)
-        Restart_data_dir = data_dir;
+        Data_dir = data_dir;
     else
-        Restart_data_dir = DwString();
-    Last_restart_time = 0;
+        Data_dir = DwString();
 
-    if(access(toxd_path, X_OK) != 0) {
-        GRTLOG("tox bridge: toxd not found at ", 0, 0);
-        GRTLOG(toxd_path, 0, 0);
+    if(!toxd_start())
         return 0;
-    }
-
-    int stdin_pipe[2];
-    int stdout_pipe[2];
-
-    if(pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
-        return 0;
-
-    Toxd_pid = fork();
-    if(Toxd_pid < 0) {
-        close(stdin_pipe[0]);
-        close(stdin_pipe[1]);
-        close(stdout_pipe[0]);
-        close(stdout_pipe[1]);
-        return 0;
-    }
-
-    if(Toxd_pid == 0) {
-        close(stdin_pipe[1]);
-        close(stdout_pipe[0]);
-        dup2(stdin_pipe[0], STDIN_FILENO);
-        dup2(stdout_pipe[1], STDOUT_FILENO);
-        close(stdin_pipe[0]);
-        close(stdout_pipe[1]);
-
-        if(data_dir)
-            setenv("DWYCO_TOX_DATA", data_dir, 1);
-
-        execl(toxd_path, toxd_path, (char *)NULL);
-        _exit(1);
-    }
-
-    close(stdin_pipe[0]);
-    close(stdout_pipe[1]);
-    Toxd_stdin = stdin_pipe[1];
-    Toxd_stdout = stdout_pipe[0];
-    Active = 1;
 
     Tox_q = new ToxQueue;
     if(Tox_q->init())
         Tox_q->recover_inprogress();
-    GRTLOG("tox bridge: initialized, pid=", Toxd_pid, 0);
+    GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
 }
 
 void
 tox_bridge_shutdown()
 {
-    if(!Active)
+    if(!Started)
         return;
-
-    vc result;
-    toxd_rpc_call(vc("shutdown"), vc(VC_MAP, "", 0), result, 3000);
-
-    if(Toxd_stdin >= 0) {
-        close(Toxd_stdin);
-        Toxd_stdin = -1;
-    }
-    if(Toxd_stdout >= 0) {
-        close(Toxd_stdout);
-        Toxd_stdout = -1;
-    }
-
-    if(Toxd_pid > 0) {
-        int status;
-        waitpid(Toxd_pid, &status, WNOHANG);
-        Toxd_pid = 0;
-    }
 
     if(Tox_q) {
         Tox_q->exit();
@@ -517,15 +544,14 @@ tox_bridge_shutdown()
         Tox_q = 0;
     }
 
-    Active = 0;
-    Pending_responses = vcnil;
+    toxd_stop();
     GRTLOG("tox bridge: shutdown", 0, 0);
 }
 
 int
 tox_bridge_is_active()
 {
-    return Active;
+    return Started;
 }
 
 ToxQueue *
@@ -534,77 +560,12 @@ tox_queue()
     return Tox_q;
 }
 
-static int
-restart_toxd()
-{
-    time_t now = time(0);
-    if(now - Last_restart_time < 5)
-        return 0;
-    Last_restart_time = now;
-
-    if(Restart_toxd_path.length() == 0)
-        return 0;
-    if(access(Restart_toxd_path.c_str(), X_OK) != 0)
-        return 0;
-
-    if(Toxd_stdin >= 0) { close(Toxd_stdin); Toxd_stdin = -1; }
-    if(Toxd_stdout >= 0) { close(Toxd_stdout); Toxd_stdout = -1; }
-    if(Toxd_pid > 0) {
-        kill(Toxd_pid, SIGKILL);
-        int status;
-        waitpid(Toxd_pid, &status, WNOHANG);
-        Toxd_pid = 0;
-    }
-
-    int stdin_pipe[2];
-    int stdout_pipe[2];
-    if(pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
-        return 0;
-
-    Toxd_pid = fork();
-    if(Toxd_pid < 0) {
-        close(stdin_pipe[0]); close(stdin_pipe[1]);
-        close(stdout_pipe[0]); close(stdout_pipe[1]);
-        return 0;
-    }
-
-    if(Toxd_pid == 0) {
-        close(stdin_pipe[1]);
-        close(stdout_pipe[0]);
-        dup2(stdin_pipe[0], STDIN_FILENO);
-        dup2(stdout_pipe[1], STDOUT_FILENO);
-        close(stdin_pipe[0]);
-        close(stdout_pipe[1]);
-        if(Restart_data_dir.length() > 0)
-            setenv("DWYCO_TOX_DATA", Restart_data_dir.c_str(), 1);
-        execl(Restart_toxd_path.c_str(), Restart_toxd_path.c_str(), (char *)NULL);
-        _exit(1);
-    }
-
-    close(stdin_pipe[0]);
-    close(stdout_pipe[1]);
-    Toxd_stdin = stdin_pipe[1];
-    Toxd_stdout = stdout_pipe[0];
-    Active = 1;
-    Pending_responses = vcnil;
-    Reqid_counter = 0;
-
-    if(Tox_q)
-        Tox_q->recover_inprogress();
-
-    GRTLOG("tox bridge: restarted, pid=", Toxd_pid, 0);
-    return 1;
-}
-
 void
 tox_bridge_poll()
 {
-    if(!Active)
-    {
-        if(Tox_q)
-            restart_toxd();
+    if(!Started)
         return;
-    }
+
     read_pending_events(Toxd_stdout);
 
     // reset stale in-progress messages so they get retried
