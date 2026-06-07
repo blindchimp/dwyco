@@ -44,6 +44,9 @@ static ToxQueue *Tox_q;
 static vc Friend_cache;
 static DwString Toxd_path;
 static DwString Data_dir;
+static time_t Toxd_last_restart;
+static int Toxd_restart_delay = 1;
+static const int Toxd_max_restart_delay = 300;
 
 // forward declarations
 static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
@@ -528,6 +531,8 @@ tox_bridge_init(const char *toxd_path, const char *data_dir)
     if(!toxd_start())
         return 0;
 
+    Toxd_last_restart = 0;
+    Toxd_restart_delay = 1;
     Tox_q = new ToxQueue;
     if(Tox_q->init())
         Tox_q->recover_inprogress();
@@ -566,8 +571,25 @@ tox_queue()
 void
 tox_bridge_poll()
 {
-    if(!Started)
+    if(!Started) {
+        if(Toxd_last_restart == 0 || time(0) - Toxd_last_restart >= Toxd_restart_delay) {
+            Toxd_last_restart = time(0);
+            if(toxd_start()) {
+                tox_bridge_rebuild_friend_cache();
+                if(Tox_q)
+                    Tox_q->recover_inprogress();
+                Toxd_restart_delay = 1;
+                GRTLOG("tox bridge: restarted successfully", 0, 0);
+                se_emit(SE_TOX_READY, vcnil);
+            } else {
+                Toxd_restart_delay *= 2;
+                if(Toxd_restart_delay > Toxd_max_restart_delay)
+                    Toxd_restart_delay = Toxd_max_restart_delay;
+                GRTLOG("tox bridge: restart failed, retry in %ds", Toxd_restart_delay, 0);
+            }
+        }
         return;
+    }
 
     read_pending_events(Toxd_stdout);
 
