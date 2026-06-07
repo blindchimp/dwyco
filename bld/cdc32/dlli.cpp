@@ -5799,6 +5799,8 @@ int
 dwyco_kill_message(const char *pers_id, int len_pers_id)
 {
     DwString a(pers_id, 0, len_pers_id);
+    if(dwyco::tox_bridge_kill_message(a))
+        return 1;
     if(!is_pers_id(a))
         return 0;
     return kill_message(a);

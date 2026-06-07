@@ -17,6 +17,7 @@ public:
     int mark_inprogress(int64_t row_id, uint32_t tox_mid);
     int mark_sent(int64_t row_id);
     int mark_failed(int64_t row_id);
+    int remove_message(const vc &local_mid);
     vc load_qqm_blob(int64_t row_id);
     void recover_inprogress();
 
@@ -56,6 +57,7 @@ int tox_bridge_friend_delete(uint32_t friend_number);
 int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0, int *tox_error_out = 0);
 int tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_action);
 void tox_bridge_send_queued();
+int tox_bridge_kill_message(const vc &local_mid);
 
 // file transfer
 int tox_bridge_file_send(uint32_t friend_number, const vc &name, uint64_t size);

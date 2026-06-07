@@ -860,7 +860,7 @@ ToxQueue::mark_inprogress(int64_t row_id, uint32_t tox_mid)
 int
 ToxQueue::mark_sent(int64_t row_id)
 {
-    vc res = sql_simple("UPDATE tox_outbox SET status=2 WHERE id=?1",
+    vc res = sql_simple("DELETE FROM tox_outbox WHERE id=?1",
                         vc((long long)row_id));
     return !res.is_nil();
 }
@@ -870,6 +870,14 @@ ToxQueue::mark_failed(int64_t row_id)
 {
     vc res = sql_simple("UPDATE tox_outbox SET status=3 WHERE id=?1",
                         vc((long long)row_id));
+    return !res.is_nil();
+}
+
+int
+ToxQueue::remove_message(const vc &local_mid)
+{
+    vc res = sql_simple("DELETE FROM tox_outbox WHERE local_mid=?1",
+                        local_mid);
     return !res.is_nil();
 }
 
@@ -1025,6 +1033,24 @@ tox_bridge_send_queued()
         // for retry.
         Tox_q->mark_inprogress(row_id, tox_mid);
     }
+}
+
+int
+tox_bridge_kill_message(const vc &local_mid)
+{
+    if(!Tox_q)
+        return 0;
+    DwString s = local_mid;
+    if(fn_extension(s) == ".q")
+        return 0;
+    vc res = Tox_q->sql_simple("SELECT recipient_pseudo FROM tox_outbox WHERE local_mid=?1",
+                                local_mid);
+    if(res.is_nil() || res.num_elems() == 0)
+        return 0;
+    vc recipient = res[0][0];
+    Tox_q->remove_message(local_mid);
+    se_emit_msg(SE_MSG_SEND_CANCELED, local_mid, recipient);
+    return 1;
 }
 
 }
