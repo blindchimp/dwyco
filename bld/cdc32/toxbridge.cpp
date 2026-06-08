@@ -47,6 +47,7 @@ static DwString Data_dir;
 static time_t Toxd_last_restart;
 static int Toxd_restart_delay = 1;
 static const int Toxd_max_restart_delay = 300;
+static int Inhibit_restart;
 
 // forward declarations
 static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
@@ -530,6 +531,7 @@ tox_bridge_init(const char *toxd_path, const char *data_dir)
     if(!toxd_start())
         return 0;
 
+    Inhibit_restart = 0;
     Toxd_last_restart = 0;
     Toxd_restart_delay = 1;
     Tox_q = new ToxQueue;
@@ -551,6 +553,7 @@ tox_bridge_shutdown()
         Tox_q = 0;
     }
 
+    Inhibit_restart = 1;
     toxd_stop();
     GRTLOG("tox bridge: shutdown", 0, 0);
 }
@@ -570,7 +573,7 @@ tox_queue()
 void
 tox_bridge_poll()
 {
-    if(!Started) {
+    if(!Started && !Inhibit_restart) {
         if(Toxd_last_restart == 0 || time(0) - Toxd_last_restart >= Toxd_restart_delay) {
             Toxd_last_restart = time(0);
             if(toxd_start()) {
