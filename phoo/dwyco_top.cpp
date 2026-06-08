@@ -678,6 +678,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     }
     case DWYCO_SE_TOX_READY:
         TheDwycoCore->set_tox_enabled(true);
+        TheDwycoCore->update_tox_self_address(TheDwycoCore->tox_get_self_address());
         break;
     case DWYCO_SE_TOX_CRASHED:
         TheDwycoCore->set_tox_enabled(false);
@@ -2016,10 +2017,11 @@ DwycoCore::init()
     {
         QString tox_enabled_s = get_local_setting("tox_enabled");
         if(tox_enabled_s == "" || tox_enabled_s == "0") {
-            m_tox_enabled = false;
+            set_tox_enabled(false);
         } else {
-            m_tox_enabled = true;
+            set_tox_enabled(true);
             dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
+            update_tox_self_address(tox_get_self_address());
         }
     }
     Init_ok = 1;
@@ -2801,6 +2803,7 @@ DwycoCore::enable_tox()
         return;
     set_tox_enabled(true);
     dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
+    update_tox_self_address(tox_get_self_address());
 }
 
 void
@@ -2811,6 +2814,7 @@ DwycoCore::disable_tox()
     dwyco_disable_tox();
     set_tox_enabled(false);
     update_tox_connected(0);
+    update_tox_self_address("");
     emit tox_connection_status_changed(0);
 }
 
@@ -2828,6 +2832,18 @@ DwycoCore::tox_get_self_public_key()
     char *out;
     int len_out;
     if(!dwyco_tox_get_self_public_key(&out, &len_out))
+        return QString();
+    QByteArray ret(out, len_out);
+    dwyco_free(out);
+    return ret.toHex();
+}
+
+QString
+DwycoCore::tox_get_self_address()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_get_self_address(&out, &len_out))
         return QString();
     QByteArray ret(out, len_out);
     dwyco_free(out);

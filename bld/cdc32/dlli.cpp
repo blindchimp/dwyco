@@ -9612,6 +9612,23 @@ dwyco_tox_get_self_public_key(char **out, int *len_out)
 
 DWYCOEXPORT
 int
+dwyco_tox_get_self_address(char **out, int *len_out)
+{
+    vc addr = dwyco::tox_bridge_get_address();
+    if(addr.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[addr.len()];
+        memcpy(*out, (const char *)addr, addr.len());
+    }
+    if(len_out)
+        *len_out = addr.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_is_tox_uid(const char *uid, int len_uid)
 {
     return dwyco::tox_bridge_is_tox_uid(vc(VC_BSTRING, uid, len_uid)) ? 1 : 0;

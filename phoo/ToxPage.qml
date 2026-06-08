@@ -67,6 +67,27 @@ Page {
             }
         }
 
+        RowLayout {
+            enabled: core.tox_enabled
+            spacing: mm(1)
+
+            Button {
+                text: "Copy"
+                onClicked: Qt.clipboard.setText(toxIdField.text)
+            }
+
+            TextField {
+                id: toxIdField
+                text: core.tox_self_address
+                readOnly: true
+                selectByMouse: true
+                placeholderText: "Waiting for toxd..."
+                font.family: "monospace"
+                font.pixelSize: 10
+                Layout.fillWidth: true
+            }
+        }
+
         Label {
             text: "Add Friend"
             enabled: core.tox_enabled

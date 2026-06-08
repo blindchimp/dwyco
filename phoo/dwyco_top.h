@@ -67,6 +67,7 @@ class DwycoCore : public QObject
 
     QML_WRITABLE_VAR_PROPERTY(bool, tox_enabled)
     QML_READONLY_VAR_PROPERTY(int, tox_connected)
+    QML_READONLY_VAR_PROPERTY(QString, tox_self_address)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -99,6 +100,7 @@ public:
         m_emergency_exit = 0;
         m_tox_enabled = false;
         m_tox_connected = 0;
+        m_tox_self_address = "";
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -337,6 +339,7 @@ public:
     Q_INVOKABLE void disable_tox();
     Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
     Q_INVOKABLE QString tox_get_self_public_key();
+    Q_INVOKABLE QString tox_get_self_address();
 
 public:
 
