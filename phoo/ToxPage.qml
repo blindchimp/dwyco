@@ -42,13 +42,15 @@ Page {
                 core.set_local_setting("tox_enabled", checked ? "1" : "0")
                 if(checked) {
                     core.enable_tox()
+                } else {
+                    core.disable_tox()
                 }
             }
             Layout.fillWidth: true
         }
 
         RowLayout {
-            visible: core.tox_enabled
+            enabled: core.tox_enabled
             spacing: mm(1)
 
             Rectangle {
@@ -67,14 +69,14 @@ Page {
 
         Label {
             text: "Add Friend"
-            visible: core.tox_enabled
+            enabled: core.tox_enabled
             font.bold: true
             Layout.topMargin: mm(2)
         }
 
         TextFieldX {
             id: toxIdInput
-            visible: core.tox_enabled
+            enabled: core.tox_enabled
             placeholder_text: "Paste Tox ID here..."
             Layout.fillWidth: true
         }
@@ -82,8 +84,7 @@ Page {
         Button {
             id: addFriendButton
             text: "Add Friend"
-            visible: core.tox_enabled
-            enabled: toxIdInput.text_input.length > 0
+            enabled: core.tox_enabled && toxIdInput.text_input.length > 0
             onClicked: {
                 core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
                 toxIdInput.text_input = ""

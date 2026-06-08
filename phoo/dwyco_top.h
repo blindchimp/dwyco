@@ -334,6 +334,7 @@ public:
     Q_INVOKABLE QString map_to_representative(const QString& uid);
 
     Q_INVOKABLE void enable_tox();
+    Q_INVOKABLE void disable_tox();
     Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
     Q_INVOKABLE QString tox_get_self_public_key();
 

@@ -9597,6 +9597,14 @@ dwyco_enable_tox(const char *tox_data_dir)
 
 DWYCOEXPORT
 int
+dwyco_disable_tox()
+{
+    dwyco::tox_bridge_shutdown();
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_get_self_public_key(char **out, int *len_out)
 {
     return dwyco::tox_bridge_get_self_public_key(out, len_out);

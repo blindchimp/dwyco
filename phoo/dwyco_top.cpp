@@ -2803,6 +2803,17 @@ DwycoCore::enable_tox()
     dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
 }
 
+void
+DwycoCore::disable_tox()
+{
+    if(!m_tox_enabled)
+        return;
+    dwyco_disable_tox();
+    set_tox_enabled(false);
+    update_tox_connected(0);
+    emit tox_connection_status_changed(0);
+}
+
 int
 DwycoCore::tox_add_friend(const QString& addr, const QString& msg)
 {
