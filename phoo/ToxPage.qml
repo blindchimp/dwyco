@@ -73,18 +73,17 @@ Page {
 
             Button {
                 text: "Copy"
-                onClicked: Qt.clipboard.setText(toxIdField.text)
+                onClicked: core.copy_to_clipboard(toxIdField.text)
             }
 
-            TextField {
+            Label {
                 id: toxIdField
                 text: core.tox_self_address
-                readOnly: true
-                selectByMouse: true
-                placeholderText: "Waiting for toxd..."
                 font.family: "monospace"
                 font.pixelSize: 10
                 Layout.fillWidth: true
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
             }
         }
 

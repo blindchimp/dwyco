@@ -340,6 +340,7 @@ public:
     Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
     Q_INVOKABLE QString tox_get_self_public_key();
     Q_INVOKABLE QString tox_get_self_address();
+    Q_INVOKABLE void copy_to_clipboard(const QString& text);
 
 public:
 

@@ -15,6 +15,7 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
+#include <QClipboard>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
 #ifdef LINUX
@@ -2821,7 +2822,7 @@ DwycoCore::disable_tox()
 int
 DwycoCore::tox_add_friend(const QString& addr, const QString& msg)
 {
-    QByteArray addr_b = addr.toLatin1();
+    QByteArray addr_b = QByteArray::fromHex(addr.toLatin1());
     QByteArray msg_b = msg.toLatin1();
     return dwyco_tox_add_friend(addr_b.constData(), addr_b.length(), msg_b.constData());
 }
@@ -2848,6 +2849,12 @@ DwycoCore::tox_get_self_address()
     QByteArray ret(out, len_out);
     dwyco_free(out);
     return ret.toHex();
+}
+
+void
+DwycoCore::copy_to_clipboard(const QString& text)
+{
+    QGuiApplication::clipboard()->setText(text);
 }
 
 QUrl
