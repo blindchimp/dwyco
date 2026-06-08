@@ -206,8 +206,7 @@ toxd_start()
         return 1;
 
     if(access(Toxd_path.c_str(), X_OK) != 0) {
-        GRTLOG("tox bridge: toxd not found at ", 0, 0);
-        GRTLOG(Toxd_path.c_str(), 0, 0);
+        GRTLOG("tox bridge: toxd not found at %s", Toxd_path.c_str(), 0);
         return 0;
     }
 
@@ -278,7 +277,7 @@ toxd_start()
 
     Started = 1;
     Reqid_counter = 0;
-    GRTLOG("tox bridge: started, pid=", Toxd_pid, 0);
+    GRTLOG("tox bridge: started, pid=%d", Toxd_pid, 0);
     return 1;
 }
 
@@ -304,7 +303,7 @@ process_tox_event(const vc &ev)
         vc msg_type = args[3];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
 
-        GRTLOG("tox: message from fn ", (int)fn, 0);
+        GRTLOG("tox: message from fn %d", (int)fn, 0);
         GRTLOGVC(pseudo);
 
         vc body(VC_VECTOR);
@@ -339,7 +338,7 @@ process_tox_event(const vc &ev)
     } else if(strcmp(type, "read_receipt") == 0 && args.num_elems() >= 2) {
         uint32_t fn = (uint32_t)(int)args[0];
         uint32_t mid = (uint32_t)(int)args[1];
-        GRTLOG("tox: read receipt for mid ", (int)mid, 0);
+        GRTLOG("tox: read receipt for mid %d", (int)mid, 0);
         if(Tox_q)
         {
             vc pseudo;
@@ -377,7 +376,7 @@ process_tox_event(const vc &ev)
         vc pubkey = args[1];
         vc status = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        GRTLOG("tox: friend ", (int)fn, status == vc("online") ? 1 : 0);
+        GRTLOG("tox: friend %d online=%d", (int)fn, status == vc("online") ? 1 : 0);
         se_emit(SE_TOX_FRIEND_STATUS, pseudo, status);
 
     } else if(strcmp(type, "friend_name") == 0 && args.num_elems() >= 3) {
@@ -1045,7 +1044,7 @@ tox_bridge_send_queued()
         // permanent failure
         Tox_q->mark_failed(row_id);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
-        GRTLOG("tox: send permanent failure, error=", tox_error, 0);
+        GRTLOG("tox: send permanent failure, error=%d", tox_error, 0);
     }
     else
     {

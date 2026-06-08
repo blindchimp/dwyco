@@ -670,13 +670,8 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_SELF_CONNECTION_STATUS:
     {
         int connected = 0;
-        if(val && len_val > 0) {
-            QByteArray ba(val, len_val);
-            bool ok;
-            int n = ba.trimmed().toInt(&ok);
-            if(ok)
-                connected = (n > 0) ? 1 : 0;
-        }
+        if(str_data == "udp" || str_data =="tcp")
+            connected = 1;
         TheDwycoCore->update_tox_connected(connected);
         emit TheDwycoCore->tox_connection_status_changed(connected);
         break;
