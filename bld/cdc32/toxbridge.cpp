@@ -657,6 +657,16 @@ tox_bridge_friend_delete(uint32_t friend_number)
 }
 
 int
+tox_bridge_friend_delete_by_pubkey(const vc &pubkey)
+{
+    vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo, &fn))
+        return 0;
+    return tox_bridge_friend_delete(fn);
+}
+
+int
 tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out, int *tox_error_out)
 {
     vc params(VC_MAP, "", 6);

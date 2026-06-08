@@ -2213,6 +2213,7 @@ int DWYCOEXPORT dwyco_tox_get_self_address(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_is_tox_uid(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg);
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
+int DWYCOEXPORT dwyco_tox_delete_friend(const char *pubkey, int pubkey_len);
 
 #ifdef __cplusplus
 }

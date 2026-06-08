@@ -9640,6 +9640,11 @@ dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg)
 {
     vc addr_vc(VC_BSTRING, addr, (long)addr_len);
     vc msg_vc(VC_STRING, msg);
+    if(addr_len >= 32)
+    {
+        vc pubkey(VC_BSTRING, addr, 32);
+        dwyco::tox_bridge_friend_delete_by_pubkey(pubkey);
+    }
     return dwyco::tox_bridge_friend_add(addr_vc, msg_vc);
 }
 
@@ -9661,6 +9666,14 @@ dwyco_tox_get_friend_list(DWYCO_LIST *list_out)
     if(list_out)
         *list_out = (DWYCO_LIST)new vc(fl);
     return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_delete_friend(const char *pubkey, int pubkey_len)
+{
+    vc pk(VC_BSTRING, pubkey, (long)pubkey_len);
+    return dwyco::tox_bridge_friend_delete_by_pubkey(pk);
 }
 
 void
