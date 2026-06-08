@@ -510,14 +510,19 @@ se_process()
             break;
 
         case SE_TOX_SELF_CONNECTION_STATUS:
+        {
+            const char *val;
+            int len_val;
+            int tp = dllify(Se_q[i][2], val, len_val);
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),
                                            0, 0,
-                                           0, 0, 0,
+                                           tp, val, len_val,
                                            0, 0
                                           );
             break;
+        }
 
         case SE_TOX_READY:
             (*dwyco_system_event_callback)(api_cmd,

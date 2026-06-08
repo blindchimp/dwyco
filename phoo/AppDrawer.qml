@@ -87,4 +87,9 @@ AppDrawerForm {
 
     }
 
+    tox_button.onClicked: {
+        stack.push(tox_page)
+        close()
+    }
+
 }

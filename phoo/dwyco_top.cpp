@@ -667,6 +667,28 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_FRIEND_REQUEST:
         dwyco_tox_accept_friend_request(val, len_val);
         break;
+    case DWYCO_SE_TOX_SELF_CONNECTION_STATUS:
+    {
+        int connected = 0;
+        if(val && len_val > 0) {
+            QByteArray ba(val, len_val);
+            bool ok;
+            int n = ba.trimmed().toInt(&ok);
+            if(ok)
+                connected = (n > 0) ? 1 : 0;
+        }
+        TheDwycoCore->update_tox_connected(connected);
+        emit TheDwycoCore->tox_connection_status_changed(connected);
+        break;
+    }
+    case DWYCO_SE_TOX_READY:
+        TheDwycoCore->set_tox_enabled(true);
+        break;
+    case DWYCO_SE_TOX_CRASHED:
+        TheDwycoCore->set_tox_enabled(false);
+        TheDwycoCore->update_tox_connected(0);
+        emit TheDwycoCore->tox_connection_status_changed(0);
+        break;
     default:
         break;
     }
@@ -1996,7 +2018,15 @@ DwycoCore::init()
     if(!dwyco_init())
         ::abort();
     setup_emergency_servers();
-    dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
+    {
+        QString tox_enabled_s = get_local_setting("tox_enabled");
+        if(tox_enabled_s == "" || tox_enabled_s == "0") {
+            m_tox_enabled = false;
+        } else {
+            m_tox_enabled = true;
+            dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
+        }
+    }
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
@@ -2767,6 +2797,35 @@ DwycoCore::get_local_setting(QString name)
         return QString();
 
     return ret;
+}
+
+void
+DwycoCore::enable_tox()
+{
+    if(m_tox_enabled)
+        return;
+    set_tox_enabled(true);
+    dwyco_enable_tox("/Users/dwight/.config/dwyco/tox");
+}
+
+int
+DwycoCore::tox_add_friend(const QString& addr, const QString& msg)
+{
+    QByteArray addr_b = addr.toLatin1();
+    QByteArray msg_b = msg.toLatin1();
+    return dwyco_tox_add_friend(addr_b.constData(), addr_b.length(), msg_b.constData());
+}
+
+QString
+DwycoCore::tox_get_self_public_key()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_get_self_public_key(&out, &len_out))
+        return QString();
+    QByteArray ret(out, len_out);
+    dwyco_free(out);
+    return ret.toHex();
 }
 
 QUrl

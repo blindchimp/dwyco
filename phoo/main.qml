@@ -519,6 +519,11 @@ ApplicationWindow {
         // }
     }
 
+    ToxPage {
+        id: tox_page
+        visible: false
+    }
+
     ConvList {
         id: convlist
         visible: false

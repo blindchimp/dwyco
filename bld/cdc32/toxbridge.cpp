@@ -405,9 +405,9 @@ process_tox_event(const vc &ev)
 
     } else if(strcmp(type, "self_connection_status") == 0 && args.num_elems() >= 1) {
         vc status = args[0];
-        GRTLOG("tox: self connection status ", 0, 0);
-        GRTLOG((const char *)status, status.len(), 0);
-        se_emit(SE_TOX_SELF_CONNECTION_STATUS, status);
+        GRTLOG("tox: self connection status %s", (const char *)status, 0);
+
+        se_emit(SE_TOX_SELF_CONNECTION_STATUS, My_UID, status);
 
     } else if(strcmp(type, "file_chunk") == 0 && args.num_elems() >= 4) {
         uint32_t fn = (uint32_t)(int)args[0];

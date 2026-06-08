@@ -65,6 +65,8 @@ class DwycoCore : public QObject
 
     QML_READONLY_VAR_PROPERTY(int, emergency_exit)
 
+    QML_WRITABLE_VAR_PROPERTY(bool, tox_enabled)
+    QML_READONLY_VAR_PROPERTY(int, tox_connected)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -95,6 +97,8 @@ public:
         m_total_users = 0;
         m_qt_version_string = QT_VERSION_STRING;
         m_emergency_exit = 0;
+        m_tox_enabled = false;
+        m_tox_connected = 0;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -329,6 +333,10 @@ public:
 
     Q_INVOKABLE QString map_to_representative(const QString& uid);
 
+    Q_INVOKABLE void enable_tox();
+    Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
+    Q_INVOKABLE QString tox_get_self_public_key();
+
 public:
 
 public slots:
@@ -416,6 +424,8 @@ signals:
     void join_result(QString gname, int result);
 
     void emergency_exit_signal(int what, int must_exit, QString msg);
+
+    void tox_connection_status_changed(int connected);
 
 private:
 

@@ -205,6 +205,7 @@ qt_add_qml_module(phoo
         RestoreAutoBackup.qml
         MessageYN.qml
         SimpleTrashBrowse.qml
+        ToxPage.qml
         PulseLoader.qml
         MsgViewMenu.qml
         MsgViewMenuTrash.qml
