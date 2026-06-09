@@ -81,6 +81,12 @@ ToxQueue *tox_queue();
 int tox_bridge_set_typing(uint32_t friend_number, int typing);
 int tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing);
 
+// self profile
+int tox_bridge_set_name(const char *name, int name_len);
+int tox_bridge_set_status_message(const char *msg, int msg_len);
+vc tox_bridge_get_name();
+vc tox_bridge_get_status_message();
+
 // convenience wrappers for dlli
 int tox_bridge_is_tox_uid(const vc &uid);
 // must call dwyco_free_array on returned pointer

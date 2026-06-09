@@ -624,6 +624,30 @@ tox_bridge_get_address()
 }
 
 vc
+tox_bridge_get_name()
+{
+    vc result;
+    if(!toxd_rpc_call(vc("get_name"), vc(VC_MAP, "", 0), result, 5000))
+        return vcnil;
+    vc name;
+    if(!result.find("name", name))
+        return vcnil;
+    return name;
+}
+
+vc
+tox_bridge_get_status_message()
+{
+    vc result;
+    if(!toxd_rpc_call(vc("get_status_message"), vc(VC_MAP, "", 0), result, 5000))
+        return vcnil;
+    vc msg;
+    if(!result.find("status_message", msg))
+        return vcnil;
+    return msg;
+}
+
+vc
 tox_bridge_get_pubkey()
 {
     vc result;
@@ -865,6 +889,24 @@ tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing)
     if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
         return 0;
     return tox_bridge_set_typing(fn, typing);
+}
+
+int
+tox_bridge_set_name(const char *name, int name_len)
+{
+    vc params(VC_MAP, "", 4);
+    params.add_kv("name", vc(VC_BSTRING, name, (long)name_len));
+    vc result;
+    return toxd_rpc_call(vc("set_name"), params, result, 5000);
+}
+
+int
+tox_bridge_set_status_message(const char *msg, int msg_len)
+{
+    vc params(VC_MAP, "", 4);
+    params.add_kv("status_message", vc(VC_BSTRING, msg, (long)msg_len));
+    vc result;
+    return toxd_rpc_call(vc("set_status_message"), params, result, 5000);
 }
 
 // --- ToxQueue implementation ---

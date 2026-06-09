@@ -9750,6 +9750,54 @@ dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing)
     return dwyco::tox_bridge_set_typing_by_uid(puid, typing);
 }
 
+DWYCOEXPORT
+int
+dwyco_tox_set_name(const char *name, int name_len)
+{
+    return dwyco::tox_bridge_set_name(name, name_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_status_message(const char *msg, int msg_len)
+{
+    return dwyco::tox_bridge_set_status_message(msg, msg_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_name(char **out, int *len_out)
+{
+    vc name = dwyco::tox_bridge_get_name();
+    if(name.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[name.len()];
+        memcpy(*out, (const char *)name, name.len());
+    }
+    if(len_out)
+        *len_out = name.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_status_message(char **out, int *len_out)
+{
+    vc msg = dwyco::tox_bridge_get_status_message();
+    if(msg.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[msg.len()];
+        memcpy(*out, (const char *)msg, msg.len());
+    }
+    if(len_out)
+        *len_out = msg.len();
+    return 1;
+}
+
 void
 reset_audio_menus()
 {

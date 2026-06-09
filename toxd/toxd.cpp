@@ -604,6 +604,34 @@ handle_get_address(ToxdState *s, vc params, int reqid)
 }
 
 static void
+handle_get_name(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "get_name", reqid, params);
+    size_t len = tox_self_get_name_size(s->tox);
+    uint8_t *name = (uint8_t *)malloc(len + 1);
+    tox_self_get_name(s->tox, name);
+    name[len] = 0;
+    vc result(VC_MAP, "", 2);
+    result.add_kv("name", vc(VC_BSTRING, (const char *)name, (long)len));
+    free(name);
+    send_response(STDOUT_FILENO, reqid, result);
+}
+
+static void
+handle_get_status_message(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "get_status_message", reqid, params);
+    size_t len = tox_self_get_status_message_size(s->tox);
+    uint8_t *msg = (uint8_t *)malloc(len + 1);
+    tox_self_get_status_message(s->tox, msg);
+    msg[len] = 0;
+    vc result(VC_MAP, "", 2);
+    result.add_kv("status_message", vc(VC_BSTRING, (const char *)msg, (long)len));
+    free(msg);
+    send_response(STDOUT_FILENO, reqid, result);
+}
+
+static void
 handle_friend_add(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "friend_add", reqid, params);
@@ -805,6 +833,48 @@ handle_typing_set(ToxdState *s, vc params, int reqid)
 }
 
 static void
+handle_set_name(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "set_name", reqid, params);
+    vc name_vc;
+    if(!params.find("name", name_vc))
+    {
+        send_error(STDOUT_FILENO, reqid, "missing name");
+        return;
+    }
+    uint8_t *name = (uint8_t *)(const char *)name_vc;
+    size_t len = name_vc.len();
+    Tox_Err_Set_Info err;
+    if(!tox_self_set_name(s->tox, name, len, &err))
+    {
+        send_error(STDOUT_FILENO, reqid, "set name failed");
+        return;
+    }
+    send_response(STDOUT_FILENO, reqid, vcnil);
+}
+
+static void
+handle_set_status_message(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "set_status_message", reqid, params);
+    vc msg_vc;
+    if(!params.find("status_message", msg_vc))
+    {
+        send_error(STDOUT_FILENO, reqid, "missing status_message");
+        return;
+    }
+    uint8_t *msg = (uint8_t *)(const char *)msg_vc;
+    size_t len = msg_vc.len();
+    Tox_Err_Set_Info err;
+    if(!tox_self_set_status_message(s->tox, msg, len, &err))
+    {
+        send_error(STDOUT_FILENO, reqid, "set status message failed");
+        return;
+    }
+    send_response(STDOUT_FILENO, reqid, vcnil);
+}
+
+static void
 handle_file_send(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "file_send", reqid, params);
@@ -993,6 +1063,14 @@ handle_rpc_request(ToxdState *s, const vc &req)
         handle_friend_list(s, params, reqid);
     else if(strcmp(method, "ping") == 0)
         handle_ping(s, params, reqid);
+    else if(strcmp(method, "set_name") == 0)
+        handle_set_name(s, params, reqid);
+    else if(strcmp(method, "set_status_message") == 0)
+        handle_set_status_message(s, params, reqid);
+    else if(strcmp(method, "get_name") == 0)
+        handle_get_name(s, params, reqid);
+    else if(strcmp(method, "get_status_message") == 0)
+        handle_get_status_message(s, params, reqid);
     else if(strcmp(method, "shutdown") == 0)
         handle_shutdown(s, params, reqid);
     else
@@ -1074,7 +1152,7 @@ main(int argc, char **argv)
         return 1;
 
     register_callbacks(state.tox);
-    tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
+    //tox_self_set_name(state.tox, (const uint8_t *)"test-tox", 9, NULL);
 
     signal(SIGPIPE, SIG_IGN);
 

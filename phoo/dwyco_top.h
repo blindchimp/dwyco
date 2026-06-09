@@ -340,6 +340,10 @@ public:
     Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
     Q_INVOKABLE int tox_delete_friend(const QString& pubkey);
     Q_INVOKABLE void tox_set_typing(const QString& uid, int typing);
+    Q_INVOKABLE int tox_set_name(const QString& name);
+    Q_INVOKABLE int tox_set_status_message(const QString& msg);
+    Q_INVOKABLE QString tox_get_name();
+    Q_INVOKABLE QString tox_get_status_message();
     Q_INVOKABLE bool is_tox_uid(const QString& uid);
     Q_INVOKABLE QString tox_get_self_public_key();
     Q_INVOKABLE QString tox_get_self_address();

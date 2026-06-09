@@ -2216,6 +2216,10 @@ int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char 
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
 int DWYCOEXPORT dwyco_tox_delete_friend(const char *pubkey, int pubkey_len);
 int DWYCOEXPORT dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing);
+int DWYCOEXPORT dwyco_tox_set_name(const char *name, int name_len);
+int DWYCOEXPORT dwyco_tox_set_status_message(const char *msg, int msg_len);
+int DWYCOEXPORT dwyco_tox_get_name(char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_get_status_message(char **out, int *len_out);
 
 typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_FRIEND_NUMBER "000"

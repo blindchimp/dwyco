@@ -2860,6 +2860,44 @@ DwycoCore::tox_set_typing(const QString& uid, int typing)
     dwyco_tox_set_typing(buid.constData(), buid.length(), typing);
 }
 
+int
+DwycoCore::tox_set_name(const QString& name)
+{
+    QByteArray bname = name.toUtf8();
+    return dwyco_tox_set_name(bname.constData(), bname.length());
+}
+
+int
+DwycoCore::tox_set_status_message(const QString& msg)
+{
+    QByteArray bmsg = msg.toUtf8();
+    return dwyco_tox_set_status_message(bmsg.constData(), bmsg.length());
+}
+
+QString
+DwycoCore::tox_get_name()
+{
+    char *out = 0;
+    int len = 0;
+    if(!dwyco_tox_get_name(&out, &len))
+        return QString();
+    QString s = QString::fromUtf8(out, len);
+    delete[] out;
+    return s;
+}
+
+QString
+DwycoCore::tox_get_status_message()
+{
+    char *out = 0;
+    int len = 0;
+    if(!dwyco_tox_get_status_message(&out, &len))
+        return QString();
+    QString s = QString::fromUtf8(out, len);
+    delete[] out;
+    return s;
+}
+
 bool
 DwycoCore::is_tox_uid(const QString& uid)
 {
