@@ -8404,6 +8404,46 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
     if(cant_resolve_now_out)
         *cant_resolve_now_out = 0;
     vc buid(VC_BSTRING, uid, len_uid);
+
+    // If this is a tox pseudo_uid, return info from local friend cache
+    // without hitting any dwyco servers or profile DB
+    if(dwyco::tox_bridge_is_tox_uid(buid))
+    {
+        vc fl = dwyco::tox_bridge_get_friend_list_vc();
+        vc name;
+        if(!fl.is_nil())
+        {
+            int n = fl.num_elems();
+            for(int i = 0; i < n; ++i)
+            {
+                vc entry = fl[i];
+                vc pubkey;
+                if(entry.find("pubkey", pubkey))
+                {
+                    vc pseudo = dwyco::tox_pubkey_to_pseudo_uid(pubkey);
+                    if(pseudo == buid)
+                    {
+                        entry.find("name", name);
+                        break;
+                    }
+                }
+            }
+        }
+        if(name.is_nil() || name == vc(""))
+            name = to_hex(buid);
+
+        vc v(VC_VECTOR);
+        v.append(name);
+        v.append("");
+        v.append("");
+        v.append(0);
+        v.append(0);
+        v.append("");
+        vc v1(VC_VECTOR);
+        v1[0] = v;
+        return dwyco_list_from_vc(v1);
+    }
+
     // note: have to think about this. it might be
     // too expensive on mobile if you have lots of
     // profiles. maybe need to just limit it to
@@ -9665,6 +9705,32 @@ dwyco_tox_get_friend_list(DWYCO_LIST *list_out)
         return 0;
     if(list_out)
         *list_out = (DWYCO_LIST)new vc(fl);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out)
+{
+    dwyco::tox_bridge_rebuild_friend_cache();
+    vc fl = dwyco::tox_bridge_get_friend_list_vc();
+    if(fl.is_nil())
+        return 0;
+    vc result(VC_VECTOR);
+    int n = fl.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = fl[i];
+        vc row(VC_VECTOR);
+        vc tmp;
+        row.append(entry.find("friend_number", tmp) ? tmp : vc(0));
+        row.append(entry.find("pubkey", tmp) ? tmp : vc(""));
+        row.append(entry.find("name", tmp) ? tmp : vc(""));
+        row.append(entry.find("status", tmp) ? tmp : vc(""));
+        result.append(row);
+    }
+    if(list_out)
+        *list_out = (DWYCO_TOX_FRIENDS_MODEL)new vc(result);
     return 1;
 }
 

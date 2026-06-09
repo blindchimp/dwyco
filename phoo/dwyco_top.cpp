@@ -45,6 +45,7 @@
 #include "simpledirmodel.h"
 #include "syncmodel.h"
 #include "discomodel.h"
+#include "toxfriendmodel.h"
 #include "ccmodel.h"
 #include "joinlogmodel.h"
 #ifdef ANDROID
@@ -685,6 +686,14 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->set_tox_enabled(false);
         TheDwycoCore->update_tox_connected(0);
         emit TheDwycoCore->tox_connection_status_changed(0);
+        break;
+    case DWYCO_SE_TOX_FRIEND_NAME:
+        // tox friend name changed — re-resolve display name
+        emit TheDwycoCore->sys_uid_resolved(huid);
+        break;
+    case DWYCO_SE_TOX_FRIEND_STATUS:
+        // tox friend online/offline — re-resolve display
+        emit TheDwycoCore->sys_uid_resolved(huid);
         break;
     default:
         break;
@@ -2827,6 +2836,13 @@ DwycoCore::tox_add_friend(const QString& addr, const QString& msg)
     return dwyco_tox_add_friend(addr_b.constData(), addr_b.length(), msg_b.constData());
 }
 
+int
+DwycoCore::tox_delete_friend(const QString& pubkey)
+{
+    QByteArray pk = QByteArray::fromHex(pubkey.toLatin1());
+    return dwyco_tox_delete_friend(pk.constData(), pk.length());
+}
+
 QString
 DwycoCore::tox_get_self_public_key()
 {
@@ -3650,6 +3666,9 @@ dwyco_register_qml(QQmlContext *root)
 
     JoinLogModel *jlm = new JoinLogModel;
     root->setContextProperty("JoinLogModel", jlm);
+
+    ToxFriendModel *toxfm = new ToxFriendModel;
+    root->setContextProperty("ToxFriendModel", toxfm);
 
 //#ifdef ANDROID
     //AndroidPerms *a = new AndroidPerms;

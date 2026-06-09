@@ -886,9 +886,25 @@ handle_friend_list(ToxdState *s, vc params, int reqid)
         uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
         if(tox_friend_get_public_key(s->tox, fn, pubkey, NULL))
         {
-            vc entry(VC_MAP, "", 4);
+            vc entry(VC_MAP, "", 8);
             entry.add_kv("friend_number", vc((int)fn));
             entry.add_kv("pubkey", vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE));
+
+            size_t name_len = tox_friend_get_name_size(s->tox, fn, NULL);
+            if(name_len > 0 && name_len <= TOX_MAX_NAME_LENGTH)
+            {
+                uint8_t name[TOX_MAX_NAME_LENGTH];
+                tox_friend_get_name(s->tox, fn, name, NULL);
+                entry.add_kv("name", vc(VC_BSTRING, (const char *)name, (long)name_len));
+            }
+            else
+            {
+                entry.add_kv("name", vc(""));
+            }
+
+            Tox_Connection conn = tox_friend_get_connection_status(s->tox, fn, NULL);
+            entry.add_kv("status", vc(conn == TOX_CONNECTION_NONE ? "offline" : "online"));
+
             friends.append(entry);
         }
     }

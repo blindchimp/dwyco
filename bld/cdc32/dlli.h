@@ -2215,6 +2215,13 @@ int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char 
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
 int DWYCOEXPORT dwyco_tox_delete_friend(const char *pubkey, int pubkey_len);
 
+typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
+#define DWYCO_TF_FRIEND_NUMBER "000"
+#define DWYCO_TF_PUBKEY       "001"
+#define DWYCO_TF_NAME         "002"
+#define DWYCO_TF_STATUS       "003"
+int DWYCOEXPORT dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out);
+
 #ifdef __cplusplus
 }
 #endif

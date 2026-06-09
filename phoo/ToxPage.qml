@@ -28,6 +28,14 @@ Page {
         } else {
             enable_tox_cb.checked = true
         }
+        ToxFriendModel.load_friends()
+    }
+
+    Timer {
+        interval: 5000
+        running: core.tox_enabled
+        repeat: true
+        onTriggered: ToxFriendModel.load_friends()
     }
 
     ColumnLayout {
@@ -112,8 +120,113 @@ Page {
             Layout.fillWidth: true
         }
 
+        Label {
+            text: "Friends"
+            enabled: core.tox_enabled
+            font.bold: true
+            Layout.topMargin: mm(2)
+            visible: core.tox_enabled
+        }
+
         Item {
+            enabled: core.tox_enabled
+            visible: core.tox_enabled
+            Layout.fillWidth: true
             Layout.fillHeight: true
+
+            ListView {
+                id: friendList
+                anchors.fill: parent
+                clip: true
+                spacing: mm(1)
+                model: ToxFriendModel
+                currentIndex: -1
+                highlight: Rectangle {
+                    color: amber_accent
+                    opacity: 0.3
+                }
+                highlightMoveDuration: 200
+                ScrollBar.vertical: ScrollBar { }
+
+                delegate: Item {
+                    width: ListView.view.width
+                    height: mm(9)
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: friendList.currentIndex = index
+                        onDoubleClicked: {
+                            var pseudo_uid = pubkey.substring(0, 20)
+                            top_dispatch.uid_selected(pseudo_uid, "clicked")
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        color: "transparent"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: mm(1)
+                            spacing: mm(0.5)
+
+                            RowLayout {
+                                spacing: mm(1)
+                                Layout.fillWidth: true
+
+                                Text {
+                                    text: name
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Rectangle {
+                                    width: 8
+                                    height: 8
+                                    radius: 4
+                                    color: status === "online" ? "green" : "gray"
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+
+                                Text {
+                                    text: status
+                                    font.pixelSize: 10
+                                    color: status === "online" ? "green" : "gray"
+                                }
+                            }
+
+                            Text {
+                                text: pubkey
+                                font.family: "monospace"
+                                font.pixelSize: 9
+                                elide: Text.ElideRight
+                                color: "#666"
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+                }
+            }
+
+            Label {
+                anchors.centerIn: parent
+                visible: ToxFriendModel.count === 0
+                text: qsTr("(No friends yet. Add one above.)")
+            }
+        }
+
+        Button {
+            text: "Delete Friend"
+            enabled: friendList.currentIndex >= 0
+            Layout.fillWidth: true
+            onClicked: {
+                var f = ToxFriendModel.get(friendList.currentIndex)
+                core.tox_delete_friend(f.pubkey)
+                friendList.currentIndex = -1
+                ToxFriendModel.load_friends()
+            }
         }
     }
 }

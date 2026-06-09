@@ -98,8 +98,9 @@ set(SRCS
     qlimitedbuffer.cpp 
     resizeimage.cpp 
     simple_user_list.cpp 
-    ctlist.cpp 
-    dwycovideopreviewprovider.cpp  
+    ctlist.cpp
+    dwycovideopreviewprovider.cpp
+    toxfriendmodel.cpp
     syncmodel.cpp
     msgrawmodel.cpp
     msgproxymodel.cpp
