@@ -43,6 +43,14 @@ Page {
     property var drafts: ({})
     property string _prev_uid: ""    // holds the UID before the current change
     property bool _updatingText: false
+    property bool _toxTypingActive: false
+    property Timer _toxTypingTimer: Timer {
+        interval: 2000
+        onTriggered: {
+            _toxTypingActive = false
+            core.tox_set_typing(to_uid, 0)
+        }
+    }
     /* --------- END AI CODE --------- */
 
     prov_img_height: .33 * height
@@ -1070,10 +1078,26 @@ Page {
 
         onLengthChanged: {
             if (chatbox_page._updatingText) return
-            core.uid_keyboard_input(to_uid)
+            if (core.is_tox_uid(to_uid)) {
+                if (!chatbox_page._toxTypingActive) {
+                    chatbox_page._toxTypingActive = true
+                    core.tox_set_typing(to_uid, 1)
+                }
+                chatbox_page._toxTypingTimer.restart()
+            } else {
+                core.uid_keyboard_input(to_uid)
+            }
         }
         onInputMethodComposingChanged: {
-            core.uid_keyboard_input(to_uid)
+            if (core.is_tox_uid(to_uid)) {
+                if (!chatbox_page._toxTypingActive) {
+                    chatbox_page._toxTypingActive = true
+                    core.tox_set_typing(to_uid, 1)
+                }
+                chatbox_page._toxTypingTimer.restart()
+            } else {
+                core.uid_keyboard_input(to_uid)
+            }
         }
 
         onAccepted: {

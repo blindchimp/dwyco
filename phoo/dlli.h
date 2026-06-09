@@ -518,6 +518,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_TOX_SELF_CONNECTION_STATUS 57
 #define DWYCO_SE_TOX_READY 58
 #define DWYCO_SE_TOX_CRASHED 59
+#define DWYCO_SE_TOX_TYPING 60
 
 int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -2214,6 +2215,7 @@ int DWYCOEXPORT dwyco_tox_is_tox_uid(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg);
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
 int DWYCOEXPORT dwyco_tox_delete_friend(const char *pubkey, int pubkey_len);
+int DWYCOEXPORT dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing);
 
 typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_FRIEND_NUMBER "000"

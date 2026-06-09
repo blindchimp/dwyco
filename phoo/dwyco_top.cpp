@@ -695,6 +695,12 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         // tox friend online/offline — re-resolve display
         emit TheDwycoCore->sys_uid_resolved(huid);
         break;
+    case DWYCO_SE_TOX_TYPING:
+    {
+        int typing = (namestr == "on") ? 1 : 0;
+        emit TheDwycoCore->sc_rem_keyboard_active(huid, typing);
+        break;
+    }
     default:
         break;
     }
@@ -2369,6 +2375,8 @@ int
 DwycoCore::get_rem_keyboard_state(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
+    if(!c)
+        return 0;
     return c->rem_kb_active;
 
 }
@@ -2377,6 +2385,8 @@ int
 DwycoCore::get_established_state(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
+    if(!c)
+        return 0;
     return c->get_connected();
 
 }
@@ -2841,6 +2851,20 @@ DwycoCore::tox_delete_friend(const QString& pubkey)
 {
     QByteArray pk = QByteArray::fromHex(pubkey.toLatin1());
     return dwyco_tox_delete_friend(pk.constData(), pk.length());
+}
+
+void
+DwycoCore::tox_set_typing(const QString& uid, int typing)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    dwyco_tox_set_typing(buid.constData(), buid.length(), typing);
+}
+
+bool
+DwycoCore::is_tox_uid(const QString& uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    return dwyco_tox_is_tox_uid(buid.constData(), buid.length()) != 0;
 }
 
 QString

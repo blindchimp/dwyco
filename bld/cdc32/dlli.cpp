@@ -9742,6 +9742,14 @@ dwyco_tox_delete_friend(const char *pubkey, int pubkey_len)
     return dwyco::tox_bridge_friend_delete_by_pubkey(pk);
 }
 
+DWYCOEXPORT
+int
+dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing)
+{
+    vc puid(VC_BSTRING, pseudo_uid, (long)pseudo_uid_len);
+    return dwyco::tox_bridge_set_typing_by_uid(puid, typing);
+}
+
 void
 reset_audio_menus()
 {
