@@ -422,6 +422,13 @@ process_tox_event(const vc &ev)
     } else if(strcmp(type, "ready") == 0) {
         GRTLOG("tox: ready", 0, 0);
         se_emit(SE_TOX_READY, vcnil);
+
+    } else if(strcmp(type, "typing") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        GRTLOG("tox: typing fn=%d typing=%s", (int)fn, (const char *)args[2]);
+        se_emit(SE_TOX_TYPING, pseudo, args[2]);
     }
 }
 
@@ -839,6 +846,25 @@ tox_bridge_get_friend_list_vc()
     if(Friend_cache.is_nil())
         tox_bridge_rebuild_friend_cache();
     return Friend_cache;
+}
+
+int
+tox_bridge_set_typing(uint32_t friend_number, int typing)
+{
+    vc params(VC_MAP, "", 4);
+    params.add_kv("friend_number", vc((int)friend_number));
+    params.add_kv("typing", vc(typing ? 1 : 0));
+    vc result;
+    return toxd_rpc_call(vc("typing_set"), params, result, 5000);
+}
+
+int
+tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing)
+{
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    return tox_bridge_set_typing(fn, typing);
 }
 
 // --- ToxQueue implementation ---

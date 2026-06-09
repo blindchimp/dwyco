@@ -433,6 +433,21 @@ toxd_on_friend_status_message(Tox *tox, uint32_t fn, const uint8_t *msg,
 }
 
 static void
+toxd_on_friend_typing(Tox *tox, uint32_t fn, bool typing, void *ud)
+{
+    (void)tox;
+    ToxdState *s = (ToxdState *)ud;
+    log_printf(s->log_file, "[cb] friend_typing fn=%u typing=%d", fn, typing);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(typing ? "on" : "off"));
+    send_event(STDOUT_FILENO, "typing", args);
+}
+
+static void
 save_tox_state(ToxdState *s)
 {
     char save_path[1024];
@@ -558,6 +573,7 @@ register_callbacks(Tox *tox)
     tox_callback_self_connection_status(tox, toxd_on_self_connection_status);
     tox_callback_friend_name(tox, toxd_on_friend_name);
     tox_callback_friend_status_message(tox, toxd_on_friend_status_message);
+    tox_callback_friend_typing(tox, toxd_on_friend_typing);
 }
 
 static void
@@ -768,6 +784,27 @@ handle_message_send(ToxdState *s, vc params, int reqid)
 }
 
 static void
+handle_typing_set(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "typing_set", reqid, params);
+    vc fn_vc, typing_vc;
+    if(!params.find("friend_number", fn_vc) || !params.find("typing", typing_vc))
+    {
+        send_error(STDOUT_FILENO, reqid, "missing friend_number or typing");
+        return;
+    }
+    uint32_t fn = (uint32_t)(int)fn_vc;
+    bool typing = ((int)typing_vc) != 0;
+    Tox_Err_Set_Typing err;
+    if(!tox_self_set_typing(s->tox, fn, typing, &err))
+    {
+        send_error(STDOUT_FILENO, reqid, "typing set failed");
+        return;
+    }
+    send_response(STDOUT_FILENO, reqid, vcnil);
+}
+
+static void
 handle_file_send(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "file_send", reqid, params);
@@ -944,6 +981,8 @@ handle_rpc_request(ToxdState *s, const vc &req)
         handle_friend_delete(s, params, reqid);
     else if(strcmp(method, "message_send") == 0)
         handle_message_send(s, params, reqid);
+    else if(strcmp(method, "typing_set") == 0)
+        handle_typing_set(s, params, reqid);
     else if(strcmp(method, "file_send") == 0)
         handle_file_send(s, params, reqid);
     else if(strcmp(method, "file_send_data") == 0)

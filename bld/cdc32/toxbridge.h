@@ -77,6 +77,10 @@ void tox_bridge_rebuild_friend_cache();
 // access the queue instance for integration with dwyco_ API
 ToxQueue *tox_queue();
 
+// typing indicators
+int tox_bridge_set_typing(uint32_t friend_number, int typing);
+int tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing);
+
 // convenience wrappers for dlli
 int tox_bridge_is_tox_uid(const vc &uid);
 // must call dwyco_free_array on returned pointer
