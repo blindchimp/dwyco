@@ -131,18 +131,19 @@ Item {
                    }
                }
 
-               Text {
-                   // note: we don't censor the text on desktop, if they are already in your
-                   // list, being able to see the text is a little more important.
-                   text: display
-                   elide: Text.ElideRight
-                   clip: true
-                   Layout.alignment: Qt.AlignLeft
-                   Layout.fillWidth: true
-                   color: "white"
-                   font.weight: Font.Light
-                   font.pixelSize: applicationWindow1.font.pixelSize
-               }
+                Text {
+                    // note: we don't censor the text on desktop, if they are already in your
+                    // list, being able to see the text is a little more important.
+                    text: display
+                    elide: Text.ElideRight
+                    clip: true
+                    Layout.alignment: Qt.AlignLeft
+                    Layout.fillWidth: true
+                    color: "white"
+                    font.weight: Font.Light
+                    font.pixelSize: applicationWindow1.font.pixelSize
+                    renderType: Text.QtRendering
+                }
            }
            MouseArea {
                anchors.fill: drow

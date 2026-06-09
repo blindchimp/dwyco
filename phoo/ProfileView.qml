@@ -106,6 +106,7 @@ Page {
         font.pointSize: 20
         clip: true
         wrapMode: Text.WordWrap
+        renderType: Text.QtRendering
     }
 
     Text {
@@ -120,6 +121,7 @@ Page {
         //font.pointSize: 20
         clip: true
         wrapMode: Text.WordWrap
+        renderType: Text.QtRendering
     }
 
     PinchArea {

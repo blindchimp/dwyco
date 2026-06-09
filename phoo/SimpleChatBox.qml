@@ -192,6 +192,7 @@ Page {
                         anchors.top: parent.top
                         //anchors.bottom: parent.bottom
                         anchors.left: top_toolbar_img.right
+                        renderType: Text.QtRendering
                     }
                     Label {
                         anchors.bottom: parent.bottom

@@ -988,7 +988,7 @@ DwycoCore::dwyco_chat_ctx_callback(int cmd, int id,
 void
 DwycoCore::send_chat(QString text)
 {
-    QByteArray chat = text.toLatin1();
+    QByteArray chat = text.toUtf8();
 
     dwyco_chat_send_data(chat.constBegin(), chat.length(), DWYCO_CHAT_DATA_PIC_TYPE_NONE, 0, 0);
 }
@@ -2443,8 +2443,8 @@ DwycoCore::bootstrap(QString name, QString email)
     // note: android and other mobile platforms with auto complete
     // and other keyboard auto-typing is notorious for having extra
     // spaces at the end of text inputs. just get rid of it.
-    QByteArray bname = name.trimmed().toLatin1().trimmed();
-    QByteArray bemail = email.trimmed().toLatin1().trimmed();
+    QByteArray bname = name.trimmed().toUtf8().trimmed();
+    QByteArray bemail = email.trimmed().toUtf8().trimmed();
 
     dwyco_create_bootstrap_profile(bname.constData(), bname.length(), "", 0, "mobile user", 11, bemail.constData(), bemail.length());
     dwyco_set_local_auth(1);
@@ -2516,10 +2516,10 @@ DwycoCore::set_simple_profile(QString handle, QString email, QString desc, QStri
     const char *profile_pack;
     int len_profile_pack;
 
-    QByteArray bhandle = handle.trimmed().toLatin1().trimmed();
-    QByteArray bemail = email.trimmed().toLatin1().trimmed();
-    QByteArray bedesc = desc.trimmed().toLatin1().trimmed();
-    QByteArray fn = img_fn.toLatin1();
+    QByteArray bhandle = handle.trimmed().toUtf8().trimmed();
+    QByteArray bemail = email.trimmed().toUtf8().trimmed();
+    QByteArray bedesc = desc.trimmed().toUtf8().trimmed();
+    QByteArray fn = img_fn.toUtf8();
     int compid;
 
     if(fn.length() > 0)
