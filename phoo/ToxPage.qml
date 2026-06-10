@@ -229,14 +229,14 @@ Page {
                                         width: 8
                                         height: 8
                                         radius: 4
-                                        color: status === "online" ? "green" : "gray"
+                                        color: status === "offline" ? "gray" : user_status === "busy" ? "red" : user_status === "away" ? "orange" : "green"
                                         Layout.alignment: Qt.AlignVCenter
                                     }
 
                                     Text {
-                                        text: status
+                                        text: status === "offline" ? "offline" : user_status === "none" ? "online" : user_status
                                         font.pixelSize: 10
-                                        color: status === "online" ? "green" : "gray"
+                                        color: status === "offline" ? "gray" : user_status === "busy" ? "red" : user_status === "away" ? "orange" : "green"
                                     }
                                 }
 
