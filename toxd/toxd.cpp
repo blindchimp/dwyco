@@ -50,12 +50,12 @@ static const char *bootstrap_nodes[] =
 
 struct ToxdState
 {
-    Tox *tox;
-    int shutdown;
-    int reqid_counter;
-    char data_dir[1024];
-    FILE *log_file;
-    int bootstrapped;
+    Tox *tox{};
+    int shutdown{};
+    int reqid_counter{};
+    DwString data_dir{};
+    FILE *log_file{};
+    int bootstrapped{};
 };
 
 FILE *Lf;
@@ -450,21 +450,19 @@ toxd_on_friend_typing(Tox *tox, uint32_t fn, bool typing, void *ud)
 static void
 save_tox_state(ToxdState *s)
 {
-    char save_path[1024];
-    snprintf(save_path, sizeof(save_path), "%s/%s", s->data_dir, SAVE_FILE);
-    char tmp_path[1024];
-    snprintf(tmp_path, sizeof(tmp_path), "%s/%s.new", s->data_dir, SAVE_FILE);
+    DwString save_path = DwString("%1/%2").arg(s->data_dir, SAVE_FILE);
+    DwString tmp_path = DwString("%1/%2.new").arg(s->data_dir, SAVE_FILE);
 
     size_t sz = tox_get_savedata_size(s->tox);
     uint8_t *data = (uint8_t *)malloc(sz);
     tox_get_savedata(s->tox, data);
 
-    FILE *f = fopen(tmp_path, "wb");
+    FILE *f = fopen(tmp_path.c_str(), "wb");
     if(f)
     {
         fwrite(data, 1, sz, f);
         fclose(f);
-        rename(tmp_path, save_path);
+        rename(tmp_path.c_str(), save_path.c_str());
     }
     free(data);
 }
@@ -486,20 +484,18 @@ tox_write_log(Tox *tox, Tox_Log_Level level, const char *file,
 static void
 load_or_create_tox(ToxdState *s)
 {
-    char save_path[1024];
-    snprintf(save_path, sizeof(save_path), "%s/%s", s->data_dir, SAVE_FILE);
+    DwString save_path = DwString("%1/%2").arg(s->data_dir, SAVE_FILE);
 
     struct Tox_Options opts;
-    memset(&opts, 0, sizeof(opts));
     tox_options_default(&opts);
 
     const char *home = getenv("HOME");
-    char log_path[1024];
+    DwString log_path;
     if(home)
-        snprintf(log_path, sizeof(log_path), "%s/tox.log", home);
+        log_path = DwString("%1/tox.log").arg(home);
     else
-        snprintf(log_path, sizeof(log_path), "tox.log");
-    Lf = s->log_file = fopen(log_path, "a");
+        log_path = DwString("tox.log");
+    Lf = s->log_file = fopen(log_path.c_str(), "a");
     if(s->log_file)
     {
         opts.log_callback = tox_write_log;
@@ -508,7 +504,7 @@ load_or_create_tox(ToxdState *s)
 
     uint8_t *savedata = NULL;
     size_t savedata_sz = 0;
-    FILE *f = fopen(save_path, "rb");
+    FILE *f = fopen(save_path.c_str(), "rb");
     if(f)
     {
         fseek(f, 0, SEEK_END);
@@ -1112,32 +1108,29 @@ int
 main(int argc, char **argv)
 {
     ToxdState state;
-    memset(&state, 0, sizeof(state));
 
     const char *data_dir = getenv(DATA_DIR_ENV);
     if(!data_dir)
     {
         const char *home = getenv("HOME");
         if(home)
-            snprintf(state.data_dir, sizeof(state.data_dir), "%s/%s", home, DEFAULT_DATA_DIR);
+            state.data_dir = DwString("%1/%2").arg(home, DEFAULT_DATA_DIR);
         else
-            snprintf(state.data_dir, sizeof(state.data_dir), DEFAULT_DATA_DIR);
+            state.data_dir = DwString(DEFAULT_DATA_DIR);
     }
     else
     {
-        snprintf(state.data_dir, sizeof(state.data_dir), "%s", data_dir);
+        state.data_dir = DwString(data_dir);
     }
 
-    if(!ensure_data_dir(state.data_dir))
+    if(!ensure_data_dir(state.data_dir.c_str()))
         return 1;
 
-    char incoming_dir[1024];
-    snprintf(incoming_dir, sizeof(incoming_dir), "%s/incoming", state.data_dir);
-    ensure_data_dir(incoming_dir);
+    DwString incoming_dir = DwString("%1/incoming").arg(state.data_dir);
+    ensure_data_dir(incoming_dir.c_str());
 
-    char lock_path[1024];
-    snprintf(lock_path, sizeof(lock_path), "%s/%s", state.data_dir, LOCK_FILE);
-    int lock_fd = open(lock_path, O_CREAT | O_RDWR, 0644);
+    DwString lock_path = DwString("%1/%2").arg(state.data_dir, LOCK_FILE);
+    int lock_fd = open(lock_path.c_str(), O_CREAT | O_RDWR, 0644);
     if(lock_fd < 0)
         return 1;
     if(flock(lock_fd, LOCK_EX | LOCK_NB) < 0)
@@ -1211,7 +1204,7 @@ main(int argc, char **argv)
     save_tox_state(&state);
     tox_kill(state.tox);
     close(lock_fd);
-    unlink(lock_path);
+    unlink(lock_path.c_str());
     if(state.log_file)
         fclose(state.log_file);
     return 0;
