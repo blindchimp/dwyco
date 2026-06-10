@@ -1147,7 +1147,7 @@ main(int argc, char **argv)
     }
 
     load_or_create_tox(&state);
-    log_printf(state.log_file, "FUCK!");
+    log_printf(state.log_file, "START!");
     if(!state.tox)
         return 1;
 
@@ -1179,10 +1179,6 @@ main(int argc, char **argv)
                 vc req = read_msg(STDIN_FILENO);
                 if(!req.is_nil())
                 {
-                    // if(is_response(req))
-                    // { alarm(0); continue; }
-                    // if(is_event(req))
-                    // { alarm(0); continue; }
                     if(req.type() == VC_VECTOR && req.num_elems() >= 3)
                         handle_rpc_request(&state, req);
                 }
