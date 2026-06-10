@@ -35,6 +35,7 @@ ToxFriendModel::load_friends()
         f->update_pubkey(qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY).toHex());
         f->update_name(qfl.get<QByteArray>(i, DWYCO_TF_NAME));
         f->update_status(qfl.get<QByteArray>(i, DWYCO_TF_STATUS));
+        f->update_user_status(qfl.get<QByteArray>(i, DWYCO_TF_USER_STATUS));
         append(f);
     }
 }

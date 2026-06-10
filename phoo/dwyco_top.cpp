@@ -701,6 +701,9 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         emit TheDwycoCore->sc_rem_keyboard_active(huid, typing);
         break;
     }
+    case DWYCO_SE_TOX_FRIEND_USER_STATUS:
+        emit TheDwycoCore->sys_uid_resolved(huid);
+        break;
     default:
         break;
     }

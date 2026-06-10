@@ -95,6 +95,7 @@ enum dwyco_sys_event {
     SE_TOX_READY,
     SE_TOX_CRASHED,
     SE_TOX_TYPING,
+    SE_TOX_FRIEND_USER_STATUS,
 };
 
 // at this point, the id can be a uid or a mid

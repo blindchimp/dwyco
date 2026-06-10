@@ -429,6 +429,15 @@ process_tox_event(const vc &ev)
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         GRTLOG("tox: typing fn=%d typing=%s", (int)fn, (const char *)args[2]);
         se_emit(SE_TOX_TYPING, pseudo, args[2]);
+
+    } else if(strcmp(type, "friend_status") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc status = args[2];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        (void)fn;
+        GRTLOG("tox: friend status fn=%d status=%s", (int)fn, (const char *)status);
+        se_emit(SE_TOX_FRIEND_USER_STATUS, pseudo, status);
     }
 }
 
@@ -907,6 +916,27 @@ tox_bridge_set_status_message(const char *msg, int msg_len)
     params.add_kv("status_message", vc(VC_BSTRING, msg, (long)msg_len));
     vc result;
     return toxd_rpc_call(vc("set_status_message"), params, result, 5000);
+}
+
+int
+tox_bridge_set_user_status(const char *status)
+{
+    vc params(VC_MAP, "", 2);
+    params.add_kv("status", vc(status));
+    vc result;
+    return toxd_rpc_call(vc("set_user_status"), params, result, 5000);
+}
+
+vc
+tox_bridge_get_user_status()
+{
+    vc result;
+    if(!toxd_rpc_call(vc("get_user_status"), vc(VC_MAP, "", 0), result, 5000))
+        return vcnil;
+    vc status;
+    if(!result.find("status", status))
+        return vcnil;
+    return status;
 }
 
 // --- ToxQueue implementation ---

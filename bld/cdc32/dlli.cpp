@@ -9727,6 +9727,7 @@ dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out)
         row.append(entry.find("pubkey", tmp) ? tmp : vc(""));
         row.append(entry.find("name", tmp) ? tmp : vc(""));
         row.append(entry.find("status", tmp) ? tmp : vc(""));
+        row.append(entry.find("user_status", tmp) ? tmp : vc("none"));
         result.append(row);
     }
     if(list_out)
@@ -9795,6 +9796,30 @@ dwyco_tox_get_status_message(char **out, int *len_out)
     }
     if(len_out)
         *len_out = msg.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_user_status(const char *status)
+{
+    return dwyco::tox_bridge_set_user_status(status);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_user_status(char **out, int *len_out)
+{
+    vc status = dwyco::tox_bridge_get_user_status();
+    if(status.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[status.len()];
+        memcpy(*out, (const char *)status, status.len());
+    }
+    if(len_out)
+        *len_out = status.len();
     return 1;
 }
 

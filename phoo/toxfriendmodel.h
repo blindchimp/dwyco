@@ -21,6 +21,7 @@ class ToxFriend : public QObject
     QML_READONLY_VAR_PROPERTY(QString, pubkey)
     QML_READONLY_VAR_PROPERTY(QString, name)
     QML_READONLY_VAR_PROPERTY(QString, status)
+    QML_READONLY_VAR_PROPERTY(QString, user_status)
 
 public:
     ToxFriend(QObject *parent = 0) : QObject(parent) {

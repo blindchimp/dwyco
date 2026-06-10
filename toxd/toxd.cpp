@@ -448,6 +448,25 @@ toxd_on_friend_typing(Tox *tox, uint32_t fn, bool typing, void *ud)
 }
 
 static void
+toxd_on_friend_status(Tox *tox, uint32_t fn, Tox_User_Status status, void *ud)
+{
+    ToxdState *s = (ToxdState *)ud;
+    const char *status_str = "none";
+    if(status == TOX_USER_STATUS_AWAY)
+        status_str = "away";
+    else if(status == TOX_USER_STATUS_BUSY)
+        status_str = "busy";
+    log_printf(s->log_file, "[cb] friend_status fn=%u status=%s", fn, status_str);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(status_str));
+    send_event(STDOUT_FILENO, "friend_status", args);
+}
+
+static void
 save_tox_state(ToxdState *s)
 {
     DwString save_path = DwString("%1/%2").arg(s->data_dir, SAVE_FILE);
@@ -570,6 +589,7 @@ register_callbacks(Tox *tox)
     tox_callback_friend_name(tox, toxd_on_friend_name);
     tox_callback_friend_status_message(tox, toxd_on_friend_status_message);
     tox_callback_friend_typing(tox, toxd_on_friend_typing);
+    tox_callback_friend_status(tox, toxd_on_friend_status);
 }
 
 static void
@@ -871,6 +891,41 @@ handle_set_status_message(ToxdState *s, vc params, int reqid)
 }
 
 static void
+handle_set_user_status(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "set_user_status", reqid, params);
+    vc status_vc;
+    if(!params.find("status", status_vc))
+    {
+        send_error(STDOUT_FILENO, reqid, "missing status");
+        return;
+    }
+    const char *sval = (const char *)status_vc;
+    Tox_User_Status ts = TOX_USER_STATUS_NONE;
+    if(strcmp(sval, "away") == 0)
+        ts = TOX_USER_STATUS_AWAY;
+    else if(strcmp(sval, "busy") == 0)
+        ts = TOX_USER_STATUS_BUSY;
+    tox_self_set_status(s->tox, ts);
+    send_response(STDOUT_FILENO, reqid, vcnil);
+}
+
+static void
+handle_get_user_status(ToxdState *s, vc params, int reqid)
+{
+    log_cmd(s, "get_user_status", reqid, params);
+    Tox_User_Status ts = tox_self_get_status(s->tox);
+    const char *status_str = "none";
+    if(ts == TOX_USER_STATUS_AWAY)
+        status_str = "away";
+    else if(ts == TOX_USER_STATUS_BUSY)
+        status_str = "busy";
+    vc result(VC_MAP, "", 2);
+    result.add_kv("status", vc(status_str));
+    send_response(STDOUT_FILENO, reqid, result);
+}
+
+static void
 handle_file_send(ToxdState *s, vc params, int reqid)
 {
     log_cmd(s, "file_send", reqid, params);
@@ -1008,6 +1063,9 @@ handle_friend_list(ToxdState *s, vc params, int reqid)
             Tox_Connection conn = tox_friend_get_connection_status(s->tox, fn, NULL);
             entry.add_kv("status", vc(conn == TOX_CONNECTION_NONE ? "offline" : "online"));
 
+            Tox_User_Status us = tox_friend_get_status(s->tox, fn, NULL);
+            entry.add_kv("user_status", vc(us == TOX_USER_STATUS_AWAY ? "away" : us == TOX_USER_STATUS_BUSY ? "busy" : "none"));
+
             friends.append(entry);
         }
     }
@@ -1067,6 +1125,10 @@ handle_rpc_request(ToxdState *s, const vc &req)
         handle_get_name(s, params, reqid);
     else if(strcmp(method, "get_status_message") == 0)
         handle_get_status_message(s, params, reqid);
+    else if(strcmp(method, "set_user_status") == 0)
+        handle_set_user_status(s, params, reqid);
+    else if(strcmp(method, "get_user_status") == 0)
+        handle_get_user_status(s, params, reqid);
     else if(strcmp(method, "shutdown") == 0)
         handle_shutdown(s, params, reqid);
     else

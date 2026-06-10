@@ -87,6 +87,10 @@ int tox_bridge_set_status_message(const char *msg, int msg_len);
 vc tox_bridge_get_name();
 vc tox_bridge_get_status_message();
 
+// user status (away/busy)
+int tox_bridge_set_user_status(const char *status);
+vc tox_bridge_get_user_status();
+
 // convenience wrappers for dlli
 int tox_bridge_is_tox_uid(const vc &uid);
 // must call dwyco_free_array on returned pointer

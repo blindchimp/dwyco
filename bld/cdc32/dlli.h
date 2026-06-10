@@ -519,6 +519,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_TOX_READY 58
 #define DWYCO_SE_TOX_CRASHED 59
 #define DWYCO_SE_TOX_TYPING 60
+#define DWYCO_SE_TOX_FRIEND_USER_STATUS 61
 
 int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -2226,7 +2227,10 @@ typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_PUBKEY       "001"
 #define DWYCO_TF_NAME         "002"
 #define DWYCO_TF_STATUS       "003"
+#define DWYCO_TF_USER_STATUS  "004"
 int DWYCOEXPORT dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out);
+int DWYCOEXPORT dwyco_tox_set_user_status(const char *status);
+int DWYCOEXPORT dwyco_tox_get_user_status(char **out, int *len_out);
 
 #ifdef __cplusplus
 }
