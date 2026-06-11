@@ -172,6 +172,22 @@ tox_pubkey_to_pseudo_uid(const vc &pubkey)
     return vc(VC_BSTRING, (const char *)pubkey, 10);
 }
 
+static vc
+vcblob(const vc &v)
+{
+    vc ret(VC_VECTOR);
+    ret.append(vc("blob"));
+    ret.append(v);
+    return ret;
+}
+
+static void
+tox_uid_cache_add(const vc &pseudo_uid)
+{
+    if(Tox_q)
+        Tox_q->sql_simple("INSERT OR IGNORE INTO tox_uid_type VALUES(?1)", vcblob(pseudo_uid));
+}
+
 static void
 toxd_stop()
 {
@@ -293,6 +309,7 @@ process_tox_event(const vc &ev)
         vc pubkey = args[0];
         vc msg = args[1];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
         GRTLOG("tox: friend request from ", 0, 0);
         GRTLOGVC(pseudo);
         se_emit(SE_TOX_FRIEND_REQUEST, pseudo, msg, pubkey);
@@ -303,6 +320,7 @@ process_tox_event(const vc &ev)
         vc text = args[2];
         vc msg_type = args[3];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
 
         GRTLOG("tox: message from fn %d", (int)fn, 0);
         GRTLOGVC(pseudo);
@@ -345,6 +363,8 @@ process_tox_event(const vc &ev)
             vc pseudo;
             if(!tox_friend_number_to_pseudo_uid(fn, pseudo))
                 pseudo = vcnil;
+            if(!pseudo.is_nil())
+                pseudo = vcblob(pseudo);
             vc res = Tox_q->sql_simple(
                 "SELECT id, local_mid, qqm_blob FROM tox_outbox "
                 "WHERE recipient_pseudo=?1 AND tox_mid=?2 AND status=1",
@@ -377,6 +397,7 @@ process_tox_event(const vc &ev)
         vc pubkey = args[1];
         vc status = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
         GRTLOG("tox: friend %d online=%d", (int)fn, status == vc("online") ? 1 : 0);
         se_emit(SE_TOX_FRIEND_STATUS, pseudo, status);
 
@@ -385,6 +406,7 @@ process_tox_event(const vc &ev)
         vc pubkey = args[1];
         vc name = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
         (void)fn;
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
 
@@ -427,6 +449,7 @@ process_tox_event(const vc &ev)
         uint32_t fn = (uint32_t)(int)args[0];
         vc pubkey = args[1];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
         GRTLOG("tox: typing fn=%d typing=%s", (int)fn, (const char *)args[2]);
         se_emit(SE_TOX_TYPING, pseudo, args[2]);
 
@@ -435,6 +458,7 @@ process_tox_event(const vc &ev)
         vc pubkey = args[1];
         vc status = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
         (void)fn;
         GRTLOG("tox: friend status fn=%d status=%s", (int)fn, (const char *)status);
         se_emit(SE_TOX_FRIEND_USER_STATUS, pseudo, status);
@@ -675,7 +699,13 @@ tox_bridge_friend_add(const vc &address, const vc &message)
     params.add_kv("address", address);
     params.add_kv("message", message);
     vc result;
-    return toxd_rpc_call(vc("friend_add"), params, result, 10000);
+    if(toxd_rpc_call(vc("friend_add"), params, result, 10000))
+    {
+        vc pseudo(address, 10);
+        tox_uid_cache_add(pseudo);
+        return 1;
+    }
+    return 0;
 }
 
 int
@@ -684,7 +714,13 @@ tox_bridge_friend_add_norequest(const vc &pubkey)
     vc params(VC_MAP, "", 2);
     params.add_kv("pubkey", pubkey);
     vc result;
-    return toxd_rpc_call(vc("friend_add_norequest"), params, result, 10000);
+    if(toxd_rpc_call(vc("friend_add_norequest"), params, result, 10000))
+    {
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_cache_add(pseudo);
+        return 1;
+    }
+    return 0;
 }
 
 int
@@ -773,6 +809,8 @@ tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out)
 {
     if(Friend_cache.is_nil())
         tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return 0;
     int n = Friend_cache.num_elems();
     for(int i = 0; i < n; ++i)
     {
@@ -801,6 +839,8 @@ tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out)
 {
     if(Friend_cache.is_nil())
         tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return 0;
     int n = Friend_cache.num_elems();
     for(int i = 0; i < n; ++i)
     {
@@ -833,6 +873,14 @@ tox_bridge_rebuild_friend_cache()
     if(result.find("friends", fl) && fl.type() == VC_VECTOR)
     {
         Friend_cache = fl;
+        int n = Friend_cache.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            vc entry = Friend_cache[i];
+            vc pubkey;
+            if(entry.find("pubkey", pubkey))
+                tox_uid_cache_add(tox_pubkey_to_pseudo_uid(pubkey));
+        }
         GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);
     }
 }
@@ -840,8 +888,16 @@ tox_bridge_rebuild_friend_cache()
 int
 tox_bridge_is_tox_uid(const vc &uid)
 {
+    if(Tox_q)
+    {
+        vc res = Tox_q->sql_simple("SELECT 1 FROM tox_uid_type WHERE pseudo_uid=?1", vcblob(uid));
+        if(!res.is_nil() && res.num_elems() > 0)
+            return 1;
+    }
     if(Friend_cache.is_nil())
         tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return 0;
     int n = Friend_cache.num_elems();
     for(int i = 0; i < n; ++i)
     {
@@ -954,14 +1010,18 @@ ToxQueue::init_schema(const DwString&)
                "tox_mid INTEGER, "
                "local_mid TEXT, "
                "created_at INTEGER DEFAULT (strftime('%s','now')))");
+    sql_simple("CREATE TABLE IF NOT EXISTS tox_uid_type ("
+               "pseudo_uid BLOB PRIMARY KEY)");
 }
 
 int
 ToxQueue::enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid)
 {
+    vc blob_arg = vcblob(qqm_blob);
+    vc pseudo_arg = vcblob(recipient_pseudo);
     vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, recipient_pseudo, status, local_mid) "
                         "VALUES (?1, ?2, 0, ?3)",
-                        qqm_blob, recipient_pseudo, local_mid);
+                        blob_arg, pseudo_arg, local_mid);
     return !res.is_nil();
 }
 
@@ -1041,7 +1101,7 @@ ToxQueue::get_qd_msgs(const vc &pseudo_uid)
         rows = sql_simple("SELECT local_mid, recipient_pseudo, qqm_blob "
                           "FROM tox_outbox WHERE recipient_pseudo=?1 "
                           "AND status IN (0,1,3) ORDER BY id",
-                          pseudo_uid);
+                          vcblob(pseudo_uid));
     if(rows.is_nil())
         return ret;
     int n = rows.num_elems();
