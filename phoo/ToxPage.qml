@@ -59,6 +59,8 @@ Page {
                     core.set_local_setting("tox_enabled", checked ? "1" : "0")
                     if(checked) {
                         core.enable_tox()
+                        toxNameInput.text_input = core.tox_get_name()
+                        toxStatusInput.text_input = core.tox_get_status_message()
                     } else {
                         core.disable_tox()
                     }
