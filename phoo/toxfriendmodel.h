@@ -27,6 +27,7 @@ public:
     ToxFriend(QObject *parent = 0) : QObject(parent) {
         m_friend_number = 0;
     }
+    int update_counter = 0;
 };
 
 class ToxFriendModel : public QQmlObjectListModel<ToxFriend>
