@@ -55,6 +55,12 @@ Page {
             hid = core.has_tag_message(mid, "_hid")
         }
     }
+    onMidChanged: {
+        if(mid.length > 0) {
+            show_text_button.checked = false
+            msg_text.cursorPosition = 0
+        }
+    }
 
 //    fav: { (mid.length > 0) ?
 //             (core.get_fav_message(mid) === 1) : false
@@ -170,6 +176,10 @@ Page {
                 Layout.fillHeight: true
                 ToolTip.text: "Show msg text"
                 text: "Msg text"
+                onCheckedChanged: {
+                    if(checked)
+                        msg_text.cursorPosition = 0
+                }
 
             }
             TipButton {
@@ -344,6 +354,12 @@ Page {
             color: msgviewer.text_bg_color
             radius: 6
         }
+        clip: true
+        color: "white"
+        leftPadding: 12
+        rightPadding: 12
+        topPadding: 12
+        bottomPadding: 12
         readOnly: true
         selectByKeyboard: !is_mobile
         selectByMouse: !is_mobile
@@ -353,6 +369,7 @@ Page {
         }
 
         Layout.fillWidth: true
+        Layout.minimumHeight: 60
         Layout.maximumHeight: viewer.source === "" ? (parent.height * 6) / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
