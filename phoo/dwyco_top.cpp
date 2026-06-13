@@ -694,6 +694,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_FRIEND_STATUS:
         // tox friend online/offline — re-resolve display
         emit TheDwycoCore->sys_uid_resolved(huid);
+        emit TheDwycoCore->tox_friend_status_changed(huid, QString::fromUtf8(namestr));
         break;
     case DWYCO_SE_TOX_TYPING:
     {
@@ -703,6 +704,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     }
     case DWYCO_SE_TOX_FRIEND_USER_STATUS:
         emit TheDwycoCore->sys_uid_resolved(huid);
+        emit TheDwycoCore->tox_friend_user_status_changed(huid, QString::fromUtf8(namestr));
         break;
     default:
         break;

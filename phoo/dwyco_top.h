@@ -438,6 +438,8 @@ signals:
     void emergency_exit_signal(int what, int must_exit, QString msg);
 
     void tox_connection_status_changed(int connected);
+    void tox_friend_status_changed(QString pseudo_uid, QString status);
+    void tox_friend_user_status_changed(QString pseudo_uid, QString user_status);
 
 private:
 
