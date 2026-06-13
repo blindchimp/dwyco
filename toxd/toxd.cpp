@@ -125,9 +125,9 @@ write_all(int fd, const char *buf, int len)
     while(total < len)
     {
         int n = (int)write(fd, buf + total, (size_t)(len - total));
-        log_printf(Lf, "write n= %d\n", n);
-        fwrite(buf + total, n, 1, Lf);
-        fflush(Lf);
+        //log_printf(Lf, "write n= %d\n", n);
+        //fwrite(buf + total, n, 1, Lf);
+        //fflush(Lf);
         if(n <= 0)
         {
             if(errno == EINTR)
