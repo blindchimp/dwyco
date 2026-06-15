@@ -505,7 +505,8 @@ load_or_create_tox(ToxdState *s)
 {
     DwString save_path = DwString("%1/%2").arg(s->data_dir, SAVE_FILE);
 
-    struct Tox_Options opts;
+    Tox_Err_Options_New new_err;
+    struct Tox_Options &opts = *tox_options_new(&new_err);
     tox_options_default(&opts);
 
     const char *home = getenv("HOME");
