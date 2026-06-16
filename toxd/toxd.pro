@@ -27,12 +27,15 @@ $${D}/jenkins/libjenkins.a \
 }
 
 linux-* {
+DEFINES += LINUX
+INCLUDEPATH += /home/dwight/git/c-toxcore/toxcore
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/vc/libvc.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
--ltoxcore \
+$${D}/jenkins/libjenkins.a \
+/home/dwight/git/c-toxcore/build/libtoxcore.a \
 -lsodium \
 -lpthread \
 -ldl

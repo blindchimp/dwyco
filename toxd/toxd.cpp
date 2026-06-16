@@ -8,7 +8,11 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <arpa/inet.h>
+#ifdef LINUX
+#include <tox.h>
+#else
 #include <tox/tox.h>
+#endif
 #include <sodium.h>
 #include <signal.h>
 #include <vector>
