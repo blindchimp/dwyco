@@ -1229,7 +1229,7 @@ main(int argc, char **argv)
             pfd.events = POLLIN;
             int ret = poll(&pfd, 1, interval < 50 ? 50 : interval);
 
-            if(ret > 0 && (pfd.revents & POLLIN))
+            if(ret > 0 && (pfd.revents & (POLLIN | POLLHUP)))
             {
                 alarm(1);
                 vc req = read_msg(STDIN_FILENO);
