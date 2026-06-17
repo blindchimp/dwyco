@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <arpa/inet.h>
-#ifdef LINUX
+#ifdef LOCAL_TOXCORE
 #include <tox.h>
 #else
 #include <tox/tox.h>
