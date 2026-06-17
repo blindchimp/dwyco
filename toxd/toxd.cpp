@@ -97,6 +97,24 @@ read_all(int fd, char *buf, int len)
     int total = 0;
     while(total < len)
     {
+        struct pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = POLLIN;
+        int ret;
+        do {
+            ret = poll(&pfd, 1, 5000);
+        } while(ret < 0 && errno == EINTR);
+        if(ret < 0)
+        {
+            log_printf(Lf, "read_all poll: %s\n", strerror(errno));
+            return total;
+        }
+        if(ret == 0)
+        {
+            log_printf(Lf, "read_all timeout\n");
+            return total;
+        }
+
         int n = (int)read(fd, buf + total, (size_t)(len - total));
         log_printf(Lf, "read n=%d\n", n);
         fwrite(buf + total, n, 1, Lf);

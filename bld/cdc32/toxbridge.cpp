@@ -66,6 +66,18 @@ read_all(int fd, char *buf, int len)
 {
     int total = 0;
     while(total < len) {
+        struct pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = POLLIN;
+        int ret;
+        do {
+            ret = poll(&pfd, 1, 10000);
+        } while(ret < 0 && errno == EINTR);
+        if(ret < 0)
+            throw toxd_error(DwString(strerror(errno)));
+        if(ret == 0)
+            throw toxd_error(DwString("read timeout"));
+
         int n = (int)read(fd, buf + total, (size_t)(len - total));
         if(n <= 0) {
             if(n == 0)
