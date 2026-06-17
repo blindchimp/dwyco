@@ -78,13 +78,6 @@ oopanic(const char *a)
     ::abort();
 }
 
-[[noreturn]]
-static void
-watchdog_handler(int)
-{
-    _exit(1);
-}
-
 static void
 log_printf(FILE *lf, const char *fmt, ...)
 {
@@ -1216,11 +1209,6 @@ main(int argc, char **argv)
 
     signal(SIGPIPE, SIG_IGN);
 
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = watchdog_handler;
-    sigaction(SIGALRM, &sa, NULL);
-
     try
     {
         send_event(STDOUT_FILENO, "ready", vc(VC_MAP, "", 0));
@@ -1235,7 +1223,6 @@ main(int argc, char **argv)
 
             if(ret > 0 && (pfd.revents & (POLLIN | POLLHUP)))
             {
-                alarm(1);
                 vc req = read_msg(STDIN_FILENO);
                 if(!req.is_nil())
                 {
@@ -1244,14 +1231,11 @@ main(int argc, char **argv)
                 }
                 else
                 {
-                    alarm(0); break;
+                    break;
                 }
-                alarm(0);
             }
 
-            alarm(1);
             tox_iterate(state.tox, &state);
-            alarm(0);
 
             if(!state.bootstrapped)
             {
