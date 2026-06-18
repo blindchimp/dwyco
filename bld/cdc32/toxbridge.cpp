@@ -300,7 +300,11 @@ tox_bridge_get_address()
 {
     if(!Tox_plugin)
         return vcnil;
-    return toxp_get_address(Tox_plugin);
+    vc result = toxp_get_address(Tox_plugin);
+    vc addr;
+    if(!result.find("address", addr))
+        return vcnil;
+    return addr;
 }
 
 vc
