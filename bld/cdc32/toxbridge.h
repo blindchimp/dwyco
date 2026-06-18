@@ -93,6 +93,7 @@ vc tox_bridge_get_user_status();
 
 // convenience wrappers for dlli
 int tox_bridge_is_tox_uid(const vc &uid);
+vc make_tox_info_vec(const vc &pseudo, const vc &name);
 // must call dwyco_free_array on returned pointer
 int tox_bridge_get_self_public_key(char **out, int *len_out);
 vc tox_bridge_get_friend_list_vc();

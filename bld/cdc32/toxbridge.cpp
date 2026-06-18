@@ -12,6 +12,7 @@
 #include "simplesql.h"
 #include "xinfo.h"
 #include "fnmod.h"
+#include "qdirth.h"
 
 // toxcore error codes — only the ones we check on the bridge side
 #define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
@@ -30,6 +31,21 @@ tox_pubkey_to_pseudo_uid(const vc &pubkey)
     if(pubkey.len() < 10)
         return vcnil;
     return vc(VC_BSTRING, (const char *)pubkey, 10);
+}
+
+vc
+make_tox_info_vec(const vc &pseudo, const vc &name)
+{
+    vc v(VC_VECTOR);
+    v[QIR_FROM] = pseudo;
+    v[QIR_HANDLE] = name;
+    v[QIR_EMAIL] = "";
+    v[QIR_USER_SPECED_ID] = "";
+    v[QIR_FIRST] = "";
+    v[QIR_LAST] = "";
+    v[QIR_DESCRIPTION] = "";
+    v[QIR_LOCATION] = "";
+    return v;
 }
 
 static vc
@@ -156,6 +172,7 @@ process_tox_event(const char *type, const vc &args)
         tox_uid_cache_add(pseudo);
         (void)fn;
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
+        Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
 
     } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
         uint32_t fn = (uint32_t)(int)args[0];
@@ -241,6 +258,7 @@ tox_bridge_init(const char *data_dir)
     Tox_q = new ToxQueue;
     if(Tox_q->init())
         Tox_q->recover_inprogress();
+    tox_bridge_rebuild_friend_cache();
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
 }
@@ -512,6 +530,17 @@ tox_bridge_rebuild_friend_cache()
             vc pubkey;
             if(entry.find("pubkey", pubkey))
                 tox_uid_cache_add(tox_pubkey_to_pseudo_uid(pubkey));
+        }
+        for(int i = 0; i < n; ++i)
+        {
+            vc entry = Friend_cache[i];
+            vc pubkey;
+            vc name;
+            if(entry.find("pubkey", pubkey) && entry.find("name", name))
+            {
+                vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+                Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            }
         }
         GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);
     }

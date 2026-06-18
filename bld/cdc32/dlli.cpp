@@ -8424,6 +8424,8 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
                     if(pseudo == buid)
                     {
                         entry.find("name", name);
+                        if(!name.is_nil() && name != vc(""))
+                            Session_infos.add_kv(pseudo, dwyco::make_tox_info_vec(pseudo, name));
                         break;
                     }
                 }
