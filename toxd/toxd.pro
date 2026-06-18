@@ -27,7 +27,7 @@ $${D}/jenkins/libjenkins.a \
 }
 
 linux-* {
-DEFINES += LOCAL_TOXCORE
+DEFINES += LOCAL_TOXCORE #TOXD_STANDALONE
 INCLUDEPATH += /home/dwight/git/c-toxcore/toxcore
 D = $${OUT_PWD}/../bld
 LIBS += \
