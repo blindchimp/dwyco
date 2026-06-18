@@ -692,13 +692,11 @@ Page {
                 Text {
                     function gentext(msg, tm) {
                         var dt = new Date(tm * 1000)
-                        //                        return "<table><tr><td>" + msg + "</td>" +
-                        //                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
-                        //                                "</td></tr></table>"
+                        var fmt = core.format_message(String(msg))
                         if(Date.now() - dt.getTime() > 86400 * 1000) {
-                            return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
+                            return "<html>" + fmt + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
                         } else {
-                            return "<html>" + msg + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
+                            return "<html>" + fmt + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
                         }
 
                     }
@@ -711,7 +709,9 @@ Page {
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
-                    //font.family: "Noto Color Emoji"
+                    onLinkActivated: (link)=> {
+                        Qt.openUrlExternally(link)
+                    }
                 }
 
             }
@@ -773,7 +773,7 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.msg_text = model.MSG_TEXT
+                            themsgview.msg_text = core.format_message(model.MSG_TEXT)
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid

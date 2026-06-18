@@ -973,6 +973,36 @@ DwycoCore::strip_html(QString txt)
     return res;
 }
 
+QString
+DwycoCore::format_message(QString txt)
+{
+    // split on URLs first so we can escape only the non-URL parts
+    static QRegularExpression re(QStringLiteral("(https?://[^\\s<>\"'()]+)"));
+    QRegularExpressionMatchIterator i = re.globalMatch(txt);
+    int last_end = 0;
+    QString res;
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        // escape non-URL segment
+        QString seg = txt.mid(last_end, match.capturedStart() - last_end);
+        seg.replace(QStringLiteral("&"), QStringLiteral("&amp;"));
+        seg.replace(QStringLiteral("<"), QStringLiteral("&lt;"));
+        seg.replace(QStringLiteral(">"), QStringLiteral("&gt;"));
+        res += seg;
+        // URL segment — use as-is (no HTML escaping needed), wrap in link
+        QString url = match.captured();
+        res += QStringLiteral("<a href=\"") + url + QStringLiteral("\" style=\"color:#FFAB00;\">") + url + QStringLiteral("</a>");
+        last_end = match.capturedStart() + match.capturedLength();
+    }
+    // escape remaining tail
+    QString tail = txt.mid(last_end);
+    tail.replace(QStringLiteral("&"), QStringLiteral("&amp;"));
+    tail.replace(QStringLiteral("<"), QStringLiteral("&lt;"));
+    tail.replace(QStringLiteral(">"), QStringLiteral("&gt;"));
+    res += tail;
+    return res;
+}
+
 void
 DWYCOCALLCONV
 DwycoCore::dwyco_chat_ctx_callback(int cmd, int id,

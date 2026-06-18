@@ -183,6 +183,7 @@ public:
     }
 
     Q_INVOKABLE QString strip_html(QString);
+    Q_INVOKABLE QString format_message(QString);
 
     Q_INVOKABLE int database_online();
     Q_INVOKABLE int chat_online();

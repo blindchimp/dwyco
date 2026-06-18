@@ -347,16 +347,13 @@ Page {
 
             Text {
                 function gentext(msg) {
-                    return msg
-                    return "<html>" + msg + "</html>"
+                    return core.format_message(String(msg))
                 }
 
                 id: msg
                 anchors.bottom: datetext.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                //anchors.top: preview.visible ? undefined : parent.top
-                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
                 wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
@@ -366,8 +363,10 @@ Page {
                 style: Text.Outline
                 styleColor: "black"
                 padding: 3
-
                 clip: true
+                onLinkActivated: (link)=> {
+                    Qt.openUrlExternally(link)
+                }
             }
 
             Text {
@@ -420,7 +419,7 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.msg_text = model.MSG_TEXT
+                            themsgview.msg_text = core.format_message(model.MSG_TEXT)
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = model.ASSOC_UID

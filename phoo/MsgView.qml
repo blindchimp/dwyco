@@ -363,8 +363,8 @@ Page {
         readOnly: true
         selectByKeyboard: !is_mobile
         selectByMouse: !is_mobile
-        textFormat: Text.AutoText
-        onLinkActivated: {
+        textFormat: Text.RichText
+        onLinkActivated: (link)=> {
             Qt.openUrlExternally(link)
         }
 
