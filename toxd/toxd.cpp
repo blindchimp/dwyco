@@ -545,6 +545,7 @@ toxp_set_name(ToxPlugin *p, const char *name, int len)
     Tox_Err_Set_Info err;
     if(!tox_self_set_name(p->tox, (const uint8_t *)name, (size_t)len, &err))
         return 0;
+    save_tox_state(p);
     return 1;
 }
 
@@ -554,6 +555,7 @@ toxp_set_status_message(ToxPlugin *p, const char *msg, int len)
     Tox_Err_Set_Info err;
     if(!tox_self_set_status_message(p->tox, (const uint8_t *)msg, (size_t)len, &err))
         return 0;
+    save_tox_state(p);
     return 1;
 }
 
