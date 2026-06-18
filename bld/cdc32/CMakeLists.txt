@@ -24,6 +24,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../libvorbis-1.3.7/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../miniupnp/miniupnp-master/miniupnpc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../c-toxcore/toxcore
     .
 )
 
@@ -68,6 +69,7 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
+        LOCAL_TOXCORE
 )
 
 add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
@@ -220,6 +222,7 @@ add_library(cdc32 OBJECT
 	aqkey.cpp 
 	netlog.cpp
         toxbridge.cpp
+        ../../toxd/toxd.cpp
         sqlite3.c
         ${EXTRA_FILES}
 )

@@ -1,17 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <poll.h>
-#include <errno.h>
-#include <signal.h>
-#include <time.h>
 
 #include "toxbridge.h"
+#include "../../toxd/toxd_plugin.h"
 #include "qauth.h"
-#include "vcxstrm.h"
-#include "vccomp.h"
 #include "dwrtlog.h"
 #include "se.h"
 #include "qmsg.h"
@@ -20,161 +13,16 @@
 #include "xinfo.h"
 #include "fnmod.h"
 
-#define RPCM_METHOD 0
-#define RPCM_PARAMS 1
-#define RPCM_REQID 2
-
-#define RPCM_RES_REQID 0
-#define RPCM_RESULT 1
-
-#define EV_TYPE 0
-#define EV_ARGS 1
-
 // toxcore error codes — only the ones we check on the bridge side
 #define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
 
 namespace dwyco {
 
-static int Toxd_pid;
-static int Toxd_stdin = -1;
-static int Toxd_stdout = -1;
-static int Reqid_counter;
+static ToxPlugin *Tox_plugin;
 static int Started;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
-static DwString Toxd_path;
 static DwString Data_dir;
-static time_t Toxd_last_restart;
-static int Toxd_restart_delay = 1;
-static const int Toxd_max_restart_delay = 300;
-static int Inhibit_restart;
-
-// forward declarations
-static int toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms);
-static int toxd_start();
-static void toxd_stop();
-
-struct toxd_error {
-    DwString error;
-    toxd_error(const DwString& e) : error(e) {}
-};
-
-
-
-static int
-read_all(int fd, char *buf, int len)
-{
-    int total = 0;
-    while(total < len) {
-        struct pollfd pfd;
-        pfd.fd = fd;
-        pfd.events = POLLIN;
-        int ret;
-        do {
-            ret = poll(&pfd, 1, 10000);
-        } while(ret < 0 && errno == EINTR);
-        if(ret < 0)
-            throw toxd_error(DwString(strerror(errno)));
-        if(ret == 0)
-            throw toxd_error(DwString("read timeout"));
-
-        int n = (int)read(fd, buf + total, (size_t)(len - total));
-        if(n <= 0) {
-            if(n == 0)
-                throw toxd_error(DwString("toxd read eof"));
-            if(errno == EINTR)
-                continue;
-            throw toxd_error(DwString(strerror(errno)));
-        }
-        total += n;
-    }
-    return total;
-}
-
-static int
-write_all(int fd, const char *buf, int len)
-{
-    int total = 0;
-    while(total < len) {
-        int n = (int)write(fd, buf + total, (size_t)(len - total));
-        if(n <= 0) {
-            if(errno == EINTR)
-                continue;
-            throw toxd_error(DwString(strerror(errno)));
-        }
-        total += n;
-    }
-    return total;
-}
-
-static int
-write_msg(int fd, vc msg)
-{
-    vcxstream os(0, 2048, vcxstream::CONTINUOUS);
-    if(!os.open(vcxstream::WRITEABLE, vcxstream::ATOMIC))
-        throw toxd_error(DwString("write_msg open failed"));
-    vc_composite::new_dfs();
-    if(msg.xfer_out(os) < 0) {
-        os.close(vcxstream::DISCARD);
-        throw toxd_error(DwString("write_msg xfer failed"));
-    }
-    const char *buf;
-    long len;
-    os.cur_buf(buf, len);
-    uint32_t nlen = htonl((uint32_t)len);
-    write_all(fd, (const char *)&nlen, 4);
-    write_all(fd, buf, len);
-    return 1;
-}
-
-static vc
-read_msg(int fd)
-{
-    uint32_t nlen;
-    read_all(fd, (char *)&nlen, 4);
-    long len = (long)ntohl(nlen);
-    if(len < 2 || len > 1024)
-        throw toxd_error(DwString("read_msg invalid length"));
-    char *buf = new char[len];
-    try {
-        read_all(fd, buf, (int)len);
-    } catch(...) {
-        delete[] buf;
-        throw;
-    }
-    vcxstream is(buf, len, vcxstream::FIXED);
-    if(!is.open(vcxstream::READABLE)) {
-        delete[] buf;
-        throw toxd_error(DwString("read_msg stream open failed"));
-    }
-    vc msg;
-    if(msg.xfer_in(is) < 0) {
-        delete[] buf;
-        throw toxd_error(DwString("read_msg xfer failed"));
-    }
-    delete[] buf;
-    return msg;
-}
-
-static int
-is_response(const vc &msg)
-{
-    if(msg.type() != VC_VECTOR)
-        return 0;
-    if(msg.num_elems() < 2)
-        return 0;
-    return msg[0].type() == VC_INT;
-}
-
-static int
-is_event(const vc &msg)
-{
-    if(msg.type() != VC_VECTOR)
-        return 0;
-    if(msg.num_elems() < 1)
-        return 0;
-    return msg[0].type() == VC_STRING;
-}
 
 vc
 tox_pubkey_to_pseudo_uid(const vc &pubkey)
@@ -201,121 +49,8 @@ tox_uid_cache_add(const vc &pseudo_uid)
 }
 
 static void
-toxd_stop()
+process_tox_event(const char *type, const vc &args)
 {
-    if(Toxd_pid <= 0 && Toxd_stdin < 0 && Toxd_stdout < 0)
-        return;
-
-    if(Toxd_stdin >= 0) {
-        close(Toxd_stdin);
-        Toxd_stdin = -1;
-    }
-
-    if(Toxd_pid > 0) {
-        int status;
-        if(waitpid(Toxd_pid, &status, WNOHANG) == 0) {
-            kill(Toxd_pid, SIGKILL);
-            waitpid(Toxd_pid, NULL, 0);
-        }
-        Toxd_pid = 0;
-    }
-
-    if(Toxd_stdout >= 0) {
-        close(Toxd_stdout);
-        Toxd_stdout = -1;
-    }
-
-    Started = 0;
-}
-
-static int
-toxd_start()
-{
-    if(Started || Toxd_pid > 0)
-        return 1;
-
-    if(access(Toxd_path.c_str(), X_OK) != 0) {
-        GRTLOG("tox bridge: toxd not found at %s", Toxd_path.c_str(), 0);
-        return 0;
-    }
-
-    int stdin_pipe[2];
-    int stdout_pipe[2];
-
-    if(pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
-        return 0;
-
-    Toxd_pid = fork();
-    if(Toxd_pid < 0) {
-        close(stdin_pipe[0]); close(stdin_pipe[1]);
-        close(stdout_pipe[0]); close(stdout_pipe[1]);
-        return 0;
-    }
-
-    if(Toxd_pid == 0) {
-        close(stdin_pipe[1]);
-        close(stdout_pipe[0]);
-        dup2(stdin_pipe[0], STDIN_FILENO);
-        dup2(stdout_pipe[1], STDOUT_FILENO);
-        close(stdin_pipe[0]);
-        close(stdout_pipe[1]);
-
-        if(Data_dir.length() > 0)
-            setenv("DWYCO_TOX_DATA", Data_dir.c_str(), 1);
-
-        execl(Toxd_path.c_str(), Toxd_path.c_str(), (char *)NULL);
-        _exit(1);
-    }
-
-    close(stdin_pipe[0]);
-    close(stdout_pipe[1]);
-    Toxd_stdin = stdin_pipe[1];
-    Toxd_stdout = stdout_pipe[0];
-
-    int ready = 0;
-    try {
-        int timeout = 10000;
-        int elapsed = 0;
-        while(elapsed < timeout) {
-            struct pollfd pfd;
-            pfd.fd = Toxd_stdout;
-            pfd.events = POLLIN;
-            int ret;
-            do {
-                ret = poll(&pfd, 1, 50);
-            } while(ret < 0 && errno == EINTR);
-            if(ret < 0)
-                throw toxd_error(DwString(strerror(errno)));
-            if(ret == 0) {
-                elapsed += 50;
-                continue;
-            }
-            vc msg = read_msg(Toxd_stdout);
-            if(is_event(msg) && strcmp((const char *)msg[EV_TYPE], "ready") == 0) {
-                ready = 1;
-                break;
-            }
-        }
-    } catch(toxd_error&) {
-    }
-
-    if(!ready) {
-        toxd_stop();
-        return 0;
-    }
-
-    Started = 1;
-    Reqid_counter = 0;
-    GRTLOG("tox bridge: started, pid=%d", Toxd_pid, 0);
-    return 1;
-}
-
-static void
-process_tox_event(const vc &ev)
-{
-    vc type_vc = ev[EV_TYPE];
-    vc args = ev[EV_ARGS];
-    const char *type = (const char *)type_vc;
 
     if(strcmp(type, "friend_request") == 0 && args.num_elems() >= 2) {
         vc pubkey = args[0];
@@ -477,115 +212,32 @@ process_tox_event(const vc &ev)
     }
 }
 
-static int
-read_pending_events(int fd)
+static void
+on_tox_event(const char *type, const vc &args, void *userdata)
 {
-    struct pollfd pfd;
-    pfd.fd = fd;
-    pfd.events = POLLIN;
-    int count = 0;
-
-    try {
-        int ret;
-        while(true) {
-            do {
-                ret = poll(&pfd, 1, 0);
-            } while(ret < 0 && errno == EINTR);
-            if(ret < 0)
-                throw toxd_error(DwString(strerror(errno)));
-            if(ret == 0 || !(pfd.revents & POLLIN))
-                break;
-            vc msg = read_msg(fd);
-            if(is_event(msg)) {
-                process_tox_event(msg);
-                ++count;
-            }
-        }
-    } catch(toxd_error&) {
-        se_emit(SE_TOX_CRASHED, vcnil);
-        toxd_stop();
-    }
-    return count;
-}
-
-static int
-read_response(int fd, int reqid, vc &result_out, int timeout_ms)
-{
-    int elapsed = 0;
-    while(elapsed < timeout_ms) {
-        struct pollfd pfd;
-        pfd.fd = fd;
-        pfd.events = POLLIN;
-        int ret;
-        do {
-            ret = poll(&pfd, 1, 50);
-        } while(ret < 0 && errno == EINTR);
-        if(ret < 0)
-            throw toxd_error(DwString(strerror(errno)));
-        if(ret == 0) {
-            elapsed += 50;
-            continue;
-        }
-        vc msg = read_msg(fd);
-        if(is_event(msg)) {
-            process_tox_event(msg);
-            continue;
-        }
-        if(is_response(msg) && (int)msg[RPCM_RES_REQID] == reqid) {
-            result_out = msg[RPCM_RESULT];
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static int
-toxd_rpc_call(const vc &method, const vc &params, vc &result_out, int timeout_ms)
-{
-    try {
-        if(!Started)
-            return 0;
-
-        int reqid = ++Reqid_counter;
-        vc req(VC_VECTOR);
-        req.append(method);
-        req.append(params);
-        req.append(vc(reqid));
-
-        write_msg(Toxd_stdin, req);
-
-        if(!read_response(Toxd_stdout, reqid, result_out, timeout_ms))
-            return 0;
-
-        if(result_out.type() == VC_STRING)
-            return 0;
-
-        return 1;
-    } catch(toxd_error&) {
-        se_emit(SE_TOX_CRASHED, vcnil);
-        toxd_stop();
-        return 0;
-    }
+    (void)userdata;
+    if(!Started)
+        return;
+    process_tox_event(type, args);
 }
 
 int
-tox_bridge_init(const char *toxd_path, const char *data_dir)
+tox_bridge_init(const char *data_dir)
 {
     if(Started)
         return 1;
 
-    Toxd_path = toxd_path;
     if(data_dir)
         Data_dir = data_dir;
     else
         Data_dir = DwString();
 
-    if(!toxd_start())
+    Tox_plugin = toxp_init(Data_dir.length() > 0 ? Data_dir.c_str() : NULL,
+                           on_tox_event, NULL);
+    if(!Tox_plugin)
         return 0;
 
-    Inhibit_restart = 0;
-    Toxd_last_restart = 0;
-    Toxd_restart_delay = 1;
+    Started = 1;
     Tox_q = new ToxQueue;
     if(Tox_q->init())
         Tox_q->recover_inprogress();
@@ -605,8 +257,12 @@ tox_bridge_shutdown()
         Tox_q = 0;
     }
 
-    Inhibit_restart = 1;
-    toxd_stop();
+    if(Tox_plugin) {
+        toxp_save(Tox_plugin);
+        toxp_shutdown(Tox_plugin);
+        Tox_plugin = 0;
+    }
+    Started = 0;
     GRTLOG("tox bridge: shutdown", 0, 0);
 }
 
@@ -625,30 +281,13 @@ tox_queue()
 void
 tox_bridge_poll()
 {
-    if(!Started && !Inhibit_restart) {
-        if(Toxd_last_restart == 0 || time(0) - Toxd_last_restart >= Toxd_restart_delay) {
-            Toxd_last_restart = time(0);
-            if(toxd_start()) {
-                tox_bridge_rebuild_friend_cache();
-                if(Tox_q)
-                    Tox_q->recover_inprogress();
-                Toxd_restart_delay = 1;
-                GRTLOG("tox bridge: restarted successfully", 0, 0);
-                se_emit(SE_TOX_READY, vcnil);
-            } else {
-                Toxd_restart_delay *= 2;
-                if(Toxd_restart_delay > Toxd_max_restart_delay)
-                    Toxd_restart_delay = Toxd_max_restart_delay;
-                GRTLOG("tox bridge: restart failed, retry in %ds", Toxd_restart_delay, 0);
-            }
-        }
+    if(!Started || !Tox_plugin)
         return;
-    }
 
-    read_pending_events(Toxd_stdout);
+    toxp_iterate(Tox_plugin);
 
     // reset stale in-progress messages so they get retried
-    // (handles lost read receipts and toxd restarts)
+    // (handles lost read receipts)
     if(Tox_q)
         Tox_q->sql_simple("UPDATE tox_outbox SET status=0 "
                            "WHERE status=1 AND created_at < strftime('%s','now') - 30");
@@ -659,21 +298,17 @@ tox_bridge_poll()
 vc
 tox_bridge_get_address()
 {
-    vc result;
-    if(!toxd_rpc_call(vc("get_address"), vc(VC_MAP, "", 0), result, 5000))
+    if(!Tox_plugin)
         return vcnil;
-    vc addr;
-    if(!result.find("address", addr))
-        return vcnil;
-    return addr;
+    return toxp_get_address(Tox_plugin);
 }
 
 vc
 tox_bridge_get_name()
 {
-    vc result;
-    if(!toxd_rpc_call(vc("get_name"), vc(VC_MAP, "", 0), result, 5000))
+    if(!Tox_plugin)
         return vcnil;
+    vc result = toxp_get_name(Tox_plugin);
     vc name;
     if(!result.find("name", name))
         return vcnil;
@@ -683,9 +318,9 @@ tox_bridge_get_name()
 vc
 tox_bridge_get_status_message()
 {
-    vc result;
-    if(!toxd_rpc_call(vc("get_status_message"), vc(VC_MAP, "", 0), result, 5000))
+    if(!Tox_plugin)
         return vcnil;
+    vc result = toxp_get_status_message(Tox_plugin);
     vc msg;
     if(!result.find("status_message", msg))
         return vcnil;
@@ -695,9 +330,9 @@ tox_bridge_get_status_message()
 vc
 tox_bridge_get_pubkey()
 {
-    vc result;
-    if(!toxd_rpc_call(vc("generate_keypair"), vc(VC_MAP, "", 0), result, 5000))
+    if(!Tox_plugin)
         return vcnil;
+    vc result = toxp_get_self_pubkey(Tox_plugin);
     vc pk;
     if(!result.find("pubkey", pk))
         return vcnil;
@@ -707,11 +342,10 @@ tox_bridge_get_pubkey()
 int
 tox_bridge_friend_add(const vc &address, const vc &message)
 {
-    vc params(VC_MAP, "", 4);
-    params.add_kv("address", address);
-    params.add_kv("message", message);
-    vc result;
-    if(toxd_rpc_call(vc("friend_add"), params, result, 10000))
+    if(!Tox_plugin)
+        return 0;
+    uint32_t fn;
+    if(toxp_friend_add(Tox_plugin, address, message, &fn))
     {
         vc pseudo(address, 10);
         tox_uid_cache_add(pseudo);
@@ -723,10 +357,10 @@ tox_bridge_friend_add(const vc &address, const vc &message)
 int
 tox_bridge_friend_add_norequest(const vc &pubkey)
 {
-    vc params(VC_MAP, "", 2);
-    params.add_kv("pubkey", pubkey);
-    vc result;
-    if(toxd_rpc_call(vc("friend_add_norequest"), params, result, 10000))
+    if(!Tox_plugin)
+        return 0;
+    uint32_t fn;
+    if(toxp_friend_add_norequest(Tox_plugin, pubkey, &fn))
     {
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         tox_uid_cache_add(pseudo);
@@ -738,10 +372,9 @@ tox_bridge_friend_add_norequest(const vc &pubkey)
 int
 tox_bridge_friend_delete(uint32_t friend_number)
 {
-    vc params(VC_MAP, "", 2);
-    params.add_kv("friend_number", vc((int)friend_number));
-    vc result;
-    return toxd_rpc_call(vc("friend_delete"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    return toxp_friend_delete(Tox_plugin, friend_number);
 }
 
 int
@@ -757,63 +390,46 @@ tox_bridge_friend_delete_by_pubkey(const vc &pubkey)
 int
 tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out, int *tox_error_out)
 {
-    vc params(VC_MAP, "", 6);
-    params.add_kv("friend_number", vc((int)friend_number));
-    params.add_kv("text", text);
-    params.add_kv("type", vc(is_action ? "action" : "normal"));
-    vc result;
-    if(!toxd_rpc_call(vc("message_send"), params, result, 10000))
+    if(!Tox_plugin)
         return -1;
-    if(tox_error_out)
+    uint32_t mid = 0;
+    int tox_err = 0;
+    int ret = toxp_message_send(Tox_plugin, friend_number, text, is_action, &mid, &tox_err);
+    if(ret == 0 && tox_err != 0)
     {
-        vc ec;
-        if(result.find("tox_error", ec))
-        {
-            *tox_error_out = (int)ec;
-            return 0;
-        }
+        if(tox_error_out)
+            *tox_error_out = tox_err;
+        return 0;
     }
-    if(mid_out)
-    {
-        vc mid_vc;
-        if(result.find("message_id", mid_vc))
-            *mid_out = (uint32_t)(int)mid_vc;
-    }
-    return 1;
+    if(ret == 1 && mid_out)
+        *mid_out = mid;
+    return ret;
 }
 
 int
 tox_bridge_file_send(uint32_t friend_number, const vc &name, uint64_t size)
 {
-    vc params(VC_MAP, "", 6);
-    params.add_kv("friend_number", vc((int)friend_number));
-    params.add_kv("name", name);
-    params.add_kv("size", vc((long long)size));
-    vc result;
-    return toxd_rpc_call(vc("file_send"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    uint32_t fnum;
+    return toxp_file_send(Tox_plugin, friend_number, name, size, &fnum);
 }
 
 int
 tox_bridge_file_send_data(uint32_t friend_number, uint32_t file_number,
                           uint64_t pos, const vc &data)
 {
-    vc params(VC_MAP, "", 8);
-    params.add_kv("friend_number", vc((int)friend_number));
-    params.add_kv("file_number", vc((int)file_number));
-    params.add_kv("pos", vc((long long)pos));
-    params.add_kv("data", data);
-    vc result;
-    return toxd_rpc_call(vc("file_send_data"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    return toxp_file_send_data(Tox_plugin, friend_number, file_number, pos, data);
 }
 
 int
 tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number)
 {
-    vc params(VC_MAP, "", 4);
-    params.add_kv("friend_number", vc((int)friend_number));
-    params.add_kv("file_number", vc((int)file_number));
-    vc result;
-    return toxd_rpc_call(vc("file_accept"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    return toxp_file_accept(Tox_plugin, friend_number, file_number);
 }
 
 int
@@ -875,12 +491,12 @@ tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out)
 void
 tox_bridge_rebuild_friend_cache()
 {
-    vc result;
-    if(!toxd_rpc_call(vc("friend_list"), vc(VC_MAP, "", 0), result, 5000))
+    if(!Tox_plugin)
     {
         Friend_cache = vcnil;
         return;
     }
+    vc result = toxp_friend_list(Tox_plugin);
     vc fl;
     if(result.find("friends", fl) && fl.type() == VC_VECTOR)
     {
@@ -952,11 +568,9 @@ tox_bridge_get_friend_list_vc()
 int
 tox_bridge_set_typing(uint32_t friend_number, int typing)
 {
-    vc params(VC_MAP, "", 4);
-    params.add_kv("friend_number", vc((int)friend_number));
-    params.add_kv("typing", vc(typing ? 1 : 0));
-    vc result;
-    return toxd_rpc_call(vc("typing_set"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    return toxp_typing_set(Tox_plugin, friend_number, typing);
 }
 
 int
@@ -971,36 +585,34 @@ tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing)
 int
 tox_bridge_set_name(const char *name, int name_len)
 {
-    vc params(VC_MAP, "", 4);
-    params.add_kv("name", vc(VC_BSTRING, name, (long)name_len));
-    vc result;
-    return toxd_rpc_call(vc("set_name"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    return toxp_set_name(Tox_plugin, name, name_len);
 }
 
 int
 tox_bridge_set_status_message(const char *msg, int msg_len)
 {
-    vc params(VC_MAP, "", 4);
-    params.add_kv("status_message", vc(VC_BSTRING, msg, (long)msg_len));
-    vc result;
-    return toxd_rpc_call(vc("set_status_message"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    return toxp_set_status_message(Tox_plugin, msg, msg_len);
 }
 
 int
 tox_bridge_set_user_status(const char *status)
 {
-    vc params(VC_MAP, "", 2);
-    params.add_kv("status", vc(status));
-    vc result;
-    return toxd_rpc_call(vc("set_user_status"), params, result, 5000);
+    if(!Tox_plugin)
+        return 0;
+    toxp_set_user_status(Tox_plugin, status);
+    return 1;
 }
 
 vc
 tox_bridge_get_user_status()
 {
-    vc result;
-    if(!toxd_rpc_call(vc("get_user_status"), vc(VC_MAP, "", 0), result, 5000))
+    if(!Tox_plugin)
         return vcnil;
+    vc result = toxp_get_user_status(Tox_plugin);
     vc status;
     if(!result.find("status", status))
         return vcnil;
@@ -1231,7 +843,7 @@ tox_bridge_send_queued()
     }
     else
     {
-        // RPC transport failure: mark in-progress so we don't re-dequeue
+        // transport failure: mark in-progress so we don't re-dequeue
         // on the next poll and spam the recipient.  The stale-timeout in
         // tox_bridge_poll (30 s) will reset stuck entries to status=0
         // for retry.

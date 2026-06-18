@@ -37,7 +37,7 @@ public:
 // binary strings. there is no hex encoding.
 
 // tox bridge lifecycle
-int tox_bridge_init(const char *toxd_path, const char *data_dir);
+int tox_bridge_init(const char *data_dir);
 void tox_bridge_shutdown();
 int tox_bridge_is_active();
 

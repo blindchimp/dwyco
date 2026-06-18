@@ -298,6 +298,8 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
+   /home/dwight/git/c-toxcore/build/libtoxcore.a
+   -lsodium
    #-fsanitize=undefined
    #v4lcap
     -ldl

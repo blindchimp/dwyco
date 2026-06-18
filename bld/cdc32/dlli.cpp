@@ -9632,14 +9632,7 @@ DWYCOEXPORT
 int
 dwyco_enable_tox(const char *tox_data_dir)
 {
-#ifdef DWYCO_DEBUG
-    const char *home = getenv("HOME");
-    if(!home) home = ".";
-    DwString toxd_path = DwString(home) + "/toxd";
-    return dwyco::tox_bridge_init(toxd_path.c_str(), tox_data_dir);
-#else
-    return dwyco::tox_bridge_init("./toxd", tox_data_dir);
-#endif
+    return dwyco::tox_bridge_init(tox_data_dir);
 }
 
 DWYCOEXPORT
