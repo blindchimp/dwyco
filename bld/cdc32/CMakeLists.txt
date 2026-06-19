@@ -25,6 +25,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../miniupnp/miniupnp-master/miniupnpc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../c-toxcore/toxcore
+    /opt/homebrew/include
     .
 )
 
@@ -69,8 +70,10 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
-        LOCAL_TOXCORE
 )
+if(UNIX AND NOT APPLE)
+    add_compile_definitions(LOCAL_TOXCORE)
+endif()
 
 add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 # i forgot, adding this tracing stuff confuses the shit

@@ -320,6 +320,8 @@ if(APPLE OR IOS)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
+       /opt/homebrew/lib/libtoxcore.a
+       /opt/homebrew/lib/libsodium.a
        Qt6::Widgets
 
     )
