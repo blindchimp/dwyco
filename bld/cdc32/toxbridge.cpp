@@ -13,6 +13,7 @@
 #include "xinfo.h"
 #include "fnmod.h"
 #include "qdirth.h"
+#include "qmsgsql.h"
 
 // toxcore error codes — only the ones we check on the bridge side
 #define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
@@ -24,6 +25,18 @@ static int Started;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
 static DwString Data_dir;
+
+static void
+safe_add_crdt_tag(const vc &mid, const vc &tag)
+{
+    vc existing = sql_get_tagged_mids2(tag);
+    for(int i = 0; i < existing.num_elems(); ++i)
+    {
+        if(existing[i][0] == mid)
+            return;
+    }
+    sql_add_tag(mid, tag);
+}
 
 vc
 tox_pubkey_to_pseudo_uid(const vc &pubkey)
@@ -173,6 +186,13 @@ process_tox_event(const char *type, const vc &args)
         (void)fn;
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
         Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+        {
+            DwString composite;
+            composite += to_hex(pseudo);
+            composite += "_";
+            composite += to_hex(name);
+            safe_add_crdt_tag(composite, "_tox_friend");
+        }
 
     } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
         uint32_t fn = (uint32_t)(int)args[0];
@@ -259,6 +279,7 @@ tox_bridge_init(const char *data_dir)
     if(Tox_q->init())
         Tox_q->recover_inprogress();
     tox_bridge_rebuild_friend_cache();
+    safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
 }
@@ -540,6 +561,11 @@ tox_bridge_rebuild_friend_cache()
             {
                 vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
                 Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+                DwString composite;
+                composite += to_hex(pseudo);
+                composite += "_";
+                composite += to_hex(name);
+                safe_add_crdt_tag(composite, "_tox_friend");
             }
         }
         GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);

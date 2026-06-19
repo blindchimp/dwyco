@@ -8446,6 +8446,38 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
         return dwyco_list_from_vc(v1);
     }
 
+    // Fallback for tox friend info synced via CRDT tags
+    // (clients without tox enabled)
+    {
+        vc mids = sql_get_tagged_mids2("_tox_friend");
+        DwString target((const char *)to_hex(buid));
+        target += "_";
+        for(int i = 0; i < mids.num_elems(); ++i)
+        {
+            DwString m((const char *)mids[i][0]);
+            if(m.find(target.c_str()) == 0)
+            {
+                DwString name_hex = m;
+                name_hex.erase(0, target.length());
+                vc name = from_hex(vc(VC_BSTRING, name_hex.c_str(), name_hex.length()));
+                if(!name.is_nil() && name != vc(""))
+                    Session_infos.add_kv(buid, dwyco::make_tox_info_vec(buid, name));
+                else
+                    name = to_hex(buid);
+                vc v(VC_VECTOR);
+                v.append(name);
+                v.append("");
+                v.append("");
+                v.append(0);
+                v.append(0);
+                v.append("");
+                vc v1(VC_VECTOR);
+                v1[0] = v;
+                return dwyco_list_from_vc(v1);
+            }
+        }
+    }
+
     // note: have to think about this. it might be
     // too expensive on mobile if you have lots of
     // profiles. maybe need to just limit it to
@@ -9822,6 +9854,42 @@ dwyco_tox_get_user_status(char **out, int *len_out)
     }
     if(len_out)
         *len_out = status.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_uid_is_tox_friend(const char *uid, int len_uid)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc mids = sql_get_tagged_mids2("_tox_friend");
+    DwString target((const char *)to_hex(buid));
+    target += "_";
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        DwString m((const char *)mids[i][0]);
+        if(m.find(target.c_str()) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_device_uid(char **out, int *len_out)
+{
+    vc mids = sql_get_tagged_mids2("_tox_device");
+    if(mids.num_elems() == 0)
+        return 0;
+    vc hex_uid = mids[0][0];
+    vc uid = from_hex(hex_uid);
+    if(out)
+    {
+        *out = new char[uid.len()];
+        memcpy(*out, (const char *)uid, uid.len());
+    }
+    if(len_out)
+        *len_out = uid.len();
     return 1;
 }
 

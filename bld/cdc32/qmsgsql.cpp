@@ -166,6 +166,8 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_crdt_tags values('_pal')");
         sql_simple("insert into static_crdt_tags values('_leader')");
         sql_simple("insert into static_crdt_tags values('_trash')");
+        sql_simple("insert into static_crdt_tags values('_tox_friend')");
+        sql_simple("insert into static_crdt_tags values('_tox_device')");
 
         // this is an upgrade, the msg_tags2 stuff should be installed in gmt
         // with proper guids. this should mostly only be done once, but there
@@ -1270,6 +1272,33 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             }
             if(tag == ign)
                 reload_ignore = true;
+            static vc tox_friend("_tox_friend");
+            if(tag == tox_friend)
+            {
+                DwString m((const char *)mid);
+                int uscore = m.find_first_of("_");
+                if(uscore > 0 && uscore < m.length() - 1)
+                {
+                    DwString uid_hex(m.c_str(), 0, uscore);
+                    DwString name_hex = m;
+                    name_hex.erase(0, uscore + 1);
+                    vc uid = from_hex(vc(VC_BSTRING, uid_hex.c_str(), uid_hex.length()));
+                    vc name = from_hex(vc(VC_BSTRING, name_hex.c_str(), name_hex.length()));
+                    if(!uid.is_nil() && !name.is_nil())
+                    {
+                        vc info(VC_VECTOR);
+                        info[QIR_FROM] = uid;
+                        info[QIR_HANDLE] = name;
+                        info[QIR_EMAIL] = "";
+                        info[QIR_USER_SPECED_ID] = "";
+                        info[QIR_FIRST] = "";
+                        info[QIR_LAST] = "";
+                        info[QIR_DESCRIPTION] = "";
+                        info[QIR_LOCATION] = "";
+                        Session_infos.add_kv(uid, info);
+                    }
+                }
+            }
         }
         else if (op == op_d)
         {
@@ -1294,6 +1323,19 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             }
             if(tag == ign)
                 reload_ignore = true;
+            static vc tox_friend("_tox_friend");
+            if(tag == tox_friend)
+            {
+                DwString m((const char *)mid);
+                int uscore = m.find_first_of("_");
+                if(uscore > 0 && uscore < m.length() - 1)
+                {
+                    DwString uid_hex(m.c_str(), 0, uscore);
+                    vc uid = from_hex(vc(VC_BSTRING, uid_hex.c_str(), uid_hex.length()));
+                    if(!uid.is_nil())
+                        Session_infos.del(uid);
+                }
+            }
         }
         else
             oopanic("bad tupdate");
