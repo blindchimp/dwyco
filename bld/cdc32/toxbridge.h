@@ -40,6 +40,7 @@ public:
 int tox_bridge_init(const char *data_dir);
 void tox_bridge_shutdown();
 int tox_bridge_is_active();
+void tox_bridge_cleanup_incomplete();
 
 // polling — call from dwyco timer loop
 void tox_bridge_poll();

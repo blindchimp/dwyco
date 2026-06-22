@@ -182,6 +182,26 @@ toxd_on_file_recv_chunk(Tox *tox, uint32_t fn, uint32_t fnum,
 }
 
 static void
+toxd_on_file_recv_control(Tox *tox, uint32_t fn, uint32_t fnum,
+                          Tox_File_Control control, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    const char *ctrl_str = "resume";
+    if(control == TOX_FILE_CONTROL_PAUSE)
+        ctrl_str = "pause";
+    else if(control == TOX_FILE_CONTROL_CANCEL)
+        ctrl_str = "cancel";
+    log_printf(p->log_file, "[cb] file_control fn=%u fnum=%u control=%s",
+               fn, fnum, ctrl_str);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)fnum));
+    args.append(vc(ctrl_str));
+    p->event_cb("file_control", args, p->event_userdata);
+}
+
+static void
 toxd_on_self_connection_status(Tox *tox, Tox_Connection status, void *ud)
 {
     ToxPlugin *p = (ToxPlugin *)ud;
@@ -391,6 +411,7 @@ register_callbacks(Tox *tox)
     tox_callback_friend_read_receipt(tox, toxd_on_friend_read_receipt);
     tox_callback_file_recv(tox, toxd_on_file_recv);
     tox_callback_file_recv_chunk(tox, toxd_on_file_recv_chunk);
+    tox_callback_file_recv_control(tox, toxd_on_file_recv_control);
     tox_callback_friend_connection_status(tox, toxd_on_connection_status);
     tox_callback_self_connection_status(tox, toxd_on_self_connection_status);
     tox_callback_friend_name(tox, toxd_on_friend_name);
@@ -698,13 +719,21 @@ toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos,
 }
 
 int
-toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum)
+toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum, int *error_out)
 {
     Tox_Err_File_Control err;
     tox_file_control(p->tox, fn, fnum, TOX_FILE_CONTROL_RESUME, &err);
-    if(err != TOX_ERR_FILE_CONTROL_OK)
-        return 0;
-    return 1;
+    if(error_out)
+        *error_out = (int)err;
+    return err == TOX_ERR_FILE_CONTROL_OK ? 1 : 0;
+}
+
+int
+toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum)
+{
+    Tox_Err_File_Control err;
+    tox_file_control(p->tox, fn, fnum, TOX_FILE_CONTROL_CANCEL, &err);
+    return err == TOX_ERR_FILE_CONTROL_OK ? 1 : 0;
 }
 
 vc

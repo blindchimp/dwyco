@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <map>
 
 #include "toxbridge.h"
 #include "../../toxd/toxd_plugin.h"
@@ -25,6 +27,22 @@ static int Started;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
 static DwString Data_dir;
+
+struct IncomingFileTransfer {
+    DwString tmp_basename;
+    int fd;
+    uint64_t expected_size;
+    uint64_t received_size;
+    DwString original_filename;
+    vc pseudo_uid;
+};
+static std::map<DwString, IncomingFileTransfer> Incoming_xfers;
+
+static DwString
+xfer_key(uint32_t fn, uint32_t fnum)
+{
+    return DwString::fromInt(fn) + "_" + DwString::fromInt(fnum);
+}
 
 static void
 safe_add_crdt_tag(const vc &mid, const vc &tag)
@@ -198,16 +216,50 @@ process_tox_event(const char *type, const vc &args)
         uint32_t fn = (uint32_t)(int)args[0];
         uint32_t fnum = (uint32_t)(int)args[1];
         uint32_t kind = (uint32_t)(int)args[2];
-        (void)kind;
         uint64_t size = 0;
         if(args[3].type() == VC_INT)
             size = (uint64_t)(long long)args[3];
-        vc name = args[4];
+        vc name_vc = args[4];
+        DwString original_name((const char *)name_vc, name_vc.len());
+
         vc pseudo;
-        if(tox_friend_number_to_pseudo_uid(fn, pseudo))
+        if(!tox_friend_number_to_pseudo_uid(fn, pseudo))
+            return;
+
+        if(kind == 1)
         {
-            se_emit(SE_TOX_FILE_REQUEST, pseudo, vc((int)fnum), name, vc((long long)size));
+            GRTLOG("tox: rejecting avatar transfer fn=%d fnum=%d", fn, fnum);
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            return;
         }
+
+        int err = 0;
+        if(!toxp_file_accept(Tox_plugin, fn, fnum, &err))
+        {
+            GRTLOG("tox: auto-accept failed fn=%d fnum=%d", fn, fnum);
+            GRTLOG("tox: auto-accept err=%d", err, 0);
+            return;
+        }
+
+        DwString tmp_basename = gen_random_filename() + ".tmp";
+        DwString tmp_path = newfn(tmp_basename);
+        int fd = open(tmp_path.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0600);
+        if(fd == -1)
+        {
+            GRTLOG("tox: cant open temp file %s", tmp_path.c_str(), 0);
+            return;
+        }
+
+        IncomingFileTransfer xfer;
+        xfer.tmp_basename = tmp_basename;
+        xfer.fd = fd;
+        xfer.expected_size = size;
+        xfer.received_size = 0;
+        xfer.original_filename = dwbasename(original_name);
+        xfer.pseudo_uid = pseudo;
+        Incoming_xfers[xfer_key(fn, fnum)] = xfer;
+
+        GRTLOG("tox: file recv accepted fn=%d fnum=%d", fn, fnum);
 
     } else if(strcmp(type, "self_connection_status") == 0 && args.num_elems() >= 1) {
         vc status = args[0];
@@ -222,8 +274,97 @@ process_tox_event(const char *type, const vc &args)
         if(args[2].type() == VC_INT)
             pos = (uint64_t)(long long)args[2];
         vc data = args[3];
-        se_emit(SE_TOX_FILE_CHUNK, vc((int)fn), vc((int)fnum),
-                vc((long long)pos), data);
+        (void)pos;
+
+        DwString key = xfer_key(fn, fnum);
+        std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
+        if(it == Incoming_xfers.end())
+            return;
+        IncomingFileTransfer &xfer = it->second;
+
+        // nil data signals EOF → file complete
+        if(data.is_nil())
+        {
+            close(xfer.fd);
+            xfer.fd = -1;
+
+            DwString fle_basename = gen_random_filename() + ".fle";
+            DwString src = newfn(xfer.tmp_basename);
+            DwString dst = newfn(fle_basename);
+            if(CopyFile(src.c_str(), dst.c_str(), 0))
+            {
+                vc body(VC_VECTOR);
+                body[QQM_BODY_FROM] = xfer.pseudo_uid;
+                body[QQM_BODY_TEXT_do_not_use] = vcnil;
+                body[QQM_BODY_ATTACHMENT] = fle_basename;
+                body[QQM_BODY_DATE] = date_vector();
+                body[QQM_BODY_AUTH_VEC] = vcnil;
+                body[QQM_BODY_FORWARDED_BODY] = vcnil;
+                body[QQM_BODY_NEW_TEXT] = "";
+                body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
+                body[QQM_BODY_SPECIAL_TYPE] = vcnil;
+                body[QQM_BODY_NO_FORWARD] = vcnil;
+                body[QQM_BODY_FILE_ATTACHMENT] = xfer.original_filename;
+                body[QQM_BODY_DHSF] = vcnil;
+                body[QQM_BODY_EMSG] = vcnil;
+                body[QQM_BODY_ESTIMATED_SIZE] = vc((long long)xfer.expected_size);
+                body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
+                body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
+                body[QQM_BODY_FROM_GROUP] = vcnil;
+
+                vc qqm(VC_VECTOR);
+                qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+                qqm[QQM_RECIP_VEC][0] = My_UID;
+                qqm[QQM_MSG_VEC] = body;
+                qqm[QQM_LOCAL_ID] = to_hex(gen_id());
+
+                store_direct(0, qqm, 0);
+                se_emit(SE_TOX_MESSAGE, xfer.pseudo_uid);
+                GRTLOG("tox: file recv complete fn=%d fnum=%d", fn, fnum);
+            }
+            else
+            {
+                GRTLOG("tox: failed to copy completed file %s", src.c_str(), 0);
+            }
+            DeleteFile(src.c_str());
+            Incoming_xfers.erase(it);
+        }
+        else
+        {
+            // normal data chunk — append to temp file
+            const char *buf = (const char *)data;
+            size_t len = data.len();
+            ssize_t n = write(xfer.fd, buf, len);
+            if(n < 0 || (size_t)n != len)
+            {
+                GRTLOG("tox: file write error fn=%d fnum=%d", fn, fnum);
+                close(xfer.fd);
+                DeleteFile(newfn(xfer.tmp_basename).c_str());
+                Incoming_xfers.erase(it);
+            }
+            else
+            {
+                xfer.received_size += len;
+            }
+        }
+
+    } else if(strcmp(type, "file_control") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t fnum = (uint32_t)(int)args[1];
+        vc control = args[2];
+        DwString key = xfer_key(fn, fnum);
+        std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
+        if(it != Incoming_xfers.end())
+        {
+            if(control == vc("cancel"))
+            {
+                if(it->second.fd >= 0)
+                    close(it->second.fd);
+                DeleteFile(newfn(it->second.tmp_basename).c_str());
+                Incoming_xfers.erase(it);
+                GRTLOG("tox: xfer cancelled by sender fn=%d fnum=%d", fn, fnum);
+            }
+        }
 
     } else if(strcmp(type, "ready") == 0) {
         GRTLOG("tox: ready", 0, 0);
@@ -278,6 +419,7 @@ tox_bridge_init(const char *data_dir)
     Tox_q = new ToxQueue;
     if(Tox_q->init())
         Tox_q->recover_inprogress();
+    tox_bridge_cleanup_incomplete();
     tox_bridge_rebuild_friend_cache();
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     GRTLOG("tox bridge: initialized", 0, 0);
@@ -303,6 +445,20 @@ tox_bridge_shutdown()
     }
     Started = 0;
     GRTLOG("tox bridge: shutdown", 0, 0);
+}
+
+void
+tox_bridge_cleanup_incomplete()
+{
+    DwString pat = newfn("*.tmp");
+    FindVec fv(pat);
+    for(int i = 0; i < fv.num_elems(); ++i)
+    {
+        const WIN32_FIND_DATA &d = *fv[i];
+        DwString full = newfn(d.cFileName);
+        DeleteFile(full.c_str());
+        GRTLOG("tox: cleaned orphaned temp file %s", d.cFileName, 0);
+    }
 }
 
 int
@@ -472,7 +628,7 @@ tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number)
 {
     if(!Tox_plugin)
         return 0;
-    return toxp_file_accept(Tox_plugin, friend_number, file_number);
+    return toxp_file_accept(Tox_plugin, friend_number, file_number, 0);
 }
 
 int
