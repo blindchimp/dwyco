@@ -8434,6 +8434,8 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
 
     // If this is a tox pseudo_uid, return info from local friend cache
     // without hitting any dwyco servers or profile DB
+    // If the user is not in the friend cache (or has no cached name),
+    // fall through to session_infos / CRDT tag fallbacks below.
     if(dwyco::tox_bridge_is_tox_uid(buid))
     {
         vc fl = dwyco::tox_bridge_get_friend_list_vc();
@@ -8452,25 +8454,24 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
                     {
                         entry.find("name", name);
                         if(!name.is_nil() && name != vc(""))
+                        {
                             Session_infos.add_kv(pseudo, dwyco::make_tox_info_vec(pseudo, name));
+                            vc v(VC_VECTOR);
+                            v.append(name);
+                            v.append("");
+                            v.append("");
+                            v.append(0);
+                            v.append(0);
+                            v.append("");
+                            vc v1(VC_VECTOR);
+                            v1[0] = v;
+                            return dwyco_list_from_vc(v1);
+                        }
                         break;
                     }
                 }
             }
         }
-        if(name.is_nil() || name == vc(""))
-            name = to_hex(buid);
-
-        vc v(VC_VECTOR);
-        v.append(name);
-        v.append("");
-        v.append("");
-        v.append(0);
-        v.append(0);
-        v.append("");
-        vc v1(VC_VECTOR);
-        v1[0] = v;
-        return dwyco_list_from_vc(v1);
     }
 
     // Fallback for tox friend info synced via CRDT tags

@@ -230,8 +230,13 @@ process_tox_event(const char *type, const vc &args)
         tox_uid_cache_add(pseudo);
         (void)fn;
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
-        Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+        if(!name.is_nil() && name != vc(""))
         {
+            vc old;
+            int same = Session_infos.find(pseudo, old) && old.num_elems() > QIR_HANDLE && old[QIR_HANDLE] == name;
+            Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            if(!same)
+                save_info(Session_infos, "sinfo");
             DwString composite;
             composite += to_hex(pseudo);
             composite += "_";
@@ -852,7 +857,7 @@ tox_bridge_rebuild_friend_cache()
             vc entry = Friend_cache[i];
             vc pubkey;
             vc name;
-            if(entry.find("pubkey", pubkey) && entry.find("name", name))
+            if(entry.find("pubkey", pubkey) && entry.find("name", name) && !name.is_nil() && name != vc(""))
             {
                 vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
                 Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
