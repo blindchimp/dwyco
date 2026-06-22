@@ -202,6 +202,22 @@ toxd_on_file_recv_control(Tox *tox, uint32_t fn, uint32_t fnum,
 }
 
 static void
+toxd_on_file_chunk_request(Tox *tox, uint32_t fn, uint32_t fnum,
+                           uint64_t position, size_t length, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] file_chunk_request fn=%u fnum=%u pos=%llu len=%zu",
+               fn, fnum, (unsigned long long)position, length);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)fnum));
+    args.append(vc((long long)position));
+    args.append(vc((long long)length));
+    p->event_cb("file_chunk_request", args, p->event_userdata);
+}
+
+static void
 toxd_on_self_connection_status(Tox *tox, Tox_Connection status, void *ud)
 {
     ToxPlugin *p = (ToxPlugin *)ud;
@@ -412,6 +428,7 @@ register_callbacks(Tox *tox)
     tox_callback_file_recv(tox, toxd_on_file_recv);
     tox_callback_file_recv_chunk(tox, toxd_on_file_recv_chunk);
     tox_callback_file_recv_control(tox, toxd_on_file_recv_control);
+    tox_callback_file_chunk_request(tox, toxd_on_file_chunk_request);
     tox_callback_friend_connection_status(tox, toxd_on_connection_status);
     tox_callback_self_connection_status(tox, toxd_on_self_connection_status);
     tox_callback_friend_name(tox, toxd_on_friend_name);

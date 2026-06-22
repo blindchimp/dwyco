@@ -12,7 +12,7 @@ class ToxQueue : public SimpleSql
 public:
     ToxQueue();
     void init_schema(const DwString&);
-    int enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid);
+    int enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file = 0);
     vc dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id);
     int mark_inprogress(int64_t row_id, uint32_t tox_mid);
     int mark_sent(int64_t row_id);
@@ -58,6 +58,12 @@ int tox_bridge_friend_delete_by_pubkey(const vc &pubkey);
 // messaging
 int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0, int *tox_error_out = 0);
 int tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_action);
+int tox_bridge_send_file_message_by_uid(const vc &pseudo_uid, const vc &text,
+                                        const vc &original_filename,
+                                        const DwString &attachment_basename,
+                                        const vc &filehash,
+                                        uint64_t file_size,
+                                        vc &local_mid_out);
 void tox_bridge_send_queued();
 int tox_bridge_kill_message(const vc &local_mid);
 

@@ -5674,8 +5674,35 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
     // route to tox bridge if this is a tox contact
     if(dwyco::tox_bridge_is_tox_uid(vuid))
     {
+        // reject dwyco-media (recordings) — only file zaps are sent via tox
+        if(m->user_filename.is_nil() && m->composer && m->actual_filename.length() > 0)
+        {
+            GRTLOG("zap_send: %d rejecting dwyco-media to tox contact", compid, 0);
+            return 0;
+        }
+
         vc text_vc(VC_BSTRING, text, len_text);
-        int ret = dwyco::tox_bridge_send_message_by_uid(vuid, text_vc, 0);
+        int ret;
+        if(m->actual_filename.length() > 0)
+        {
+            struct stat st;
+            uint64_t fsize = (stat(m->actual_filename.c_str(), &st) == 0)
+                             ? (uint64_t)st.st_size : 0;
+            vc local_mid_out;
+            ret = dwyco::tox_bridge_send_file_message_by_uid(
+                vuid, text_vc,
+                m->user_filename,
+                m->file_basename,
+                m->filehash,
+                fsize,
+                local_mid_out);
+            // bridge owns the file now
+            m->composer = 0;
+        }
+        else
+        {
+            ret = dwyco::tox_bridge_send_message_by_uid(vuid, text_vc, 0);
+        }
         if(pers_id_out)
             *pers_id_out = "";
         if(len_pers_id_out)

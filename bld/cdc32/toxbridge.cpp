@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <map>
 
 #include "toxbridge.h"
@@ -37,6 +38,32 @@ struct IncomingFileTransfer {
     vc pseudo_uid;
 };
 static std::map<DwString, IncomingFileTransfer> Incoming_xfers;
+
+struct OutgoingFileTransfer {
+    DwString file_path;
+    int fd;
+    uint64_t file_size;
+    uint64_t sent_size;
+    DwString original_filename;
+    int64_t row_id;
+    vc local_mid;
+    uint32_t tox_fn;
+    uint32_t tox_fnum;
+};
+static std::map<DwString, OutgoingFileTransfer> Outgoing_xfers;
+
+static void
+fail_outgoing(const vc &local_mid)
+{
+    if(!Tox_q)
+        return;
+    Tox_q->sql_simple("UPDATE tox_outbox SET status=3 WHERE local_mid=?1", local_mid);
+    vc res = Tox_q->sql_simple("SELECT recipient_pseudo FROM tox_outbox WHERE local_mid=?1", local_mid);
+    vc recip;
+    if(!res.is_nil() && res.num_elems() > 0)
+        recip = res[0][0];
+    se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recip);
+}
 
 static DwString
 xfer_key(uint32_t fn, uint32_t fnum)
@@ -348,6 +375,78 @@ process_tox_event(const char *type, const vc &args)
             }
         }
 
+    } else if(strcmp(type, "file_chunk_request") == 0 && args.num_elems() >= 4) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t fnum = (uint32_t)(int)args[1];
+        uint64_t position = 0;
+        if(args[2].type() == VC_INT)
+            position = (uint64_t)(long long)args[2];
+        uint64_t length = 0;
+        if(args[3].type() == VC_INT)
+            length = (uint64_t)(long long)args[3];
+
+        DwString key = xfer_key(fn, fnum);
+        std::map<DwString, OutgoingFileTransfer>::iterator oit = Outgoing_xfers.find(key);
+        if(oit == Outgoing_xfers.end())
+            return;
+        OutgoingFileTransfer &xfer = oit->second;
+
+        // length == 0 signals toxcore has confirmed transfer complete
+        if(length == 0)
+        {
+            close(xfer.fd);
+            GRTLOG("tox: file send complete fn=%d fnum=%d", (int)fn, (int)fnum);
+
+            if(Tox_q)
+            {
+                vc qqm_blob = Tox_q->load_qqm_blob(xfer.row_id);
+                if(!qqm_blob.is_nil())
+                {
+                    vc qqm;
+                    if(deserialize(qqm_blob, qqm) > 0)
+                    {
+                        DwString tmpfn = gen_random_filename() + ".q";
+                        if(save_info(qqm, tmpfn))
+                        {
+                                do_local_store(tmpfn, xfer.local_mid);
+                                DeleteFile(newfn(tmpfn).c_str());
+                        }
+                    }
+                }
+                Tox_q->mark_sent(xfer.row_id);
+            }
+
+            Outgoing_xfers.erase(oit);
+            return;
+        }
+
+        // read length bytes at position and send
+        if(lseek(xfer.fd, position, SEEK_SET) < 0)
+        {
+            GRTLOG("tox: file_chunk_request lseek error fn=%d fnum=%d", (int)fn, (int)fnum);
+            return;
+        }
+
+        char buf[4096];
+        if(length > sizeof(buf))
+            length = sizeof(buf);
+        ssize_t n = read(xfer.fd, buf, (size_t)length);
+        if(n < 0 || (size_t)n != length)
+        {
+            GRTLOG("tox: file_chunk_request read error fn=%d fnum=%d", (int)fn, (int)fnum);
+            return;
+        }
+
+        vc chunk(VC_BSTRING, buf, n);
+        if(toxp_file_send_data(Tox_plugin, fn, fnum, position, chunk))
+        {
+            xfer.sent_size += n;
+        }
+        else
+        {
+            GRTLOG("tox: file_chunk_request send error fn=%d fnum=%d", (int)fn, (int)fnum);
+        }
+
     } else if(strcmp(type, "file_control") == 0 && args.num_elems() >= 3) {
         uint32_t fn = (uint32_t)(int)args[0];
         uint32_t fnum = (uint32_t)(int)args[1];
@@ -364,6 +463,35 @@ process_tox_event(const char *type, const vc &args)
                 Incoming_xfers.erase(it);
                 GRTLOG("tox: xfer cancelled by sender fn=%d fnum=%d", fn, fnum);
             }
+            return;
+        }
+        std::map<DwString, OutgoingFileTransfer>::iterator oit = Outgoing_xfers.find(key);
+        if(oit != Outgoing_xfers.end())
+        {
+            if(control == vc("resume"))
+            {
+                oit->second.fd = open(oit->second.file_path.c_str(), O_RDONLY);
+                if(oit->second.fd < 0)
+                {
+                    GRTLOG("tox: outgoing xfer resume, cant open %s", oit->second.file_path.c_str(), 0);
+                    toxp_file_cancel(Tox_plugin, fn, fnum);
+                    fail_outgoing(oit->second.local_mid);
+                    Outgoing_xfers.erase(oit);
+                }
+                else
+                {
+                    GRTLOG("tox: outgoing xfer resume fn=%d fnum=%d", fn, fnum);
+                }
+            }
+            else if(control == vc("cancel"))
+            {
+                GRTLOG("tox: outgoing xfer cancelled by receiver fn=%d fnum=%d", fn, fnum);
+                if(oit->second.fd >= 0)
+                    close(oit->second.fd);
+                fail_outgoing(oit->second.local_mid);
+                Outgoing_xfers.erase(oit);
+            }
+            return;
         }
 
     } else if(strcmp(type, "ready") == 0) {
@@ -432,6 +560,15 @@ tox_bridge_shutdown()
     if(!Started)
         return;
 
+    // clean up outgoing file transfers
+    for(std::map<DwString, OutgoingFileTransfer>::iterator it = Outgoing_xfers.begin();
+        it != Outgoing_xfers.end(); ++it)
+    {
+        if(it->second.fd >= 0)
+            close(it->second.fd);
+    }
+    Outgoing_xfers.clear();
+
     if(Tox_q) {
         Tox_q->exit();
         delete Tox_q;
@@ -481,11 +618,13 @@ tox_bridge_poll()
 
     toxp_iterate(Tox_plugin);
 
-    // reset stale in-progress messages so they get retried
-    // (handles lost read receipts)
+    // reset stale in-progress text-only messages so they get retried
+    // (handles lost read receipts). file transfers are one-shot and must
+    // not be retried.
     if(Tox_q)
         Tox_q->sql_simple("UPDATE tox_outbox SET status=0 "
-                           "WHERE status=1 AND created_at < strftime('%s','now') - 30");
+                           "WHERE status=1 AND (has_file IS NULL OR has_file = 0) "
+                           "AND created_at < strftime('%s','now') - 30");
 
     tox_bridge_send_queued();
 }
@@ -848,19 +987,43 @@ ToxQueue::init_schema(const DwString&)
                "status INTEGER DEFAULT 0, "
                "tox_mid INTEGER, "
                "local_mid TEXT, "
+               "has_file INTEGER DEFAULT 0, "
                "created_at INTEGER DEFAULT (strftime('%s','now')))");
     sql_simple("CREATE TABLE IF NOT EXISTS tox_uid_type ("
                "pseudo_uid BLOB PRIMARY KEY)");
+    // migration: add has_file column for existing databases
+    // PRAGMA table_info is the standard SQLite way to check column existence
+    vc col_info = sql_simple("PRAGMA table_info(tox_outbox)");
+    int has_col = 0;
+    if(!col_info.is_nil())
+    {
+        int n = col_info.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            vc col_name = col_info[i][1];
+            if(col_name.type() == VC_STRING)
+            {
+                DwString s((const char *)col_name, col_name.len());
+                if(s == "has_file")
+                {
+                    has_col = 1;
+                    break;
+                }
+            }
+        }
+    }
+    if(!has_col)
+        (void)sql_simple("ALTER TABLE tox_outbox ADD COLUMN has_file INTEGER DEFAULT 0");
 }
 
 int
-ToxQueue::enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid)
+ToxQueue::enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file)
 {
     vc blob_arg = vcblob(qqm_blob);
     vc pseudo_arg = vcblob(recipient_pseudo);
-    vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, recipient_pseudo, status, local_mid) "
-                        "VALUES (?1, ?2, 0, ?3)",
-                        blob_arg, pseudo_arg, local_mid);
+    vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, recipient_pseudo, status, local_mid, has_file) "
+                        "VALUES (?1, ?2, 0, ?3, ?4)",
+                        blob_arg, pseudo_arg, local_mid, vc(has_file));
     return !res.is_nil();
 }
 
@@ -925,7 +1088,11 @@ ToxQueue::load_qqm_blob(int64_t row_id)
 void
 ToxQueue::recover_inprogress()
 {
-    sql_simple("UPDATE tox_outbox SET status=0 WHERE status=1");
+    // text-only: can retry on restart
+    sql_simple("UPDATE tox_outbox SET status=0 WHERE status=1 "
+               "AND (has_file IS NULL OR has_file = 0)");
+    // file messages: one-shot, mark as failed on restart
+    sql_simple("UPDATE tox_outbox SET status=3 WHERE status=1 AND has_file = 1");
 }
 
 vc
@@ -1013,6 +1180,50 @@ tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_acti
     return Tox_q->enqueue(blob, pseudo_uid, local_mid);
 }
 
+int
+tox_bridge_send_file_message_by_uid(const vc &pseudo_uid, const vc &text,
+                                     const vc &original_filename,
+                                     const DwString &attachment_basename,
+                                     const vc &filehash,
+                                     uint64_t file_size,
+                                     vc &local_mid_out)
+{
+    if(!Tox_q)
+        return 0;
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    vc local_mid = to_hex(gen_id());
+    local_mid_out = local_mid;
+    vc body(VC_VECTOR);
+    body[QQM_BODY_FROM] = My_UID;
+    body[QQM_BODY_TEXT_do_not_use] = vcnil;
+    body[QQM_BODY_ATTACHMENT] = attachment_basename;
+    body[QQM_BODY_DATE] = date_vector();
+    body[QQM_BODY_RATING_do_not_use] = vcnil;
+    body[QQM_BODY_AUTH_VEC] = vcnil;
+    body[QQM_BODY_FORWARDED_BODY] = vcnil;
+    body[QQM_BODY_NEW_TEXT] = text;
+    body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
+    body[QQM_BODY_SPECIAL_TYPE] = vcnil;
+    body[QQM_BODY_NO_FORWARD] = vcnil;
+    body[QQM_BODY_FILE_ATTACHMENT] = original_filename;
+    body[QQM_BODY_DHSF] = vcnil;
+    body[QQM_BODY_EMSG] = vcnil;
+    body[QQM_BODY_ESTIMATED_SIZE] = vc((long long)file_size);
+    body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
+    body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
+    body[QQM_BODY_FROM_GROUP] = vcnil;
+    (void)filehash;
+    vc qqm(VC_VECTOR);
+    qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+    qqm[QQM_RECIP_VEC][0] = pseudo_uid;
+    qqm[QQM_MSG_VEC] = body;
+    qqm[QQM_LOCAL_ID] = local_mid;
+    vc blob = serialize(qqm);
+    return Tox_q->enqueue(blob, pseudo_uid, local_mid, 1);
+}
+
 void
 tox_bridge_send_queued()
 {
@@ -1041,6 +1252,62 @@ tox_bridge_send_queued()
     deserialize(qqm_blob, qqm);
     vc body = qqm[QQM_MSG_VEC];
     vc text = body[QQM_BODY_NEW_TEXT];
+
+    // if this message has a file attachment, skip text send entirely
+    // (one-shot: if it fails, the message is marked failed permanently)
+    if(!body[QQM_BODY_ATTACHMENT].is_nil())
+    {
+        DwString basename((const char *)body[QQM_BODY_ATTACHMENT],
+                          body[QQM_BODY_ATTACHMENT].len());
+        DwString file_path = newfn(basename);
+        vc orig_name_vc = body[QQM_BODY_FILE_ATTACHMENT];
+        DwString orig_name;
+        if(!orig_name_vc.is_nil())
+            orig_name = DwString((const char *)orig_name_vc, orig_name_vc.len());
+        else
+            orig_name = DwString("file");
+        uint64_t fsize = 0;
+        if(body[QQM_BODY_ESTIMATED_SIZE].type() == VC_INT)
+            fsize = (uint64_t)(long long)body[QQM_BODY_ESTIMATED_SIZE];
+
+        struct stat st;
+        if(stat(file_path.c_str(), &st) != 0 || (uint64_t)st.st_size != fsize)
+        {
+            Tox_q->mark_failed(row_id);
+            se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+            GRTLOG("tox: file missing for message, marking failed %s", file_path.c_str(), 0);
+            return;
+        }
+
+        uint32_t fnum;
+        vc name_vc(VC_BSTRING, orig_name.c_str(), (long)orig_name.length());
+        if(!toxp_file_send(Tox_plugin, fn, name_vc, fsize, &fnum))
+        {
+            Tox_q->mark_failed(row_id);
+            se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+            GRTLOG("tox: file send init failed for fn=%d", (int)fn, 0);
+            return;
+        }
+
+        // no text sent, so tox_mid is 0 (no read receipt expected)
+        Tox_q->mark_inprogress(row_id, 0);
+
+        OutgoingFileTransfer xfer;
+        xfer.file_path = file_path;
+        xfer.fd = -1;
+        xfer.file_size = fsize;
+        xfer.sent_size = 0;
+        xfer.original_filename = orig_name;
+        xfer.row_id = row_id;
+        xfer.local_mid = local_mid;
+        xfer.tox_fn = fn;
+        xfer.tox_fnum = fnum;
+        Outgoing_xfers[xfer_key(fn, fnum)] = xfer;
+        GRTLOG("tox: file send initiated fn=%d fnum=%d", (int)fn, (int)fnum);
+        return;
+    }
+
+    // text-only path
     uint32_t tox_mid = 0;
     int tox_error = -1;
     int ret = tox_bridge_send_message(fn, text, 0, &tox_mid, &tox_error);
