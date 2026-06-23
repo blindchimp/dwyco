@@ -104,8 +104,6 @@ Page {
 
                 Button {
                     text: "Update"
-                    font.pixelSize: 12
-                    implicitHeight: mm(6)
                     onClicked: {
                         if(toxNameInput.text_input.length > 0)
                             core.tox_set_name(toxNameInput.text_input)
@@ -121,8 +119,6 @@ Page {
 
                 Button {
                     text: "Copy"
-                    font.pixelSize: 12
-                    implicitHeight: mm(6)
                     onClicked: core.copy_to_clipboard(toxIdField.text)
                 }
 
@@ -154,8 +150,6 @@ Page {
             Button {
                 id: addFriendButton
                 text: "Add Friend"
-                font.pixelSize: 12
-                implicitHeight: mm(6)
                 enabled: core.tox_enabled && toxIdInput.text_input.length > 0
                 onClicked: {
                     core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
@@ -264,8 +258,6 @@ Page {
 
             Button {
                 text: "Delete Friend"
-                font.pixelSize: 12
-                implicitHeight: mm(6)
                 enabled: friendList.currentIndex >= 0
                 Layout.fillWidth: true
                 onClicked: {
