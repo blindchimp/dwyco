@@ -33,6 +33,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
+	add_compile_definitions(MACOS_EMOJI_CRASH_HACK)
 endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

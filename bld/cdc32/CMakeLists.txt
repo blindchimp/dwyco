@@ -70,6 +70,7 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
+	#LOCAL_TOXCORE
 )
 if(UNIX AND NOT APPLE)
     add_compile_definitions(LOCAL_TOXCORE)
