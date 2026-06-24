@@ -30,6 +30,8 @@ private:
     QColor dwycoColor() const;
     QColor toxColor() const;
     QString makeTooltip() const;
+    bool isInGroup() const;
+    bool hasSyncConnections() const;
 
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_menu;

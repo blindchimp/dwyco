@@ -11,6 +11,7 @@
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
 
 #include "dwyco_top.h"
+#include "syncmodel.h"
 #include <QGuiApplication>
 #include <QPainter>
 #include <QPainterPath>
@@ -69,6 +70,17 @@ TrayIcon::TrayIcon(QObject *parent)
                          this, &TrayIcon::updateIcon);
         QObject::connect(TheDwycoCore, &DwycoCore::invisibleChanged,
                          this, &TrayIcon::updateIcon);
+        QObject::connect(TheDwycoCore, &DwycoCore::active_group_nameChanged,
+                         this, &TrayIcon::updateIcon);
+        QObject::connect(TheDwycoCore, &DwycoCore::group_statusChanged,
+                         this, &TrayIcon::updateIcon);
+        QObject::connect(TheDwycoCore, &DwycoCore::group_private_key_validChanged,
+                         this, &TrayIcon::updateIcon);
+    }
+    if (TheSyncDescModel)
+    {
+        QObject::connect(TheSyncDescModel, &SyncDescModel::connection_countChanged,
+                         this, &TrayIcon::updateIcon);
     }
 
     updateIcon();
@@ -92,7 +104,11 @@ QIcon TrayIcon::makeIcon() const
 {
     QIcon icon;
     icon.addPixmap(makePixmap(22));
+    icon.addPixmap(makePixmap(24));
+    icon.addPixmap(makePixmap(32));
     icon.addPixmap(makePixmap(44));
+    icon.addPixmap(makePixmap(48));
+    icon.addPixmap(makePixmap(64));
     return icon;
 }
 
@@ -104,31 +120,78 @@ QPixmap TrayIcon::makePixmap(int size) const
     p.setRenderHint(QPainter::Antialiasing);
 
     qreal r = size * 0.22;
-    qreal half = size / 2.0;
 
     QPainterPath path;
     path.addRoundedRect(0, 0, size, size, r, r);
 
-    // Left half — DWYCO
-    p.save();
-    p.setClipRect(QRectF(0, 0, half + 0.5, size));
-    p.fillPath(path, dwycoColor());
-    p.restore();
+    if (isInGroup())
+    {
+        qreal dwycoEnd = size * 0.30;
+        qreal syncEnd = size * 0.70;
 
-    // Right half — Tox
-    p.save();
-    p.setClipRect(QRectF(half - 0.5, 0, half + 0.5, size));
-    p.fillPath(path, toxColor());
-    p.restore();
+        // DWYCO panel (left)
+        p.save();
+        p.setClipRect(QRectF(0, 0, dwycoEnd + 0.5, size));
+        p.fillPath(path, dwycoColor());
+        p.restore();
+
+        // Sync panel (middle)
+        p.save();
+        p.setClipRect(QRectF(dwycoEnd - 0.5, 0, syncEnd - dwycoEnd + 1, size));
+        p.fillPath(path, QColor(60, 60, 60));
+        p.restore();
+
+        // Tox panel (right)
+        p.save();
+        p.setClipRect(QRectF(syncEnd - 0.5, 0, size - syncEnd + 0.5, size));
+        p.fillPath(path, toxColor());
+        p.restore();
+
+        // Cloud icon centered in sync panel
+        QString iconPath = hasSyncConnections()
+            ? QStringLiteral(":/material/icons/material/mdpi/ic_cloud_done_white_24dp.png")
+            : QStringLiteral(":/material/icons/material/mdpi/ic_cloud_off_white_24dp.png");
+        QPixmap cloudIcon(iconPath);
+        if (!cloudIcon.isNull()) {
+            qreal syncPanelW = syncEnd - dwycoEnd;
+            qreal iconSize = syncPanelW * 0.8;
+            qreal iconX = dwycoEnd + (syncPanelW - iconSize) / 2;
+            qreal iconY = (size - iconSize) / 2;
+            QPixmap scaled = cloudIcon.scaled(iconSize, iconSize,
+                                              Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            p.drawPixmap(QPointF(iconX, iconY), scaled);
+        }
+
+        // Dividers
+        p.setPen(QPen(QColor(60, 60, 60), 1));
+        p.drawLine(QPointF(dwycoEnd, 2), QPointF(dwycoEnd, size - 2));
+        p.drawLine(QPointF(syncEnd, 2), QPointF(syncEnd, size - 2));
+    }
+    else
+    {
+        qreal half = size / 2.0;
+
+        // Left half — DWYCO
+        p.save();
+        p.setClipRect(QRectF(0, 0, half + 0.5, size));
+        p.fillPath(path, dwycoColor());
+        p.restore();
+
+        // Right half — Tox
+        p.save();
+        p.setClipRect(QRectF(half - 0.5, 0, half + 0.5, size));
+        p.fillPath(path, toxColor());
+        p.restore();
+
+        // Divider
+        p.setPen(QPen(QColor(60, 60, 60), 1));
+        p.drawLine(QPointF(half, 2), QPointF(half, size - 2));
+    }
 
     // Subtle outline
     p.setPen(QPen(QColor(60, 60, 60), 1));
     p.setBrush(Qt::NoBrush);
     p.drawPath(path);
-
-    // Divider
-    p.setPen(QPen(QColor(60, 60, 60), 1));
-    p.drawLine(QPointF(half, 2), QPointF(half, size - 2));
 
     p.end();
     return pm;
@@ -193,7 +256,33 @@ QString TrayIcon::makeTooltip() const
     else
         toxStr = QStringLiteral("Disconnected");
 
+    QString syncStr;
+    if (isInGroup()) {
+        if (hasSyncConnections())
+            syncStr = QStringLiteral("Sync: OK (%1)").arg(TheSyncDescModel->get_connection_count());
+        else
+            syncStr = QStringLiteral("Sync: Off");
+    }
+
+    if (!syncStr.isEmpty())
+        return QStringLiteral("Dwyco: %1 | Tox: %2 | %3").arg(dwycoStr, toxStr, syncStr);
     return QStringLiteral("Dwyco: %1 | Tox: %2").arg(dwycoStr, toxStr);
+}
+
+bool TrayIcon::isInGroup() const
+{
+    if (!TheDwycoCore)
+        return false;
+    return TheDwycoCore->get_active_group_name().length() > 0
+        && TheDwycoCore->get_group_status() == 0
+        && TheDwycoCore->get_group_private_key_valid() == 1;
+}
+
+bool TrayIcon::hasSyncConnections() const
+{
+    if (!TheSyncDescModel)
+        return false;
+    return TheSyncDescModel->get_connection_count() > 0;
 }
 
 #endif
