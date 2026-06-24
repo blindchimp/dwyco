@@ -10,6 +10,7 @@ Rectangle {
 
     radius: width / 2
     color: {
+        if (!core.tox_enabled) return "purple"
         if (!_inFriendList) return "purple"
         if (_friendStatus === "offline") return "gray"
         if (_friendUserStatus === "busy") return "red"
@@ -56,6 +57,9 @@ Rectangle {
         }
         function onTox_friend_user_status_changed(pseudo_uid, user_status) {
             if (pseudo_uid === friendUid) _friendUserStatus = user_status
+        }
+        function onTox_enabledChanged() {
+            lookupFriend()
         }
     }
 
