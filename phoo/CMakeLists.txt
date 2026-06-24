@@ -45,7 +45,7 @@ find_package(Qt6 REQUIRED COMPONENTS Network)
 #find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets Widgets)
 
 # Qt6 BUG in multi-abi android builds: the execute_process thing is only done
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
@@ -106,6 +106,10 @@ set(SRCS
     msgrawmodel.cpp
     msgproxymodel.cpp
 )
+
+if(NOT ANDROID AND NOT IOS)
+    list(APPEND SRCS trayicon.cpp)
+endif()
 
 qt_add_resources(SRCS
     dwyco.qrc
@@ -300,6 +304,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
+   Qt6::Widgets
    /home/dwight/git/c-toxcore/build/libtoxcore.a
    -lsodium
    #-fsanitize=undefined
@@ -312,6 +317,7 @@ if(WIN32)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
+       Qt6::Widgets
        winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
 target_link_options(phoo PRIVATE binmode.obj)
