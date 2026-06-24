@@ -113,7 +113,7 @@ Page {
         }
 
         ToxBadge {
-            isTox: core.is_tox_uid(profview.uid)
+            friendUid: profview.uid
             width: 20
             height: 20
             Layout.alignment: Qt.AlignVCenter

@@ -314,7 +314,7 @@ Page {
                         color: "orange"
                     }
                     ToxBadge {
-                        isTox: core.is_tox_uid(uid)
+                        friendUid: uid
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         width: .3 * ppic.height
@@ -501,7 +501,7 @@ Page {
                     color: "orange"
                 }
                 ToxBadge {
-                    isTox: core.is_tox_uid(uid)
+                    friendUid: uid
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     width: .3 * ppic.height
