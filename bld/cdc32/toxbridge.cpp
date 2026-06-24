@@ -549,8 +549,16 @@ tox_bridge_init(const char *data_dir)
         return 0;
 
     Started = 1;
-    Tox_q = new ToxQueue;
-    if(Tox_q->init())
+    if(!Tox_q)
+    {
+        Tox_q = new ToxQueue;
+        if(!Tox_q->init())
+        {
+            delete Tox_q;
+            Tox_q = 0;
+        }
+    }
+    if(Tox_q)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
     tox_bridge_rebuild_friend_cache();
@@ -875,6 +883,15 @@ tox_bridge_rebuild_friend_cache()
 int
 tox_bridge_is_tox_uid(const vc &uid)
 {
+    if(!Tox_q)
+    {
+        Tox_q = new ToxQueue;
+        if(!Tox_q->init())
+        {
+            delete Tox_q;
+            Tox_q = 0;
+        }
+    }
     if(Tox_q)
     {
         vc res = Tox_q->sql_simple("SELECT 1 FROM tox_uid_type WHERE pseudo_uid=?1", vcblob(uid));
