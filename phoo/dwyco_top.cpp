@@ -3134,6 +3134,25 @@ DwycoCore::tox_set_status_message(const QString& msg)
     return dwyco_tox_set_status_message(bmsg.constData(), bmsg.length());
 }
 
+int
+DwycoCore::tox_set_user_status(const QString& status)
+{
+    QByteArray bstatus = status.toUtf8();
+    return dwyco_tox_set_user_status(bstatus.constData());
+}
+
+QString
+DwycoCore::tox_get_user_status()
+{
+    char *out = 0;
+    int len = 0;
+    if(!dwyco_tox_get_user_status(&out, &len))
+        return QString();
+    QString s = QString::fromUtf8(out, len);
+    delete[] out;
+    return s;
+}
+
 QString
 DwycoCore::tox_get_name()
 {

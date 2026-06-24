@@ -31,6 +31,10 @@ Page {
         ToxFriendModel.load_friends()
         toxNameInput.text_input = core.tox_get_name()
         toxStatusInput.text_input = core.tox_get_status_message()
+        var curStatus = core.tox_get_user_status()
+        var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
+        if(statusIdx >= 0)
+            userStatusCombo.currentIndex = statusIdx
     }
 
     Timer {
@@ -52,25 +56,23 @@ Page {
             width: parent.width
             spacing: mm(1)
 
-            CheckBox {
-                id: enable_tox_cb
-                text: "Enable Tox"
-                onCheckedChanged: {
-                    core.set_local_setting("tox_enabled", checked ? "1" : "0")
-                    if(checked) {
-                        core.enable_tox()
-                        toxNameInput.text_input = core.tox_get_name()
-                        toxStatusInput.text_input = core.tox_get_status_message()
-                    } else {
-                        core.disable_tox()
+            RowLayout {
+                spacing: mm(1)
+
+                CheckBox {
+                    id: enable_tox_cb
+                    text: "Enable Tox"
+                    onCheckedChanged: {
+                        core.set_local_setting("tox_enabled", checked ? "1" : "0")
+                        if(checked) {
+                            core.enable_tox()
+                            toxNameInput.text_input = core.tox_get_name()
+                            toxStatusInput.text_input = core.tox_get_status_message()
+                        } else {
+                            core.disable_tox()
+                        }
                     }
                 }
-                Layout.fillWidth: true
-            }
-
-            RowLayout {
-                enabled: core.tox_enabled
-                spacing: mm(1)
 
                 Rectangle {
                     id: statusIndicator
@@ -78,10 +80,30 @@ Page {
                     height: 16
                     radius: 8
                     color: core.tox_connected ? "green" : "red"
+                    enabled: core.tox_enabled
                 }
 
                 Label {
                     text: core.tox_connected ? "Connected" : "Not connected"
+                    enabled: core.tox_enabled
+                }
+
+                Label {
+                    text: "Status:"
+                    enabled: core.tox_enabled
+                }
+
+                ComboBox {
+                    id: userStatusCombo
+                    model: ["Available", "Away", "Busy"]
+                    enabled: core.tox_enabled
+                    onActivated: {
+                        var map = ["none", "away", "busy"]
+                        core.tox_set_user_status(map[currentIndex])
+                    }
+                }
+
+                Item {
                     Layout.fillWidth: true
                 }
             }
