@@ -302,21 +302,28 @@ Page {
                            source: mi("ic_visibility_off_white_24dp.png")
                        }
                    }
-                   Rectangle {
-                       id: hidden
-                       width: 16
-                       height: 16
-                       anchors.right:parent.right
-                       anchors.top:parent.top
-                       visible: show_hidden && has_hidden
-                       z: 2
-                       radius: width
-                       color: "orange"
-                   }
-               }
+                    Rectangle {
+                        id: hidden
+                        width: 16
+                        height: 16
+                        anchors.right:parent.right
+                        anchors.top:parent.top
+                        visible: show_hidden && has_hidden
+                        z: 2
+                        radius: width
+                        color: "orange"
+                    }
+                    ToxBadge {
+                        isTox: core.is_tox_uid(uid)
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        width: .3 * ppic.height
+                        height: .3 * ppic.height
+                    }
+                }
 
-               Text {
-                   // on desktop, don't censor text
+                Text {
+                    // on desktop, don't censor text
                    text: (!censor_it || !is_mobile)  ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
@@ -482,18 +489,25 @@ Page {
                        source: mi("ic_visibility_off_white_24dp.png")
                    }
                }
-               Rectangle {
-                   id: ghidden
-                   width: 16
-                   height: 16
-                   anchors.right:parent.right
-                   anchors.top:parent.top
-                   visible: show_hidden && has_hidden
-                   z: 2
-                   radius: width
-                   color: "orange"
-               }
-           }
+                Rectangle {
+                    id: ghidden
+                    width: 16
+                    height: 16
+                    anchors.right:parent.right
+                    anchors.top:parent.top
+                    visible: show_hidden && has_hidden
+                    z: 2
+                    radius: width
+                    color: "orange"
+                }
+                ToxBadge {
+                    isTox: core.is_tox_uid(uid)
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    width: .3 * ppic.height
+                    height: .3 * ppic.height
+                }
+            }
 
            Text {
                // don't censor text on desktop

@@ -171,6 +171,7 @@ qt_add_qml_module(phoo
         PicPreview.qml
         SimpleToolbar.qml
         CircularImage2.qml
+        ToxBadge.qml
         CQRes.qml
         ConvToolButton.qml
         MultiSelectToolbar.qml

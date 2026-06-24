@@ -10,6 +10,7 @@ import QtQml
 import QtQuick
 import dwyco
 import QtQuick.Controls
+import QtQuick.Layouts
 
 Page {
     id: profview
@@ -80,7 +81,7 @@ Page {
 
     Image {
         id: preview
-        anchors.top: dragging ? undefined : handle.bottom
+        anchors.top: dragging ? undefined : handleRow.bottom
         anchors.right: dragging ? undefined : parent.right
         anchors.left: dragging ? undefined : parent.left
         anchors.bottom: dragging ? undefined : desc.top
@@ -94,19 +95,29 @@ Page {
 
     }
 
-    Text {
-        id: handle
-        //height: 16
-        //anchors.horizontalCenter: parent.horizontalCenter
+    RowLayout {
+        id: handleRow
         anchors.top : parent.top
         anchors.left:parent.left
         anchors.right:parent.right
         anchors.margins: 10
-        font.bold: true
-        font.pointSize: 20
-        clip: true
-        wrapMode: Text.WordWrap
-        renderType: Text.QtRendering
+
+        Text {
+            id: handle
+            Layout.fillWidth: true
+            font.bold: true
+            font.pointSize: 20
+            clip: true
+            wrapMode: Text.WordWrap
+            renderType: Text.QtRendering
+        }
+
+        ToxBadge {
+            isTox: core.is_tox_uid(profview.uid)
+            width: 20
+            height: 20
+            Layout.alignment: Qt.AlignVCenter
+        }
     }
 
     Text {

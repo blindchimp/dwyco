@@ -82,7 +82,13 @@ Page {
                         z: 3
                         opacity: 1.0
                     }
-
+                    ToxBadge {
+                        isTox: core.is_tox_uid(uid)
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        width: .3 * ppic.height
+                        height: .3 * ppic.height
+                    }
                 }
 
                 Text {

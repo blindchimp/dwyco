@@ -118,20 +118,27 @@ Item {
                            source: mi("ic_visibility_off_white_24dp.png")
                        }
                    }
-                   Rectangle {
-                       id: hidden
-                       width: .3 * ppic.height
-                       height: .3 * ppic.height
-                       anchors.right:parent.right
-                       anchors.top:parent.top
-                       visible: show_hidden && has_hidden
-                       z: 2
-                       radius: width
-                       color: "orange"
-                   }
-               }
+                    Rectangle {
+                        id: hidden
+                        width: .3 * ppic.height
+                        height: .3 * ppic.height
+                        anchors.right:parent.right
+                        anchors.top:parent.top
+                        visible: show_hidden && has_hidden
+                        z: 2
+                        radius: width
+                        color: "orange"
+                    }
+                    ToxBadge {
+                        isTox: core.is_tox_uid(uid)
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        width: .3 * ppic.height
+                        height: .3 * ppic.height
+                    }
+                }
 
-                Text {
+                 Text {
                     // note: we don't censor the text on desktop, if they are already in your
                     // list, being able to see the text is a little more important.
                     text: display
