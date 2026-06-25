@@ -65,6 +65,7 @@ class DwycoCore : public QObject
 
     QML_READONLY_VAR_PROPERTY(int, emergency_exit)
 
+    QML_READONLY_VAR_PROPERTY(int, tox_available)
     QML_WRITABLE_VAR_PROPERTY(bool, tox_enabled)
     QML_READONLY_VAR_PROPERTY(int, tox_connected)
     QML_READONLY_VAR_PROPERTY(QString, tox_self_address)
@@ -98,6 +99,7 @@ public:
         m_total_users = 0;
         m_qt_version_string = QT_VERSION_STRING;
         m_emergency_exit = 0;
+        m_tox_available = dwyco_tox_available();
         m_tox_enabled = false;
         m_tox_connected = 0;
         m_tox_self_address = "";
