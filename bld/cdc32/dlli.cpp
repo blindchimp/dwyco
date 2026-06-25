@@ -9921,6 +9921,17 @@ dwyco_tox_get_device_uid(char **out, int *len_out)
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_tox_available()
+{
+#ifdef DWYCO_TOXCORE
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 void
 reset_audio_menus()
 {

@@ -2235,6 +2235,8 @@ int DWYCOEXPORT dwyco_tox_get_user_status(char **out, int *len_out);
 int DWYCOEXPORT dwyco_uid_is_tox_friend(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_get_device_uid(char **out, int *len_out);
 
+int DWYCOEXPORT dwyco_tox_available(void);
+
 #ifdef __cplusplus
 }
 #endif

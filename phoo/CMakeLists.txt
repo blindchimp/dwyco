@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.19)
 
 project(phoo VERSION 0.1 LANGUAGES CXX)
 
+option(DWYCO_TOXCORE "Build with toxcore support" OFF)
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -305,12 +307,15 @@ target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
    Qt6::Widgets
-   /home/dwight/git/c-toxcore/build/libtoxcore.a
-   -lsodium
-   #-fsanitize=undefined
-   #v4lcap
     -ldl
 )
+if(DWYCO_TOXCORE)
+target_link_libraries(phoo
+    PRIVATE
+   /home/dwight/git/c-toxcore/build/libtoxcore.a
+   -lsodium
+)
+endif()
 endif()
 
 if(WIN32)
@@ -328,11 +333,15 @@ if(APPLE OR IOS)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
+       Qt6::Widgets
+    )
+    if(DWYCO_TOXCORE)
+    target_link_libraries(phoo
+        PRIVATE
        /opt/homebrew/lib/libtoxcore.a
        /opt/homebrew/lib/libsodium.a
-       Qt6::Widgets
-
     )
+    endif()
 endif()
 
 include(GNUInstallDirs)

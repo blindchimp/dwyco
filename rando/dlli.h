@@ -2209,10 +2209,33 @@ dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
 int DWYCOEXPORT dwyco_enable_tox(const char *tox_data_dir);
+int DWYCOEXPORT dwyco_disable_tox();
 int DWYCOEXPORT dwyco_tox_get_self_public_key(char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_get_self_address(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_is_tox_uid(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg);
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
+int DWYCOEXPORT dwyco_tox_delete_friend(const char *pubkey, int pubkey_len);
+int DWYCOEXPORT dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing);
+int DWYCOEXPORT dwyco_tox_set_name(const char *name, int name_len);
+int DWYCOEXPORT dwyco_tox_set_status_message(const char *msg, int msg_len);
+int DWYCOEXPORT dwyco_tox_get_name(char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_get_status_message(char **out, int *len_out);
+
+typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
+#define DWYCO_TF_FRIEND_NUMBER "000"
+#define DWYCO_TF_PUBKEY       "001"
+#define DWYCO_TF_NAME         "002"
+#define DWYCO_TF_STATUS       "003"
+#define DWYCO_TF_USER_STATUS  "004"
+int DWYCOEXPORT dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out);
+int DWYCOEXPORT dwyco_tox_set_user_status(const char *status);
+int DWYCOEXPORT dwyco_tox_get_user_status(char **out, int *len_out);
+
+int DWYCOEXPORT dwyco_uid_is_tox_friend(const char *uid, int len_uid);
+int DWYCOEXPORT dwyco_tox_get_device_uid(char **out, int *len_out);
+
+int DWYCOEXPORT dwyco_tox_available(void);
 
 #ifdef __cplusplus
 }

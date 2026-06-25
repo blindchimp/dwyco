@@ -5,6 +5,15 @@ project(cdc32 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
+
+if(DWYCO_TOXCORE)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../c-toxcore/toxcore)
+    add_compile_definitions(DWYCO_TOXCORE)
+    if(UNIX AND NOT APPLE)
+        add_compile_definitions(LOCAL_TOXCORE)
+    endif()
+endif()
+
 include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
@@ -24,7 +33,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../libvorbis-1.3.7/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../miniupnp/miniupnp-master/miniupnpc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../c-toxcore/toxcore
     /opt/homebrew/include
     .
 )
@@ -72,10 +80,6 @@ add_compile_definitions(
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
 	#LOCAL_TOXCORE
 )
-if(UNIX AND NOT APPLE)
-    add_compile_definitions(LOCAL_TOXCORE)
-endif()
-
 add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 # i forgot, adding this tracing stuff confuses the shit
 # out of the clangd reference calculations and stuff in the ide.

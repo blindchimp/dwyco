@@ -1,3 +1,5 @@
+#ifdef DWYCO_TOXCORE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -839,4 +841,192 @@ main(int argc, char **argv)
     toxp_shutdown(p);
     return 0;
 }
+#endif
+
+#else
+
+#include "toxd_plugin.h"
+
+ToxPlugin *
+toxp_init(const char *, ToxpEventCB, void *)
+{
+    return nullptr;
+}
+
+void
+toxp_shutdown(ToxPlugin *)
+{
+}
+
+void
+toxp_save(ToxPlugin *p)
+{
+    (void)p;
+}
+
+void
+toxp_iterate(ToxPlugin *p)
+{
+    (void)p;
+}
+
+vc
+toxp_get_address(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_get_self_pubkey(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_get_name(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_get_status_message(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+int
+toxp_set_name(ToxPlugin *p, const char *name, int len)
+{
+    (void)p;
+    (void)name;
+    (void)len;
+    return 0;
+}
+
+int
+toxp_set_status_message(ToxPlugin *p, const char *msg, int len)
+{
+    (void)p;
+    (void)msg;
+    (void)len;
+    return 0;
+}
+
+void
+toxp_set_user_status(ToxPlugin *p, const char *status)
+{
+    (void)p;
+    (void)status;
+}
+
+vc
+toxp_get_user_status(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+int
+toxp_friend_add(ToxPlugin *p, const vc &address, const vc &message, uint32_t *fn_out)
+{
+    (void)p;
+    (void)address;
+    (void)message;
+    (void)fn_out;
+    return 0;
+}
+
+int
+toxp_friend_add_norequest(ToxPlugin *p, const vc &pubkey, uint32_t *fn_out)
+{
+    (void)p;
+    (void)pubkey;
+    (void)fn_out;
+    return 0;
+}
+
+int
+toxp_friend_delete(ToxPlugin *p, uint32_t fn)
+{
+    (void)p;
+    (void)fn;
+    return 0;
+}
+
+vc
+toxp_friend_list(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+int
+toxp_message_send(ToxPlugin *p, uint32_t fn, const vc &text, int is_action,
+                  uint32_t *mid_out, int *tox_err_out)
+{
+    (void)p;
+    (void)fn;
+    (void)text;
+    (void)is_action;
+    (void)mid_out;
+    (void)tox_err_out;
+    return 0;
+}
+
+int
+toxp_typing_set(ToxPlugin *p, uint32_t fn, int typing)
+{
+    (void)p;
+    (void)fn;
+    (void)typing;
+    return 0;
+}
+
+int
+toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size,
+               uint32_t *fnum_out)
+{
+    (void)p;
+    (void)fn;
+    (void)name;
+    (void)size;
+    (void)fnum_out;
+    return 0;
+}
+
+int
+toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos,
+                    const vc &data)
+{
+    (void)p;
+    (void)fn;
+    (void)fnum;
+    (void)pos;
+    (void)data;
+    return 0;
+}
+
+int
+toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum, int *error_out)
+{
+    (void)p;
+    (void)fn;
+    (void)fnum;
+    (void)error_out;
+    return 0;
+}
+
+int
+toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum)
+{
+    (void)p;
+    (void)fn;
+    (void)fnum;
+    return 0;
+}
+
 #endif
