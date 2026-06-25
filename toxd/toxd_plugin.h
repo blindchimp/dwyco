@@ -3,10 +3,6 @@
 
 #include "vc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct ToxPlugin;
 
 typedef void (*ToxpEventCB)(const char *type, const vc &args, void *userdata);
@@ -38,9 +34,5 @@ int toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size, uin
 int toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos, const vc &data);
 int toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum, int *error_out);
 int toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
