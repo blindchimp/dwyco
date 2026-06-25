@@ -115,6 +115,34 @@ vcblob(const vc &v)
     return ret;
 }
 
+static vc
+make_msg_body(const vc &from, const vc &text,
+              const vc &attachment = vcnil,
+              const vc &file_attachment = vcnil,
+              const vc &estimated_size = vcnil)
+{
+    vc body(VC_VECTOR);
+    body[QQM_BODY_FROM] = from;
+    body[QQM_BODY_TEXT_do_not_use] = vcnil;
+    body[QQM_BODY_ATTACHMENT] = attachment;
+    body[QQM_BODY_DATE] = date_vector();
+    body[QQM_BODY_RATING_do_not_use] = vcnil;
+    body[QQM_BODY_AUTH_VEC] = vcnil;
+    body[QQM_BODY_FORWARDED_BODY] = vcnil;
+    body[QQM_BODY_NEW_TEXT] = text;
+    body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
+    body[QQM_BODY_SPECIAL_TYPE] = vcnil;
+    body[QQM_BODY_NO_FORWARD] = vcnil;
+    body[QQM_BODY_FILE_ATTACHMENT] = file_attachment;
+    body[QQM_BODY_DHSF] = vcnil;
+    body[QQM_BODY_EMSG] = vcnil;
+    body[QQM_BODY_ESTIMATED_SIZE] = estimated_size;
+    body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
+    body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
+    body[QQM_BODY_FROM_GROUP] = vcnil;
+    return body;
+}
+
 static void
 tox_uid_cache_add(const vc &pseudo_uid)
 {
@@ -146,24 +174,7 @@ process_tox_event(const char *type, const vc &args)
         GRTLOG("tox: message from fn %d", (int)fn, 0);
         GRTLOGVC(pseudo);
 
-        vc body(VC_VECTOR);
-        body[QQM_BODY_FROM] = pseudo;
-        body[QQM_BODY_TEXT_do_not_use] = vcnil;
-        body[QQM_BODY_ATTACHMENT] = vcnil;
-        body[QQM_BODY_DATE] = date_vector();
-        body[QQM_BODY_AUTH_VEC] = vcnil;
-        body[QQM_BODY_FORWARDED_BODY] = vcnil;
-        body[QQM_BODY_NEW_TEXT] = text;
-        body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
-        body[QQM_BODY_SPECIAL_TYPE] = vcnil;
-        body[QQM_BODY_NO_FORWARD] = vcnil;
-        body[QQM_BODY_FILE_ATTACHMENT] = vcnil;
-        body[QQM_BODY_DHSF] = vcnil;
-        body[QQM_BODY_EMSG] = vcnil;
-        body[QQM_BODY_ESTIMATED_SIZE] = vcnil;
-        body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
-        body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
-        body[QQM_BODY_FROM_GROUP] = vcnil;
+        vc body = make_msg_body(pseudo, text);
 
         vc qqm(VC_VECTOR);
         qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
@@ -325,24 +336,10 @@ process_tox_event(const char *type, const vc &args)
             DwString dst = newfn(fle_basename);
             if(CopyFile(src.c_str(), dst.c_str(), 0))
             {
-                vc body(VC_VECTOR);
-                body[QQM_BODY_FROM] = xfer.pseudo_uid;
-                body[QQM_BODY_TEXT_do_not_use] = vcnil;
-                body[QQM_BODY_ATTACHMENT] = fle_basename;
-                body[QQM_BODY_DATE] = date_vector();
-                body[QQM_BODY_AUTH_VEC] = vcnil;
-                body[QQM_BODY_FORWARDED_BODY] = vcnil;
-                body[QQM_BODY_NEW_TEXT] = "";
-                body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
-                body[QQM_BODY_SPECIAL_TYPE] = vcnil;
-                body[QQM_BODY_NO_FORWARD] = vcnil;
-                body[QQM_BODY_FILE_ATTACHMENT] = xfer.original_filename;
-                body[QQM_BODY_DHSF] = vcnil;
-                body[QQM_BODY_EMSG] = vcnil;
-                body[QQM_BODY_ESTIMATED_SIZE] = vc((long long)xfer.expected_size);
-                body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
-                body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
-                body[QQM_BODY_FROM_GROUP] = vcnil;
+                vc body = make_msg_body(xfer.pseudo_uid, vc(""),
+                                        fle_basename,
+                                        xfer.original_filename,
+                                        vc((long long)xfer.expected_size));
 
                 vc qqm(VC_VECTOR);
                 qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
@@ -1174,25 +1171,7 @@ tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_acti
     if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
         return 0;
     vc local_mid = to_hex(gen_id());
-    vc body(VC_VECTOR);
-    body[QQM_BODY_FROM] = My_UID;
-    body[QQM_BODY_TEXT_do_not_use] = vcnil;
-    body[QQM_BODY_ATTACHMENT] = vcnil;
-    body[QQM_BODY_DATE] = date_vector();
-    body[QQM_BODY_RATING_do_not_use] = vcnil;
-    body[QQM_BODY_AUTH_VEC] = vcnil;
-    body[QQM_BODY_FORWARDED_BODY] = vcnil;
-    body[QQM_BODY_NEW_TEXT] = text;
-    body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
-    body[QQM_BODY_SPECIAL_TYPE] = vcnil;
-    body[QQM_BODY_NO_FORWARD] = vcnil;
-    body[QQM_BODY_FILE_ATTACHMENT] = vcnil;
-    body[QQM_BODY_DHSF] = vcnil;
-    body[QQM_BODY_EMSG] = vcnil;
-    body[QQM_BODY_ESTIMATED_SIZE] = vcnil;
-    body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
-    body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
-    body[QQM_BODY_FROM_GROUP] = vcnil;
+    vc body = make_msg_body(My_UID, text);
     vc qqm(VC_VECTOR);
     qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
     qqm[QQM_RECIP_VEC][0] = pseudo_uid;
@@ -1217,25 +1196,10 @@ tox_bridge_send_file_message_by_uid(const vc &pseudo_uid, const vc &text,
         return 0;
     vc local_mid = to_hex(gen_id());
     local_mid_out = local_mid;
-    vc body(VC_VECTOR);
-    body[QQM_BODY_FROM] = My_UID;
-    body[QQM_BODY_TEXT_do_not_use] = vcnil;
-    body[QQM_BODY_ATTACHMENT] = attachment_basename;
-    body[QQM_BODY_DATE] = date_vector();
-    body[QQM_BODY_RATING_do_not_use] = vcnil;
-    body[QQM_BODY_AUTH_VEC] = vcnil;
-    body[QQM_BODY_FORWARDED_BODY] = vcnil;
-    body[QQM_BODY_NEW_TEXT] = text;
-    body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
-    body[QQM_BODY_SPECIAL_TYPE] = vcnil;
-    body[QQM_BODY_NO_FORWARD] = vcnil;
-    body[QQM_BODY_FILE_ATTACHMENT] = original_filename;
-    body[QQM_BODY_DHSF] = vcnil;
-    body[QQM_BODY_EMSG] = vcnil;
-    body[QQM_BODY_ESTIMATED_SIZE] = vc((long long)file_size);
-    body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
-    body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
-    body[QQM_BODY_FROM_GROUP] = vcnil;
+    vc body = make_msg_body(My_UID, text,
+                            attachment_basename,
+                            original_filename,
+                            vc((long long)file_size));
     (void)filehash;
     vc qqm(VC_VECTOR);
     qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
