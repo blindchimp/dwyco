@@ -68,5 +68,8 @@ Rectangle {
         function onCountChanged() {
             lookupFriend()
         }
+        function onFriendsLoaded() {
+            lookupFriend()
+        }
     }
 }

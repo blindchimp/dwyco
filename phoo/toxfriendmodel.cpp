@@ -56,4 +56,5 @@ ToxFriendModel::load_friends()
     }
     for(int i = 0; i < dead.count(); ++i)
         remove(dead[i]);
+    emit friendsLoaded();
 }

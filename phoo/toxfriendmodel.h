@@ -38,6 +38,9 @@ public:
     ~ToxFriendModel();
 
     Q_INVOKABLE void load_friends();
+
+signals:
+    void friendsLoaded();
 };
 
 #endif
