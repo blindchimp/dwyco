@@ -1201,6 +1201,8 @@ DwycoCore::format_message(QString txt)
 #ifdef MACOS_EMOJI_CRASH_HACK
     txt = replaceEmoji(txt);
 #endif
+    if (txt.contains("<html>", Qt::CaseInsensitive))
+        return txt;
     // split on URLs first so we can escape only the non-URL parts
     static QRegularExpression re(QStringLiteral("(https?://[^\\s<>\"'()]+)"));
     QRegularExpressionMatchIterator i = re.globalMatch(txt);
