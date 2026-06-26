@@ -773,7 +773,8 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.msg_text = core.format_message(model.MSG_TEXT)
+                            themsgview.raw_text = model.MSG_TEXT
+                            themsgview.formatted_text = core.format_message(model.MSG_TEXT)
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid

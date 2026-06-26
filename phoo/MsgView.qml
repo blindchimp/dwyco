@@ -19,7 +19,9 @@ Page {
     property int view_id: -1
     property int ui_id: -1
     property alias view_source : viewer.source
-    property alias msg_text: msg_text.text
+    property string formatted_text
+    property string raw_text
+    property bool _rawMode: false
     property bool dragging
     property bool fav
     property bool hid
@@ -45,6 +47,8 @@ Page {
             core.delete_zap_view(view_id)
             }
             is_trash = false
+            view_id = -1
+            view_source = ""
         }
         else
         {
@@ -55,11 +59,38 @@ Page {
             hid = core.has_tag_message(mid, "_hid")
         }
     }
+    onFormatted_textChanged: {
+        if(!_rawMode) {
+            msg_text.text = formatted_text
+            msg_text.textFormat = Text.RichText
+        }
+    }
+    onRaw_textChanged: {
+        if(_rawMode) {
+            msg_text.text = raw_text
+            msg_text.textFormat = Text.PlainText
+        }
+    }
     onMidChanged: {
         if(mid.length > 0) {
             show_text_button.checked = false
+            show_raw_button.checked = false
+            _rawMode = false
+            msg_text.textFormat = Text.RichText
             msg_text.cursorPosition = 0
         }
+    }
+
+    Component.onCompleted: {
+        console.log("vid, vsource ", view_id, view_source)
+    }
+
+    onView_idChanged: {
+        console.log("VIEWID ", msgviewer.view_id)
+    }
+
+    onView_sourceChanged: {
+        console.log("VIEW_SOURCE", msgviewer.view_source)
     }
 
 //    fav: { (mid.length > 0) ?
@@ -183,6 +214,23 @@ Page {
 
             }
             TipButton {
+                id: show_raw_button
+                checkable: true
+                Layout.fillHeight: true
+                ToolTip.text: "Toggle raw/ formatted text"
+                text: "Raw"
+                onCheckedChanged: {
+                    msgviewer._rawMode = checked
+                    if(checked) {
+                        msg_text.textFormat = Text.PlainText
+                        msg_text.text = raw_text
+                    } else {
+                        msg_text.textFormat = Text.RichText
+                        msg_text.text = formatted_text
+                    }
+                }
+            }
+            TipButton {
                 id: clean_button
                 checkable: true
                 Layout.fillHeight: true
@@ -289,7 +337,7 @@ Page {
 
     Rectangle {
         //anchors.fill:parent
-        Layout.fillHeight: view_source === "" ? false : true
+        Layout.fillHeight: view_source == "" ? false : true
         Layout.fillWidth: true
         color: primary_dark
         gradient: Gradient {
@@ -341,15 +389,8 @@ Page {
             }
         }
     }
-    // note: couldn't get scrolling to work, this is really a corner
-    // case i'll have to check out later.
-    //ScrollView {
-    //    Layout.fillWidth: true
-    //    Layout.maximumHeight: viewer_source === "" ? (parent.height * 9) /10 : parent.height / 3
-
     TextArea {
         id: msg_text
-        //anchors.fill: parent
         background: Rectangle {
             color: msgviewer.text_bg_color
             radius: 6
@@ -370,12 +411,15 @@ Page {
 
         Layout.fillWidth: true
         Layout.minimumHeight: 60
-        Layout.maximumHeight: viewer.source === "" ? (parent.height * 6) / 10 : parent.height / 3
+        Layout.maximumHeight: (view_source == "" && view_id === -1) ? parent.height * 9 / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
-        visible: show_text_button.checked
+        visible: show_text_button.checked || ((view_source == "" && view_id == -1) && (raw_text.length > 0 || formatted_text.length > 0))
+
+        ScrollBar.vertical: ScrollBar {
+            policy: ScrollBar.AsNeeded
+        }
     }
-    //}
 
     }
 

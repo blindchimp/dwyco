@@ -149,6 +149,19 @@ Page {
         }
 
         CheckBox {
+            id: format_msgs
+            text: "Auto-format message text and links"
+            onCheckedChanged: {
+                core.set_local_setting("format_messages", checked ? "1" : "0")
+            }
+            Component.onCompleted: {
+                var v = core.get_local_setting("format_messages")
+                checked = (v === "" || v !== "0")
+            }
+            Layout.fillWidth: true
+        }
+
+        CheckBox {
             id: show_archived
             text: { "Show archived users (" + core.total_users.toString() + ")" }
             onCheckedChanged: {

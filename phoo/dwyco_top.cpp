@@ -1203,6 +1203,16 @@ DwycoCore::format_message(QString txt)
 #endif
     if (txt.contains("<html>", Qt::CaseInsensitive))
         return txt;
+    {
+        QString fm;
+        setting_get("format_messages", fm);
+        if (!fm.isEmpty() && fm == "0") {
+            txt.replace(QStringLiteral("&"), QStringLiteral("&amp;"));
+            txt.replace(QStringLiteral("<"), QStringLiteral("&lt;"));
+            txt.replace(QStringLiteral(">"), QStringLiteral("&gt;"));
+            return txt;
+        }
+    }
     // split on URLs first so we can escape only the non-URL parts
     static QRegularExpression re(QStringLiteral("(https?://[^\\s<>\"'()]+)"));
     QRegularExpressionMatchIterator i = re.globalMatch(txt);
