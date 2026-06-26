@@ -205,6 +205,7 @@ Pane {
         ItemDelegate {
             id: tox_button
             text: qsTr("Tox")
+            visible: core.tox_available
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
