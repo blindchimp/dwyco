@@ -337,7 +337,7 @@ Page {
 
     Rectangle {
         //anchors.fill:parent
-        Layout.fillHeight: view_source == "" ? false : true
+        Layout.fillHeight: view_source.toString() === "" ? false : true
         Layout.fillWidth: true
         color: primary_dark
         gradient: Gradient {
@@ -411,10 +411,10 @@ Page {
 
         Layout.fillWidth: true
         Layout.minimumHeight: 60
-        Layout.maximumHeight: (view_source == "" && view_id === -1) ? parent.height * 9 / 10 : parent.height / 3
+        Layout.maximumHeight: (view_source.toString() === "" && view_id === -1) ? parent.height * 9 / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
-        visible: show_text_button.checked || ((view_source == "" && view_id == -1) && (raw_text.length > 0 || formatted_text.length > 0))
+        visible: show_text_button.checked || ((view_source.toString() === "" && view_id == -1) && (raw_text.length > 0 || formatted_text.length > 0))
 
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
@@ -453,7 +453,7 @@ Page {
 
     BusyIndicator {
         id: busy1
-        running: view_source == "" && view_id !== -1
+        running: view_source.toString() === "" && view_id !== -1
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         z: 20

@@ -164,7 +164,7 @@ Page {
 
     BusyIndicator {
         id: busy1
-        running: {viewer.source === "" }
+        running: {viewer.source.toString() === "" }
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }
