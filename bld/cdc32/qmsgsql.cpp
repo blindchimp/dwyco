@@ -1797,7 +1797,7 @@ sql_has_msg_recently(vc uid, long num_seconds)
         return false;
     if(res2[0][0].is_nil())
         return false;
-    auto dm = static_cast<long long>(res[0][0]);
+    auto dm = static_cast<long long>(res2[0][0]);
     if(time(0) - dm < num_seconds)
         return true;
     return false;
