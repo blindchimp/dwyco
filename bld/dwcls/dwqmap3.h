@@ -550,8 +550,8 @@ template<class R, class D, int elems>
 class DwQMapLazyC : public DwQMapLazy<R,D>
 {
 private:
-    char rng[elems * sizeof(R)];
-    char dom[elems * sizeof(D)];
+    alignas(alignof(R)) char rng[elems * sizeof(R)];
+    alignas(alignof(D)) char dom[elems * sizeof(D)];
 
     R *addr_rng(long i) const {
         return (R*)(rng + i * sizeof(R));

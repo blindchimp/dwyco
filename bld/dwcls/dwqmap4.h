@@ -71,8 +71,8 @@ private:
 
     long search(const D& key, int& found, long& first_del = dum);
 
-    char rng[nelems * sizeof(R)];
-    char dom[nelems * sizeof(D)];
+    alignas(alignof(R)) char rng[nelems * sizeof(R)];
+    alignas(alignof(D)) char dom[nelems * sizeof(D)];
 
     R *addr_rng(long i) const {
         return (R*)(rng + i * sizeof(R));

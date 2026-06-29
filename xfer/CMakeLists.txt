@@ -1,4 +1,4 @@
-
+# WARNING: DO NOT USE THIS, use the qmake build instead
 
 cmake_minimum_required(VERSION 3.14)
 

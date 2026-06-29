@@ -59,6 +59,7 @@
 #include "vccrypt2.h"
 
 vc Filename;
+vc PartFilename;
 vc Filesize;
 vc ECtx;
 vc DCtx;
@@ -549,12 +550,15 @@ recv_response(vc sock)
                 return 0;
             }
             Filename = resp[1][0];
+            DwString tmp(Filename);
+            tmp += ".part";
+            PartFilename = tmp;
             Filesize = resp[1][1];
             // 2 is session_id, not sure why i put that in
             Client_UID = resp[3];
             Client_MID = resp[4];
             int fd;
-            if((fd = get_write_locked_fd(Filename)) == -1)
+            if((fd = get_write_locked_fd(PartFilename)) == -1)
                 return 0;
             File = fd;
 
@@ -656,7 +660,7 @@ do_recvfile(vc sock)
         if(!Recv_to_null && write(File, buf, len) != len)
         {
             dolog("disk write failed");
-            unlink(Filename);
+            unlink(PartFilename);
             exit(0);
         }
         total += len;
@@ -667,6 +671,14 @@ do_recvfile(vc sock)
     alarm(60);
     if(close(File) != 0)
         done = 0;
+    if(done)
+    {
+        if(rename((const char *)PartFilename, (const char *)Filename) != 0)
+        {
+            dolog_sys("rename .part failed");
+            done = 0;
+        }
+    }
     if(!done)
     {
 
@@ -711,7 +723,7 @@ recv_main(int sock)
         // bit bucket
         Recv_to_null = 1;
 
-        unlink(Filename);
+        unlink(PartFilename);
         if(!send_reject(vcsock))
             exit(0);
         dolog("rejected too big");

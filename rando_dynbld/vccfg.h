@@ -5,6 +5,7 @@
 
 #if defined(ANDROID) || defined(_Windows) || defined(EMSCRIPTEN)
 #define DWYCO_NO_UVSOCK
+#define DWYCO_VC_MT_SOCKET
 #endif
 
 #define DWYCO_NO_VCREGEX

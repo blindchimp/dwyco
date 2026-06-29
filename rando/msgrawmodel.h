@@ -72,6 +72,7 @@ public:
 
     int mid_to_index(QByteArray mid);
     void invalidate_sent_to();
+    void cleanup_unviewed_for_mid(const QByteArray& mid);
 
 public slots:
     void msg_recv_status(int cmd, const QString& mid, const QString& huid);

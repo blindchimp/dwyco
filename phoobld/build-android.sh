@@ -18,15 +18,23 @@
 #-D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" 
 QTDIR=$HOME/Qt/6.10.2/android_x86_64
 export PATH=$QTDIR/bin:$PATH
-rm -rf /tmp/r
+if [ "$(uname)" = "Darwin" ]; then
+    export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+    SDK_ROOT="$HOME/Library/Android/sdk"
+    NDK_PATH="$SDK_ROOT/ndk/28.2.13676358"
+else
+    SDK_ROOT="$HOME/Android/Sdk"
+    NDK_PATH="$SDK_ROOT/ndk/28.2.13676358"
+fi
+rm -rf build
 
 qt-cmake \
 -D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" \
 -D CMAKE_BUILD_TYPE=Release \
--S $HOME/git/dwyco/phoo -B /tmp/r -GNinja \
+-S $HOME/git/dwyco/phoo -B build -GNinja \
 -D QT_NO_GLOBAL_APK_TARGET_PART_OF_ALL:BOOL=OFF \
--D ANDROID_SDK_ROOT=$HOME/Android/Sdk \
--D ANDROID_NDK_ROOT=$HOME/Android/Sdk/ndk/28.2.13676358 \
+-D ANDROID_SDK_ROOT=$SDK_ROOT \
+-D ANDROID_NDK_ROOT=$NDK_PATH \
 -D QT_ANDROID_BUILD_ALL_ABIS=TRUE \
 -D QT_ANDROID_SIGN_AAB=TRUE 
 
@@ -34,3 +42,6 @@ qt-cmake \
 #-DQT_PATH_ANDROID_ABI_x86_64="$HOME/syncdev/qta6101/android6101_x86_64" \
 #-DQT_PATH_ANDROID_ABI_armeabi-v7a="$HOME/syncdev/qta6101/android6101_armeabi-v7a" \
 #-DQT_PATH_ANDROID_ABI_x86="$HOME/syncdev/qta6101/android6101_x86" \
+#
+# uncomment next line to build immediately after configuring
+#cmake --build build
