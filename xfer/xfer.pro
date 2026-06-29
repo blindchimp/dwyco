@@ -1,3 +1,5 @@
+# NOTE: DWYCO_CONFDIR=helperbld should be defined unless you are doing something special
+# WARNING: the final executable contains private keys
 TEMPLATE = app
 CONFIG += console
 CONFIG -= qt
