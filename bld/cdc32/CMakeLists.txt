@@ -14,7 +14,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../jenkins
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../vc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../pbm
     ${CMAKE_CURRENT_SOURCE_DIR}/../pgm
     ${CMAKE_CURRENT_SOURCE_DIR}/../ppm
     ${CMAKE_CURRENT_SOURCE_DIR}/../gsm

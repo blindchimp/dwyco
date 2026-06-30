@@ -1,7 +1,7 @@
 set(DWYCOBG 0)
 set(DWYCO_APP "ftpreview")
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-add_compile_definitions(VCCFG_FILE DWYCO_APP_NICENAME="dwyco-ftpreview" DWYCO_VC_CONV DWYCO_PBM_FILE_OPS DWYCO_NO_ACQ_VIDEO_MEDIA)
+add_compile_definitions(VCCFG_FILE DWYCO_APP_NICENAME="dwyco-ftpreview" DWYCO_VC_CONV DWYCO_NO_ACQ_VIDEO_MEDIA)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})

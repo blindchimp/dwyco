@@ -1826,12 +1826,12 @@ simple_call::preview_saved_msg(DwOString mid, DwOString& preview_fn, int& video,
         }
         QFile::remove(rfn);
         q = q.scaled(240, 180, Qt::KeepAspectRatio);
-        // change into a ppm
+        // change into a png
         idx = rfn.rfind(".");
         if(idx == DwOString::npos)
             return 0;
         rfn.erase(idx);
-        rfn += ".ppm";
+        rfn += ".png";
         q.save(rfn.c_str());
         preview_fn = rfn;
         return 1;
@@ -1849,7 +1849,7 @@ simple_call::preview_saved_msg(DwOString mid, DwOString& preview_fn, int& video,
     }
     // create random filename
     fn = random_fn();
-    fn += ".ppm";
+    fn += ".png";
     fn = add_pfx(Tmp_pfx, fn);
     int ret = 0;
     if(dwyco_zap_create_preview(viewid, fn.c_str(), fn.length()))
@@ -1933,7 +1933,7 @@ html_local_preview(DwOString uid, QString chat, DwOString picfn)
         fn = random_fn();
     }
 
-    fn += ".ppm";
+    fn += ".png";
     fn = add_pfx(Tmp_pfx, fn);
     if(!QFile::exists(fn.c_str()))
         img.save(fn.c_str());
@@ -2083,7 +2083,7 @@ simple_call::display_new_msg(DwOString uid, DwOString txt, DwOString mid)
             img = img.scaled(240, 180, Qt::KeepAspectRatio);
         fn = random_fn();
     }
-    fn += ".ppm";
+    fn += ".png";
     fn = add_pfx(Tmp_pfx, fn);
     if(!QFile::exists(fn.c_str()))
         img.save(fn.c_str());
@@ -2224,7 +2224,7 @@ void simple_call::on_send_button_clicked()
     }
 
     DwOString fn = random_fn();
-    fn += ".ppm";
+    fn += ".png";
     fn = add_pfx(Tmp_pfx, fn);
 
     DwOString preview_fn = add_pfx(Sys_pfx, "no_img.png");
