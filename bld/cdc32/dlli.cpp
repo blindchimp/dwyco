@@ -347,6 +347,7 @@ using namespace CryptoPP;
 #include <sys/stat.h>
 #include <fcntl.h>
 #endif
+#include <fcntl.h>
 #include "sepstr.h"
 #include "xinfo.h"
 #include "dhsetup.h"
@@ -369,6 +370,8 @@ using namespace CryptoPP;
 #include "backandroid.h"
 #include "directsend.h"
 #include "audchk.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 using namespace dwyco;
 
@@ -1348,7 +1351,7 @@ DWYCOEXPORT
 void
 dwyco_free_image(char *p_elide, int rows)
 {
-    ppm_freearray(p_elide, rows);
+    ppm_freearray((pixel **)p_elide, rows);
 }
 
 // activity reporting
@@ -6218,17 +6221,14 @@ dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
     if(!dwyco_zap_create_preview_buf(viewid, &vimg, &len, &cols, &rows))
         return 0;
 
-    FILE *f = fopen(DwString(filename, 0, len_filename).c_str(), "wb");
-    if(!f)
+    pixel **px = (pixel **)vimg;
+    if(!stbi_write_png(DwString(filename, 0, len_filename).c_str(), cols, rows, 3, (const void *)px[0], cols * 3))
     {
-        GRTLOG("create_preview_view: %d can't open %s", viewid, filename);
-        ppm_freearray(vimg, rows);
+        GRTLOG("create_preview_view: %d can't write %s", viewid, filename);
+        ppm_freearray((pixel **)vimg, rows);
         return 0;
     }
-    // duh, no error checking
-    ppm_writeppm(f, (pixel **)vimg, cols, rows, PPM_MAXMAXVAL, 0);
-    fclose(f);
-    ppm_freearray(vimg, rows);
+    ppm_freearray((pixel **)vimg, rows);
     return 1;
 #endif
 }

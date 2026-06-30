@@ -22,6 +22,7 @@ Page {
     property int ind_online: 0
     property int filter_show_sent: 1
     property int filter_show_only_fav: 0
+    property int filter_show_only_video: 0
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -36,6 +37,10 @@ Page {
         themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
     }
 
+    onFilter_show_only_videoChanged: {
+        themsglist.set_show_video_only(filter_show_only_video)
+    }
+
     onTo_uidChanged: {
         if(to_uid === "")
             return
@@ -45,6 +50,7 @@ Page {
         top_toolbar_text.rawtext = core.uid_to_name(to_uid)
         ind_online = core.get_established_state(to_uid)
         filter_show_only_fav = 0
+        filter_show_only_video = 0
         filter_show_sent = 1
 
     }
@@ -66,6 +72,7 @@ Page {
             console.log("depth mb ", simple_msg_browse.StackView.index, stack.depth)
             if(simple_msg_browse.StackView.index === -1) {
                 filter_show_only_fav = 0
+                filter_show_only_video = 0
                 filter_show_sent = 1
             }
 
@@ -154,6 +161,7 @@ Page {
                     checkable: false
                     onClicked: {
                         filter_show_only_fav = 0
+                        filter_show_only_video = 0
                         filter_show_sent = 1
                         stack.pop()
                     }
@@ -223,11 +231,12 @@ Page {
 //                        z:10
 //                        visible: true
                         onClicked: {
-                            filter_show_only_fav = 0
-                            filter_show_sent = 1
-                            stack.pop()
-                        }
+                        filter_show_only_fav = 0
+                        filter_show_only_video = 0
+                        filter_show_sent = 1
+                        stack.pop()
                     }
+                }
 
                 }
 
@@ -270,6 +279,16 @@ Page {
                             checkable: true
                             onCheckedChanged: {
                                 filter_show_only_fav = checked
+                            }
+
+                        }
+
+                        MenuItem {
+                            text: "Show Only Video"
+                            checked: filter_show_only_video
+                            checkable: true
+                            onCheckedChanged: {
+                                filter_show_only_video = checked
                             }
 
                         }
