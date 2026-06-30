@@ -1,7 +1,8 @@
 #ifndef PPM_H
 #define PPM_H
 
-typedef struct {
+typedef struct
+{
     unsigned char r;
     unsigned char g;
     unsigned char b;
