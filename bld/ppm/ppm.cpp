@@ -1,5 +1,5 @@
 
-#include <stdio.h>
+// AI generated ca 2026
 #include <stdlib.h>
 #include "ppm.h"
 /* Simple PPM/PGM image library – modern, minimal, C99 */
@@ -30,6 +30,7 @@ void ppm_freearray(pixel **arr, int rows) {
     free(arr);
 }
 
+#if 0
 /* Reads a binary P6 PPM file. Returns pointer to pixel array or NULL on error. */
 pixel **ppm_readppm(FILE *fp, int *colsP, int *rowsP) {
     if (!fp) return NULL;
@@ -78,3 +79,4 @@ int ppm_writeppm(FILE *fp, pixel **img, int cols, int rows) {
     }
     return 1;
 }
+#endif

@@ -12,6 +12,7 @@
  */
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 #include "macs.h"
 #include "pbmcfg.h"
 #include "matcom.h"

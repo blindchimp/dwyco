@@ -1,4 +1,5 @@
-#include <stdio.h>
+
+// AI generated, ca 2026
 #include <stdlib.h>
 #include "pgm.h"
 
@@ -45,7 +46,7 @@ pm_freerow( char *itrow )
     free( itrow );
     }
 
-
+#if 0
 gray **pgm_readpgm(FILE *fp, int *colsP, int *rowsP) {
     if (!fp) return NULL;
     char format[3];
@@ -84,4 +85,5 @@ int pgm_writepgm(FILE *fp, gray **img, int cols, int rows) {
     }
     return 1;
 }
+#endif
 
