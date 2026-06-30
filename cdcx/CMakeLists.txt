@@ -126,7 +126,6 @@ set(BASELIBS
     kazlib
     ppm
     pgm
-    pbm
     theora.1.2.x
     speex
     libvorbis-1.3.7

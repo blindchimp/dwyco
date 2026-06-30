@@ -16,7 +16,6 @@ set(BASELIBS
     kazlib
     ppm
     pgm
-    pbm
     jenkins
 )
 

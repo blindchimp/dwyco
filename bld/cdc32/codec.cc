@@ -12,6 +12,8 @@
  */
 #include "codec.h"
 #include "imgmisc.h"
+#include <string.h>
+#include "pbmcfg.h"
 [[noreturn]] void oopanic(const char *);
 
 int
