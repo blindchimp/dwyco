@@ -18,6 +18,6 @@
 
 typedef pixel **PPMIMG;
 typedef unsigned char **PGMIMG;
-#define bcopy(a, b, c) memcpy((b), (a), (c))
+//#define bcopy(a, b, c) memcpy((b), (a), (c))
 
 #endif
