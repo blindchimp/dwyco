@@ -592,7 +592,7 @@ simple_public::display_snapchat(QByteArray uid, QString name, QVariant data)
             fn = random_fn();
         }
         fn = add_pfx(Tmp_pfx, fn);
-        fn += ".ppm";
+        fn += ".png";
         if(!QFile::exists(fn.c_str()))
             img.save(fn.c_str());
     }
@@ -900,7 +900,7 @@ display_profile(int succ, const char *reason,
         }
         // this is for the popup profile
         DwOString fn = random_fn();
-        fn += ".ppm";
+        fn += ".png";
         fn = add_pfx(Tmp_pfx, fn);
         if(dwyco_zap_create_preview(succ, fn.c_str(), fn.length()))
         {
