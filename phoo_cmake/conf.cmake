@@ -13,6 +13,7 @@ add_compile_definitions(
 )
 
 #add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
+#add_compile_options(-fsanitize=address,undefined )
 
 if(NOT WIN32)
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
