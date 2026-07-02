@@ -2208,7 +2208,7 @@ dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
 
-int DWYCOEXPORT dwyco_enable_tox(const char *tox_data_dir);
+int DWYCOEXPORT dwyco_enable_tox(const char *tox_save_file);
 int DWYCOEXPORT dwyco_disable_tox();
 int DWYCOEXPORT dwyco_tox_get_self_public_key(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_get_self_address(char **out, int *len_out);

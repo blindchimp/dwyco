@@ -27,8 +27,6 @@ static ToxPlugin *Tox_plugin;
 static int Started;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
-static DwString Data_dir;
-
 struct IncomingFileTransfer {
     DwString tmp_basename;
     int fd;
@@ -530,18 +528,12 @@ on_tox_event(const char *type, const vc &args, void *userdata)
 }
 
 int
-tox_bridge_init(const char *data_dir)
+tox_bridge_init(const char *save_file)
 {
     if(Started)
         return 1;
 
-    if(data_dir)
-        Data_dir = data_dir;
-    else
-        Data_dir = DwString();
-
-    Tox_plugin = toxp_init(Data_dir.length() > 0 ? Data_dir.c_str() : NULL,
-                           on_tox_event, NULL);
+    Tox_plugin = toxp_init(save_file, on_tox_event, NULL);
     if(!Tox_plugin)
         return 0;
 

@@ -2308,7 +2308,7 @@ DwycoCore::init()
             set_tox_enabled(false);
         } else {
             set_tox_enabled(true);
-            dwyco_enable_tox((QDir::homePath() + "/.config/dwyco/tox").toLatin1().constData());
+            dwyco_enable_tox("tox_save.tox");
             update_tox_self_address(tox_get_self_address());
         }
     }
@@ -3094,7 +3094,7 @@ DwycoCore::enable_tox()
     if(m_tox_enabled)
         return;
     set_tox_enabled(true);
-    dwyco_enable_tox((QDir::homePath() + "/.config/dwyco/tox").toLatin1().constData());
+    dwyco_enable_tox("tox_save.tox");
     update_tox_self_address(tox_get_self_address());
 }
 

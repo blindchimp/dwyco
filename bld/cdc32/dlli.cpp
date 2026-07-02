@@ -9692,9 +9692,9 @@ set_audio_status(int)
 
 DWYCOEXPORT
 int
-dwyco_enable_tox(const char *tox_data_dir)
+dwyco_enable_tox(const char *tox_save_file)
 {
-    return dwyco::tox_bridge_init(tox_data_dir);
+    return dwyco::tox_bridge_init(tox_save_file);
 }
 
 DWYCOEXPORT

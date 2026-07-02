@@ -19,6 +19,7 @@
 #include "vc.h"
 #include "vccomp.h"
 #include "dwstr.h"
+#include "fnmod.h"
 #include "toxd_plugin.h"
 
 // Order: static IP entries, then resolved IP equivalents of hostname entries,
@@ -50,11 +51,13 @@ static const char *bootstrap_nodes[] =
 struct ToxPlugin
 {
     Tox *tox{};
-    DwString data_dir{};
+    DwString save_file{};
     FILE *log_file{};
     int bootstrapped{};
+#if 0
     int lock_fd{-1};
     DwString lock_path;
+#endif
     ToxpEventCB event_cb{};
     void *event_userdata{};
 };
@@ -313,8 +316,8 @@ toxd_on_friend_status(Tox *tox, uint32_t fn, Tox_User_Status status, void *ud)
 static void
 save_tox_state(ToxPlugin *p)
 {
-    DwString save_path = DwString("%1/%2").arg(p->data_dir, "tox_save.tox");
-    DwString tmp_path = DwString("%1/%2.new").arg(p->data_dir, "tox_save.tox");
+    DwString save_path = dwyco::newfn(p->save_file);
+    DwString tmp_path = save_path + ".new";
 
     size_t sz = tox_get_savedata_size(p->tox);
     uint8_t *data = (uint8_t *)malloc(sz);
@@ -347,19 +350,14 @@ tox_write_log(Tox *tox, Tox_Log_Level level, const char *file,
 static void
 load_or_create_tox(ToxPlugin *p)
 {
-    DwString save_path = DwString("%1/%2").arg(p->data_dir, "tox_save.tox");
+    DwString save_path = dwyco::newfn(p->save_file);
 
     Tox_Err_Options_New new_err;
     struct Tox_Options &opts = *tox_options_new(&new_err);
     tox_options_default(&opts);
     tox_options_set_experimental_disable_dns(&opts, true);
 
-    const char *home = getenv("HOME");
-    DwString log_path;
-    if(home)
-        log_path = DwString("%1/tox.log").arg(home);
-    else
-        log_path = DwString("tox.log");
+    DwString log_path = dwyco::newfn("tox.log");
     p->log_file = fopen(log_path.c_str(), "a");
     if(p->log_file)
     {
@@ -442,32 +440,19 @@ register_callbacks(Tox *tox)
 // --- plugin API ---
 
 ToxPlugin *
-toxp_init(const char *data_dir, ToxpEventCB cb, void *userdata)
+toxp_init(const char *save_file, ToxpEventCB cb, void *userdata)
 {
     ToxPlugin *p = new ToxPlugin;
     p->event_cb = cb;
     p->event_userdata = userdata;
 
-    if(data_dir && data_dir[0])
-    {
-        p->data_dir = data_dir;
-    }
+    if(save_file && save_file[0])
+        p->save_file = save_file;
     else
-    {
-        const char *env = getenv("DWYCO_TOX_DATA");
-        if(env)
-            p->data_dir = env;
-        else
-        {
-            const char *home = getenv("HOME");
-            if(home)
-                p->data_dir = DwString("%1/%2").arg(home, ".config/dwyco/tox");
-            else
-                p->data_dir = DwString(".config/dwyco/tox");
-        }
-    }
+        return 0;
 
-    DwString lock_path = DwString("%1/%2").arg(p->data_dir, "toxd.lock");
+#if 0
+    DwString lock_path = DwString("%1/%2").arg(p->save_file, "toxd.lock");
     p->lock_fd = open(lock_path.c_str(), O_CREAT | O_RDWR, 0644);
     if(p->lock_fd < 0)
     {
@@ -481,12 +466,14 @@ toxp_init(const char *data_dir, ToxpEventCB cb, void *userdata)
         return NULL;
     }
     p->lock_path = lock_path;
-
+#endif
     load_or_create_tox(p);
     if(!p->tox)
     {
+#if 0
         close(p->lock_fd);
         unlink(p->lock_path.c_str());
+#endif
         delete p;
         return NULL;
     }
@@ -502,11 +489,13 @@ toxp_shutdown(ToxPlugin *p)
         return;
     save_tox_state(p);
     tox_kill(p->tox);
+#if 0
     if(p->lock_fd >= 0)
     {
         close(p->lock_fd);
         unlink(p->lock_path.c_str());
     }
+#endif
     if(p->log_file)
         fclose(p->log_file);
     delete p;

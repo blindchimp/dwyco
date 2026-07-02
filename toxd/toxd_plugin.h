@@ -7,7 +7,7 @@ struct ToxPlugin;
 
 typedef void (*ToxpEventCB)(const char *type, const vc &args, void *userdata);
 
-ToxPlugin *toxp_init(const char *data_dir, ToxpEventCB cb, void *userdata);
+ToxPlugin *toxp_init(const char *save_file, ToxpEventCB cb, void *userdata);
 void toxp_shutdown(ToxPlugin *p);
 void toxp_save(ToxPlugin *p);
 void toxp_iterate(ToxPlugin *p);
