@@ -3204,7 +3204,7 @@ DwycoCore::tox_get_self_public_key()
     if(!dwyco_tox_get_self_public_key(&out, &len_out))
         return QString();
     QByteArray ret(out, len_out);
-    dwyco_free(out);
+    dwyco_free_array(out);
     return ret.toHex();
 }
 
@@ -3216,7 +3216,7 @@ DwycoCore::tox_get_self_address()
     if(!dwyco_tox_get_self_address(&out, &len_out))
         return QString();
     QByteArray ret(out, len_out);
-    dwyco_free(out);
+    dwyco_free_array(out);
     return ret.toHex();
 }
 
