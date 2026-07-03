@@ -6532,7 +6532,6 @@ dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid)
     ret = load_qd_msgs(buid, 0);
 
     // append tox queued/in-progress/failed messages
-    if(tox_bridge_is_active())
     {
         dwyco::ToxQueue *tq = tox_queue();
         if(tq)
@@ -6558,7 +6557,7 @@ dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, in
     vc b;
     if(is_pers_id((const char *)pid))
         b = load_qd_to_body(pid);
-    if(b.is_nil() && tox_bridge_is_active())
+    if(b.is_nil())
     {
         dwyco::ToxQueue *tq = tox_queue();
         if(tq)

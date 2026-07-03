@@ -3161,7 +3161,9 @@ int
 DwycoCore::tox_set_user_status(const QString& status)
 {
     QByteArray bstatus = status.toUtf8();
-    return dwyco_tox_set_user_status(bstatus.constData());
+    int ret = dwyco_tox_set_user_status(bstatus.constData());
+    emit tox_user_status_changed(status);
+    return ret;
 }
 
 QString

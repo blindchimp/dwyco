@@ -32,6 +32,10 @@
         <file>icons/refresh.png</file>
         <file>icons/trivia-icon.png</file>
         <file>icons/tox-icon.svg</file>
+        <file>icons/tox-icon-green.svg</file>
+        <file>icons/tox-icon-orange.svg</file>
+        <file>icons/tox-icon-red.svg</file>
+        <file>icons/tox-icon-purple.svg</file>
     </qresource>
     <qresource prefix="/new/red32">
         <file>icons/red-32x32/Computer-32x32.png</file>

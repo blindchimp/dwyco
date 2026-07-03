@@ -28,6 +28,26 @@ Page {
     property bool android_hack: false
     property string android_img_filename
     property int ind_typing: 0
+
+    function can_send_to(uid) {
+        if (!core.is_tox_uid(uid))
+            return true
+        if (!core.tox_enabled) {
+            showToast("Tox is not enabled. Message cannot be sent.")
+            return false
+        }
+        for (var i = 0; i < ToxFriendModel.count; i++) {
+            if (ToxFriendModel.get(i).pubkey.substring(0, 20) === uid)
+                return true
+        }
+        showToast("Tox contact not in current friend list. Message cannot be delivered.")
+        return false
+    }
+
+    function showToast(msg) {
+        failed_msg.text = msg
+        animateOpacity.restart()
+    }
     property int ind_online: 0
     property int inh_block_warning: 0
     property bool multiselect_mode: false
@@ -1100,6 +1120,8 @@ Page {
 
         onAccepted: {
             if(textField1.length > 0) {
+                if(!can_send_to(to_uid))
+                    return
                 core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.start_control(to_uid)
 
@@ -1193,6 +1215,8 @@ Page {
 
         //text: "send"
         onClicked: {
+            if(!can_send_to(to_uid))
+                return
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
             core.simple_send(to_uid, core.strip_html(textField1.text))

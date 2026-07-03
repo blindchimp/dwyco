@@ -224,9 +224,13 @@ Item {
         clip: true
         section.property: "tox_section"
         section.delegate: Rectangle {
+            id: sectionRoot
             height: 24
             visible: section !== ""
             color: "#444444"
+
+            property string localToxUserStatus: core.tox_get_user_status()
+
             Rectangle {
                 height: 1
                 color: "#666666"
@@ -243,14 +247,25 @@ Item {
                     width: 16
                     height: 16
                     anchors.verticalCenter: parent.verticalCenter
-                    source: "qrc:/new/prefix1/icons/tox-icon.svg"
                     fillMode: Image.PreserveAspectFit
+                    source: {
+                        if (!core.tox_enabled) return "qrc:/new/prefix1/icons/tox-icon-purple.svg"
+                        if (localToxUserStatus === "busy") return "qrc:/new/prefix1/icons/tox-icon-red.svg"
+                        if (localToxUserStatus === "away") return "qrc:/new/prefix1/icons/tox-icon-orange.svg"
+                        return "qrc:/new/prefix1/icons/tox-icon-green.svg"
+                    }
                 }
                 Text {
                     text: section
                     color: "white"
                     font.bold: true
                     font.pixelSize: applicationWindow1.font.pixelSize
+                }
+            }
+            Connections {
+                target: core
+                function onTox_user_status_changed(status) {
+                    localToxUserStatus = status
                 }
             }
         }
