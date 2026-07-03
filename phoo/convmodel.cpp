@@ -15,11 +15,13 @@
 #ifdef DWYCO_MODEL_TEST
 #include <QAbstractItemModelTester>
 #endif
+#include <QSet>
 
 void hack_unread_count();
 void reload_conv_list();
 
 ConvListModel *TheConvListModel;
+static QSet<QString> s_tox_friend_prefixes;
 
 void
 Conversation::load_external_state(const QByteArray& uid)
@@ -37,6 +39,51 @@ Conversation::load_external_state(const QByteArray& uid)
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
     update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
     //update_has_hidden(false);
+    bool tox = dwyco_tox_is_tox_uid(uid.constData(), uid.length()) != 0;
+    update_is_tox(tox);
+    if(tox) {
+        bool is_friend = ConvListModel::is_uid_tox_friend(uid);
+        update_is_tox_friend(is_friend);
+        if(is_friend) {
+            char *name;
+            int name_len;
+            if(dwyco_tox_get_name(&name, &name_len)) {
+                update_tox_section(QString::fromUtf8(name, name_len));
+                delete[] name;
+            } else {
+                update_tox_section(QString());
+            }
+        } else {
+            update_tox_section(QStringLiteral("Tox Other"));
+        }
+    } else {
+        update_is_tox_friend(false);
+        update_tox_section(QString());
+    }
+}
+
+void
+ConvListModel::refresh_tox_friend_cache()
+{
+    s_tox_friend_prefixes.clear();
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(!dwyco_tox_get_friends_model(&fl))
+        return;
+    simple_scoped qfl(fl);
+    int n = qfl.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+        QString pkhex = pk.toHex();
+        if(pkhex.length() >= 20)
+            s_tox_friend_prefixes.insert(pkhex.left(20));
+    }
+}
+
+bool
+ConvListModel::is_uid_tox_friend(const QByteArray& uid)
+{
+    return s_tox_friend_prefixes.contains(uid.toHex());
 }
 
 ConvListModel::ConvListModel(QObject *parent) :
@@ -66,6 +113,7 @@ init_convlist_model()
 void
 ConvListModel::redecorate()
 {
+    refresh_tox_friend_cache();
     int n = count();
     for(int i = 0; i < n; ++i)
     {
@@ -310,6 +358,7 @@ ConvListModel::reload_possible_changes(long time)
 void
 ConvListModel::load_users_to_model()
 {
+    refresh_tox_friend_cache();
     DWYCO_LIST l;
     int n;
     static int cnt;
@@ -543,6 +592,17 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     if(!m)
         return false;
 
+    // group: non-tox(0) < tox friends(1) < tox other(2)
+    bool ltox = m->data(left, m->roleForName("is_tox")).toBool();
+    bool rtox = m->data(right, m->roleForName("is_tox")).toBool();
+    int lgroup = 0;
+    int rgroup = 0;
+    if(ltox)
+        lgroup = m->data(left, m->roleForName("is_tox_friend")).toBool() ? 1 : 2;
+    if(rtox)
+        rgroup = m->data(right, m->roleForName("is_tox_friend")).toBool() ? 1 : 2;
+    if(lgroup < rgroup) return true;
+    if(lgroup > rgroup) return false;
 
     bool lsm = m->data(left, m->roleForName("session_msg")).toBool();
     bool rsm = m->data(right, m->roleForName("session_msg")).toBool();

@@ -671,6 +671,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     }
     case DWYCO_SE_TOX_FRIEND_REQUEST:
         dwyco_tox_accept_friend_request(val, len_val);
+        reload_conv_list();
         break;
     case DWYCO_SE_TOX_SELF_CONNECTION_STATUS:
     {
@@ -684,11 +685,13 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_READY:
         TheDwycoCore->set_tox_enabled(true);
         TheDwycoCore->update_tox_self_address(TheDwycoCore->tox_get_self_address());
+        reload_conv_list();
         break;
     case DWYCO_SE_TOX_CRASHED:
         TheDwycoCore->set_tox_enabled(false);
         TheDwycoCore->update_tox_connected(0);
         emit TheDwycoCore->tox_connection_status_changed(0);
+        reload_conv_list();
         break;
     case DWYCO_SE_TOX_FRIEND_NAME:
         // tox friend name changed — re-resolve display name
@@ -3096,6 +3099,7 @@ DwycoCore::enable_tox()
     set_tox_enabled(true);
     dwyco_enable_tox("tox_save.tox");
     update_tox_self_address(tox_get_self_address());
+    reload_conv_list();
 }
 
 void
@@ -3108,6 +3112,7 @@ DwycoCore::disable_tox()
     update_tox_connected(0);
     update_tox_self_address("");
     emit tox_connection_status_changed(0);
+    reload_conv_list();
 }
 
 int
@@ -3115,14 +3120,20 @@ DwycoCore::tox_add_friend(const QString& addr, const QString& msg)
 {
     QByteArray addr_b = QByteArray::fromHex(addr.toLatin1());
     QByteArray msg_b = msg.toLatin1();
-    return dwyco_tox_add_friend(addr_b.constData(), addr_b.length(), msg_b.constData());
+    int ret = dwyco_tox_add_friend(addr_b.constData(), addr_b.length(), msg_b.constData());
+    if(ret >= 0)
+        reload_conv_list();
+    return ret;
 }
 
 int
 DwycoCore::tox_delete_friend(const QString& pubkey)
 {
     QByteArray pk = QByteArray::fromHex(pubkey.toLatin1());
-    return dwyco_tox_delete_friend(pk.constData(), pk.length());
+    int ret = dwyco_tox_delete_friend(pk.constData(), pk.length());
+    if(ret >= 0)
+        reload_conv_list();
+    return ret;
 }
 
 void

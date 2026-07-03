@@ -31,6 +31,7 @@
         <file>icons/wizdec.png</file>
         <file>icons/refresh.png</file>
         <file>icons/trivia-icon.png</file>
+        <file>icons/tox-icon.svg</file>
     </qresource>
     <qresource prefix="/new/red32">
         <file>icons/red-32x32/Computer-32x32.png</file>

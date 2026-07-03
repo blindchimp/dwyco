@@ -32,6 +32,9 @@ class Conversation : public QObject
     QML_READONLY_VAR_PROPERTY(bool, pal)
     QML_READONLY_VAR_PROPERTY(bool, has_hidden)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
+    QML_READONLY_VAR_PROPERTY(bool, is_tox)
+    QML_READONLY_VAR_PROPERTY(bool, is_tox_friend)
+    QML_READONLY_VAR_PROPERTY(QString, tox_section)
 
 
 public:
@@ -48,6 +51,9 @@ public:
         m_selected = false;
         m_pal = false;
         m_has_hidden = false;
+        m_is_tox = false;
+        m_is_tox_friend = false;
+        m_tox_section = "";
         update_counter = -1;
     }
     void load_external_state(const QByteArray& uid);
@@ -66,6 +72,9 @@ public:
     Conversation * add_uid_to_model(const QByteArray& uid);
     void redecorate();
     void reload_possible_changes(long time);
+
+    static void refresh_tox_friend_cache();
+    static bool is_uid_tox_friend(const QByteArray& uid);
 
     void set_all_selected(bool);
     void obliterate_all_selected();

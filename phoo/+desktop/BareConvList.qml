@@ -220,9 +220,41 @@ Item {
        //visible: !show_grid.grid_checked
 
        model: ConvListModel
-       delegate: convlist_delegate
-       clip: true
-       highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
+        delegate: convlist_delegate
+        clip: true
+        section.property: "tox_section"
+        section.delegate: Rectangle {
+            height: 24
+            visible: section !== ""
+            color: "#444444"
+            Rectangle {
+                height: 1
+                color: "#666666"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+            }
+            Row {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 8
+                spacing: 6
+                Image {
+                    width: 16
+                    height: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    source: "qrc:/new/prefix1/icons/tox-icon.svg"
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    text: section
+                    color: "white"
+                    font.bold: true
+                    font.pixelSize: applicationWindow1.font.pixelSize
+                }
+            }
+        }
+        highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
        highlightMoveDuration: 200
        highlightMoveVelocity: -1
        //spacing: 3
