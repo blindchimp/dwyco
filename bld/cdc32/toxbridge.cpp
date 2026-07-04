@@ -315,7 +315,6 @@ process_tox_event(const char *type, const vc &args)
         if(args[2].type() == VC_INT)
             pos = (uint64_t)(long long)args[2];
         vc data = args[3];
-        (void)pos;
 
         DwString key = xfer_key(fn, fnum);
         std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
@@ -361,7 +360,7 @@ process_tox_event(const char *type, const vc &args)
             // normal data chunk — append to temp file
             const char *buf = (const char *)data;
             size_t len = data.len();
-            ssize_t n = write(xfer.fd, buf, len);
+            ssize_t n = pwrite(xfer.fd, buf, len, pos);
             if(n < 0 || (size_t)n != len)
             {
                 GRTLOG("tox: file write error fn=%d fnum=%d", fn, fnum);
@@ -424,20 +423,30 @@ process_tox_event(const char *type, const vc &args)
         if(lseek(xfer.fd, position, SEEK_SET) < 0)
         {
             GRTLOG("tox: file_chunk_request lseek error fn=%d fnum=%d", (int)fn, (int)fnum);
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            fail_outgoing(xfer.local_mid);
+            Outgoing_xfers.erase(oit);
             return;
         }
 
-        char buf[4096];
-        if(length > sizeof(buf))
-            length = sizeof(buf);
-        ssize_t n = read(xfer.fd, buf, (size_t)length);
-        if(n < 0 || (size_t)n != length)
+        uint64_t read_len = length;
+        const uint64_t max_chunk = 65536;
+        if(read_len > max_chunk)
+            read_len = max_chunk;
+        char *buf = new char[read_len];
+        ssize_t n = read(xfer.fd, buf, (size_t)read_len);
+        if(n < 0 || (size_t)n != read_len)
         {
             GRTLOG("tox: file_chunk_request read error fn=%d fnum=%d", (int)fn, (int)fnum);
+            delete[] buf;
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            fail_outgoing(xfer.local_mid);
+            Outgoing_xfers.erase(oit);
             return;
         }
 
         vc chunk(VC_BSTRING, buf, n);
+        delete[] buf;
         if(toxp_file_send_data(Tox_plugin, fn, fnum, position, chunk))
         {
             xfer.sent_size += n;
@@ -445,6 +454,10 @@ process_tox_event(const char *type, const vc &args)
         else
         {
             GRTLOG("tox: file_chunk_request send error fn=%d fnum=%d", (int)fn, (int)fnum);
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            fail_outgoing(xfer.local_mid);
+            Outgoing_xfers.erase(oit);
+            return;
         }
 
     } else if(strcmp(type, "file_control") == 0 && args.num_elems() >= 3) {
@@ -561,6 +574,15 @@ tox_bridge_shutdown()
 {
     if(!Started)
         return;
+
+    // clean up incoming file transfers
+    for(std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.begin();
+        it != Incoming_xfers.end(); ++it)
+    {
+        if(it->second.fd >= 0)
+            close(it->second.fd);
+    }
+    Incoming_xfers.clear();
 
     // clean up outgoing file transfers
     for(std::map<DwString, OutgoingFileTransfer>::iterator it = Outgoing_xfers.begin();
@@ -687,7 +709,8 @@ tox_bridge_friend_add(const vc &address, const vc &message)
     uint32_t fn;
     if(toxp_friend_add(Tox_plugin, address, message, &fn))
     {
-        vc pseudo(address, 10);
+        vc pubkey((const char *)address, 32);
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         tox_uid_cache_add(pseudo);
         return 1;
     }
@@ -1205,7 +1228,7 @@ tox_bridge_send_file_message_by_uid(const vc &pseudo_uid, const vc &text,
 void
 tox_bridge_send_queued()
 {
-    if(!Tox_q)
+    if(!Tox_q || !Tox_plugin)
         return;
     vc recipient_pseudo;
     vc local_mid;
