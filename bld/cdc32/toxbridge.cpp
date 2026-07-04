@@ -6,6 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+
+/*
+ * WARNING: the bulk of this code is AI generated (opencode/big-pickle ca. 2026)
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
