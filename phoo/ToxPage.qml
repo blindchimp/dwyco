@@ -236,34 +236,32 @@ Page {
                                     spacing: mm(1)
                                     Layout.fillWidth: true
 
-                                    Text {
-                                        text: name
-                                        font.bold: true
-                                        elide: Text.ElideRight
+                                    ToxBadge {
+                                        friendUid: pubkey.substring(0, 20)
+                                        width: 14
+                                        height: 14
+                                        Layout.alignment: Qt.AlignTop
+                                    }
+
+                                    ColumnLayout {
                                         Layout.fillWidth: true
-                                    }
+                                        spacing: mm(0.3)
 
-                                    Rectangle {
-                                        width: 8
-                                        height: 8
-                                        radius: 4
-                                        color: status === "offline" ? "gray" : user_status === "busy" ? "red" : user_status === "away" ? "orange" : "green"
-                                        Layout.alignment: Qt.AlignVCenter
-                                    }
+                                        Text {
+                                            text: name
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
 
-                                    Text {
-                                        text: status === "offline" ? "offline" : user_status === "none" ? "online" : user_status
-                                        font.pixelSize: 10
-                                        color: status === "offline" ? "gray" : user_status === "busy" ? "red" : user_status === "away" ? "orange" : "green"
+                                        Text {
+                                            text: pubkey.substring(0, 8)
+                                            font.family: "monospace"
+                                            font.pixelSize: 9
+                                            color: "#666"
+                                            Layout.fillWidth: true
+                                        }
                                     }
-                                }
-
-                                Text {
-                                    text: pubkey.substring(0, 8)
-                                    font.family: "monospace"
-                                    font.pixelSize: 9
-                                    color: "#666"
-                                    Layout.fillWidth: true
                                 }
                             }
                         }
