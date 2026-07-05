@@ -21,6 +21,9 @@ Page {
         color: amber_light
     }
 
+    property string origName: ""
+    property string origStatus: ""
+
     Component.onCompleted: {
         var a = core.get_local_setting("tox_enabled")
         if(a === "" || a === "0") {
@@ -31,6 +34,8 @@ Page {
         ToxFriendModel.load_friends()
         toxNameInput.text_input = core.tox_get_name()
         toxStatusInput.text_input = core.tox_get_status_message()
+        origName = toxNameInput.text_input
+        origStatus = toxStatusInput.text_input
         var curStatus = core.tox_get_user_status()
         var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
         if(statusIdx >= 0)
@@ -44,17 +49,10 @@ Page {
         onTriggered: ToxFriendModel.load_friends()
     }
 
-    Flickable {
+    ColumnLayout {
         anchors.fill: parent
         anchors.margins: mm(2)
-        contentHeight: col.implicitHeight
-        clip: true
-        ScrollBar.vertical: ScrollBar { }
-
-        ColumnLayout {
-            id: col
-            width: parent.width
-            spacing: mm(1)
+        spacing: mm(1)
 
             RowLayout {
                 spacing: mm(1)
@@ -68,6 +66,8 @@ Page {
                             core.enable_tox()
                             toxNameInput.text_input = core.tox_get_name()
                             toxStatusInput.text_input = core.tox_get_status_message()
+                            origName = toxNameInput.text_input
+                            origStatus = toxStatusInput.text_input
                         } else {
                             core.disable_tox()
                         }
@@ -126,11 +126,12 @@ Page {
 
                 Button {
                     text: "Update"
+                    enabled: core.tox_enabled && (toxNameInput.text_input !== origName || toxStatusInput.text_input !== origStatus)
                     onClicked: {
-                        if(toxNameInput.text_input.length > 0)
-                            core.tox_set_name(toxNameInput.text_input)
-                        if(toxStatusInput.text_input.length > 0)
-                            core.tox_set_status_message(toxStatusInput.text_input)
+                        core.tox_set_name(toxNameInput.text_input)
+                        core.tox_set_status_message(toxStatusInput.text_input)
+                        origName = toxNameInput.text_input
+                        origStatus = toxStatusInput.text_input
                     }
                 }
             }
@@ -140,17 +141,16 @@ Page {
                 spacing: mm(1)
 
                 Button {
-                    text: "Copy"
-                    onClicked: core.copy_to_clipboard(toxIdField.text)
+                    text: "Copy Tox ID"
+                    onClicked: core.copy_to_clipboard(core.tox_self_address)
                 }
 
                 Label {
                     id: toxIdField
-                    text: core.tox_self_address
+                    text: core.tox_self_address.substring(0, 8)
                     font.family: "monospace"
                     font.pixelSize: 10
                     Layout.fillWidth: true
-                    elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -259,10 +259,9 @@ Page {
                                 }
 
                                 Text {
-                                    text: pubkey
+                                    text: pubkey.substring(0, 8)
                                     font.family: "monospace"
                                     font.pixelSize: 9
-                                    elide: Text.ElideRight
                                     color: "#666"
                                     Layout.fillWidth: true
                                 }
@@ -282,13 +281,46 @@ Page {
                 text: "Delete Friend"
                 enabled: friendList.currentIndex >= 0
                 Layout.fillWidth: true
-                onClicked: {
-                    var f = ToxFriendModel.get(friendList.currentIndex)
-                    core.tox_delete_friend(f.pubkey)
-                    friendList.currentIndex = -1
-                    ToxFriendModel.load_friends()
-                }
+                onClicked: deleteFriendDialog.open()
             }
+        }
+
+    Dialog {
+        id: deleteFriendDialog
+        title: "Delete Friend"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        anchors.centerIn: Overlay.overlay
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Delete this friend and remove them from your contact list?"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            CheckBox {
+                id: trashMessagesCb
+                text: "Also trash all messages with this friend"
+                checked: false
+            }
+        }
+
+        onAccepted: {
+            var f = ToxFriendModel.get(friendList.currentIndex)
+            if(trashMessagesCb.checked)
+                core.trash_messages(f.pubkey.substring(0, 20))
+            core.tox_delete_friend(f.pubkey)
+            friendList.currentIndex = -1
+            ToxFriendModel.load_friends()
+            trashMessagesCb.checked = false
+        }
+
+        onRejected: {
+            trashMessagesCb.checked = false
         }
     }
 }

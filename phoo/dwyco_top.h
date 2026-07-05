@@ -263,6 +263,7 @@ public:
     Q_INVOKABLE int delete_message(QString uid, QString mid);
     Q_INVOKABLE int clear_messages(QString uid);
     Q_INVOKABLE int clear_messages_unfav(QString uid);
+    Q_INVOKABLE void trash_messages(QString uid);
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
     Q_INVOKABLE void set_fav_message(QString mid, int val);

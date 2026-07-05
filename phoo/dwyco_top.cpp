@@ -27,6 +27,8 @@
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
+#include "dwycolist2.h"
+#include <QSet>
 #include "getinfo.h"
 #ifdef MACOS_EMOJI_CRASH_HACK
 #include <unordered_map>
@@ -3419,6 +3421,58 @@ DwycoCore::clear_messages_unfav(QString uid)
     buid = QByteArray::fromHex(buid);
     return dwyco_clear_user_unfav(buid.constData(), buid.length());
 
+}
+
+void
+DwycoCore::trash_messages(QString uid)
+{
+    QByteArray buid = uid.toLatin1();
+    buid = QByteArray::fromHex(buid);
+
+    DWYCO_LIST msgs;
+    if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
+        return;
+    simple_scoped q(msgs);
+
+    DWYCO_LIST favs;
+    if(!dwyco_get_tagged_mids(&favs, "_fav"))
+        return;
+
+    QSet<QByteArray> fset;
+
+    simple_scoped qf(favs);
+    int n = qf.rows();
+    QByteArray hbuid = buid.toHex();
+    for(int i = 0; i < n; ++i)
+    {
+        auto huid = qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID);
+        if(huid != hbuid)
+            continue;
+        fset.insert(qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID));
+    }
+
+    n = q.rows();
+
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
+
+    DWYCO_LIST um;
+    if(!dwyco_get_unfetched_messages(&um, buid.constData(), buid.length()))
+        return;
+    simple_scoped q2(um);
+    n = q2.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q2.get<QByteArray>(i, DWYCO_QMS_ID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
 }
 
 int
