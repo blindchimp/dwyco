@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.19)
 
 project(phoo VERSION 0.1 LANGUAGES CXX)
 
-option(DWYCO_TOXCORE "Build with toxcore support" OFF)
-if(DWYCO_TOXCORE)
-    add_compile_definitions(DWYCO_TOXCORE)
-endif()
-
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -29,6 +24,10 @@ include_directories(
 )
 if(UNIX AND NOT APPLE AND NOT ANDROID)
     include_directories(../bld/v4lcap)
+endif()
+
+if(DWYCO_TOXCORE)
+    add_compile_definitions(DWYCO_TOXCORE)
 endif()
 
 add_compile_definitions(NO_BUILDTIME)

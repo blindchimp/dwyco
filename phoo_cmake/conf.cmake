@@ -1,5 +1,7 @@
 set(DWYCO_APP "phoo")
 set(DWYCOBG 0)
+set(DWYCO_TOXCORE ON)
+add_compile_definitions(DWYCO_TOXCORE)
 add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
 
 add_compile_definitions(VCCFG_FILE)
@@ -11,6 +13,7 @@ add_compile_definitions(
 	DWYCO_FORCE_DESKTOP_VGQT
         DWYCO_VC_CONV
 )
+
 
 #add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
 #add_compile_options(-fsanitize=address,undefined )

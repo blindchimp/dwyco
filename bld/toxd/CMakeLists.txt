@@ -17,7 +17,7 @@ include_directories(
 if(DWYCO_TOXCORE)
     if(UNIX AND NOT APPLE)
 	include_directories(/home/dwight/git/c-toxcore/toxcore)
-        add_compile_definitions(LOCAL_TOXCORE)
+        add_compile_definitions(LOCAL_TOXCORE DWYCO_TOXCORE)
     endif()
     if(APPLE)
         include_directories(/opt/homebrew/include)
