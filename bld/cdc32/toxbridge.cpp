@@ -18,7 +18,7 @@
 #include <map>
 
 #include "toxbridge.h"
-#include "../../toxd/toxd_plugin.h"
+#include "toxd_plugin.h"
 #include "qauth.h"
 #include "dwrtlog.h"
 #include "se.h"

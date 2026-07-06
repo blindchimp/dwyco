@@ -6,17 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 
-if(DWYCO_TOXCORE)
-    add_compile_definitions(DWYCO_TOXCORE)
-    if(UNIX AND NOT APPLE)
-	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../c-toxcore/toxcore)
-        add_compile_definitions(LOCAL_TOXCORE)
-    endif()
-endif()
-
 include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
+    ${CMAKE_CURRENT_SOURCE_DIR}/../toxd
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../crypto8
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
@@ -229,7 +222,6 @@ add_library(cdc32 OBJECT
 	aqkey.cpp 
 	netlog.cpp
         toxbridge.cpp
-        ../../toxd/toxd.cpp
         sqlite3.c
         ${EXTRA_FILES}
 )

@@ -1,12 +1,13 @@
-TEMPLATE = app
-CONFIG += console
-CONFIG -= app_bundle
+TEMPLATE = lib
+CONFIG += staticlib
 CONFIG -= qt
-include(../$$DWYCO_CONFDIR/conf.pri)
+include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
-INCLUDEPATH += $${PWD}/../bld/vc
-INCLUDEPATH += $${PWD}/../bld/dwcls
-INCLUDEPATH += $${PWD}/../bld/kazlib
+INCLUDEPATH += $${PWD}/../vc
+INCLUDEPATH += $${PWD}/../dwcls
+INCLUDEPATH += $${PWD}/../kazlib
+INCLUDEPATH += $${PWD}/../jenkins
+INCLUDEPATH += $${PWD}/../cdc32
 
 
 SOURCES += \
@@ -14,8 +15,7 @@ SOURCES += \
 
 macx-* {
 INCLUDEPATH += /opt/homebrew/include
-#QMAKE_LFLAGS += /opt/homebrew/lib
-D = $${OUT_PWD}/../bld
+D = $${OUT_PWD}/..
 LIBS += \
 $${D}/vc/libvc.a \
 $${D}/dwcls/libdwcls.a \
@@ -29,7 +29,7 @@ $${D}/jenkins/libjenkins.a \
 linux-* {
 DEFINES += LOCAL_TOXCORE #TOXD_STANDALONE
 INCLUDEPATH += /home/dwight/git/c-toxcore/toxcore
-D = $${OUT_PWD}/../bld
+D = $${OUT_PWD}/..
 LIBS += \
 $${D}/vc/libvc.a \
 $${D}/dwcls/libdwcls.a \
@@ -42,7 +42,7 @@ $${D}/jenkins/libjenkins.a \
 }
 
 win32* {
-D=$${OUT_PWD}/../bld
+D=$${OUT_PWD}/..
 LIBS += \
 $${D}/vc/$${S}/vc.lib \
 $${D}/dwcls/$${S}/dwcls.lib \

@@ -14,6 +14,7 @@ D = $${OUT_PWD}/../bld
 
 LIBS += \
 $${D}/cdc32/libcdc32.a \
+$${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -28,6 +29,7 @@ $${D}/uv/libuv.a \
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
+$${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -44,6 +46,7 @@ macx-* {
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
+$${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -71,6 +74,7 @@ CONFIG(release, debug|release) {
 
 LIBS += \
 $${D}/cdc32/$${S}/cdc32.lib \
+$${D}/toxd/$${S}/toxd.lib \
 $${D}/vc/$${S}/vc.lib \
 $${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \

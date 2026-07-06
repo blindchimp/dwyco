@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.19)
 project(phoo VERSION 0.1 LANGUAGES CXX)
 
 option(DWYCO_TOXCORE "Build with toxcore support" OFF)
+if(DWYCO_TOXCORE)
+    add_compile_definitions(DWYCO_TOXCORE)
+endif()
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -259,6 +262,7 @@ set_target_properties(phoo PROPERTIES
 )
 
 set(BASELIBS
+    toxd
     cdc32
     vc
     crypto8
