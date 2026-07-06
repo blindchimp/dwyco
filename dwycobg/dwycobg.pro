@@ -91,3 +91,15 @@ DEFINES += USE_VFW  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _W
 #LIBS +=  $${PWD}/cdcdll8.lib winmm.lib user32.lib kernel32.lib
 
 }
+
+contains(DEFINES, DWYCO_TOXCORE) {
+    linux-* {
+        LIBS += /home/dwight/git/c-toxcore/build/libtoxcore.a -lsodium
+    }
+    macx-* {
+        LIBS += /opt/homebrew/lib/libtoxcore.a /opt/homebrew/lib/libsodium.a
+    }
+    win32* {
+        LIBS += toxcore.lib libsodium.lib ws2_32.lib
+    }
+}
