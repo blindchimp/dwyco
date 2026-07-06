@@ -10,8 +10,6 @@ linux {
 SUBDIRS += bld/uv
 }
 
-# used if you are using toxcore integration
-SUBDIRS += toxd
 # distributed on desktop platforms for background processing.
 # does not depend on Qt
 SUBDIRS += dwycobg
