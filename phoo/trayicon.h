@@ -23,9 +23,11 @@ public:
 
 private slots:
     void updateIcon();
+    void blink();
 
 private:
     QIcon makeIcon() const;
+    QIcon makeDimmedIcon(const QIcon &normal) const;
     QPixmap makePixmap(int size) const;
     QColor dwycoColor() const;
     QColor toxColor() const;
@@ -36,6 +38,10 @@ private:
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_menu;
     QTimer *m_timer;
+    QTimer *m_blinkTimer;
+    bool m_blinkOn;
+    QIcon m_normalIcon;
+    QIcon m_dimmedIcon;
 };
 
 #endif

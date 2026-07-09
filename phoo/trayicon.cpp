@@ -24,6 +24,8 @@ TrayIcon::TrayIcon(QObject *parent)
     , m_trayIcon(new QSystemTrayIcon(this))
     , m_menu(new QMenu())
     , m_timer(new QTimer(this))
+    , m_blinkTimer(new QTimer(this))
+    , m_blinkOn(true)
 {
     if (!QSystemTrayIcon::isSystemTrayAvailable())
     {
@@ -83,6 +85,22 @@ TrayIcon::TrayIcon(QObject *parent)
                          this, &TrayIcon::updateIcon);
     }
 
+    if (TheDwycoCore)
+    {
+        QObject::connect(TheDwycoCore, &DwycoCore::any_unviewedChanged,
+                         this, [this](bool unviewed) {
+            if (unviewed) {
+                m_blinkOn = true;
+                m_blinkTimer->start();
+            } else {
+                m_blinkTimer->stop();
+            }
+            updateIcon();
+        });
+    }
+    m_blinkTimer->setInterval(1000);
+    QObject::connect(m_blinkTimer, &QTimer::timeout, this, &TrayIcon::blink);
+
     updateIcon();
     m_trayIcon->show();
 }
@@ -96,8 +114,46 @@ void TrayIcon::updateIcon()
 {
     if (!m_trayIcon)
         return;
-    m_trayIcon->setIcon(makeIcon());
+    m_normalIcon = makeIcon();
+    m_dimmedIcon = makeDimmedIcon(m_normalIcon);
     m_trayIcon->setToolTip(makeTooltip());
+
+    if (TheDwycoCore && TheDwycoCore->get_any_unviewed() && !m_blinkOn)
+        m_trayIcon->setIcon(m_dimmedIcon);
+    else
+        m_trayIcon->setIcon(m_normalIcon);
+}
+
+void TrayIcon::blink()
+{
+    if (!m_trayIcon)
+        return;
+    if (!TheDwycoCore || !TheDwycoCore->get_any_unviewed()) {
+        m_blinkTimer->stop();
+        updateIcon();
+        return;
+    }
+    m_blinkOn = !m_blinkOn;
+    if (m_blinkOn)
+        m_trayIcon->setIcon(m_normalIcon);
+    else
+        m_trayIcon->setIcon(m_dimmedIcon);
+}
+
+QIcon TrayIcon::makeDimmedIcon(const QIcon &normal) const
+{
+    QIcon dimmed;
+    for (int size : {22, 24, 32, 44, 48, 64}) {
+        QPixmap pm = normal.pixmap(size, size);
+        QPixmap dim(size, size);
+        dim.fill(Qt::transparent);
+        QPainter p(&dim);
+        p.setOpacity(0.35);
+        p.drawPixmap(0, 0, pm);
+        p.end();
+        dimmed.addPixmap(dim);
+    }
+    return dimmed;
 }
 
 QIcon TrayIcon::makeIcon() const
