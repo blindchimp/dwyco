@@ -40,8 +40,11 @@ private:
     QTimer *m_timer;
     QTimer *m_blinkTimer;
     bool m_blinkOn;
+    bool m_appVisible;
+    bool m_backgroundAlert;
     QIcon m_normalIcon;
     QIcon m_dimmedIcon;
+    void evaluateBlink();
 };
 
 #endif

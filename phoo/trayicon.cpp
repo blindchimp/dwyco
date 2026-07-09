@@ -26,6 +26,8 @@ TrayIcon::TrayIcon(QObject *parent)
     , m_timer(new QTimer(this))
     , m_blinkTimer(new QTimer(this))
     , m_blinkOn(true)
+    , m_appVisible(true)
+    , m_backgroundAlert(false)
 {
     if (!QSystemTrayIcon::isSystemTrayAvailable())
     {
@@ -87,27 +89,62 @@ TrayIcon::TrayIcon(QObject *parent)
 
     if (TheDwycoCore)
     {
+        // new_msg fires before auto-fetch clears unviewed tags, so this
+        // catches messages that would never reach any_unviewedChanged(true)
+        QObject::connect(TheDwycoCore, &DwycoCore::new_msg,
+                         this, [this](const QString&, const QString&, const QString&) {
+            if (!m_appVisible)
+                m_backgroundAlert = true;
+            evaluateBlink();
+        });
         QObject::connect(TheDwycoCore, &DwycoCore::any_unviewedChanged,
                          this, [this](bool unviewed) {
-            if (unviewed) {
-                m_blinkOn = true;
-                m_blinkTimer->start();
-            } else {
-                m_blinkTimer->stop();
-            }
-            updateIcon();
+            if (unviewed && !m_appVisible)
+                m_backgroundAlert = true;
+            evaluateBlink();
         });
     }
+
+    QObject::connect(qGuiApp, &QGuiApplication::applicationStateChanged,
+                     this, [this](Qt::ApplicationState state) {
+        bool wasVisible = m_appVisible;
+        m_appVisible = (state == Qt::ApplicationActive);
+        if (m_appVisible && !wasVisible) {
+            m_backgroundAlert = false;
+            evaluateBlink();
+        } else if (!m_appVisible && wasVisible) {
+            if (TheDwycoCore && TheDwycoCore->get_any_unviewed())
+                m_backgroundAlert = true;
+            evaluateBlink();
+        }
+    });
+    // initial visibility state
+    m_appVisible = (qGuiApp->applicationState() == Qt::ApplicationActive);
+    if (!m_appVisible && TheDwycoCore && TheDwycoCore->get_any_unviewed())
+        m_backgroundAlert = true;
+
     m_blinkTimer->setInterval(1000);
     QObject::connect(m_blinkTimer, &QTimer::timeout, this, &TrayIcon::blink);
 
-    updateIcon();
+    evaluateBlink();
     m_trayIcon->show();
 }
 
 TrayIcon::~TrayIcon()
 {
     delete m_menu;
+}
+
+void TrayIcon::evaluateBlink()
+{
+    bool shouldBlink = !m_appVisible && m_backgroundAlert;
+    if (shouldBlink) {
+        m_blinkOn = true;
+        m_blinkTimer->start();
+    } else {
+        m_blinkTimer->stop();
+    }
+    updateIcon();
 }
 
 void TrayIcon::updateIcon()
@@ -118,7 +155,7 @@ void TrayIcon::updateIcon()
     m_dimmedIcon = makeDimmedIcon(m_normalIcon);
     m_trayIcon->setToolTip(makeTooltip());
 
-    if (TheDwycoCore && TheDwycoCore->get_any_unviewed() && !m_blinkOn)
+    if (m_blinkTimer->isActive() && !m_blinkOn)
         m_trayIcon->setIcon(m_dimmedIcon);
     else
         m_trayIcon->setIcon(m_normalIcon);
@@ -128,11 +165,6 @@ void TrayIcon::blink()
 {
     if (!m_trayIcon)
         return;
-    if (!TheDwycoCore || !TheDwycoCore->get_any_unviewed()) {
-        m_blinkTimer->stop();
-        updateIcon();
-        return;
-    }
     m_blinkOn = !m_blinkOn;
     if (m_blinkOn)
         m_trayIcon->setIcon(m_normalIcon);
