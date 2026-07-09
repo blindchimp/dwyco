@@ -449,12 +449,15 @@ Page {
                                 }
                             }
                         }
-                        MenuItem {
-                            text: "Send video message"
-                            onTriggered: {
-                                core.start_control(to_uid)
-                                dwyco_vid_rec.uid = to_uid
-                                stack.push(dwyco_vid_rec)
+                        Repeater {
+                            model: core.is_tox_uid(to_uid) ? 0 : 1
+                            MenuItem {
+                                text: "Send video message"
+                                onTriggered: {
+                                    core.start_control(to_uid)
+                                    dwyco_vid_rec.uid = to_uid
+                                    stack.push(dwyco_vid_rec)
+                                }
                             }
                         }
 
@@ -1168,7 +1171,7 @@ Page {
                 source: mi("ic_add_a_photo_black_24dp.png")
             }
             checkable: false
-            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0)
+            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0) && !core.is_tox_uid(to_uid)
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
@@ -1277,8 +1280,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
-        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input && !core.is_tox_uid(to_uid)
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input && !core.is_tox_uid(to_uid)
         z: 5
         background: Rectangle {
             id: bg2
