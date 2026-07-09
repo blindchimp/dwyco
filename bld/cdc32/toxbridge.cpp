@@ -35,6 +35,23 @@
 
 namespace dwyco {
 
+class ToxQueue : public SimpleSql
+{
+public:
+    ToxQueue();
+    void init_schema(const DwString&);
+    int enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file = 0);
+    vc dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id);
+    int mark_inprogress(int64_t row_id, uint32_t tox_mid);
+    int mark_sent(int64_t row_id);
+    int mark_failed(int64_t row_id);
+    int remove_message(const vc &local_mid);
+    vc load_qqm_blob(int64_t row_id);
+    void recover_inprogress();
+    vc get_qd_msgs(const vc &pseudo_uid);
+    vc load_qd_body(const vc &local_mid);
+};
+
 static ToxPlugin *Tox_plugin;
 static int Started;
 static ToxQueue *Tox_q;
@@ -640,10 +657,20 @@ tox_bridge_is_active()
     return Started;
 }
 
-ToxQueue *
-tox_queue()
+vc
+tox_queue_get_qd_msgs(const vc &pseudo_uid)
 {
-    return Tox_q;
+    if(!Tox_q)
+        return vc(VC_VECTOR);
+    return Tox_q->get_qd_msgs(pseudo_uid);
+}
+
+vc
+tox_queue_load_qd_body(const vc &local_mid)
+{
+    if(!Tox_q)
+        return vcnil;
+    return Tox_q->load_qd_body(local_mid);
 }
 
 void

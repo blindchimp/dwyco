@@ -6533,14 +6533,10 @@ dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid)
 
     // append tox queued/in-progress/failed messages
     {
-        dwyco::ToxQueue *tq = tox_queue();
-        if(tq)
-        {
-            vc tox_msgs = tq->get_qd_msgs(buid);
-            int n = tox_msgs.num_elems();
-            for(int i = 0; i < n; ++i)
-                ret.append(tox_msgs[i]);
-        }
+        vc tox_msgs = tox_queue_get_qd_msgs(buid);
+        int n = tox_msgs.num_elems();
+        for(int i = 0; i < n; ++i)
+            ret.append(tox_msgs[i]);
     }
 
     sort_on_time(ret, 2);
@@ -6559,9 +6555,7 @@ dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, in
         b = load_qd_to_body(pid);
     if(b.is_nil())
     {
-        dwyco::ToxQueue *tq = tox_queue();
-        if(tq)
-            b = tq->load_qd_body(pid);
+        b = tox_queue_load_qd_body(pid);
     }
     if(b.is_nil())
         return 0;

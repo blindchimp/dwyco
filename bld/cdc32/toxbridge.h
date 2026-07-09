@@ -15,35 +15,9 @@
 
 #include "vc.h"
 #include "ser.h"
-#include "simplesql.h"
+#include "dwstr.h"
 
 namespace dwyco {
-
-class ToxQueue : public SimpleSql
-{
-public:
-    ToxQueue();
-    void init_schema(const DwString&);
-    int enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file = 0);
-    vc dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id);
-    int mark_inprogress(int64_t row_id, uint32_t tox_mid);
-    int mark_sent(int64_t row_id);
-    int mark_failed(int64_t row_id);
-    int remove_message(const vc &local_mid);
-    vc load_qqm_blob(int64_t row_id);
-    void recover_inprogress();
-
-    // QD-compatible methods for integrating tox messages into the
-    // dwyco_get_qd_messages API.
-    // Returns a vc vector in the same format as load_q_files():
-    //   [0]=recipient_pseudo, [1]=local_mid, [2]=logical_clock,
-    //   [3]=attachment (nil), [4]=special_type (nil)
-    vc get_qd_msgs(const vc &pseudo_uid);
-
-    // Load a queued message body by local_mid (pers_id).
-    // Returns direct_to_body2(qqm[QQM_MSG_VEC]) or nil if not found.
-    vc load_qd_body(const vc &local_mid);
-};
 
 // NOTE: for this API, identifiers and addresses are all
 // binary strings. there is no hex encoding.
@@ -93,8 +67,10 @@ int tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out);
 // friend number lookup (run on startup to rebuild cache)
 void tox_bridge_rebuild_friend_cache();
 
-// access the queue instance for integration with dwyco_ API
-ToxQueue *tox_queue();
+// QD-compatible queue access for integrating tox messages into the
+// dwyco_get_qd_messages / dwyco_qd_message_to_body APIs.
+vc tox_queue_get_qd_msgs(const vc &pseudo_uid);
+vc tox_queue_load_qd_body(const vc &local_mid);
 
 // typing indicators
 int tox_bridge_set_typing(uint32_t friend_number, int typing);
