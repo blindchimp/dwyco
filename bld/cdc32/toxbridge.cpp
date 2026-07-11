@@ -170,7 +170,7 @@ make_msg_body(const vc &from, const vc &text,
     return body;
 }
 
-static void
+void
 tox_uid_cache_add(const vc &pseudo_uid)
 {
     if(Tox_q)
@@ -593,6 +593,7 @@ tox_bridge_init(const char *save_file)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
     tox_bridge_rebuild_friend_cache();
+    tox_bridge_seed_uid_cache_from_tags();
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
@@ -929,6 +930,25 @@ tox_bridge_rebuild_friend_cache()
         }
         GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);
     }
+}
+
+void
+tox_bridge_seed_uid_cache_from_tags()
+{
+    vc mids = sql_get_tagged_mids2("_tox_friend");
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        DwString m((const char *)mids[i][0]);
+        int uscore = m.find_first_of("_");
+        if(uscore > 0 && uscore < m.length() - 1)
+        {
+            DwString uid_hex(m.c_str(), 0, uscore);
+            vc uid = from_hex(vc(VC_BSTRING, uid_hex.c_str(), uid_hex.length()));
+            if(!uid.is_nil())
+                tox_uid_cache_add(uid);
+        }
+    }
+    GRTLOG("tox bridge: seeded uid cache from %d tags", mids.num_elems(), 0);
 }
 
 int

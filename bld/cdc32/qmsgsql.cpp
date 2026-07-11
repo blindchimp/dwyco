@@ -46,6 +46,7 @@
 #include "dirth.h"
 #include "pulls.h"
 #include "synccalls.h"
+#include "toxbridge.h"
 
 namespace dwyco {
 using namespace dwyco::qmsgsql;
@@ -158,17 +159,6 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
         sql_simple("create index if not exists mt.gtombi2 on gtomb(time)");
 
-        sql_simple("drop table if exists mt.static_crdt_tags");
-        sql_simple("create table mt.static_crdt_tags(tag text primary key on conflict ignore not null on conflict fail)");
-        sql_simple("insert into static_crdt_tags values('_fav')");
-        sql_simple("insert into static_crdt_tags values('_hid')");
-        sql_simple("insert into static_crdt_tags values('_ignore')");
-        sql_simple("insert into static_crdt_tags values('_pal')");
-        sql_simple("insert into static_crdt_tags values('_leader')");
-        sql_simple("insert into static_crdt_tags values('_trash')");
-        sql_simple("insert into static_crdt_tags values('_tox_friend')");
-        sql_simple("insert into static_crdt_tags values('_tox_device')");
-
         // this is an upgrade, the msg_tags2 stuff should be installed in gmt
         // with proper guids. this should mostly only be done once, but there
         // are cases where people reinstall old software that might trigger
@@ -185,7 +175,15 @@ QMsgSql::init_schema_fav()
         rollback_transaction();
     }
     start_transaction();
+    sql_simple("create table if not exists mt.static_crdt_tags(tag text primary key on conflict ignore not null on conflict fail)");
+    sql_simple("insert into static_crdt_tags values('_fav')");
+    sql_simple("insert into static_crdt_tags values('_hid')");
+    sql_simple("insert into static_crdt_tags values('_ignore')");
+    sql_simple("insert into static_crdt_tags values('_pal')");
+    sql_simple("insert into static_crdt_tags values('_leader')");
     sql_simple("insert into static_crdt_tags values('_trash')");
+    sql_simple("insert into static_crdt_tags values('_tox_friend')");
+    sql_simple("insert into static_crdt_tags values('_tox_device')");
     commit_transaction();
 }
 
@@ -1296,6 +1294,7 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
                         info[QIR_DESCRIPTION] = "";
                         info[QIR_LOCATION] = "";
                         Session_infos.add_kv(uid, info);
+                        tox_uid_cache_add(uid);
                     }
                 }
             }
@@ -1601,6 +1600,8 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_ignore')");
     sql_simple("insert into static_uid_tags values('_pal')");
     sql_simple("insert into static_uid_tags values('_leader')");
+    sql_simple("insert into static_uid_tags values('_tox_friend')");
+    sql_simple("insert into static_uid_tags values('_tox_device')");
 
     // this is just a scratch table, i put it up here to avoid "create temp"
     // during normal operations...
