@@ -638,6 +638,53 @@ func TestCHitBackReference(t *testing.T) {
 	}
 }
 
+// TestDecodeVCRegex tests that VC_REGEX (type 12) is decoded as a string,
+// matching the C++ behavior where vc_regex inherits vc_string's wire format.
+func TestDecodeVCRegex(t *testing.T) {
+	// VC_REGEX(".*"): type "12" + encode_long(2) + ".*" = "12012.*"
+	data := []byte("12012.*")
+	got, err := Decode(data)
+	if err != nil {
+		t.Fatalf("Decode VC_REGEX: %v", err)
+	}
+	s, ok := got.AsString()
+	if !ok {
+		t.Fatalf("VC_REGEX not decoded as string: %v", got)
+	}
+	if s != ".*" {
+		t.Errorf("VC_REGEX value = %q, want %q", s, ".*")
+	}
+}
+
+// TestDecodeVCRegexInVector tests VC_REGEX inside a vector.
+func TestDecodeVCRegexInVector(t *testing.T) {
+	// Vector [42, regex("abc"), nil]:
+	// "09" + encode_long(3)="013" + int(42)="010242" + regex("abc")="12013abc" + nil="04"
+	data := []byte("0901301024212013abc04")
+	got, err := Decode(data)
+	if err != nil {
+		t.Fatalf("Decode vector with regex: %v", err)
+	}
+	elems := got.Elems()
+	if len(elems) != 3 {
+		t.Fatalf("vector len = %d, want 3", len(elems))
+	}
+	i0, _ := elems[0].Int()
+	if i0 != 42 {
+		t.Errorf("vector[0] = %d, want 42", i0)
+	}
+	s1, ok := elems[1].AsString()
+	if !ok {
+		t.Fatalf("vector[1] not string: %v", elems[1])
+	}
+	if s1 != "abc" {
+		t.Errorf("vector[1] = %q, want %q", s1, "abc")
+	}
+	if !elems[2].IsNil() {
+		t.Errorf("vector[2] not nil")
+	}
+}
+
 // FuzzXferIn fuzzes the deserializer for crashes and panics.
 func FuzzXferIn(f *testing.F) {
 	// Seed with known-good inputs

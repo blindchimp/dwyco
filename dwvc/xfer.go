@@ -333,6 +333,10 @@ func (xs *XferStream) realXferIn() (Vc, int, error) {
 		rep.kvs = kvs
 		return Vc{rep: rep}, total + n, nil
 
+	case VCRegex:
+		v, n, err := vcStringXferIn(xs)
+		return v, total + n, err
+
 	default:
 		return VcNil(), 0, ErrParse
 	}

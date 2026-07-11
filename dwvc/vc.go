@@ -6,9 +6,10 @@ package dwvc
 // For the xfer subsystem, only the serializable subset of types is needed.
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"math"
-	"strings"
 )
 
 // VcType matches the C++ vc_type enum values that are serialized.
@@ -24,6 +25,7 @@ const (
 	VCVector  VcType = 9
 	VCList    VcType = 10
 	VCBag     VcType = 11
+	VCRegex   VcType = 12
 	VCCHit    VcType = 17
 	VCTree    VcType = 31
 )
@@ -357,55 +359,100 @@ func (v *vcTree) xferIn(xs *XferStream) (int, error) {
 
 // --- String representation for debugging ---
 
-func (v Vc) String() string {
+func (v Vc) writeTo(w io.Writer, visited map[uintptr]int) {
 	if v.rep == nil {
-		return "nil"
+		fmt.Fprint(w, "nil")
+		return
 	}
+	if v.rep.isAtomic() {
+		switch r := v.rep.(type) {
+		case *vcInt:
+			fmt.Fprintf(w, "%d", r.i)
+		case *vcDouble:
+			fmt.Fprintf(w, "%.*g", 17, r.d)
+		case *vcString:
+			fmt.Fprintf(w, "%q", r.s)
+		}
+		return
+	}
+	id := repID(v.rep)
+	if idx, ok := visited[id]; ok {
+		fmt.Fprintf(w, "#%d", idx)
+		return
+	}
+	visited[id] = len(visited)
 	switch r := v.rep.(type) {
-	case *vcInt:
-		return fmt.Sprintf("%d", r.i)
-	case *vcDouble:
-		return fmt.Sprintf("%.*g", 17, r.d)
-	case *vcString:
-		return fmt.Sprintf("%q", r.s)
 	case *vcVector:
-		parts := make([]string, len(r.elems))
+		fmt.Fprint(w, "vector(")
 		for i, e := range r.elems {
-			parts[i] = e.String()
+			if i > 0 {
+				fmt.Fprint(w, " ")
+			}
+			e.writeTo(w, visited)
 		}
-		return "vector(" + strings.Join(parts, " ") + ")"
-	case *vcMap:
-		parts := make([]string, len(r.kvs))
-		for i, kv := range r.kvs {
-			parts[i] = "vector(" + kv.key.String() + " " + kv.value.String() + ")"
-		}
-		return "map(" + strings.Join(parts, " ") + ")"
+		fmt.Fprint(w, ")")
 	case *vcSet:
-		parts := make([]string, len(r.elems))
+		fmt.Fprint(w, "set(")
 		for i, e := range r.elems {
-			parts[i] = e.String()
+			if i > 0 {
+				fmt.Fprint(w, " ")
+			}
+			e.writeTo(w, visited)
 		}
-		return "set(" + strings.Join(parts, " ") + ")"
+		fmt.Fprint(w, ")")
 	case *vcBag:
-		parts := make([]string, len(r.elems))
+		fmt.Fprint(w, "bag(")
 		for i, e := range r.elems {
-			parts[i] = e.String()
+			if i > 0 {
+				fmt.Fprint(w, " ")
+			}
+			e.writeTo(w, visited)
 		}
-		return "bag(" + strings.Join(parts, " ") + ")"
+		fmt.Fprint(w, ")")
 	case *vcList:
-		parts := make([]string, len(r.elems))
+		fmt.Fprint(w, "list(")
 		for i, e := range r.elems {
-			parts[i] = e.String()
+			if i > 0 {
+				fmt.Fprint(w, " ")
+			}
+			e.writeTo(w, visited)
 		}
-		return "list(" + strings.Join(parts, " ") + ")"
-	case *vcTree:
-		parts := make([]string, len(r.kvs))
+		fmt.Fprint(w, ")")
+	case *vcMap:
+		fmt.Fprint(w, "map(")
 		for i, kv := range r.kvs {
-			parts[i] = "vector(" + kv.key.String() + " " + kv.value.String() + ")"
+			if i > 0 {
+				fmt.Fprint(w, " ")
+			}
+			fmt.Fprint(w, "vector(")
+			kv.key.writeTo(w, visited)
+			fmt.Fprint(w, " ")
+			kv.value.writeTo(w, visited)
+			fmt.Fprint(w, ")")
 		}
-		return "tree(" + strings.Join(parts, " ") + ")"
+		fmt.Fprint(w, ")")
+	case *vcTree:
+		fmt.Fprint(w, "tree(")
+		for i, kv := range r.kvs {
+			if i > 0 {
+				fmt.Fprint(w, " ")
+			}
+			fmt.Fprint(w, "vector(")
+			kv.key.writeTo(w, visited)
+			fmt.Fprint(w, " ")
+			kv.value.writeTo(w, visited)
+			fmt.Fprint(w, ")")
+		}
+		fmt.Fprint(w, ")")
+	default:
+		fmt.Fprint(w, "?")
 	}
-	return "?"
+}
+
+func (v Vc) String() string {
+	var buf bytes.Buffer
+	v.writeTo(&buf, make(map[uintptr]int))
+	return buf.String()
 }
 
 // EncodeDouble produces the %g representation matching C++ vc_double::xfer_out.
