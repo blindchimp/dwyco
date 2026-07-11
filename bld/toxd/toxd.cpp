@@ -797,6 +797,19 @@ toxp_friend_list(ToxPlugin *p)
     return result;
 }
 
+vc
+toxp_friend_get_name(ToxPlugin *p, uint32_t fn)
+{
+    size_t name_len = tox_friend_get_name_size(p->tox, fn, NULL);
+    if(name_len > 0 && name_len <= TOX_MAX_NAME_LENGTH)
+    {
+        uint8_t name[TOX_MAX_NAME_LENGTH];
+        tox_friend_get_name(p->tox, fn, name, NULL);
+        return vc(VC_BSTRING, (const char *)name, (long)name_len);
+    }
+    return vcnil;
+}
+
 // --- old-style main kept for standalone test builds ---
 #if defined(TOXD_STANDALONE)
 
@@ -962,6 +975,14 @@ vc
 toxp_friend_list(ToxPlugin *p)
 {
     (void)p;
+    return vcnil;
+}
+
+vc
+toxp_friend_get_name(ToxPlugin *p, uint32_t fn)
+{
+    (void)p;
+    (void)fn;
     return vcnil;
 }
 

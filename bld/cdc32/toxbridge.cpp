@@ -594,6 +594,7 @@ tox_bridge_init(const char *save_file)
     tox_bridge_cleanup_incomplete();
     tox_bridge_rebuild_friend_cache();
     tox_bridge_seed_uid_cache_from_tags();
+    tox_bridge_create_tags_from_uid_cache();
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
@@ -752,6 +753,22 @@ tox_bridge_friend_add(const vc &address, const vc &message)
         vc pubkey((const char *)address, 32);
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         tox_uid_cache_add(pseudo);
+        vc name = toxp_friend_get_name(Tox_plugin, fn);
+        if(name.is_nil() || name == vc(""))
+        {
+            vc old;
+            if(Session_infos.find(pseudo, old) && old.num_elems() > QIR_HANDLE)
+                name = old[QIR_HANDLE];
+        }
+        if(!name.is_nil() && name != vc(""))
+        {
+            Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            DwString composite;
+            composite += to_hex(pseudo);
+            composite += "_";
+            composite += to_hex(name);
+            safe_add_crdt_tag(composite, "_tox_friend");
+        }
         return 1;
     }
     return 0;
@@ -767,6 +784,22 @@ tox_bridge_friend_add_norequest(const vc &pubkey)
     {
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         tox_uid_cache_add(pseudo);
+        vc name = toxp_friend_get_name(Tox_plugin, fn);
+        if(name.is_nil() || name == vc(""))
+        {
+            vc old;
+            if(Session_infos.find(pseudo, old) && old.num_elems() > QIR_HANDLE)
+                name = old[QIR_HANDLE];
+        }
+        if(!name.is_nil() && name != vc(""))
+        {
+            Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            DwString composite;
+            composite += to_hex(pseudo);
+            composite += "_";
+            composite += to_hex(name);
+            safe_add_crdt_tag(composite, "_tox_friend");
+        }
         return 1;
     }
     return 0;
@@ -949,6 +982,54 @@ tox_bridge_seed_uid_cache_from_tags()
         }
     }
     GRTLOG("tox bridge: seeded uid cache from %d tags", mids.num_elems(), 0);
+}
+
+void
+tox_bridge_create_tags_from_uid_cache()
+{
+    if(!Tox_q)
+        return;
+    vc uids = Tox_q->sql_simple("SELECT pseudo_uid FROM tox_uid_type");
+    int created = 0;
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        vc uid = uids[i][0];
+        vc name;
+        if(!Friend_cache.is_nil())
+        {
+            int n = Friend_cache.num_elems();
+            for(int j = 0; j < n; ++j)
+            {
+                vc entry = Friend_cache[j];
+                vc pubkey;
+                if(entry.find("pubkey", pubkey))
+                {
+                    vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+                    if(pseudo == uid)
+                    {
+                        entry.find("name", name);
+                        break;
+                    }
+                }
+            }
+        }
+        if(name.is_nil() || name == vc(""))
+        {
+            vc old;
+            if(Session_infos.find(uid, old) && old.num_elems() > QIR_HANDLE)
+                name = old[QIR_HANDLE];
+        }
+        if(!name.is_nil() && name != vc(""))
+        {
+            DwString composite;
+            composite += to_hex(uid);
+            composite += "_";
+            composite += to_hex(name);
+            safe_add_crdt_tag(composite, "_tox_friend");
+            ++created;
+        }
+    }
+    GRTLOG("tox bridge: created %d tags from uid cache", created, 0);
 }
 
 int

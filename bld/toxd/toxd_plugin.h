@@ -38,6 +38,7 @@ int toxp_friend_add(ToxPlugin *p, const vc &address, const vc &message, uint32_t
 int toxp_friend_add_norequest(ToxPlugin *p, const vc &pubkey, uint32_t *fn_out);
 int toxp_friend_delete(ToxPlugin *p, uint32_t fn);
 vc toxp_friend_list(ToxPlugin *p);
+vc toxp_friend_get_name(ToxPlugin *p, uint32_t fn);
 
 int toxp_message_send(ToxPlugin *p, uint32_t fn, const vc &text, int is_action, uint32_t *mid_out, int *tox_err_out);
 int toxp_typing_set(ToxPlugin *p, uint32_t fn, int typing);
