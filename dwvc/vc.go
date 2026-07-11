@@ -373,11 +373,11 @@ func (v Vc) String() string {
 		for i, e := range r.elems {
 			parts[i] = e.String()
 		}
-		return "[" + strings.Join(parts, " ") + "]"
+		return "vector(" + strings.Join(parts, " ") + ")"
 	case *vcMap:
 		parts := make([]string, len(r.kvs))
 		for i, kv := range r.kvs {
-			parts[i] = kv.key.String() + ":" + kv.value.String()
+			parts[i] = "vector(" + kv.key.String() + " " + kv.value.String() + ")"
 		}
 		return "map(" + strings.Join(parts, " ") + ")"
 	case *vcSet:
@@ -401,7 +401,7 @@ func (v Vc) String() string {
 	case *vcTree:
 		parts := make([]string, len(r.kvs))
 		for i, kv := range r.kvs {
-			parts[i] = kv.key.String() + ":" + kv.value.String()
+			parts[i] = "vector(" + kv.key.String() + " " + kv.value.String() + ")"
 		}
 		return "tree(" + strings.Join(parts, " ") + ")"
 	}
