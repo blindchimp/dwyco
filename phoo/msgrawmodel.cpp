@@ -698,6 +698,7 @@ msglist_raw::roleNames() const
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
+    rn(IS_FAILED);
 #undef rn
     return roles;
 }
@@ -803,8 +804,18 @@ msglist_raw::qd_data ( int r, int role ) const
     case FETCH_STATE:
         return QString("none");
 
+    case IS_FAILED:
+    {
+        int failed = dwyco_qd_message_is_failed(pers_id.constData(), pers_id.length());
+        return failed;
+    }
     case Qt::DecorationRole:
+    {
+        int failed = dwyco_qd_message_is_failed(pers_id.constData(), pers_id.length());
+        if(failed)
+            return QVariant("qrc:///new/red32/icons/red-32x32/no-32x32.png");
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
+    }
 
     case IS_NO_FORWARD:
     {
@@ -1183,6 +1194,8 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         auto huid = m.get<QByteArray>(r, DWYCO_MSG_IDX_ASSOC_UID);
         return huid;
     }
+    else if(role == IS_FAILED)
+        return 0;
     }
     catch(...)
     {

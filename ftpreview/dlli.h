@@ -787,6 +787,7 @@ void DWYCOEXPORT dwyco_cancel_message_fetch(int fetch_id);
 // lists of messages that are q'd for send
 void DWYCOEXPORT dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, int len_pers_id);
+int DWYCOEXPORT dwyco_qd_message_is_failed(const char *pers_id, int len_pers_id);
 
 
 // get_body_text returns a list with a single row (=0)
@@ -2208,7 +2209,7 @@ dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
 
-int DWYCOEXPORT dwyco_enable_tox(const char *tox_data_dir);
+int DWYCOEXPORT dwyco_enable_tox(const char *tox_save_file);
 int DWYCOEXPORT dwyco_disable_tox();
 int DWYCOEXPORT dwyco_tox_get_self_public_key(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_get_self_address(char **out, int *len_out);

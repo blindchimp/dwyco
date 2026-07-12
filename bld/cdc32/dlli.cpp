@@ -6567,6 +6567,15 @@ dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, in
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_qd_message_is_failed(const char *pers_id, int len_pers_id)
+{
+    DwString a(pers_id, 0, len_pers_id);
+    if(fn_extension(a) == ".q")
+        return 0;
+    return tox_queue_is_failed(pers_id, len_pers_id);
+}
 
 DWYCOEXPORT
 int

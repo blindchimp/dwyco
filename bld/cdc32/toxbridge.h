@@ -73,6 +73,7 @@ void tox_bridge_create_tags_from_uid_cache();
 // dwyco_get_qd_messages / dwyco_qd_message_to_body APIs.
 vc tox_queue_get_qd_msgs(const vc &pseudo_uid);
 vc tox_queue_load_qd_body(const vc &local_mid);
+int tox_queue_is_failed(const char *local_mid, int len);
 
 // typing indicators
 int tox_bridge_set_typing(uint32_t friend_number, int typing);

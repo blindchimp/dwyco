@@ -675,6 +675,19 @@ tox_queue_load_qd_body(const vc &local_mid)
     return Tox_q->load_qd_body(local_mid);
 }
 
+int
+tox_queue_is_failed(const char *local_mid, int len)
+{
+    if(!Tox_q)
+        return 0;
+    vc pid(VC_BSTRING, local_mid, len);
+    vc res = Tox_q->sql_simple("SELECT status FROM tox_outbox WHERE local_mid=?1", pid);
+    if(res.is_nil() || res.num_elems() == 0)
+        return 0;
+    int status = (int)(long long)res[0][0];
+    return status == 3 ? 1 : 0;
+}
+
 void
 tox_bridge_poll()
 {

@@ -51,6 +51,7 @@ public:
         FETCH_STATE,
         ATTACHMENT_PERCENT,
         ASSOC_UID, // who the message is from (or to, if sent msg)
+        IS_FAILED,
     };
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;

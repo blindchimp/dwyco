@@ -781,7 +781,13 @@ Page {
 
             border.width: 1
             border.color: divider
-            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
+            color: {
+                if(IS_QD === 1 && IS_FAILED === 1)
+                    return "#663333"
+                if(IS_QD === 1)
+                    return "gray"
+                return (SENT === 0) ? accent : primary_light
+            }
 
             //anchors.left: {(SENT == 0) ? parent.left : undefined}
             //x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
