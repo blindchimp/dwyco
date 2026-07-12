@@ -3,3 +3,4 @@
 * assume DWYCO_VC_CONV is defined
 * we are currently working on integrating the toxcore messenger with phoo
 * if you need new dlli.h API, make the change in bld/cdc32/dlli.h and copy it to phoo
+* do not edit files in selfs or rando or cdcx. those are different applications.

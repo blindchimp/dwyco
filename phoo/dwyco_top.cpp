@@ -597,6 +597,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_SEND_START:
     case DWYCO_SE_MSG_SEND_FAIL:
     case DWYCO_SE_MSG_SEND_SUCCESS:
+    case DWYCO_SE_MSG_SEND_CANCELED:
         emit TheDwycoCore->msg_send_status(cmd, huid, str_data);
         break;
     case DWYCO_SE_MSG_SEND_STATUS:
@@ -3137,6 +3138,17 @@ DwycoCore::delete_message(QString uid, QString mid)
         return dwyco_kill_message(bmid.constData(), bmid.length());
     }
     return dwyco_delete_saved_message(buid.constData(), buid.length(), bmid.constData());
+}
+
+int
+DwycoCore::is_queued_message(QString mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    DWYCO_LIST l;
+    int ret = dwyco_qd_message_to_body(&l, bmid.constData(), bmid.length());
+    if(ret)
+        dwyco_list_release(l);
+    return ret;
 }
 
 int

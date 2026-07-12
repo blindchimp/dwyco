@@ -268,6 +268,7 @@ public:
     Q_INVOKABLE int get_fav_message(QString mid);
     Q_INVOKABLE void set_fav_message(QString mid, int val);
     Q_INVOKABLE int has_tag_message(QString mid, QString tag);
+    Q_INVOKABLE int is_queued_message(QString mid);
     Q_INVOKABLE void set_tag_message(QString mid, QString tag);
     Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
 

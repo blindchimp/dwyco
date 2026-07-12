@@ -1064,7 +1064,8 @@ ApplicationWindow {
         onMsg_send_status: (status, recipient, pers_id)=> {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
-            if(status === DwycoCore.MSG_SEND_SUCCESS) {
+            if(status === DwycoCore.MSG_SEND_SUCCESS ||
+               status === DwycoCore.MSG_SEND_CANCELED) {
                 //sound_sent.play()
                 if(themsglist.uid === recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()

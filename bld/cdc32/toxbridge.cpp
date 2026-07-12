@@ -1487,6 +1487,23 @@ tox_bridge_kill_message(const vc &local_mid)
     if(res.is_nil() || res.num_elems() == 0)
         return 0;
     vc recipient = res[0][0];
+
+    // cancel any active file transfer for this message
+    for(auto it = Outgoing_xfers.begin(); it != Outgoing_xfers.end(); )
+    {
+        if(it->second.local_mid == local_mid)
+        {
+            toxp_file_cancel(Tox_plugin, it->second.tox_fn, it->second.tox_fnum);
+            if(it->second.fd >= 0)
+                close(it->second.fd);
+            it = Outgoing_xfers.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
     Tox_q->remove_message(local_mid);
     se_emit_msg(SE_MSG_SEND_CANCELED, local_mid, recipient);
     return 1;

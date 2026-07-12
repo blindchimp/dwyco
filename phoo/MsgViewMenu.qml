@@ -9,10 +9,15 @@ Menu {
     x: parent.width - width
     transformOrigin: Menu.TopRight
     MenuItem {
-        text: "Trash msg"
+        property bool queued: mid.length > 0 ? core.is_queued_message(mid) : false
+        text: queued ? "Cancel send" : "Trash msg"
         onTriggered: {
-            core.set_tag_message(mid, "_trash")
-            themsglist.invalidate_model_filter()
+            if(queued) {
+                core.delete_message(uid, mid)
+            } else {
+                core.set_tag_message(mid, "_trash")
+            }
+            themsglist.reload_model()
             stack.pop()
         }
     }
