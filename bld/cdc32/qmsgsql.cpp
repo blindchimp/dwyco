@@ -67,6 +67,12 @@ public:
 
 static QMsgSql *sDb;
 
+int
+sql_is_initialized()
+{
+    return sDb != 0;
+}
+
 static
 vc
 sql_simple(const char *sql, const vc& a0 = vcnil, const vc& a1 = vcnil, const vc& a2 = vcnil, const vc& a3 = vcnil, const vc& a4 = vcnil)

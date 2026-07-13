@@ -980,7 +980,23 @@ tox_bridge_rebuild_friend_cache()
 int
 tox_bridge_is_tox_uid(const vc &uid)
 {
-    return sql_mid_has_tag(to_hex(uid), "_tox") ? 1 : 0;
+    if(sql_is_initialized())
+        return sql_mid_has_tag(to_hex(uid), "_tox") ? 1 : 0;
+    if(Friend_cache.is_nil())
+        return 0;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc pubkey;
+        if(entry.find("pubkey", pubkey))
+        {
+            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+            if(pseudo == uid)
+                return 1;
+        }
+    }
+    return 0;
 }
 
 int
