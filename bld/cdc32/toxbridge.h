@@ -66,8 +66,6 @@ int tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out);
 
 // friend number lookup (run on startup to rebuild cache)
 void tox_bridge_rebuild_friend_cache();
-void tox_bridge_seed_uid_cache_from_tags();
-void tox_bridge_create_tags_from_uid_cache();
 
 // QD-compatible queue access for integrating tox messages into the
 // dwyco_get_qd_messages / dwyco_qd_message_to_body APIs.
@@ -91,7 +89,6 @@ vc tox_bridge_get_user_status();
 
 // convenience wrappers for dlli
 int tox_bridge_is_tox_uid(const vc &uid);
-void tox_uid_cache_add(const vc &pseudo_uid);
 vc make_tox_info_vec(const vc &pseudo, const vc &name);
 // must call dwyco_free_array on returned pointer
 int tox_bridge_get_self_public_key(char **out, int *len_out);

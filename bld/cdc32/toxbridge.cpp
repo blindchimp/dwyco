@@ -170,11 +170,12 @@ make_msg_body(const vc &from, const vc &text,
     return body;
 }
 
-void
-tox_uid_cache_add(const vc &pseudo_uid)
+static void
+tox_uid_tag_add(const vc &pseudo_uid)
 {
-    if(Tox_q)
-        Tox_q->sql_simple("INSERT OR IGNORE INTO tox_uid_type VALUES(?1)", vcblob(pseudo_uid));
+    vc hex_uid = to_hex(pseudo_uid);
+    if(!sql_mid_has_tag(hex_uid, "_tox"))
+        sql_add_tag(hex_uid, "_tox");
 }
 
 static void
@@ -185,7 +186,7 @@ process_tox_event(const char *type, const vc &args)
         vc pubkey = args[0];
         vc msg = args[1];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         GRTLOG("tox: friend request from ", 0, 0);
         GRTLOGVC(pseudo);
         se_emit(SE_TOX_FRIEND_REQUEST, pseudo, msg, pubkey);
@@ -196,7 +197,7 @@ process_tox_event(const char *type, const vc &args)
         vc text = args[2];
         vc msg_type = args[3];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
 
         GRTLOG("tox: message from fn %d", (int)fn, 0);
         GRTLOGVC(pseudo);
@@ -256,7 +257,7 @@ process_tox_event(const char *type, const vc &args)
         vc pubkey = args[1];
         vc status = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         GRTLOG("tox: friend %d online=%d", (int)fn, status == vc("online") ? 1 : 0);
         se_emit(SE_TOX_FRIEND_STATUS, pseudo, status);
 
@@ -265,7 +266,7 @@ process_tox_event(const char *type, const vc &args)
         vc pubkey = args[1];
         vc name = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         (void)fn;
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
         if(!name.is_nil() && name != vc(""))
@@ -544,7 +545,7 @@ process_tox_event(const char *type, const vc &args)
         uint32_t fn = (uint32_t)(int)args[0];
         vc pubkey = args[1];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         GRTLOG("tox: typing fn=%d typing=%s", (int)fn, (const char *)args[2]);
         se_emit(SE_TOX_TYPING, pseudo, args[2]);
 
@@ -553,7 +554,7 @@ process_tox_event(const char *type, const vc &args)
         vc pubkey = args[1];
         vc status = args[2];
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         (void)fn;
         GRTLOG("tox: friend status fn=%d status=%s", (int)fn, (const char *)status);
         se_emit(SE_TOX_FRIEND_USER_STATUS, pseudo, status);
@@ -593,8 +594,6 @@ tox_bridge_init(const char *save_file)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
     tox_bridge_rebuild_friend_cache();
-    tox_bridge_seed_uid_cache_from_tags();
-    tox_bridge_create_tags_from_uid_cache();
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
@@ -765,7 +764,7 @@ tox_bridge_friend_add(const vc &address, const vc &message)
     {
         vc pubkey((const char *)address, 32);
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         vc name = toxp_friend_get_name(Tox_plugin, fn);
         if(name.is_nil() || name == vc(""))
         {
@@ -796,7 +795,7 @@ tox_bridge_friend_add_norequest(const vc &pubkey)
     if(toxp_friend_add_norequest(Tox_plugin, pubkey, &fn))
     {
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-        tox_uid_cache_add(pseudo);
+        tox_uid_tag_add(pseudo);
         vc name = toxp_friend_get_name(Tox_plugin, fn);
         if(name.is_nil() || name == vc(""))
         {
@@ -956,7 +955,7 @@ tox_bridge_rebuild_friend_cache()
             vc entry = Friend_cache[i];
             vc pubkey;
             if(entry.find("pubkey", pubkey))
-                tox_uid_cache_add(tox_pubkey_to_pseudo_uid(pubkey));
+                tox_uid_tag_add(tox_pubkey_to_pseudo_uid(pubkey));
         }
         for(int i = 0; i < n; ++i)
         {
@@ -978,108 +977,10 @@ tox_bridge_rebuild_friend_cache()
     }
 }
 
-void
-tox_bridge_seed_uid_cache_from_tags()
-{
-    vc mids = sql_get_tagged_mids2("_tox_friend");
-    for(int i = 0; i < mids.num_elems(); ++i)
-    {
-        DwString m((const char *)mids[i][0]);
-        int uscore = m.find_first_of("_");
-        if(uscore > 0 && uscore < m.length() - 1)
-        {
-            DwString uid_hex(m.c_str(), 0, uscore);
-            vc uid = from_hex(vc(VC_BSTRING, uid_hex.c_str(), uid_hex.length()));
-            if(!uid.is_nil())
-                tox_uid_cache_add(uid);
-        }
-    }
-    GRTLOG("tox bridge: seeded uid cache from %d tags", mids.num_elems(), 0);
-}
-
-void
-tox_bridge_create_tags_from_uid_cache()
-{
-    if(!Tox_q)
-        return;
-    vc uids = Tox_q->sql_simple("SELECT pseudo_uid FROM tox_uid_type");
-    int created = 0;
-    for(int i = 0; i < uids.num_elems(); ++i)
-    {
-        vc uid = uids[i][0];
-        vc name;
-        if(!Friend_cache.is_nil())
-        {
-            int n = Friend_cache.num_elems();
-            for(int j = 0; j < n; ++j)
-            {
-                vc entry = Friend_cache[j];
-                vc pubkey;
-                if(entry.find("pubkey", pubkey))
-                {
-                    vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-                    if(pseudo == uid)
-                    {
-                        entry.find("name", name);
-                        break;
-                    }
-                }
-            }
-        }
-        if(name.is_nil() || name == vc(""))
-        {
-            vc old;
-            if(Session_infos.find(uid, old) && old.num_elems() > QIR_HANDLE)
-                name = old[QIR_HANDLE];
-        }
-        if(!name.is_nil() && name != vc(""))
-        {
-            DwString composite;
-            composite += to_hex(uid);
-            composite += "_";
-            composite += to_hex(name);
-            safe_add_crdt_tag(composite, "_tox_friend");
-            ++created;
-        }
-    }
-    GRTLOG("tox bridge: created %d tags from uid cache", created, 0);
-}
-
 int
 tox_bridge_is_tox_uid(const vc &uid)
 {
-    if(!Tox_q)
-    {
-        Tox_q = new ToxQueue;
-        if(!Tox_q->init())
-        {
-            delete Tox_q;
-            Tox_q = 0;
-        }
-    }
-    if(Tox_q)
-    {
-        vc res = Tox_q->sql_simple("SELECT 1 FROM tox_uid_type WHERE pseudo_uid=?1", vcblob(uid));
-        if(!res.is_nil() && res.num_elems() > 0)
-            return 1;
-    }
-    if(Friend_cache.is_nil())
-        tox_bridge_rebuild_friend_cache();
-    if(Friend_cache.is_nil())
-        return 0;
-    int n = Friend_cache.num_elems();
-    for(int i = 0; i < n; ++i)
-    {
-        vc entry = Friend_cache[i];
-        vc pubkey;
-        if(entry.find("pubkey", pubkey))
-        {
-            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-            if(pseudo == uid)
-                return 1;
-        }
-    }
-    return 0;
+    return sql_mid_has_tag(to_hex(uid), "_tox") ? 1 : 0;
 }
 
 int
@@ -1176,8 +1077,19 @@ ToxQueue::init_schema(const DwString&)
                "local_mid TEXT, "
                "has_file INTEGER DEFAULT 0, "
                "created_at INTEGER DEFAULT (strftime('%s','now')))");
-    sql_simple("CREATE TABLE IF NOT EXISTS tox_uid_type ("
-               "pseudo_uid BLOB PRIMARY KEY)");
+    // migration: convert tox_uid_type to _tox CRDT tags, then drop
+    vc check = sql_simple("SELECT name FROM sqlite_master WHERE type='table' AND name='tox_uid_type'");
+    if(!check.is_nil() && check.num_elems() > 0)
+    {
+        vc uids = sql_simple("SELECT pseudo_uid FROM tox_uid_type");
+        for(int i = 0; i < uids.num_elems(); ++i)
+        {
+            vc hex_uid = to_hex(uids[i][0]);
+            if(!sql_mid_has_tag(hex_uid, "_tox"))
+                sql_add_tag(hex_uid, "_tox");
+        }
+        sql_simple("DROP TABLE tox_uid_type");
+    }
     // migration: add has_file column for existing databases
     // PRAGMA table_info is the standard SQLite way to check column existence
     vc col_info = sql_simple("PRAGMA table_info(tox_outbox)");
