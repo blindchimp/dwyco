@@ -67,6 +67,12 @@ public:
 
 static QMsgSql *sDb;
 
+int
+sql_is_initialized()
+{
+    return sDb != 0;
+}
+
 static
 vc
 sql_simple(const char *sql, const vc& a0 = vcnil, const vc& a1 = vcnil, const vc& a2 = vcnil, const vc& a3 = vcnil, const vc& a4 = vcnil)
@@ -184,6 +190,7 @@ QMsgSql::init_schema_fav()
     sql_simple("insert into static_crdt_tags values('_trash')");
     sql_simple("insert into static_crdt_tags values('_tox_friend')");
     sql_simple("insert into static_crdt_tags values('_tox_device')");
+    sql_simple("insert into static_crdt_tags values('_tox')");
     commit_transaction();
 }
 
@@ -1294,7 +1301,9 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
                         info[QIR_DESCRIPTION] = "";
                         info[QIR_LOCATION] = "";
                         Session_infos.add_kv(uid, info);
-                        tox_uid_cache_add(uid);
+                        vc hex_uid = to_hex(uid);
+                        if(!sql_mid_has_tag(hex_uid, "_tox"))
+                            sql_add_tag(hex_uid, "_tox");
                     }
                 }
             }
@@ -1602,6 +1611,7 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_leader')");
     sql_simple("insert into static_uid_tags values('_tox_friend')");
     sql_simple("insert into static_uid_tags values('_tox_device')");
+    sql_simple("insert into static_uid_tags values('_tox')");
 
     // this is just a scratch table, i put it up here to avoid "create temp"
     // during normal operations...

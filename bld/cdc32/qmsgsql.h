@@ -15,6 +15,7 @@
 namespace dwyco {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+int sql_is_initialized();
 
 namespace qmsgsql {
 void sql_start_transaction();
