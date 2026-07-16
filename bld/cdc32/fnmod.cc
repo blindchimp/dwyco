@@ -38,6 +38,22 @@ static int Do_fnmod;
 
 #include "gp.cpp"
 
+static void
+pfx_cpy(char *&dst, const char *src)
+{
+    if(dst)
+        delete [] dst;
+    int len = strlen(src);
+    int need_sep = (len > 0 && src[len - 1] != DIRSEPSTR[0]) ? 1 : 0;
+    dst = new char [len + 1 + need_sep];
+    strcpy(dst, src);
+    if(need_sep)
+    {
+        dst[len] = DIRSEPSTR[0];
+        dst[len + 1] = 0;
+    }
+}
+
 void
 set_fn_prefixes(
     const char *sys_pfx,
@@ -48,14 +64,11 @@ set_fn_prefixes(
 
     if(sys_pfx)
     {
-        if(System_prefix)
-            delete [] System_prefix;
-        System_prefix = new char [strlen(sys_pfx) + 1];
-        strcpy(System_prefix, sys_pfx);
+        pfx_cpy(System_prefix, sys_pfx);
     }
     if(user_pfx)
     {
-        if(user_pfx && User_prefix &&
+        if(User_prefix &&
                 strcmp(user_pfx, User_prefix) != 0)
         {
 #ifndef STANDALONE
@@ -65,17 +78,11 @@ set_fn_prefixes(
             MsgFolders = vc(VC_TREE);
 #endif
         }
-        if(User_prefix)
-            delete [] User_prefix;
-        User_prefix = new char [strlen(user_pfx) + 1];
-        strcpy(User_prefix, user_pfx);
+        pfx_cpy(User_prefix, user_pfx);
     }
     if(tmp_pfx)
     {
-        if(Tmp_prefix)
-            delete [] Tmp_prefix;
-        Tmp_prefix = new char [strlen(tmp_pfx) + 1];
-        strcpy(Tmp_prefix, tmp_pfx);
+        pfx_cpy(Tmp_prefix, tmp_pfx);
     }
     // XXX be sure to kill all the cached values in the hash table
     for(int i = MIN_HASH_VALUE; i <= MAX_HASH_VALUE; ++i)
