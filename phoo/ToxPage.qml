@@ -24,6 +24,18 @@ Page {
     property string origName: ""
     property string origStatus: ""
 
+    function autoInitToxIdentity() {
+        if (core.tox_get_name() === "" && core.tox_get_status_message() === "") {
+            var genName = fname.fname()
+            core.tox_set_name(genName)
+            core.tox_set_status_message("toxing with DTox!")
+            toxNameInput.text_input = genName
+            toxStatusInput.text_input = "toxing with DTox!"
+            origName = genName
+            origStatus = "toxing with DTox!"
+        }
+    }
+
     Component.onCompleted: {
         var a = core.get_local_setting("tox_enabled")
         if(a === "" || a === "0") {
@@ -36,6 +48,7 @@ Page {
         toxStatusInput.text_input = core.tox_get_status_message()
         origName = toxNameInput.text_input
         origStatus = toxStatusInput.text_input
+        autoInitToxIdentity()
         var curStatus = core.tox_get_user_status()
         var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
         if(statusIdx >= 0)
@@ -68,6 +81,7 @@ Page {
                             toxStatusInput.text_input = core.tox_get_status_message()
                             origName = toxNameInput.text_input
                             origStatus = toxStatusInput.text_input
+                            autoInitToxIdentity()
                         } else {
                             core.disable_tox()
                         }
