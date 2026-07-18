@@ -16,7 +16,7 @@
 
 #/home/dwight/android682_arm64-v8a/bin/qt-cmake -S /home/dwight/git/dwyco/rando -B /tmp/r -GNinja
 #-D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" 
-QTDIR=$HOME/Qt/6.10.2/android_x86_64
+QTDIR=$HOME/Qt/6.11.1/android_x86_64
 export PATH=$QTDIR/bin:$PATH
 if [ "$(uname)" = "Darwin" ]; then
     export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"

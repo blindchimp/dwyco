@@ -40,7 +40,7 @@ endif()
 
 
 if(ANDROID)
-    add_compile_definitions(ANDROID LINUX)
+	add_compile_definitions(ANDROID LINUX DWYCO_NO_ACQ_VIDEO_MEDIA)
     add_compile_options( -frtti -fexceptions)
 endif()
 
