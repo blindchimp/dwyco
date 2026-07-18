@@ -31,6 +31,7 @@ LOCAL_CPPFLAGS += -DDWYCO_NO_ACQ_VIDEO_MEDIA
 else
 LOCAL_CPPFLAGS += -DDWYCO_THREADED_ENCODE
 LOCAL_CPPFLAGS += -DDWYCO_NO_ACQ_VIDEO_MEDIA
+LOCAL_CPPFLAGS += -DDWYCO_NO_VIDEO_FROM_PPM
 #LOCAL_CPPFLAGS += -DDWYCO_BACKGROUND_SYNC
 endif
 
@@ -176,7 +177,7 @@ backandroid.cpp
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := vc crypto8 kazlib jenkins dwcls
 else
-LOCAL_STATIC_LIBRARIES := libspeex-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm vc crypto8 kazlib jenkins dwcls miniupnpc
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm vc crypto8 kazlib jenkins dwcls miniupnpc
 endif
 
 LOCAL_C_INCLUDES := \
