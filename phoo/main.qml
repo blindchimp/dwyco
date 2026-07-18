@@ -1,10 +1,9 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
-; You can obtain one at https://mozilla.org/MPL/2.0/.
+; You can obtain one at https://mozilla.org/MPL/2.0.
 */
 //import QtQml
 import QtQuick
@@ -196,7 +195,9 @@ ApplicationWindow {
         qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
                                                  " (" + core.active_group_name + " " + core.percent_synced + "%)" :
                                                  (core.group_status === 1 ?
-                                                      "(Requesting " + core.active_group_name + ")" : ""))
+                                                      "(Requesting " + core.active_group_name + ")" : "")) +
+                                             (core.tox_available && core.tox_enabled && core.tox_self_name.length > 0 ?
+                                                  " | Tox: " + core.tox_self_name : "")
 
     }
     property int close_bounce: 0
@@ -300,7 +301,7 @@ ApplicationWindow {
                from: 1.0
                to: 0.0
                duration: 3000
-          }
+         }
     }
 
     
@@ -376,7 +377,6 @@ ApplicationWindow {
                 text: core.is_chat_online === 0 ? "chat off" : "chat on"
             }
     }
-
     
     Menu {
         id: moremenu
@@ -473,7 +473,7 @@ ApplicationWindow {
 //    Loader {
 //        id: settings_dialog
 //        visible: false
-
+//
 //        onVisibleChanged: {
 //            if(visible) {
 //                source = "qrc:/DSettings.qml"
@@ -552,7 +552,6 @@ ApplicationWindow {
                             chat_server.auto_connect = true
                         }
                     }
-
                 }
                 if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
@@ -873,8 +872,7 @@ ApplicationWindow {
         id: dwyco_vid_rec
         visible: false
     }
-  
-
+   
     // SoundEffect {
     //     id: sound_sent
     //     source: "qrc:/androidinst3/assets/space-zap.wav"
@@ -891,7 +889,6 @@ ApplicationWindow {
     //     volume: {dwy_quiet ? 0.0 : 1.0}
     //     muted: dwy_quiet
     // }
-
     
     StackView {
         id: stack
@@ -902,7 +899,6 @@ ApplicationWindow {
             if(depth === 1)
                 simp_tag_browse.to_tag = ""
         }
-
         
     }
 
@@ -1048,7 +1044,6 @@ ApplicationWindow {
             //notificationClient.notification = "New messages"
 
               beep()
-
 
         }
 
@@ -1258,7 +1253,3 @@ ApplicationWindow {
 
 
 }
-
-
-
-

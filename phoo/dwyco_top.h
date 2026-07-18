@@ -69,6 +69,7 @@ class DwycoCore : public QObject
     QML_WRITABLE_VAR_PROPERTY(bool, tox_enabled)
     QML_READONLY_VAR_PROPERTY(int, tox_connected)
     QML_READONLY_VAR_PROPERTY(QString, tox_self_address)
+    QML_READONLY_VAR_PROPERTY(QString, tox_self_name)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -103,6 +104,7 @@ public:
         m_tox_enabled = false;
         m_tox_connected = 0;
         m_tox_self_address = "";
+        m_tox_self_name = "";
     }
     static QByteArray My_uid;
     static int Android_migrate;

@@ -685,6 +685,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_READY:
         TheDwycoCore->set_tox_enabled(true);
         TheDwycoCore->update_tox_self_address(TheDwycoCore->tox_get_self_address());
+        TheDwycoCore->update_tox_self_name(TheDwycoCore->tox_get_name());
         reload_conv_list();
         break;
     case DWYCO_SE_TOX_CRASHED:
@@ -2093,6 +2094,7 @@ DwycoCore::init()
             set_tox_enabled(true);
             dwyco_enable_tox("tox_save.tox");
             update_tox_self_address(tox_get_self_address());
+            update_tox_self_name(tox_get_name());
         }
     }
     Init_ok = 1;
@@ -2879,6 +2881,7 @@ DwycoCore::enable_tox()
     set_tox_enabled(true);
     dwyco_enable_tox("tox_save.tox");
     update_tox_self_address(tox_get_self_address());
+    update_tox_self_name(tox_get_name());
     reload_conv_list();
 }
 
@@ -2891,6 +2894,7 @@ DwycoCore::disable_tox()
     set_tox_enabled(false);
     update_tox_connected(0);
     update_tox_self_address("");
+    update_tox_self_name("");
     emit tox_connection_status_changed(0);
     reload_conv_list();
 }
