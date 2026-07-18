@@ -200,121 +200,74 @@ QIcon TrayIcon::makeIcon() const
     return icon;
 }
 
+static bool isDwycoGreen(int r, int g, int b)
+{
+    return g > 200 && r < 50 && b < 50;
+}
+
+static bool isDwycoBlack(int r, int g, int b)
+{
+    return r < 30 && g < 30 && b < 30;
+}
+
 QPixmap TrayIcon::makePixmap(int size) const
 {
-    QPixmap pm(size, size);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing);
+    // Start from greenguy source
+    QPixmap base(":/new/prefix1/icons/greenguy.png");
+    if (base.isNull()) {
+        // fallback: solid green square
+        base = QPixmap(32, 32);
+        base.fill(Qt::green);
+    }
 
-    qreal r = size * 0.22;
+    QImage img = base.toImage().convertToFormat(QImage::Format_ARGB32);
 
-    QPainterPath path;
-    path.addRoundedRect(0, 0, size, size, r, r);
+    bool offline = !TheDwycoCore ||
+        (TheDwycoCore->database_online() <= 0 && TheDwycoCore->chat_online() <= 0);
+    bool invisible = TheDwycoCore && TheDwycoCore->get_invisible();
+    bool toxOn = TheDwycoCore && TheDwycoCore->get_tox_connected();
 
-    if (isInGroup())
-    {
-        qreal dwycoEnd = size * 0.30;
-        qreal syncEnd = size * 0.70;
-
-        // DWYCO panel (left)
-        p.save();
-        p.setClipRect(QRectF(0, 0, dwycoEnd + 0.5, size));
-        p.fillPath(path, dwycoColor());
-        p.restore();
-
-        // Sync panel (middle)
-        p.save();
-        p.setClipRect(QRectF(dwycoEnd - 0.5, 0, syncEnd - dwycoEnd + 1, size));
-        p.fillPath(path, QColor(60, 60, 60));
-        p.restore();
-
-        // Tox panel (right)
-        p.save();
-        p.setClipRect(QRectF(syncEnd - 0.5, 0, size - syncEnd + 0.5, size));
-        p.fillPath(path, toxColor());
-        p.restore();
-
-        // Cloud icon centered in sync panel
-        QString iconPath = hasSyncConnections()
-            ? QStringLiteral(":/material/icons/material/mdpi/ic_cloud_done_white_24dp.png")
-            : QStringLiteral(":/material/icons/material/mdpi/ic_cloud_off_white_24dp.png");
-        QPixmap cloudIcon(iconPath);
-        if (!cloudIcon.isNull()) {
-            qreal syncPanelW = syncEnd - dwycoEnd;
-            qreal iconSize = syncPanelW * 0.8;
-            qreal iconX = dwycoEnd + (syncPanelW - iconSize) / 2;
-            qreal iconY = (size - iconSize) / 2;
-            QPixmap scaled = cloudIcon.scaled(iconSize, iconSize,
-                                              Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            p.drawPixmap(QPointF(iconX, iconY), scaled);
+    // Apply color transformations to the 32x32 source
+    if (offline) {
+        // Flip upside down
+        img = img.flipped(Qt::Vertical);
+        // Replace green pixels with red
+        for (int y = 0; y < img.height(); ++y) {
+            for (int x = 0; x < img.width(); ++x) {
+                QRgb px = img.pixel(x, y);
+                if (isDwycoGreen(qRed(px), qGreen(px), qBlue(px)))
+                    img.setPixel(x, y, qRgba(220, 50, 50, qAlpha(px)));
+            }
         }
-
-        // Dividers
-        p.setPen(QPen(QColor(60, 60, 60), 1));
-        p.drawLine(QPointF(dwycoEnd, 2), QPointF(dwycoEnd, size - 2));
-        p.drawLine(QPointF(syncEnd, 2), QPointF(syncEnd, size - 2));
-    }
-    else
-    {
-        qreal half = size / 2.0;
-
-        // Left half — DWYCO
-        p.save();
-        p.setClipRect(QRectF(0, 0, half + 0.5, size));
-        p.fillPath(path, dwycoColor());
-        p.restore();
-
-        // Right half — Tox
-        p.save();
-        p.setClipRect(QRectF(half - 0.5, 0, half + 0.5, size));
-        p.fillPath(path, toxColor());
-        p.restore();
-
-        // Divider
-        p.setPen(QPen(QColor(60, 60, 60), 1));
-        p.drawLine(QPointF(half, 2), QPointF(half, size - 2));
+    } else if (invisible) {
+        // Tint green -> purple, black -> dark purple
+        for (int y = 0; y < img.height(); ++y) {
+            for (int x = 0; x < img.width(); ++x) {
+                QRgb px = img.pixel(x, y);
+                if (isDwycoGreen(qRed(px), qGreen(px), qBlue(px)))
+                    img.setPixel(x, y, qRgba(180, 80, 180, qAlpha(px)));
+                else if (isDwycoBlack(qRed(px), qGreen(px), qBlue(px)))
+                    img.setPixel(x, y, qRgba(100, 30, 100, qAlpha(px)));
+            }
+        }
     }
 
-    // Subtle outline
-    p.setPen(QPen(QColor(60, 60, 60), 1));
-    p.setBrush(Qt::NoBrush);
-    p.drawPath(path);
+    // If tox is connected, tint green -> hot pink
+    if (toxOn) {
+        for (int y = 0; y < img.height(); ++y) {
+            for (int x = 0; x < img.width(); ++x) {
+                QRgb px = img.pixel(x, y);
+                if (isDwycoGreen(qRed(px), qGreen(px), qBlue(px)))
+                    img.setPixel(x, y, qRgba(100, 180, 255, qAlpha(px)));
+            }
+        }
+    }
 
-    p.end();
+    // Scale to target size
+    QPixmap pm = QPixmap::fromImage(img).scaled(size, size,
+        Qt::KeepAspectRatio, Qt::FastTransformation);
+
     return pm;
-}
-
-QColor TrayIcon::dwycoColor() const
-{
-    if (!TheDwycoCore)
-        return QColor(160, 160, 160); // gray
-
-    // Invisible mode overrides everything
-    if (TheDwycoCore->get_invisible())
-        return QColor(180, 80, 180); // purple
-
-    int db = TheDwycoCore->database_online();
-    int chat = TheDwycoCore->chat_online();
-
-    if (db > 0 && chat > 0)
-        return QColor(50, 200, 50);   // green — fully connected
-    if (db > 0)
-        return QColor(240, 160, 30);  // orange — db up, chat not yet
-    return QColor(220, 50, 50);       // red — offline
-}
-
-QColor TrayIcon::toxColor() const
-{
-    if (!TheDwycoCore)
-        return QColor(160, 160, 160); // gray
-
-    if (!TheDwycoCore->get_tox_enabled())
-        return QColor(160, 160, 160); // gray — disabled
-
-    if (TheDwycoCore->get_tox_connected())
-        return QColor(50, 200, 50);   // green — connected
-    return QColor(220, 50, 50);       // red — enabled but disconnected
 }
 
 QString TrayIcon::makeTooltip() const
@@ -346,8 +299,10 @@ QString TrayIcon::makeTooltip() const
 
     QString syncStr;
     if (isInGroup()) {
-        if (hasSyncConnections())
-            syncStr = QStringLiteral("Sync: OK (%1)").arg(TheSyncDescModel->get_connection_count());
+        int total = TheSyncDescModel->count();
+        int connected = TheSyncDescModel->get_connection_count();
+        if (total > 0)
+            syncStr = QStringLiteral("Sync: %1/%2").arg(connected).arg(total);
         else
             syncStr = QStringLiteral("Sync: Off");
     }
@@ -364,13 +319,6 @@ bool TrayIcon::isInGroup() const
     return TheDwycoCore->get_active_group_name().length() > 0
         && TheDwycoCore->get_group_status() == 0
         && TheDwycoCore->get_group_private_key_valid() == 1;
-}
-
-bool TrayIcon::hasSyncConnections() const
-{
-    if (!TheSyncDescModel)
-        return false;
-    return TheSyncDescModel->get_connection_count() > 0;
 }
 
 #endif

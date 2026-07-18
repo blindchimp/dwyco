@@ -29,11 +29,8 @@ private:
     QIcon makeIcon() const;
     QIcon makeDimmedIcon(const QIcon &normal) const;
     QPixmap makePixmap(int size) const;
-    QColor dwycoColor() const;
-    QColor toxColor() const;
     QString makeTooltip() const;
     bool isInGroup() const;
-    bool hasSyncConnections() const;
 
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_menu;
