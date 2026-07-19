@@ -49,11 +49,9 @@ Page {
             }
         }
         function onTox_user_status_changed(status) {
-            if (!core.auto_away_enabled) {
-                var statusIdx = ["none", "away", "busy"].indexOf(status)
-                if(statusIdx >= 0)
-                    userStatusCombo.currentIndex = statusIdx
-            }
+            var statusIdx = ["none", "away", "busy"].indexOf(status)
+            if(statusIdx >= 0)
+                userStatusCombo.currentIndex = statusIdx
         }
     }
 

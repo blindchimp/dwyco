@@ -2094,6 +2094,7 @@ DwycoCore::init()
         } else {
             set_tox_enabled(true);
             dwyco_enable_tox("tox_save.tox");
+            set_user_status_impl(QStringLiteral("none"));
             update_tox_self_address(tox_get_self_address());
             update_tox_self_name(tox_get_name());
         }
@@ -2890,6 +2891,7 @@ DwycoCore::enable_tox()
         return;
     set_tox_enabled(true);
     dwyco_enable_tox("tox_save.tox");
+    set_user_status_impl(QStringLiteral("none"));
     update_tox_self_address(tox_get_self_address());
     update_tox_self_name(tox_get_name());
     reload_conv_list();
@@ -3058,7 +3060,7 @@ DwycoCore::dwyco_activity_callback(int /*timeout*/)
     if(TheDwycoCore->m_is_auto_away)
         return;
     TheDwycoCore->m_saved_tox_status = TheDwycoCore->tox_get_user_status();
-    if (TheDwycoCore->m_saved_tox_status == "busy")
+    if (TheDwycoCore->m_saved_tox_status == "busy" || TheDwycoCore->m_saved_tox_status == "away")
         return;
     TheDwycoCore->set_user_status_impl(QStringLiteral("away"));
     TheDwycoCore->m_is_auto_away = true;
