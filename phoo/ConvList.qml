@@ -386,24 +386,75 @@ Page {
    }
    
    
-   ListView {
-       id: listView2
-       anchors.fill:parent
+    ListView {
+        id: listView2
+        anchors.fill:parent
 
-       visible: !show_grid.grid_checked
+        visible: !show_grid.grid_checked
 
-       model: ConvListModel
-       delegate: convlist_delegate
-       clip: true
-       //spacing: 5
-       ScrollBar.vertical: ScrollBar { 
-           background: Rectangle {
-               color: "green"
-           }
+        model: ConvListModel
+        delegate: convlist_delegate
+        clip: true
+        section.property: "tox_section"
+        section.criteria: ViewSection.FullString
+        section.delegate: Rectangle {
+            id: sectionRoot
+            height: 24
+            width: ListView.view.width
+            visible: section !== ""
+            color: "dimgray"
 
-       }
+            property string localToxUserStatus: core.tox_get_user_status()
 
-   }
+            Rectangle {
+                height: 1
+                color: "#888888"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+            }
+            Row {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 8
+                spacing: 6
+                Image {
+                    width: 16
+                    height: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                    source: {
+                        if (!core.tox_enabled) return "qrc:/new/prefix1/icons/tox-icon-purple.svg"
+                        if (localToxUserStatus === "busy") return "qrc:/new/prefix1/icons/tox-icon-red.svg"
+                        if (localToxUserStatus === "away") return "qrc:/new/prefix1/icons/tox-icon-orange.svg"
+                        return "qrc:/new/prefix1/icons/tox-icon-green.svg"
+                    }
+                }
+                Text {
+                    text: section
+                    color: "white"
+                    font.bold: true
+                    font.pixelSize: 14
+                    renderType: Text.QtRendering
+                    elide: Text.ElideRight
+                }
+            }
+            Connections {
+                target: core
+                function onTox_user_status_changed(status) {
+                    localToxUserStatus = status
+                }
+            }
+        }
+        //spacing: 5
+        ScrollBar.vertical: ScrollBar { 
+            background: Rectangle {
+                color: "green"
+            }
+
+        }
+
+    }
 
    Component {
        id: convgrid_delegate
