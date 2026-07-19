@@ -36,6 +36,27 @@ Page {
         }
     }
 
+    Connections {
+        target: core
+        function onAuto_away_state_changed(isAway) {
+            if (isAway)
+                userStatusCombo.currentIndex = 1
+            else {
+                var curStatus = core.tox_get_user_status()
+                var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
+                if(statusIdx >= 0)
+                    userStatusCombo.currentIndex = statusIdx
+            }
+        }
+        function onTox_user_status_changed(status) {
+            if (!core.auto_away_enabled) {
+                var statusIdx = ["none", "away", "busy"].indexOf(status)
+                if(statusIdx >= 0)
+                    userStatusCombo.currentIndex = statusIdx
+            }
+        }
+    }
+
     Component.onCompleted: {
         var a = core.get_local_setting("tox_enabled")
         if(a === "" || a === "0") {
@@ -53,6 +74,16 @@ Page {
         var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
         if(statusIdx >= 0)
             userStatusCombo.currentIndex = statusIdx
+
+        var aaEnabled = core.get_local_setting("auto_away_enabled")
+        autoAwayCb.checked = (aaEnabled === "1")
+        var aaTimeout = core.get_local_setting("auto_away_timeout")
+        if(aaTimeout !== "") {
+            var timeoutValues = [60, 120, 300, 600, 900, 1800]
+            var tidx = timeoutValues.indexOf(parseInt(aaTimeout))
+            if(tidx >= 0)
+                autoAwayTimeout.currentIndex = tidx
+        }
     }
 
     Timer {
@@ -114,6 +145,40 @@ Page {
                     onActivated: {
                         var map = ["none", "away", "busy"]
                         core.tox_set_user_status(map[currentIndex])
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+
+            RowLayout {
+                enabled: core.tox_enabled
+                spacing: mm(1)
+
+                CheckBox {
+                    id: autoAwayCb
+                    text: "Auto-away on inactivity"
+                    checked: core.auto_away_enabled
+                    onCheckedChanged: {
+                        core.auto_away_enabled = checked
+                        core.set_local_setting("auto_away_enabled", checked ? "1" : "0")
+                        if (checked)
+                            core.start_auto_away()
+                        else
+                            core.stop_auto_away()
+                    }
+                }
+
+                ComboBox {
+                    id: autoAwayTimeout
+                    model: ["1 min", "2 min", "5 min", "10 min", "15 min", "30 min"]
+                    enabled: core.tox_enabled && autoAwayCb.checked
+                    onActivated: {
+                        var values = [60, 120, 300, 600, 900, 1800]
+                        core.auto_away_timeout = values[currentIndex]
+                        core.set_local_setting("auto_away_timeout", values[currentIndex].toString())
                     }
                 }
 

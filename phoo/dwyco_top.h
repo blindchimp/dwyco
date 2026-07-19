@@ -16,6 +16,7 @@
 #include <QUrl>
 #include <QNetworkReply>
 #include <QThread>
+#include <QEvent>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -71,6 +72,9 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, tox_self_address)
     QML_READONLY_VAR_PROPERTY(QString, tox_self_name)
 
+    QML_WRITABLE_VAR_PROPERTY(bool, auto_away_enabled)
+    QML_WRITABLE_VAR_PROPERTY(int, auto_away_timeout)
+
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
         m_client_name = "";
@@ -105,6 +109,9 @@ public:
         m_tox_connected = 0;
         m_tox_self_address = "";
         m_tox_self_name = "";
+        m_auto_away_enabled = false;
+        m_auto_away_timeout = 300;
+        m_is_auto_away = false;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -357,6 +364,8 @@ public:
     Q_INVOKABLE QString tox_get_self_public_key();
     Q_INVOKABLE QString tox_get_self_address();
     Q_INVOKABLE void copy_to_clipboard(const QString& text);
+    Q_INVOKABLE void start_auto_away();
+    Q_INVOKABLE void stop_auto_away();
 
 public:
 
@@ -450,8 +459,14 @@ signals:
     void tox_friend_status_changed(QString pseudo_uid, QString status);
     void tox_friend_user_status_changed(QString pseudo_uid, QString user_status);
     void tox_user_status_changed(QString user_status);
+    void auto_away_state_changed(bool is_away);
 
 private:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+    static void DWYCOCALLCONV dwyco_activity_callback(int timeout);
+    bool m_is_auto_away;
+    QString m_saved_tox_status;
+    void set_user_status_impl(const QString& status);
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
     static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);

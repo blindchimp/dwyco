@@ -16,6 +16,7 @@
 #include <QSslSocket>
 #include <QGuiApplication>
 #include <QClipboard>
+#include <QEvent>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
 #ifdef LINUX
@@ -2096,6 +2097,13 @@ DwycoCore::init()
             update_tox_self_address(tox_get_self_address());
             update_tox_self_name(tox_get_name());
         }
+        QString aa_enabled = get_local_setting("auto_away_enabled");
+        m_auto_away_enabled = (aa_enabled == "1");
+        QString aa_timeout = get_local_setting("auto_away_timeout");
+        if(aa_timeout != "")
+            m_auto_away_timeout = aa_timeout.toInt();
+        if(m_auto_away_enabled && m_tox_enabled)
+            start_auto_away();
     }
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
@@ -2330,6 +2338,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     if(as == Qt::ApplicationSuspended /* || as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
+        stop_auto_away();
         dwyco_set_disposition("background", 10);
         simple_call::suspend();
         dwyco_disconnect_chat_server();
@@ -2381,6 +2390,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
             QGuiApplication::quit();
         }
         Suspended = 0;
+        start_auto_away();
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);
 #endif
@@ -2883,6 +2893,7 @@ DwycoCore::enable_tox()
     update_tox_self_address(tox_get_self_address());
     update_tox_self_name(tox_get_name());
     reload_conv_list();
+    start_auto_away();
 }
 
 void
@@ -2890,6 +2901,7 @@ DwycoCore::disable_tox()
 {
     if(!m_tox_enabled)
         return;
+    stop_auto_away();
     dwyco_disable_tox();
     set_tox_enabled(false);
     update_tox_connected(0);
@@ -2941,13 +2953,28 @@ DwycoCore::tox_set_status_message(const QString& msg)
     return dwyco_tox_set_status_message(bmsg.constData(), bmsg.length());
 }
 
+void
+DwycoCore::set_user_status_impl(const QString& status)
+{
+    QByteArray bstatus = status.toUtf8();
+    dwyco_tox_set_user_status(bstatus.constData());
+    emit tox_user_status_changed(status);
+}
+
 int
 DwycoCore::tox_set_user_status(const QString& status)
 {
-    QByteArray bstatus = status.toUtf8();
-    int ret = dwyco_tox_set_user_status(bstatus.constData());
-    emit tox_user_status_changed(status);
-    return ret;
+    set_user_status_impl(status);
+    if(m_auto_away_enabled)
+    {
+        m_saved_tox_status = status;
+        if(m_is_auto_away)
+        {
+            m_is_auto_away = false;
+            emit auto_away_state_changed(false);
+        }
+    }
+    return 1;
 }
 
 QString
@@ -3021,6 +3048,65 @@ void
 DwycoCore::copy_to_clipboard(const QString& text)
 {
     QGuiApplication::clipboard()->setText(text);
+}
+
+void DWYCOCALLCONV
+DwycoCore::dwyco_activity_callback(int /*timeout*/)
+{
+    if(!TheDwycoCore || !TheDwycoCore->m_auto_away_enabled || !TheDwycoCore->m_tox_enabled)
+        return;
+    if(TheDwycoCore->m_is_auto_away)
+        return;
+    TheDwycoCore->m_saved_tox_status = TheDwycoCore->tox_get_user_status();
+    if (TheDwycoCore->m_saved_tox_status == "busy")
+        return;
+    TheDwycoCore->set_user_status_impl(QStringLiteral("away"));
+    TheDwycoCore->m_is_auto_away = true;
+    emit TheDwycoCore->auto_away_state_changed(true);
+}
+
+bool
+DwycoCore::eventFilter(QObject *obj, QEvent *event)
+{
+    if(m_auto_away_enabled && m_tox_enabled &&
+       (event->type() == QEvent::MouseMove ||
+        event->type() == QEvent::MouseButtonPress ||
+        event->type() == QEvent::KeyPress))
+    {
+        if(m_is_auto_away)
+        {
+            set_user_status_impl(m_saved_tox_status);
+            m_is_auto_away = false;
+            emit auto_away_state_changed(false);
+        }
+        if(m_auto_away_timeout > 0)
+            dwyco_enable_activity_checking(1, m_auto_away_timeout, dwyco_activity_callback);
+    }
+    return QObject::eventFilter(obj, event);
+}
+
+void
+DwycoCore::start_auto_away()
+{
+    if(!m_tox_enabled || !m_auto_away_enabled)
+        return;
+    m_saved_tox_status = tox_get_user_status();
+    m_is_auto_away = false;
+    if(m_auto_away_timeout > 0)
+        dwyco_enable_activity_checking(1, m_auto_away_timeout, dwyco_activity_callback);
+    qGuiApp->installEventFilter(this);
+}
+
+void
+DwycoCore::stop_auto_away()
+{
+    dwyco_enable_activity_checking(0, 0, 0);
+    qGuiApp->removeEventFilter(this);
+    if(m_is_auto_away)
+    {
+        set_user_status_impl(m_saved_tox_status);
+        m_is_auto_away = false;
+    }
 }
 
 QUrl
