@@ -125,6 +125,17 @@ msglist_raw::invalidate_mid(const QByteArray& mid, const QString& huid)
 }
 
 void
+msglist_raw::invalidate_mid_or_reload(const QByteArray& mid, const QString& huid)
+{
+    if(m_tag.length() > 0)
+    {
+        reload_model(1);
+        return;
+    }
+    invalidate_mid(mid, huid);
+}
+
+void
 msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
 {
     QByteArray mid = smid.toLatin1();
