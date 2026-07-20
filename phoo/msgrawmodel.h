@@ -71,6 +71,7 @@ public slots:
     void mid_tag_changed(QString mid);
     void msg_recv_progress(QString mid, QString huid, QString msg, int percent);
     void invalidate_mid(const QByteArray& mid, const QString& huid);
+    void invalidate_mid_or_reload(const QByteArray& mid, const QString& huid);
 
     void reload_model(int force = 0);
     void reload_model2(const QString&);
