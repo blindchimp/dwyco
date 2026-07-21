@@ -24,6 +24,7 @@ void sql_vacuum();
 }
 
 void init_group_map();
+void update_group_map(const vc& alt_pk, const vc& uids);
 void remove_sync_state();
 
 vc load_msg_index(vc uid, int load_count);

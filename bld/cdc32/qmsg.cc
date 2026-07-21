@@ -1425,7 +1425,11 @@ fetch_attachment(vc fn, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
     return mc;
 }
 
-static void
+// note: this is used when we are fetching public keys for a device group.
+// we don't want to fetch anything more, since we are just getting the
+// leaves of the "device group tree". see "fetch_pk_done" for more details.
+static
+void
 fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
 {
     if(m[1].is_nil())
@@ -1480,14 +1484,37 @@ fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
 
 }
 
-static void
+// this is fired with the authoritative list of group members for
+// the given alt-key. essentially, when you perform an
+// operation on a single uid, the fetch-info cascades more
+// fetches to try and get all the public key info (which includes
+// p2p keys) for all members of the group. this allows us to
+// perform p2p operations, and to display group info more
+// consistently than if we didn't pull everything.
+// the groups tend to be fairly small (think one user with a few
+// devices), so the extra work is worth it in order to display
+// things consistently.
+//
+static
+void
 fetch_group_uids(vc m, void *, vc, ValidPtr)
 {
     if(m[1].is_nil())
         return;
-    const vc pk = m[1][0];
+    vc pk;
     const vc uids = m[1][1];
-
+    // yuck, server returns serialized pk, not sure what
+    // i was thinking there. maybe if the pk ever gets to be
+    // something that is composite? not sure.
+    if(deserialize(m[1][0], pk))
+    {
+        // explicitly update the group_map, even if we don't happen to
+        // have the keys at the moment. this allows us to display things
+        // a little more accurately, assuming the keys are on their way
+        // and once they are here, the next "init_group_map" will pick them
+        // up and create an accurate group_map.
+        update_group_map(pk, uids);
+    }
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         const vc uid = uids[i];
