@@ -50,7 +50,7 @@ struct Sql : public SimpleSql
                    "dwyco_sig blob, "
                    "alt_static_public blob, "
                    "alt_server_sig blob, "
-                   "alt_gname, "
+                   "alt_gname text, "
                    "time integer"
                    ")");
         sql_simple("create index if not exists altidx on pubkeys(alt_static_public)");
@@ -60,6 +60,62 @@ struct Sql : public SimpleSql
                    "time integer "
                    ")"
                    );
+        start_transaction();
+        // Migration: ensure pubkeys.alt_gname is TEXT type
+        vc col_info = sql_simple("PRAGMA table_info(pubkeys)");
+        if(!col_info.is_nil())
+        {
+            int n = col_info.num_elems();
+            int has_alt_gname = 0;
+            int alt_gname_is_text = 0;
+            for(int i = 0; i < n; ++i)
+            {
+                vc col_name = col_info[i][1];
+                vc col_type = col_info[i][2];
+                if(col_name.type() == VC_STRING)
+                {
+                    DwString s((const char *)col_name, col_name.len());
+                    if(s == "alt_gname")
+                    {
+                        has_alt_gname = 1;
+                        if(col_type.type() == VC_STRING)
+                        {
+                            DwString t((const char *)col_type, col_type.len());
+                            t.to_lower();
+                            if(t.eq("text"))
+                                alt_gname_is_text = 1;
+                        }
+                        break;
+                    }
+                }
+            }
+            if(!has_alt_gname)
+            {
+                (void)sql_simple("ALTER TABLE pubkeys ADD COLUMN alt_gname text");
+            }
+            else if(!alt_gname_is_text)
+            {
+
+                sql_simple("CREATE TABLE pubkeys_new ("
+                           "uid text collate nocase primary key not null, "
+                           "static_public blob, "
+                           "dwyco_sig blob, "
+                           "alt_static_public blob, "
+                           "alt_server_sig blob, "
+                           "alt_gname text, "
+                           "time integer"
+                           ")");
+                sql_simple("INSERT INTO pubkeys_new "
+                           "SELECT uid, static_public, dwyco_sig, "
+                           "alt_static_public, alt_server_sig, "
+                           "CAST(alt_gname AS TEXT), time FROM pubkeys");
+                sql_simple("DROP TABLE pubkeys");
+                sql_simple("ALTER TABLE pubkeys_new RENAME TO pubkeys");
+                sql_simple("CREATE INDEX IF NOT EXISTS altidx ON pubkeys(alt_static_public)");
+
+            }
+        }
+        commit_transaction();
     }
 
 
@@ -609,7 +665,7 @@ save_pk(vc uid, vc pk)
             a.append(blobnil(pk[PKC_DWYCO_SIGNATURE]));
             a.append(blobnil(pk[PKC_ALT_STATIC_PUBLIC]));
             a.append(blobnil(pk[PKC_ALT_SERVER_SIG]));
-            a.append(blobnil(pk[PKC_ALT_GNAME]));
+            a.append(pk[PKC_ALT_GNAME]);
             sql_bulk_query(&a);
             if(Can_verify)
             {
@@ -724,7 +780,7 @@ pk_invalidate(vc uid)
 vc
 find_alt_pubkey(vc alt_name, vc& uid_out)
 {
-    vc res = sql_simple("select uid, alt_static_public, alt_server_sig from pubkeys where alt_gname = ?1 order by time desc");
+    vc res = sql_simple("select uid, alt_static_public, alt_server_sig from pubkeys where alt_gname = ?1 order by time desc", alt_name);
     vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
     for(int i = 0; i < res.num_elems(); ++i)
     {

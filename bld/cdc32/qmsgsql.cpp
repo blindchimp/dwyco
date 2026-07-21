@@ -1916,6 +1916,29 @@ init_group_map()
     //sDb->detach("prf");
 }
 
+void
+update_group_map(const vc& alt_pk, const vc& uids)
+{
+    try
+    {
+        sql_start_transaction();
+        const vc gid = to_hex(DH_alternate::get_gid(alt_pk));
+        sql_simple("delete from group_map where gid = ?1", gid);
+        int n = uids.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            const vc huid = to_hex(uids[i]);
+            sql_simple("insert into group_map (uid, gid) values(?1, ?2)", huid, gid);
+        }
+        sql_commit_transaction();
+
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
 vc
 map_uid_to_gid(vc uid)
 {
