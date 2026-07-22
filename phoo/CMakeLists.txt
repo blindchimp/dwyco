@@ -12,6 +12,7 @@ set(PHOO_VERSION_NAME ${PHOO_VERSION})
 set(PHOO_VERSION_CODE 2000145)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
+    include(ExternalProject)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -215,10 +216,7 @@ qt_add_qml_module(phoo
 )
 
 set(androidlibs
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/arm64-v8a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/armeabi-v7a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/x86/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/x86_64/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}/libdwyco_jni.so
 )
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -289,6 +287,23 @@ if(ANDROID)
 	Qt6::Concurrent
         Qt6::StateMachine
     )
+endif()
+
+if(ANDROID)
+    ExternalProject_Add(phoo_dynbld_ext
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld
+        CMAKE_ARGS
+            -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
+            -DANDROID_ABI=${ANDROID_ABI}
+            -DANDROID_PLATFORM=${ANDROID_PLATFORM}
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+            -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
+        INSTALL_COMMAND ""
+        BUILD_BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}/libdwyco_jni.so
+    )
+    add_dependencies(phoo phoo_dynbld_ext)
 endif()
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
