@@ -33,7 +33,10 @@ import android.content.ContentUris;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.os.Vibrator;
+import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -193,6 +196,15 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
         super.onResume();
 	if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
+            if (controller != null) {
+                controller.show(WindowInsets.Type.systemBars());
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        }
     }
 
     public static void set_allow_notification(int a)
