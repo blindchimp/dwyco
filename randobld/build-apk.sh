@@ -1,6 +1,6 @@
 # this script just builds one debug apk for rando
 # this uses the 16kb version of qt 6.8.2 build with ndk 28.2
-QTDIR=$HOME/Qt/6.10.2/android_x86_64
+QTDIR=$HOME/Qt/6.11.1/android_x86_64
 export PATH=$QTDIR/bin:$PATH
 if [ "$(uname)" = "Darwin" ]; then
     SDK_ROOT="$HOME/Library/Android/sdk"
