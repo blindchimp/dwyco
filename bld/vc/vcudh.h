@@ -22,6 +22,7 @@ vc dh_store_and_forward_get_key(vc sfpack, vc our_material);
 vc dh_store_and_forward_get_key2(vc sfpack, vc our_material);
 vc vclh_sf_material(vc other_pub, vc key_out);
 vc vclh_dh_store_and_forward_get_key(vc sfpack, vc our_material);
+vc udh_public_from_private(vc priv_key);
 
 #define DH_STATIC_PUBLIC 0
 #define DH_STATIC_PRIVATE 1
