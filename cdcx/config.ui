@@ -209,10 +209,10 @@
          </property>
         </widget>
        </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="label_25">
-         <property name="text">
-          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+        <item row="12" column="0">
+         <widget class="QLabel" name="label_25">
+          <property name="text">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 hr { height: 1px; border-width: 0; }
@@ -220,11 +220,11 @@ li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Fira Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If you care about your privacy:&lt;br&gt;the password should &lt;br /&gt;use 8 or more characters with&lt;br /&gt;some special characters too.&lt;br /&gt;You can change the password at any time.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
+          </property>
+         </widget>
+        </item>
+        </layout>
+      </widget>
      <widget class="QWidget" name="tab">
       <attribute name="title">
        <string>Sync</string>
@@ -1039,12 +1039,285 @@ to forward outside ports to this machine.</string>
         </widget>
        </item>
       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_tox">
+       <attribute name="title">
+        <string>Tox</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="tox_tab_layout">
+        <item>
+         <layout class="QHBoxLayout" name="tox_row1">
+          <item>
+           <widget class="QCheckBox" name="tox_enable">
+            <property name="text">
+             <string>Enable Tox P2P messaging</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="tox_status_indicator">
+            <property name="minimumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="tox_status_label">
+            <property name="text">
+             <string>Not connected</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="tox_spacer1">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="tox_status_label_2">
+            <property name="text">
+             <string>Status:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="tox_user_status">
+            <item>
+             <property name="text">
+              <string>Available</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Away</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Busy</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="tox_row2">
+          <item>
+           <widget class="QCheckBox" name="auto_away_enable">
+            <property name="text">
+             <string>Auto-away on inactivity</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="auto_away_timeout">
+            <item>
+             <property name="text">
+              <string>1 min</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>2 min</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>5 min</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>10 min</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>15 min</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>30 min</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="tox_spacer2">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="tox_row3">
+          <item>
+           <widget class="QLineEdit" name="tox_name">
+            <property name="placeholderText">
+             <string>Enter name...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="tox_status_msg">
+            <property name="placeholderText">
+             <string>Enter status message...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="tox_update_name">
+            <property name="text">
+             <string>Update</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="tox_row4">
+          <item>
+           <widget class="QPushButton" name="tox_copy_id">
+            <property name="text">
+             <string>Copy Tox ID</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="tox_id_display">
+            <property name="font">
+             <font>
+              <family>Monaco</family>
+             </font>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextInteractionFlag::TextSelectableByMouse</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="tox_spacer3">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="tox_add_friend_label">
+          <property name="text">
+           <string>Add Friend</string>
+          </property>
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="tox_friend_id_input">
+          <property name="placeholderText">
+           <string>Paste Tox ID here...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="tox_add_friend">
+          <property name="text">
+           <string>Add Friend</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="tox_friends_label">
+          <property name="text">
+           <string>Friends</string>
+          </property>
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="tox_friend_list">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>120</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="tox_delete_friend">
+          <property name="text">
+           <string>Delete Friend</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="tox_spacer_bottom">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </widget>
-    </widget>
-   </item>
-  </layout>
- </widget>
- <tabstops>
+    </item>
+   </layout>
+  </widget>
+  <tabstops>
   <tabstop>chat_dont_display_video</tabstop>
   <tabstop>chat_show_all</tabstop>
   <tabstop>profiles_no_auto_load</tabstop>

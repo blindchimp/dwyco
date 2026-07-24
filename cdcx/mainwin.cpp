@@ -75,6 +75,7 @@
 #include "player.h"
 #include "prfview.h"
 #include "profpv.h"
+#include "dwycolistscoped.h"
 
 
 DWYCO_LIST Model_dir;
@@ -139,6 +140,87 @@ static QSet<QByteArray> Recent_uid_operations;
 QSet<DwOString> Visible_to;
 QSet<DwOString> Session_remove;
 QQueue<DwOString> Seen_in_chat;
+
+// Tox friend cache for badge display and name lookup
+struct ToxFriendInfo {
+    QByteArray pubkey_hex;   // full hex pubkey (64 chars)
+    QByteArray pseudo_uid;   // first 10 bytes of pubkey (20 hex chars)
+    QString name;
+    QString status;          // "online" or "offline"
+    QString user_status;     // "none", "away", or "busy"
+};
+static QHash<QByteArray, ToxFriendInfo> s_tox_friend_cache; // keyed by pseudo_uid (20 hex chars)
+
+static void refresh_tox_friend_cache()
+{
+    s_tox_friend_cache.clear();
+    if(!dwyco_tox_available())
+        return;
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(!dwyco_tox_get_friends_model(&fl))
+        return;
+    simple_scoped qfl(fl);
+    int n = qfl.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+        QByteArray pkhex = pk.toHex();
+        QByteArray pseudo = pkhex.left(20);
+        ToxFriendInfo info;
+        info.pubkey_hex = pkhex;
+        info.pseudo_uid = pseudo;
+        info.name = qfl.get<QByteArray>(i, DWYCO_TF_NAME);
+        info.status = qfl.get<QByteArray>(i, DWYCO_TF_STATUS);
+        info.user_status = qfl.get<QByteArray>(i, DWYCO_TF_USER_STATUS);
+        s_tox_friend_cache.insert(pseudo, info);
+    }
+}
+
+static bool is_tox_uid(const DwOString& uid)
+{
+    if(!dwyco_tox_available())
+        return false;
+    return dwyco_tox_is_tox_uid(uid.c_str(), uid.length()) != 0;
+}
+
+static bool is_tox_friend(const DwOString& uid)
+{
+    QByteArray quid(uid.c_str(), uid.length());
+    return s_tox_friend_cache.contains(quid.toHex().left(20));
+}
+
+static bool is_tox_friend_by_hex(const QByteArray& uid_hex)
+{
+    return s_tox_friend_cache.contains(uid_hex.left(20));
+}
+
+static ToxFriendInfo get_tox_friend_info(const DwOString& uid)
+{
+    QByteArray quid(uid.c_str(), uid.length());
+    return s_tox_friend_cache.value(quid.toHex().left(20));
+}
+
+static QColor get_tox_badge_color(const DwOString& uid)
+{
+    if(!dwyco_tox_available())
+        return QColor(0x9C, 0x27, 0xB0); // purple
+
+    DwOString tox_enabled;
+    if(!setting_get("tox_enabled", tox_enabled) || tox_enabled.eq("0"))
+        return QColor(0x9C, 0x27, 0xB0); // purple
+
+    if(!is_tox_friend(uid))
+        return QColor(0x9C, 0x27, 0xB0); // purple (tox uid but not a friend)
+
+    ToxFriendInfo fi = get_tox_friend_info(uid);
+    if(fi.status == "offline")
+        return QColor(0x9E, 0x9E, 0x9E); // gray
+    if(fi.user_status == "busy")
+        return QColor(0xF4, 0x43, 0x36); // red
+    if(fi.user_status == "away")
+        return QColor(0xFF, 0x98, 0x00); // orange
+    return QColor(0x4C, 0xAF, 0x50); // limegreen
+}
 
 class InitCleanThread : public QThread
 {
@@ -779,6 +861,18 @@ less_than(const DwOString& u1, const DwOString& u2)
         return -1;
     else if(!o1 && o2)
         return 1;
+
+    // group: non-tox(0) < tox friends(1) < tox other(2)
+    // tox users sort after regular users but before ignored
+    {
+        int lt1 = is_tox_friend(u1) ? 1 : (is_tox_uid(u1) ? 2 : 0);
+        int lt2 = is_tox_friend(u2) ? 1 : (is_tox_uid(u2) ? 2 : 0);
+        if(lt1 < lt2)
+            return -1;
+        else if(lt1 > lt2)
+            return 1;
+    }
+
 #if 0
     o1 = dwyco_is_always_visible(u1.c_str(), u1.length());
     o2 = dwyco_is_always_visible(u2.c_str(), u2.length());
@@ -2699,6 +2793,7 @@ mainwinform::load_users()
     DWYCO_LIST l;
     int n;
 
+    refresh_tox_friend_cache();
     sort_proxy_model.setDynamicSortFilter(0);
     static int cur_update;
     dwyco_get_user_list2(&l, &n);
@@ -2716,12 +2811,21 @@ mainwinform::load_users()
             continue;
         QVariant quid(QByteArray(uid.c_str(), uid.length()));
 
+        // Build display name: for tox friends, prepend tox name
+        QString display_name = dwyco_info_to_display(uid);
+        if(is_tox_uid(uid) && is_tox_friend(uid))
+        {
+            ToxFriendInfo fi = get_tox_friend_info(uid);
+            if(!fi.name.isEmpty())
+                display_name = QString("%1 (T)").arg(fi.name);
+        }
+
         QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
         if(ql.count() == 0)
         {
             if(!umodel->insertRow(0))
                 cdcxpanic("wtf");
-            if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+            if(!umodel->setData(umodel->index(0, 0), display_name))
                 cdcxpanic("wtf2");
             if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
                 cdcxpanic("wtf3");
@@ -2733,13 +2837,12 @@ mainwinform::load_users()
         {
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
-            QString info = dwyco_info_to_display(uid);
             auto disp_name = umodel->data(ql[0]).toString();
-            if(info == disp_name)
+            if(display_name == disp_name)
                 continue;
             else
             {
-                if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                if(!umodel->setData(ql[0], display_name, Qt::DisplayRole))
                     cdcxpanic("wtf6");
             }
 
@@ -2762,12 +2865,20 @@ mainwinform::load_users()
         if(!display_uid_in_list(uid))
             continue;
         QVariant quid(QByteArray(uid.c_str(), uid.length()));
+        // Build display name: for tox friends, prepend tox name
+        QString display_name = dwyco_info_to_display(uid);
+        if(is_tox_uid(uid) && is_tox_friend(uid))
+        {
+            ToxFriendInfo fi = get_tox_friend_info(uid);
+            if(!fi.name.isEmpty())
+                display_name = QString("%1 (T)").arg(fi.name);
+        }
         QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
         if(ql.count() == 0)
         {
             if(!umodel->insertRow(0))
                 cdcxpanic("wtf");
-            if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+            if(!umodel->setData(umodel->index(0, 0), display_name))
                 cdcxpanic("wtf2");
             if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
                 cdcxpanic("wtf3");
@@ -2781,13 +2892,12 @@ mainwinform::load_users()
             // it's already in there, check to see if the info has changed
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
-            QString info = dwyco_info_to_display(uid);
             auto disp_name = umodel->data(ql[0]).toString();
-            if(info == disp_name)
+            if(display_name == disp_name)
                 continue;
             else
             {
-                if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                if(!umodel->setData(ql[0], display_name, Qt::DisplayRole))
                     cdcxpanic("wtf4");
             }
 
@@ -2809,12 +2919,20 @@ mainwinform::load_users()
         if(Session_remove.contains(uid))
             continue;
         QVariant quid(uid);
+        // Build display name: for tox friends, prepend tox name
+        QString display_name = dwyco_info_to_display(uid);
+        if(is_tox_uid(uid) && is_tox_friend(uid))
+        {
+            ToxFriendInfo fi = get_tox_friend_info(uid);
+            if(!fi.name.isEmpty())
+                display_name = QString("%1 (T)").arg(fi.name);
+        }
         QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
         if(ql.count() == 0)
         {
             if(!umodel->insertRow(0))
                 cdcxpanic("wtf");
-            if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+            if(!umodel->setData(umodel->index(0, 0), display_name))
                 cdcxpanic("wtf2");
             if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
                 cdcxpanic("wtf3");
@@ -2826,13 +2944,12 @@ mainwinform::load_users()
             // it's already in there, check to see if the info has changed
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
-            QString info = dwyco_info_to_display(uid);
             auto disp_name = umodel->data(ql[0]).toString();
-            if(info == disp_name)
+            if(display_name == disp_name)
                 continue;
             else
             {
-                if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                if(!umodel->setData(ql[0], display_name, Qt::DisplayRole))
                     cdcxpanic("wtf4");
             }
         }
@@ -2851,12 +2968,20 @@ mainwinform::load_users()
             if(Session_remove.contains(uid))
                 continue;
             QVariant quid(QByteArray(uid.c_str(), uid.length()));
+            // Build display name: for tox friends, prepend tox name
+            QString display_name = dwyco_info_to_display(uid);
+            if(is_tox_uid(uid) && is_tox_friend(uid))
+            {
+                ToxFriendInfo fi = get_tox_friend_info(uid);
+                if(!fi.name.isEmpty())
+                    display_name = QString("%1 (T)").arg(fi.name);
+            }
             QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
             if(ql.count() == 0)
             {
                 if(!umodel->insertRow(0))
                     cdcxpanic("wtf");
-                if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+                if(!umodel->setData(umodel->index(0, 0), display_name))
                     cdcxpanic("wtf2");
                 if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
                     cdcxpanic("wtf3");
@@ -2868,13 +2993,12 @@ mainwinform::load_users()
                 // it's already in there, check to see if the info has changed
                 if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                     cdcxpanic("wtf5");
-                QString info = dwyco_info_to_display(uid);
                 auto disp_name = umodel->data(ql[0]).toString();
-                if(info == disp_name)
+                if(display_name == disp_name)
                     continue;
                 else
                 {
-                    if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                    if(!umodel->setData(ql[0], display_name, Qt::DisplayRole))
                         cdcxpanic("wtf4");
                 }
             }
@@ -2892,12 +3016,20 @@ mainwinform::load_users()
             if(Session_remove.contains(uid))
                 continue;
             QVariant quid(uid);
+            // Build display name: for tox friends, prepend tox name
+            QString display_name = dwyco_info_to_display(uid);
+            if(is_tox_uid(uid) && is_tox_friend(uid))
+            {
+                ToxFriendInfo fi = get_tox_friend_info(uid);
+                if(!fi.name.isEmpty())
+                    display_name = QString("%1 (T)").arg(fi.name);
+            }
             QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
             if(ql.count() == 0)
             {
                 if(!umodel->insertRow(0))
                     cdcxpanic("wtf");
-                if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+                if(!umodel->setData(umodel->index(0, 0), display_name))
                     cdcxpanic("wtf2");
                 if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
                     cdcxpanic("wtf3");
@@ -2909,13 +3041,12 @@ mainwinform::load_users()
                 // it's already in there, check to see if the info has changed
                 if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                     cdcxpanic("wtf5");
-                QString info = dwyco_info_to_display(uid);
                 auto disp_name = umodel->data(ql[0]).toString();
-                if(info == disp_name)
+                if(display_name == disp_name)
                     continue;
                 else
                 {
-                    if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                    if(!umodel->setData(ql[0], display_name, Qt::DisplayRole))
                         cdcxpanic("wtf4");
                 }
             }
@@ -3070,6 +3201,43 @@ decorate(const DwOString& uid, QStandardItemModel *umodel, QModelIndex mi)
             {
                 umodel->setData(mi, QVariant(), Qt::DecorationRole);
             }
+    }
+    // Tox badge overlay: draw a small colored circle with "T" in bottom-right
+    if(is_tox_uid(uid) && !dwyco_is_ignored(uid.c_str(), uid.length()))
+    {
+        QColor badgeColor = get_tox_badge_color(uid);
+        QVariant currentIconVar = umodel->data(mi, Qt::DecorationRole);
+        QPixmap currentIcon;
+        if(currentIconVar.typeId() == QMetaType::QImage)
+            currentIcon = QPixmap::fromImage(currentIconVar.value<QImage>());
+        else if(currentIconVar.typeId() == QMetaType::QPixmap)
+            currentIcon = currentIconVar.value<QPixmap>();
+        else
+            currentIcon = QPixmap(sz, sz);
+
+        if(!currentIcon.isNull())
+        {
+            QPixmap composited = currentIcon;
+            QPainter p(&composited);
+            p.setRenderHint(QPainter::Antialiasing);
+            int badgeSize = sz / 3;
+            if(badgeSize < 8) badgeSize = 8;
+            int bx = sz - badgeSize;
+            int by = sz - badgeSize;
+            // draw filled circle
+            p.setPen(Qt::NoPen);
+            p.setBrush(badgeColor);
+            p.drawEllipse(bx, by, badgeSize, badgeSize);
+            // draw "T" letter
+            p.setPen(Qt::white);
+            QFont badgeFont;
+            badgeFont.setBold(true);
+            badgeFont.setPixelSize(badgeSize * 0.65);
+            p.setFont(badgeFont);
+            p.drawText(QRect(bx, by, badgeSize, badgeSize), Qt::AlignCenter, "T");
+            p.end();
+            umodel->setData(mi, composited, Qt::DecorationRole);
+        }
     }
     si->setFont(fnt);
 }
@@ -3554,6 +3722,27 @@ dwyco_sys_event_callback(int cmd, int id,
                          int qid,
                          int extra_arg)
 {
+    // Handle tox events that don't require a uid first
+    if(cmd == DWYCO_SE_TOX_READY || cmd == DWYCO_SE_TOX_CRASHED ||
+       cmd == DWYCO_SE_TOX_SELF_CONNECTION_STATUS)
+    {
+#ifdef DWYCO_TOXCORE
+        extern int s_tox_connected;
+        if(cmd == DWYCO_SE_TOX_SELF_CONNECTION_STATUS)
+        {
+            DwOString sd;
+            if(type == DWYCO_TYPE_STRING)
+                sd = DwOString(val, 0, len_val);
+            s_tox_connected = (sd.eq("udp") || sd.eq("tcp")) ? 1 : 0;
+        }
+        else if(cmd == DWYCO_SE_TOX_CRASHED)
+        {
+            s_tox_connected = 0;
+        }
+#endif
+        cdcx_set_refresh_users(1);
+        return;
+    }
     if(!uid)
         return;
     DwOString suid(uid, 0, len_uid);
@@ -3601,6 +3790,28 @@ dwyco_sys_event_callback(int cmd, int id,
         TheConfigForm->ui.CDC_group__alt_name->setReadOnly(false);
         TheConfigForm->ui.CDC_group__alt_name->setText("");
         TheConfigForm->ui.sync_enable->setChecked(false);
+        break;
+    case DWYCO_SE_TOX_FRIEND_REQUEST:
+#ifdef DWYCO_TOXCORE
+        dwyco_tox_accept_friend_request(val, len_val);
+#endif
+        cdcx_set_refresh_users(1);
+        break;
+    case DWYCO_SE_TOX_SELF_CONNECTION_STATUS:
+        cdcx_set_refresh_users(1);
+        break;
+    case DWYCO_SE_TOX_READY:
+        cdcx_set_refresh_users(1);
+        break;
+    case DWYCO_SE_TOX_CRASHED:
+        cdcx_set_refresh_users(1);
+        break;
+    case DWYCO_SE_TOX_FRIEND_NAME:
+    case DWYCO_SE_TOX_FRIEND_STATUS:
+    case DWYCO_SE_TOX_FRIEND_USER_STATUS:
+        cdcx_set_refresh_users(1);
+        break;
+    case DWYCO_SE_TOX_TYPING:
         break;
     default:
         break;

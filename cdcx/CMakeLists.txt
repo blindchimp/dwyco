@@ -118,6 +118,7 @@ qt_add_executable(CDC-X
 )
 
 set(BASELIBS
+    toxd
     cdc32
     vc
     crypto8
@@ -164,6 +165,12 @@ elseif(APPLE)
         ${CF}
         ${COCOA}
     )
+    if(DWYCO_TOXCORE)
+    target_link_libraries(CDC-X PRIVATE
+        /opt/homebrew/lib/libtoxcore.a
+        /opt/homebrew/lib/libsodium.a
+    )
+    endif()
 elseif(WIN32)
 
 add_compile_definitions(  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32)

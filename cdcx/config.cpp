@@ -11,6 +11,8 @@
 #include <QFileDialog>
 #include <QRegularExpression>
 #include <QDialog>
+#include <QClipboard>
+#include <QGuiApplication>
 #include "dwycolistscoped.h"
 #include "ui_config.h"
 #include "config.h"
@@ -18,6 +20,7 @@
 #include "ssmap.h"
 #include "mainwin.h"
 #include "simple_public.h"
+#include "simple_call.h"
 #include "tfhex.h"
 extern DwOString My_uid;
 
@@ -28,8 +31,57 @@ extern int Inhibit_powerclean;
 
 void cdcxpanic(char *);
 
+#ifdef DWYCO_TOXCORE
+int s_tox_connected = 0;
+
+static int tox_to_idx(const QByteArray &status)
+{
+    if(status == "away") return 1;
+    if(status == "busy") return 2;
+    return 0;
+}
+
+static QByteArray idx_to_status(int idx)
+{
+    if(idx == 1) return "away";
+    if(idx == 2) return "busy";
+    return "none";
+}
+
+static QColor tox_badge_color_for_info(const QByteArray &status, const QByteArray &user_status)
+{
+    if(status == "offline")
+        return QColor(0x9E, 0x9E, 0x9E);
+    if(user_status == "busy")
+        return QColor(0xF4, 0x43, 0x36);
+    if(user_status == "away")
+        return QColor(0xFF, 0x98, 0x00);
+    return QColor(0x4C, 0xAF, 0x50);
+}
+
+static QPixmap make_tox_badge(int size, QColor color)
+{
+    QPixmap pm(size, size);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+    p.setBrush(color);
+    p.drawEllipse(1, 1, size - 2, size - 2);
+    p.setPen(Qt::white);
+    QFont f;
+    f.setBold(true);
+    f.setPixelSize(size * 0.6);
+    p.setFont(f);
+    p.drawText(QRect(0, 0, size, size), Qt::AlignCenter, "T");
+    p.end();
+    return pm;
+}
+#endif
+
 configform::configform(QDialog *parent)
     : QDialog(parent)
+    , tox_refresh_timer(0)
 {
     ui.setupUi(this);
     // this is handled automatically now
@@ -51,6 +103,31 @@ configform::configform(QDialog *parent)
     ui.untrash->hide();
     ui.empty_trash->hide();
     ui.sync_table->setHorizontalHeaderLabels({"UID", "IP", "STAT"});
+
+#ifdef DWYCO_TOXCORE
+    if(!dwyco_tox_available())
+    {
+        int idx = ui.tabWidget->indexOf(ui.tab_tox);
+        if(idx >= 0)
+            ui.tabWidget->removeTab(idx);
+    }
+    else
+    {
+        tox_refresh_timer = new QTimer(this);
+        connect(tox_refresh_timer, &QTimer::timeout, this, &configform::refresh_tox_tab);
+        connect(ui.tox_friend_list, &QListWidget::itemDoubleClicked, this,
+            [this](QListWidgetItem *item) {
+                QModelIndex idx = ui.tox_friend_list->model()->index(ui.tox_friend_list->row(item), 0);
+                on_tox_friend_list_doubleClicked(idx);
+            });
+    }
+#else
+    {
+        int idx = ui.tabWidget->indexOf(ui.tab_tox);
+        if(idx >= 0)
+            ui.tabWidget->removeTab(idx);
+    }
+#endif
 
     TheConfigForm = this;
     // mainwinform may not exist yet
@@ -124,9 +201,6 @@ configform::accept()
     dwyco_set_codec_data(agc, denoise, audio_delay);
 
     // b/w settings
-    //int up = ui.upload_speed->text().toInt();
-    //int down = ui.download_speed->text().toInt();
-    //dwyco_set_rate_tweaks(20, 65535, up, down);
     dwyco_set_setting("rate/max_fps", "20");
     dwyco_set_setting("rate/kbits_per_sec_out", ui.upload_speed->text().toLatin1());
     dwyco_set_setting("rate/kbits_per_sec_in", ui.download_speed->text().toLatin1());
@@ -140,7 +214,6 @@ configform::accept()
     setting_put("call_acceptance/max_audio", ui.CDC_call_acceptance__max_audio->text(), 0);
     setting_put("call_acceptance/max_audio_recv", ui.CDC_call_acceptance__max_audio_recv->text(), 0);
     setting_put("mute_alerts", ui.mute_alerts->isChecked(), 0);
-    //setting_put("chat_dont_show_pics", ui.chat_dont_show_pics->isChecked());
     setting_put("chat_pic_size", ui.picsize_combobox->currentIndex(), 0);
     setting_put("profiles_no_auto_load", ui.profiles_no_auto_load->isChecked(), 0);
     int old = 0;
@@ -153,6 +226,39 @@ configform::accept()
 
     setting_put("disable_backups", ui.disable_backups->isChecked(), 0);
     setting_put("disable_bg", ui.inhibit_bg_checkbox->isChecked(), 0);
+
+#ifdef DWYCO_TOXCORE
+    if(ui.tabWidget->indexOf(ui.tab_tox) >= 0)
+    {
+        int tox_was_enabled = 0;
+        setting_get("tox_enabled", tox_was_enabled);
+        int tox_now = ui.tox_enable->isChecked() ? 1 : 0;
+        setting_put("tox_enabled", tox_now, 0);
+
+        if(tox_now && !tox_was_enabled)
+        {
+            dwyco_enable_tox("tox_save.tox");
+        }
+        else if(!tox_now && tox_was_enabled)
+        {
+            dwyco_disable_tox();
+        }
+
+        setting_put("auto_away_enabled", ui.auto_away_enable->isChecked() ? 1 : 0, 0);
+        int timeout_values[] = {60, 120, 300, 600, 900, 1800};
+        int tidx = ui.auto_away_timeout->currentIndex();
+        if(tidx >= 0 && tidx < 6)
+            setting_put("auto_away_timeout", timeout_values[tidx], 0);
+
+        QByteArray name_bytes = ui.tox_name->text().toUtf8();
+        QByteArray status_bytes = ui.tox_status_msg->text().toUtf8();
+        dwyco_tox_set_name(name_bytes.constData(), name_bytes.length());
+        dwyco_tox_set_status_message(status_bytes.constData(), status_bytes.length());
+
+        QByteArray status_str = idx_to_status(ui.tox_user_status->currentIndex());
+        dwyco_tox_set_user_status(status_str.constData());
+    }
+#endif
 
     settings_save2();
 }
@@ -211,12 +317,10 @@ configform::load()
     if(dwyco_get_pals_only())
     {
         ui.pals_only->setChecked(1);
-        //ui.CDC_zap__send_auto_reply->setEnabled(1);
     }
     else
     {
         ui.pals_only->setChecked(0);
-        //ui.CDC_zap__send_auto_reply->setEnabled(0);
     }
 
 
@@ -271,7 +375,6 @@ configform::load()
         setting_put("chat_dont_show_pics", 0);
         val = 0;
     }
-    //ui.chat_dont_show_pics->setChecked(val);
     int nval;
     if(!setting_get("chat_pic_size", nval))
     {
@@ -316,6 +419,79 @@ configform::load()
     }
     ui.inhibit_bg_checkbox->setChecked(val);
 
+#ifdef DWYCO_TOXCORE
+    if(ui.tabWidget->indexOf(ui.tab_tox) >= 0)
+    {
+        int tox_val;
+        if(!setting_get("tox_enabled", tox_val))
+            tox_val = 0;
+        ui.tox_enable->setChecked(tox_val);
+        set_tox_widgets_enabled(tox_val && dwyco_tox_available());
+
+        if(!setting_get("auto_away_enabled", tox_val))
+            tox_val = 0;
+        ui.auto_away_enable->setChecked(tox_val);
+
+        int aa_timeout;
+        if(!setting_get("auto_away_timeout", aa_timeout))
+            aa_timeout = 300;
+        int timeout_values[] = {60, 120, 300, 600, 900, 1800};
+        int tidx = 2;
+        for(int i = 0; i < 6; ++i)
+        {
+            if(timeout_values[i] == aa_timeout)
+            {
+                tidx = i;
+                break;
+            }
+        }
+        ui.auto_away_timeout->setCurrentIndex(tidx);
+        ui.auto_away_timeout->setEnabled(tox_val && ui.auto_away_enable->isChecked());
+
+        char *name_out = 0;
+        int name_len = 0;
+        if(dwyco_tox_get_name(&name_out, &name_len))
+            ui.tox_name->setText(QByteArray(name_out, name_len));
+        else
+            ui.tox_name->setText("");
+
+        char *status_out = 0;
+        int status_len = 0;
+        if(dwyco_tox_get_status_message(&status_out, &status_len))
+            ui.tox_status_msg->setText(QByteArray(status_out, status_len));
+        else
+            ui.tox_status_msg->setText("");
+
+        char *addr_out = 0;
+        int addr_len = 0;
+        if(dwyco_tox_get_self_address(&addr_out, &addr_len))
+        {
+            QByteArray addr_hex = QByteArray(addr_out, addr_len).toHex();
+            ui.tox_id_display->setText(addr_hex.left(16) + "...");
+        }
+
+        char *us_out = 0;
+        int us_len = 0;
+        if(dwyco_tox_get_user_status(&us_out, &us_len))
+        {
+            QByteArray us(us_out, us_len);
+            ui.tox_user_status->setCurrentIndex(tox_to_idx(us));
+        }
+        else
+        {
+            ui.tox_user_status->setCurrentIndex(0);
+        }
+
+        update_tox_status_indicator();
+        refresh_tox_friend_list();
+
+        if(tox_val)
+            tox_refresh_timer->start(5000);
+        else
+            tox_refresh_timer->stop();
+    }
+#endif
+
     if(ui.CDC_group__alt_name->text().length() == 0)
     {
         DWYCO_LIST gs;
@@ -352,7 +528,6 @@ configform::on_CDC_zap__no_forward_default_stateChanged(int newstate)
 void
 configform::on_pal_auth_stateChanged(int newstate)
 {
-    //dwyco_set_pal_auth_state(newstate == Qt::Checked, 0, 0);
 }
 
 void
@@ -382,7 +557,6 @@ void configform::on_create_auto_reply_clicked()
 {
 #if 0
     composer *c = new composer_autoreply(Mainwinform);
-    //c->set_uid(uid);
     c->show();
     c->raise();
 #endif
@@ -397,7 +571,6 @@ void configform::on_revert_auto_reply_clicked()
 
 void configform::on_CDC_call_acceptance__max_audio_textChanged(QString val)
 {
-    //settings_put("call_acceptance/max_audio", val.toAscii().constData());
 }
 
 
@@ -414,8 +587,6 @@ void configform::on_untrash_clicked()
     dwyco_load_users2(!Display_archived_users, &User_count);
     Mainwinform->load_users();
     cdcx_set_refresh_users(1);
-    // don't automatically cleanup on exit, this gives user
-    // a chance to look things over on next restart.
     Inhibit_powerclean = 1;
 }
 
@@ -453,11 +624,6 @@ get_a_backup_filename(QWidget *parent, QString filter)
 #endif
     }
 #if (!defined(LINUX) && !defined(MAC_CLIENT))
-// windows wants to change the cwd on us, so tell it to
-// use the qt dialog.
-    // apparently despite our request otherwise, qt decides to use the native dialog
-    //QString fn = QFileDialog::getOpenFileName(0, "File to send", QString(), QString(), 0, QFileDialog::DontUseNativeDialog);
-
     QFileDialog fd;
 
     fd.setOption(QFileDialog::DontUseNativeDialog);
@@ -474,10 +640,6 @@ get_a_backup_filename(QWidget *parent, QString filter)
         last_directory = fn;
         last_directory.truncate(last_directory.lastIndexOf("/"));
     }
-
-    // note: apparently on windows, qt does you the favor of changing
-    // directory separator to '/', which confuses the rest of the dll...
-    // so we'll just convert them back.
 
     fn.replace('/', '\\');
 #else
@@ -592,7 +754,6 @@ void configform::on_sync_enable_clicked(bool checked)
     }
     else
     {
-        //dwyco_set_setting("group/join_key", "");
         if(!dwyco_start_gj2("", ""))
         {
             QMessageBox::information(this, "Device UNLINKING failed",
@@ -666,14 +827,11 @@ void configform::on_sync_refresh_button_clicked()
 
     simple_scoped qsm(sm);
 
-    // Get the total number of items from the API.
     int numRows = qsm.rows();
     st->setRowCount(numRows);
 
-    // Create a QStandardItem for each column in each row.
     for (int i = 0; i < numRows; ++i)
     {
-        // Fetch data for each column from the API
         auto w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
         st->setItem(i, 0, w);
         w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
@@ -705,3 +863,181 @@ void configform::on_sync_refresh_button_clicked()
 
 }
 
+// --- Tox tab implementation ---
+
+#ifdef DWYCO_TOXCORE
+void configform::set_tox_widgets_enabled(bool enabled)
+{
+    ui.tox_status_indicator->setEnabled(enabled);
+    ui.tox_status_label->setEnabled(enabled);
+    ui.tox_status_label_2->setEnabled(enabled);
+    ui.tox_user_status->setEnabled(enabled);
+    ui.auto_away_enable->setEnabled(enabled);
+    ui.auto_away_timeout->setEnabled(enabled && ui.auto_away_enable->isChecked());
+    ui.tox_name->setEnabled(enabled);
+    ui.tox_status_msg->setEnabled(enabled);
+    ui.tox_update_name->setEnabled(enabled);
+    ui.tox_copy_id->setEnabled(enabled);
+    ui.tox_add_friend_label->setEnabled(enabled);
+    ui.tox_friend_id_input->setEnabled(enabled);
+    ui.tox_add_friend->setEnabled(enabled);
+    ui.tox_friends_label->setEnabled(enabled);
+    ui.tox_friend_list->setEnabled(enabled);
+    ui.tox_delete_friend->setEnabled(enabled);
+}
+
+void configform::update_tox_status_indicator()
+{
+    QPalette pal = ui.tox_status_indicator->palette();
+    if(s_tox_connected)
+    {
+        pal.setColor(QPalette::Window, Qt::green);
+        ui.tox_status_label->setText("Connected");
+    }
+    else
+    {
+        pal.setColor(QPalette::Window, Qt::red);
+        ui.tox_status_label->setText("Not connected");
+    }
+    ui.tox_status_indicator->setAutoFillBackground(true);
+    ui.tox_status_indicator->setPalette(pal);
+}
+
+void configform::refresh_tox_tab()
+{
+    update_tox_status_indicator();
+    refresh_tox_friend_list();
+}
+
+void configform::refresh_tox_friend_list()
+{
+    ui.tox_friend_list->clear();
+
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(!dwyco_tox_get_friends_model(&fl))
+        return;
+    simple_scoped qfl(fl);
+    int n = qfl.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+        QByteArray pkhex = pk.toHex();
+        QByteArray name = qfl.get<QByteArray>(i, DWYCO_TF_NAME);
+        QByteArray status = qfl.get<QByteArray>(i, DWYCO_TF_STATUS);
+        QByteArray user_status = qfl.get<QByteArray>(i, DWYCO_TF_USER_STATUS);
+
+        QColor badge_color = tox_badge_color_for_info(status, user_status);
+        QPixmap badge = make_tox_badge(16, badge_color);
+
+        QString display = QString(name) + "  " + pkhex.left(16);
+        QListWidgetItem *item = new QListWidgetItem(badge, display, ui.tox_friend_list);
+        item->setData(Qt::UserRole, pkhex);
+    }
+}
+
+void configform::on_tox_enable_toggled(bool checked)
+{
+    set_tox_widgets_enabled(checked && dwyco_tox_available());
+    if(checked)
+    {
+        if(!dwyco_tox_available())
+            return;
+        dwyco_enable_tox("tox_save.tox");
+
+        char *name_out = 0;
+        int name_len = 0;
+        if(dwyco_tox_get_name(&name_out, &name_len))
+            ui.tox_name->setText(QByteArray(name_out, name_len));
+
+        char *status_out = 0;
+        int status_len = 0;
+        if(dwyco_tox_get_status_message(&status_out, &status_len))
+            ui.tox_status_msg->setText(QByteArray(status_out, status_len));
+
+        tox_refresh_timer->start(5000);
+    }
+    else
+    {
+        dwyco_disable_tox();
+        tox_refresh_timer->stop();
+        s_tox_connected = 0;
+        update_tox_status_indicator();
+        ui.tox_friend_list->clear();
+    }
+}
+
+void configform::on_tox_update_name_clicked()
+{
+    QByteArray name_bytes = ui.tox_name->text().toUtf8();
+    QByteArray status_bytes = ui.tox_status_msg->text().toUtf8();
+    dwyco_tox_set_name(name_bytes.constData(), name_bytes.length());
+    dwyco_tox_set_status_message(status_bytes.constData(), status_bytes.length());
+}
+
+void configform::on_tox_copy_id_clicked()
+{
+    char *addr_out = 0;
+    int addr_len = 0;
+    if(dwyco_tox_get_self_address(&addr_out, &addr_len))
+    {
+        QByteArray addr_hex = QByteArray(addr_out, addr_len).toHex();
+        QGuiApplication::clipboard()->setText(addr_hex);
+    }
+}
+
+void configform::on_tox_add_friend_clicked()
+{
+    QString id_str = ui.tox_friend_id_input->text().trimmed();
+    if(id_str.length() == 0)
+        return;
+    QByteArray id_bytes = id_str.toLatin1();
+    QByteArray msg = "Hello from CDC-X!";
+    dwyco_tox_add_friend(id_bytes.constData(), id_bytes.length(), msg.constData());
+    ui.tox_friend_id_input->setText("");
+    refresh_tox_friend_list();
+}
+
+void configform::on_tox_delete_friend_clicked()
+{
+    QListWidgetItem *item = ui.tox_friend_list->currentItem();
+    if(!item)
+        return;
+
+    QMessageBox mb(QMessageBox::Warning, "Delete Friend",
+                   "Delete this friend and remove them from your contact list?",
+                   QMessageBox::Ok | QMessageBox::Cancel, this);
+    if(mb.exec() != QMessageBox::Ok)
+        return;
+
+    QByteArray pkhex = item->data(Qt::UserRole).toByteArray();
+    QByteArray pk = QByteArray::fromHex(pkhex);
+    dwyco_tox_delete_friend(pk.constData(), pk.length());
+    refresh_tox_friend_list();
+}
+
+void configform::on_tox_user_status_changed(int index)
+{
+    QByteArray status_str = idx_to_status(index);
+    dwyco_tox_set_user_status(status_str.constData());
+}
+
+void configform::on_tox_friend_list_doubleClicked(const QModelIndex &index)
+{
+    if(!index.isValid())
+        return;
+    QListWidgetItem *item = ui.tox_friend_list->item(index.row());
+    if(!item)
+        return;
+
+    QByteArray pkhex = item->data(Qt::UserRole).toByteArray();
+    QByteArray pk = QByteArray::fromHex(pkhex);
+    QByteArray uid = pk.left(10);
+
+    DwOString duid(uid.constData(), 0, uid.length());
+    simple_call *sc = simple_call::get_simple_call(duid);
+    sc->setVisible(1);
+    sc->raise();
+    emit Mainwinform->uid_selected(duid, 4);
+}
+
+#endif
