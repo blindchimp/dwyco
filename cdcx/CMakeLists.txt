@@ -154,6 +154,12 @@ target_link_libraries(CDC-X PRIVATE
     -ldl
     -pthread
 )
+    if(DWYCO_TOXCORE)
+    target_link_libraries(CDC-X PRIVATE
+       /home/dwight/git/c-toxcore/build/libtoxcore.a
+       -lsodium
+    )
+    endif()
 elseif(APPLE)
     add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
     find_library(CF CoreFoundation)
