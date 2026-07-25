@@ -176,7 +176,7 @@ static void refresh_tox_friend_cache()
     }
 }
 
-static bool is_tox_uid(const DwOString& uid)
+bool is_tox_uid(const DwOString& uid)
 {
     if(!dwyco_tox_available())
         return false;
@@ -1596,9 +1596,18 @@ mainwinform::on_actionCompose_Message_triggered(bool)
         return;
     }
     QByteArray uid = uids[0];
+    DwOString duid(uid.constData(), 0, uid.length());
+
+    if(is_tox_uid(duid))
+    {
+        simple_call *sc = simple_call::get_simple_call(duid);
+        sc->setVisible(1);
+        sc->raise();
+        return;
+    }
 
     c = new composer(COMP_STYLE_REGULAR, 0, this);
-    c->set_uid(DwOString(uid.constData(), 0, uid.length()));
+    c->set_uid(duid);
     c->show();
     c->raise();
 
@@ -3728,16 +3737,22 @@ dwyco_sys_event_callback(int cmd, int id,
     {
 #ifdef DWYCO_TOXCORE
         extern int s_tox_connected;
+        extern configform *TheConfigForm;
+        configform *cf = TheConfigForm;
         if(cmd == DWYCO_SE_TOX_SELF_CONNECTION_STATUS)
         {
             DwOString sd;
             if(type == DWYCO_TYPE_STRING)
                 sd = DwOString(val, 0, len_val);
             s_tox_connected = (sd.eq("udp") || sd.eq("tcp")) ? 1 : 0;
+            if(cf)
+                QMetaObject::invokeMethod(cf, [cf]() { cf->refresh_tox_tab(); }, Qt::QueuedConnection);
         }
         else if(cmd == DWYCO_SE_TOX_CRASHED)
         {
             s_tox_connected = 0;
+            if(cf)
+                QMetaObject::invokeMethod(cf, [cf]() { cf->refresh_tox_tab(); }, Qt::QueuedConnection);
         }
 #endif
         cdcx_set_refresh_users(1);

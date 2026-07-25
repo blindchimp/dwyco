@@ -11,6 +11,7 @@
 #include "msgbrowsedock.h"
 #include "ui_msgbrowsedock.h"
 #include "mainwin.h"
+#include "simple_call.h"
 #include "composer.h"
 #include "dwyco_new_msg.h"
 
@@ -427,6 +428,13 @@ MsgBrowseDock::on_actionReply_triggered(bool)
     QModelIndex mi = ism->currentIndex();
     if(mi.isValid())
     {
+        if(is_tox_uid(uid))
+        {
+            simple_call *sc = simple_call::get_simple_call(uid);
+            sc->setVisible(1);
+            sc->raise();
+            return;
+        }
         composer *c = new composer(COMP_STYLE_REGULAR, 0, this);
         c->set_uid(uid);
         c->show();

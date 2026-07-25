@@ -307,6 +307,7 @@ simple_call *display_msg(const DwOString& uid, const DwOString& txt, const DwOSt
 QString dwyco_info_to_display(const DwOString& uid);
 int dwyco_info_to_display(const DwOString& uid, QString& handle, QString& desc, QString& loc, QString& email);
 int send_file_common(const QByteArray& uid);
+bool is_tox_uid(const DwOString& uid);
 QString get_a_filename(QString filter);
 extern int DieDieDie;
 int get_expired();

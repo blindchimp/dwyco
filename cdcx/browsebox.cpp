@@ -153,6 +153,13 @@ void BrowseBox::on_actionShow_Chatbox_ctx_triggered()
 
 void BrowseBox::on_actionCompose_msg_ctx_triggered()
 {
+    if(is_tox_uid(context_uid))
+    {
+        simple_call *sc = simple_call::get_simple_call(context_uid);
+        sc->setVisible(1);
+        sc->raise();
+        return;
+    }
     composer *c = new composer(COMP_STYLE_REGULAR, 0, this);
     c->set_uid(context_uid);
     c->show();

@@ -21,9 +21,9 @@ public:
     configform(QDialog *parent = 0);
 
     void load();
+    void refresh_tox_tab();
 private:
     void load_untrash_button();
-    void refresh_tox_tab();
     void refresh_tox_friend_list();
     void update_tox_status_indicator();
     void set_tox_widgets_enabled(bool enabled);
