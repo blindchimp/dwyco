@@ -811,6 +811,10 @@ configform::showEvent(QShowEvent *ev)
 
     ui.sync_enable->setText("Enable device linking (" + QString::number(percent) + "% synced, " + QString::number(c) + "/" + QString::number(n) + " active)");
 
+#ifdef DWYCO_TOXCORE
+    if(ui.tabWidget->indexOf(ui.tab_tox) >= 0)
+        refresh_tox_tab();
+#endif
 }
 
 
@@ -907,6 +911,24 @@ void configform::refresh_tox_tab()
 {
     update_tox_status_indicator();
     refresh_tox_friend_list();
+
+    char *name_out = 0;
+    int name_len = 0;
+    if(dwyco_tox_get_name(&name_out, &name_len))
+        ui.tox_name->setText(QByteArray(name_out, name_len));
+
+    char *status_out = 0;
+    int status_len = 0;
+    if(dwyco_tox_get_status_message(&status_out, &status_len))
+        ui.tox_status_msg->setText(QByteArray(status_out, status_len));
+
+    char *us_out = 0;
+    int us_len = 0;
+    if(dwyco_tox_get_user_status(&us_out, &us_len))
+    {
+        QByteArray us(us_out, us_len);
+        ui.tox_user_status->setCurrentIndex(tox_to_idx(us));
+    }
 }
 
 void configform::refresh_tox_friend_list()
@@ -929,7 +951,7 @@ void configform::refresh_tox_friend_list()
         QColor badge_color = tox_badge_color_for_info(status, user_status);
         QPixmap badge = make_tox_badge(16, badge_color);
 
-        QString display = QString(name) + "  " + pkhex.left(16);
+        QString display = name.isEmpty() ? pkhex.left(16) : QString(name) + "  " + pkhex.left(16);
         QListWidgetItem *item = new QListWidgetItem(badge, display, ui.tox_friend_list);
         item->setData(Qt::UserRole, pkhex);
     }
@@ -990,7 +1012,7 @@ void configform::on_tox_add_friend_clicked()
     QString id_str = ui.tox_friend_id_input->text().trimmed();
     if(id_str.length() == 0)
         return;
-    QByteArray id_bytes = id_str.toLatin1();
+    QByteArray id_bytes = QByteArray::fromHex(id_str.toLatin1());
     QByteArray msg = "Hello from CDC-X!";
     dwyco_tox_add_friend(id_bytes.constData(), id_bytes.length(), msg.constData());
     ui.tox_friend_id_input->setText("");
