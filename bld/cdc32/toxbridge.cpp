@@ -12,9 +12,32 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+typedef intptr_t ssize_t;
+#define close _close
+#define open _open
+#define read _read
+#define lseek _lseeki64
+#define unlink _unlink
+static inline ssize_t pwrite_compat(int fd, const void *buf, size_t count, long long offset)
+{
+    long long cur = _lseeki64(fd, 0, SEEK_CUR);
+    _lseeki64(fd, offset, SEEK_SET);
+    ssize_t result = _write(fd, buf, count);
+    _lseeki64(fd, cur, SEEK_SET);
+    return result;
+}
+#define pwrite pwrite_compat
+#else
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#endif
 #include <map>
 
 #include "toxbridge.h"

@@ -342,6 +342,15 @@ if(WIN32)
        Qt6::Widgets
        winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
+    if(DWYCO_TOXCORE)
+        target_link_libraries(phoo
+            PRIVATE
+            optimized C:/Users/dwight/c-toxcore/_build/lib/Release/toxcore_static.lib
+            debug C:/Users/dwight/c-toxcore/_build/lib/Debug/toxcore_static.lib
+            optimized C:/Users/dwight/libsodium/bin/x64/Release/v143/static/libsodium.lib
+            debug C:/Users/dwight/libsodium/bin/x64/Debug/v143/static/libsodium.lib
+        )
+    endif()
 target_link_options(phoo PRIVATE binmode.obj)
 endif()
 

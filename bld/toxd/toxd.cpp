@@ -16,9 +16,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#ifdef _WIN32
+#include <io.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#else
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#endif
 #include <errno.h>
 #ifdef LOCAL_TOXCORE
 #include <tox.h>
