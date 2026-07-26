@@ -137,12 +137,12 @@ crop(T **img, int *cols, int *rows, int x0, int y0, int w, int h, int pad, int t
         //for(i = 0; i < h; ++i)
         //	memset(&g[i][w], img[i + y0][x0 + w - 1], (cw - w) * sizeof(T));
         for(i = h; i < ch; ++i)
-            bcopy(&img[y0 + h - 1][0], &g[i][0], w * sizeof(T));
+            memcpy(&g[i][0], &img[y0 + h - 1][0],  w * sizeof(T));
     }
     int copy_h = dw_min(h, ch);
     int copy_w = dw_min(w, cw);
     for(i = y0; i < copy_h + y0; ++i)
-        bcopy(&img[i][x0], &g[i - y0][0], copy_w * sizeof(T));
+        memcpy(&g[i - y0][0], &img[i][x0], copy_w * sizeof(T));
     *cols = cw;
     *rows = ch;
     return g;

@@ -57,6 +57,8 @@ extern DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
 static pthread_cond_t Msg_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int New_msg;
+#else
+#include <io.h>
 #endif
 
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
