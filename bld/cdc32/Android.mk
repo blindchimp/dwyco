@@ -31,6 +31,7 @@ LOCAL_CPPFLAGS += -DDWYCO_NO_ACQ_VIDEO_MEDIA
 else
 LOCAL_CPPFLAGS += -DDWYCO_THREADED_ENCODE
 LOCAL_CPPFLAGS += -DDWYCO_NO_ACQ_VIDEO_MEDIA
+LOCAL_CPPFLAGS += -DDWYCO_NO_VIDEO_FROM_PPM
 #LOCAL_CPPFLAGS += -DDWYCO_BACKGROUND_SYNC
 endif
 
@@ -174,9 +175,9 @@ activeuid.cpp \
 backandroid.cpp
 
 ifeq ($(DWYCO_APP), "rando")
-LOCAL_STATIC_LIBRARIES := pbm vc crypto8 kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := vc crypto8 kazlib jenkins dwcls
 else
-LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto8 kazlib jenkins dwcls miniupnpc
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm vc crypto8 kazlib jenkins dwcls miniupnpc
 endif
 
 LOCAL_C_INCLUDES := \
@@ -186,13 +187,12 @@ $(LOCAL_PATH)/../jenkins \
 $(LOCAL_PATH)/../crypto8 \
 $(LOCAL_PATH)/../vc \
 $(LOCAL_PATH)/../lpc \
-$(LOCAL_PATH)/../pbm \
 $(LOCAL_PATH)/../pgm \
 $(LOCAL_PATH)/../ppm \
 $(LOCAL_PATH)/winemu \
 $(LOCAL_PATH)/glob \
 $(LOCAL_PATH)/../gsm \
-$(LOCAL_PATH)/../speex/include \
+$(LOCAL_PATH)/../speexdsp-1.2.1/include \
 $(LOCAL_PATH)/../theora/include \
 $(LOCAL_PATH)/../ogg/include \
 $(LOCAL_PATH)/../vorbis/include \

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(dwyco_shared LANGUAGES CXX)
-set(DWYCO_CONFDIR rando_dynbld)
+set(DWYCO_CONFDIR phoo_dynbld)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -17,6 +17,12 @@ set(BASELIBS
     ppm
     pgm
     jenkins
+    miniupnpc
+    gsm
+    ogg
+    libvorbis-1.3.7
+    speex
+    theora.1.2.x
 )
 
 add_library(dwyco_jni SHARED dwyco.cpp)

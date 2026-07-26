@@ -87,7 +87,7 @@ TDecoder::decode_from_stream(DWBYTE*& istrm, int& len, void *&app_img, int& cols
     // in jdhuff.cc by passing in lengths and stuff...
 
     DWBYTE *tmpstrm = new DWBYTE[len + 4];
-    bcopy(istrm, tmpstrm, len);
+    memcpy(tmpstrm, istrm, len);
     tmpstrm[len] = 0;
     tmpstrm[len + 1] = 0;
     tmpstrm[len + 2] = 0;

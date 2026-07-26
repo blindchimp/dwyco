@@ -450,6 +450,10 @@ DH_alternate::insert_private_key(vc alt_name, vc grp_key)
             throw -1;
         }
 
+        vc computed_pub = udh_public_from_private(grp_key[DH_STATIC_PRIVATE]);
+        if(computed_pub != grp_key[DH_STATIC_PUBLIC])
+            throw -1;
+
         sql("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
                            alt_name,
                            blob(grp_key[DH_STATIC_PRIVATE]),

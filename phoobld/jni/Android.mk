@@ -9,7 +9,6 @@ include $(MY_CONF_LOCAL_PATH)/jenkins/Android.mk
 include $(MY_CONF_LOCAL_PATH)/gsm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/crypto8/Android.mk
 include $(MY_CONF_LOCAL_PATH)/vc/Android.mk
-include $(MY_CONF_LOCAL_PATH)/pbm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/pgm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/ppm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/cdc32/Android.mk
@@ -35,7 +34,6 @@ cdc32 \
 gsm \
 ppm \
 pgm \
-pbm \
 vc \
 crypto8 \
 kazlib \

@@ -47,9 +47,9 @@ flip_in_place(T **img, int cols, int rows)
 
     for(int i = 0; i < lim; ++i)
     {
-        bcopy(&img[i][0], &tmp[0], cols * sizeof(T));
-        bcopy(&img[rows - i - 1][0], &img[i][0], cols * sizeof(T));
-        bcopy(&tmp[0], &img[rows - i - 1][0], cols * sizeof(T));
+        memcpy(&tmp[0], &img[i][0], cols * sizeof(T));
+        memcpy(&img[i][0], &img[rows - i - 1][0], cols * sizeof(T));
+        memcpy(&img[rows - i - 1][0], &tmp[0], cols * sizeof(T));
     }
     pm_freerow((char *)tmp);
 }
