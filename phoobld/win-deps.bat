@@ -89,7 +89,16 @@ echo === Patching Dependencies.cmake ===
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write-deps-cmake.ps1" "%TOXCORE%"
 
 REM ============================================================
-REM  6. Configure c-toxcore (Debug + Release, static only)
+REM  6. Create compat/pthread.h for MSVC
+REM     c-toxcore uses pthread_mutex_t / pthread_rwlock_t.
+REM     This shim maps them to CRITICAL_SECTION / SRWLOCK.
+REM ============================================================
+echo.
+echo === Creating compat/pthread.h ===
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write-pthread-h.ps1" "%TOXCORE%"
+
+REM ============================================================
+REM  7. Configure c-toxcore (Debug + Release, static only)
 REM ============================================================
 echo.
 echo === Configuring c-toxcore ===
@@ -113,7 +122,7 @@ echo === Configuring c-toxcore ===
 if errorlevel 1 (echo FAIL: cmake configure & exit /b 1)
 
 REM ============================================================
-REM  7. Build c-toxcore (Debug + Release)
+REM  8. Build c-toxcore (Debug + Release)
 REM ============================================================
 echo.
 echo === Building c-toxcore (Release) ===
@@ -126,7 +135,7 @@ echo === Building c-toxcore (Debug) ===
 if errorlevel 1 (echo FAIL: c-toxcore Debug build & exit /b 1)
 
 REM ============================================================
-REM  8. Summary
+REM  9. Summary
 REM ============================================================
 echo.
 echo === Done ===
