@@ -2802,6 +2802,16 @@ trash_file(const DwString& dir, const DwString& fn)
 void
 trash_body(vc uid, vc msg_id, int inhibit_indexing)
 {
+
+// trashing messages like this is only really useful in
+// debugging where you can recover some removed files right
+// after they are deleted. otherwise, just delete the file
+// immediately.
+
+#if defined(ANDROID) || !defined(DWYCO_DEBUG)
+    delete_body3(uid, msg_id, inhibit_indexing);
+    return;
+#endif
     if(uid.type() != VC_STRING || uid.len() != 10)
         return;
     DwString huid((const char *)to_hex(uid));
@@ -3219,8 +3229,8 @@ delete_attachment2(vc user_id, vc attachment_name)
         return;
     if(user_id.len() == 0)
         return;
-    DwString s((const char *)to_hex(user_id));
-    DwString t((const char *)attachment_name);
+    DwString s(to_hex(user_id));
+    DwString t(attachment_name);
 
     s += ".usr";
     s = newfn(s);
@@ -4588,19 +4598,21 @@ clean_cruft()
 }
 
 void
-weekly_trash_empty()
+debug_trash_empty()
 {
-    // just empty the trash once a week, this is mainly for debugging
-    // these days anyway, since we don't really offer a way for users
-    // to untrash this atm.
+#ifdef DWYCO_DEBUG
+    // debug: empty trash daily, mainly for debugging
     vc last_empty;
     if(!load_info(last_empty, "trs.dif") ||
-            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
+            (time(0) - (time_t)last_empty) > ((time_t)1 * 24 * 3600))
     {
         empty_trash();
         last_empty = time(0);
         save_info(last_empty, "trs.dif");
     }
+#else
+    empty_trash();
+#endif
 }
 
 #if 0

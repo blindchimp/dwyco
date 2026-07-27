@@ -78,6 +78,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 # only use this if you really need the api tracing entries.
 #add_compile_definitions($<$<CONFIG:Debug>:DWYCO_TRACE>)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 # define this if you are mucking with schema update debugging and just
 # want to make sure you don't get problems with old databases crashing thigs
 #add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_SCHEMA>)

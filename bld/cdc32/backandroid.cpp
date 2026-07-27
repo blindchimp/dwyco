@@ -804,7 +804,7 @@ make_msg_folder(const vc& uid, DwString* fn_out)
     return 1;
 }
 
-// note: uid is assumed to hex
+// note: uid is assumed to be hex
 static
 int
 restore_msg(const vc& uid, const vc& mid)

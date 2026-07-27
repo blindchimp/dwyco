@@ -1596,7 +1596,7 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
-    weekly_trash_empty();
+    debug_trash_empty();
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);

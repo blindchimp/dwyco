@@ -992,7 +992,9 @@ out:
     }
 #ifndef ANDROID
     clean_cruft();
-    weekly_trash_empty();
+    debug_trash_empty();
+#else
+    empty_trash();
 #endif
     //exit(0);
     return 0;
@@ -1301,7 +1303,9 @@ out:
     dwyco_bg_exit();
 #ifndef ANDROID
     clean_cruft();
-    weekly_trash_empty();
+    debug_trash_empty();
+#else
+    empty_trash();
 #endif
     //exit(0);
     return 0;
