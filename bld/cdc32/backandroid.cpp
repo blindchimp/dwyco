@@ -116,6 +116,8 @@ sql_rollback_transaction()
 }
 using namespace dwyco::backandroid;
 
+static int backup_account_info(const char *dbn);
+
 static
 vc
 blob(vc m)
@@ -320,46 +322,34 @@ android_set_backup_state(int i)
     return ret;
 }
 
-// note: this should probably be updated to allow newer messages to
-// be loaded into the backup, erasing older ones. for now it is ok, but
-// this will be more useful if it has the latest information in it i think.
-
-void
-android_backup()
+int
+unified_backup(const char *fn, int include_account_info, int max_size_mb)
 {
     if(Db)
-        return;
-    // since this is a small backup, just delete and do it from scratch
-    DeleteFile(newfn("aback.sql").c_str());
-    Db = new backup_sql;
-    if(!Db->init())
-    {
-        delete Db;
-        return;
-        oopanic("can't init backup");
-    }
-    Db->sync_off();
-    Db->optimize();
-    Db->attach(newfn(MSG_IDX_DB), "mi");
-    Db->attach(newfn(TAG_DB), "mt");
+        return 0;
+    DeleteFile(newfn(fn).c_str());
+    Db = new backup_sql(fn);
+    bool redo_backup = false;
 
     try
     {
+        if(!Db->init())
+        {
+            throw -1;
+        }
+        Db->sync_off();
+        Db->optimize();
+        Db->attach(newfn(MSG_IDX_DB), "mi");
+        Db->attach(newfn(TAG_DB), "mt");
 
         sql_start_transaction();
-        //sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
-        //sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
-        //sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
-        //sql("delete from main.tags");
         sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
         sql_commit_transaction();
         Db->vacuum();
-        // android autobackup limit
-        Db->set_max_size(24);
+        if(max_size_mb > 0)
+            Db->set_max_size(max_size_mb);
 
-        // these tags are user-generated and usually pretty small
-        // since we don't allow backups to be loaded in group mode,
-        // only store data that would be used in non-group mode
+        // tags: filtered subset for non-group restore
         try
         {
             sql_start_transaction();
@@ -377,92 +367,77 @@ android_backup()
         catch(...)
         {
             sql_rollback_transaction();
-            goto done;
         }
 
-        // plain texts that are favorited from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                    "and not exists (select 1 from main.msgs where favmid = mid) "
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        // prioritize: favorites from pals, favorites, pals, all, then with attachments
+        // batch_size 30 for performance; with a size limit, earlier categories get priority
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+            "and not exists (select 1 from main.msgs where favmid = mid) "
+            " order by logical_clock desc", 30);
 
-        // plain texts that are favorited
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // plain texts from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // plain texts
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // favorites with attachments from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // favorites with attachments
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // with attachments
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment notnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment notnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        }
-done:
-        ;
+        if(include_account_info)
+            backup_account_info("main");
     }
     catch(vc err)
     {
         sql_rollback_transaction();
         if(err == vc("full"))
         {
-
+        }
+        else
+        {
+            redo_backup = true;
         }
     }
     catch(...)
     {
-
+        redo_backup = true;
     }
+
     Db->exit();
     delete Db;
     Db = 0;
+    if(redo_backup)
+    {
+        TRACK_ADD(BU_remove_trashed_backup, 1);
+        DeleteFile(newfn(fn).c_str());
+        return 0;
+    }
+    return 1;
 }
 
 static
@@ -697,95 +672,6 @@ desktop_days_since_backup_created()
 }
 
 
-int
-desktop_backup()
-{
-    if(Db)
-        return 0;
-    Db = new backup_sql("bun.sql");
-    // in the field, it appears backups get trashed occasionally, so
-    // if there is any problem at all during backup creation, just remove it
-    // and hope the next one will work.
-    bool redo_backup = false;
-
-    try
-    {
-        if(!Db->init())
-        {
-            throw -1;
-            return 0;
-            //oopanic("can't init backup");
-        }
-        Db->sync_off();
-        Db->optimize();
-        Db->attach(newfn(MSG_IDX_DB), "mi");
-        Db->attach(newfn(TAG_DB), "mt");
-
-        sql_start_transaction();
-        sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
-        //sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
-        //sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
-        sql("delete from main.tags");
-        sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
-        sql_commit_transaction();
-        Db->vacuum();
-
-
-        // these tags are user-generated and usually pretty small
-        try
-        {
-            sql_start_transaction();
-            sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags)");
-            sql_commit_transaction();
-        }
-        catch(...)
-        {
-            sql_rollback_transaction();
-            throw -1;
-        }
-
-        // everything not already backed up
-        if(!attempt_backup(
-                "select assoc_uid, mid from mi.msg_idx where mid not in (select mid from main.msgs) "
-                " order by logical_clock desc", 30))
-        {
-            // note: if attempt_backup returns 0, it could be the disk is full, not necessarily that
-            // the database is corrupt. so make an attempt to store the account info. if that fails,
-            // we probably need to redo the backup.
-        }
-        backup_account_info("main");
-    }
-    catch(vc err)
-    {
-        sql_rollback_transaction();
-        if(err == vc("full"))
-        {
-            // this may be transient, and there isn't really
-            // any indication the backup is trashed in this case.
-            // so just ignore it for now.
-        }
-        else
-        {
-            redo_backup = true;
-        }
-    }
-    catch(...)
-    {
-        redo_backup = true;
-    }
-
-    Db->exit();
-    delete Db;
-    Db = 0;
-    if(redo_backup)
-    {
-        TRACK_ADD(BU_remove_trashed_backup, 1);
-        DeleteFile(newfn("bun.sql").c_str());
-        return 0;
-    }
-    return 1;
-}
-
 // note: uid is assumed be hex already here
 static
 int
@@ -900,65 +786,6 @@ restore_msg(const vc& uid, const vc& mid)
 
     return 1;
 
-}
-
-int
-android_restore_msgs()
-{
-    int ret = 1;
-    if(Db)
-        return 0;
-    Db = new backup_sql;
-    if(!Db->init())
-    {
-        delete Db;
-        Db = 0;
-        return 0;
-    }
-
-    Db->attach(newfn(TAG_DB), "mt");
-    Db->sync_off();
-    GRTLOG("android restore", 0, 0);
-
-    try
-    {
-        vc res;
-
-        res = sql("select distinct(from_uid) from main.msgs");
-
-        // we are likely to be loading something at this point,
-        // so kill the index so it is rebuilt
-        DeleteFile(newfn(MSG_IDX_DB).c_str());
-
-        for(int i = 0; i < res.num_elems(); ++i)
-        {
-            const vc& uid = res[i][0];
-            make_msg_folder(uid, 0);
-        }
-
-        res = sql("select from_uid, mid from main.msgs");
-
-        for(int i = 0; i < res.num_elems(); ++i)
-        {
-            const vc& uid = res[i][0];
-            const vc& mid = res[i][1];
-            restore_msg(uid, mid);
-        }
-
-        // merge in the tags from the backup
-        sql_start_transaction();
-        sql("insert into mt.gmt select * from main.tags");
-        sql_commit_transaction();
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
-        ret = 0;
-    }
-    Db->exit();
-    delete Db;
-    Db = 0;
-    return ret;
 }
 
 int

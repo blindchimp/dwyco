@@ -9235,19 +9235,19 @@ dwyco_create_backup(int days_to_run, int days_to_rebuild)
     int du = desktop_days_since_last_backup();
     if(du == -1)
     {
-        desktop_backup();
+        unified_backup("bun.sql", 1, 0);
         return 1;
     }
     int dr = desktop_days_since_backup_created();
     if(dr == -1 || dr >= days_to_rebuild)
     {
         dwyco_remove_backup();
-        desktop_backup();
+        unified_backup("bun.sql", 1, 0);
         return 1;
     }
     if(du < days_to_run)
         return 0;
-    desktop_backup();
+    unified_backup("bun.sql", 1, 0);
     return 1;
 }
 
@@ -9390,7 +9390,7 @@ dwyco_restore_android_backup()
 {
     if(Current_alternate)
         return 0;
-    if(!android_restore_msgs())
+    if(!restore_msgs("aback.sql", 1))
         return 0;
     special_backup_bailout();
     return 1;

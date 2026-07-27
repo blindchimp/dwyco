@@ -468,7 +468,7 @@ int
 do_android_backup()
 {
     GRTLOG("backup start", 0, 0);
-    android_backup();
+    unified_backup("aback.sql", 0, 24);
     GRTLOG("backup done", 0, 0);
     return 0;
 }
