@@ -2273,6 +2273,25 @@ DwycoCore::power_clean()
     dwyco_end_bulk_update();
 }
 
+void
+DwycoCore::obliterate()
+{
+    return;
+#if 0
+    hangup_all_calls();
+    dwyco_disconnect_chat_server();
+    // TODO: leave all phoo messenger groups (send group-leave to members)
+    // when Groups map is accessible from main build
+    if(m_tox_enabled)
+        dwyco_disable_tox();
+    // dwyco_remove_profile(0, 0);  // TODO: not implemented yet, enable when ready
+    dwyco_remove_backup();
+    dwyco_exit();
+    QDir(User_pfx).removeRecursively();
+    QMetaObject::invokeMethod(qApp, "quit", Qt::QueuedConnection);
+#endif
+}
+
 int
 DwycoCore::load_backup()
 {

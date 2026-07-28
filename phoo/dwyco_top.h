@@ -188,6 +188,7 @@ public:
     }
 
     Q_INVOKABLE void power_clean();
+    Q_INVOKABLE void obliterate();
 
     Q_INVOKABLE QString get_my_uid() {
         return My_uid.toHex();
