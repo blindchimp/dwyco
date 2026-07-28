@@ -143,11 +143,14 @@ public slots:
         QMutexLocker ml(&audio_mutex);
         if(audio_output)
         {
-            if(audio_output->state() != QAudio::ActiveState)
+            QAudio::State s = audio_output->state();
+            if(s == QAudio::SuspendedState)
             {
-                qio_dev = audio_output->start();
+                audio_output->resume();
                 audio_output->setVolume(1.0);
             }
+            // IdleState: timer->qt_pushmore will write data, sink auto-transitions to Active
+            // ActiveState: already playing
             return;
         }
 
@@ -326,9 +329,13 @@ audout_qt_device_output(void *, void *buf, int len, int user_data)
     a.pos = 0;
     devq_p->append(a);
     GRTLOG("qt dev out state %d", m->audio_output->state(), 0);
-    if(m->audio_output->state() != QAudio::ActiveState)
     {
-        m->emit init();
+        QAudio::State s = m->audio_output->state();
+        if(s == QAudio::SuspendedState || s == QAudio::StoppedState)
+        {
+            m->emit init();
+        }
+        // IdleState: timer->qt_pushmore writes data, sink auto-transitions to Active
     }
     return ret;
 }
