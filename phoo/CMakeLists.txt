@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(DWYCO_CONFDIR phoo_cmake)
 set(PHOO_VERSION "4.421")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
-set(PHOO_VERSION_CODE 2000145)
+set(PHOO_VERSION_CODE 2000147)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
     include(ExternalProject)
@@ -236,6 +236,7 @@ set_target_properties(phoo PROPERTIES
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
     QT_ANDROID_TARGET_SDK_VERSION 36
+    QT_ANDROID_COMPILE_SDK_VERSION "android-36"
 
 )
 set_property(TARGET phoo APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
