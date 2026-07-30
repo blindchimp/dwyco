@@ -116,6 +116,7 @@ tox_bootstrap(Tox *tox)
             continue;
         Tox_Err_Bootstrap err;
         tox_bootstrap(tox, addr, (uint16_t)port, pubkey, &err);
+        tox_add_tcp_relay(tox, addr, (uint16_t)port, pubkey, &err);
     }
 }
 
@@ -374,6 +375,7 @@ load_or_create_tox(ToxPlugin *p)
     struct Tox_Options &opts = *tox_options_new(&new_err);
     tox_options_default(&opts);
     tox_options_set_experimental_disable_dns(&opts, true);
+    tox_options_set_udp_enabled(&opts, false);
 
     DwString log_path = dwyco::newfn("tox.log");
     p->log_file = fopen(log_path.c_str(), "a");
@@ -407,9 +409,11 @@ load_or_create_tox(ToxPlugin *p)
 
     if(savedata)
     {
-        opts.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
-        opts.savedata_data = savedata;
-        opts.savedata_length = savedata_sz;
+        //opts.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
+        //opts.savedata_data = savedata;
+        //opts.savedata_length = savedata_sz;
+        tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+        tox_options_set_savedata_data(&opts, savedata, savedata_sz);
     }
 
     Tox_Err_New err;
@@ -420,7 +424,10 @@ load_or_create_tox(ToxPlugin *p)
     {
         tox_options_default(&opts);
         tox_options_set_experimental_disable_dns(&opts, true);
-        opts.savedata_type = TOX_SAVEDATA_TYPE_NONE;
+        tox_options_set_udp_enabled(&opts, false);
+        //opts.savedata_type = TOX_SAVEDATA_TYPE_NONE;
+        tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_NONE);
+
         p->tox = tox_new(&opts, &err);
     }
 
