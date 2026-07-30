@@ -101,7 +101,12 @@ public class NotificationClient extends QtActivity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        
+
+        if (Build.VERSION.SDK_INT >= 35) {
+            getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        }
+
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 	if(DwycoApp.keep_screen_on)
