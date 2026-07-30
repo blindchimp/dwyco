@@ -189,14 +189,13 @@ msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
     case DWYCO_SE_MSG_DOWNLOAD_OK:
 
     {
+        dwyco_unset_msg_tag(mid.constData(), "_inbox");
+        if(m_uid == shuid)
+            mid_tag_changed(smid);
         reload_inbox_model();
         add_unviewed(buid, mid);
         emit TheDwycoCore->new_msg(shuid, "", smid);
         emit TheDwycoCore->decorate_user(shuid);
-
-        dwyco_unset_msg_tag(mid.constData(), "_inbox");
-        if(m_uid == shuid)
-            mid_tag_changed(smid);
 
     }
     // FALLTHRU
