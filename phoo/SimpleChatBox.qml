@@ -702,6 +702,7 @@ Page {
             clip: true
             spacing: 5
             ScrollBar.vertical: ScrollBar {
+                id: vscroll
                 onPressedChanged: {
                     lock_to_bottom = false
                 }
@@ -1197,7 +1198,7 @@ Page {
         anchors.bottom: listview_layout.bottom
         anchors.bottomMargin: mm(2)
         anchors.right: listview_layout.right
-        anchors.rightMargin: conv_sidebar.width
+        anchors.rightMargin: conv_sidebar.width + vscroll.width + dp(2)
 
         background: Rectangle {
             id: gtb_bg

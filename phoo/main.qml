@@ -1048,8 +1048,8 @@ ApplicationWindow {
         }
 
         onSys_msg_idx_updated: (uid)=> {
-            console.log("upd " + uid + " " + themsglist.uid)
-            if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
+            console.log("upd " + uid + " " + themsglist.uid + " tag " + themsglist.tag)
+            if(themsglist.tag.length > 0 || uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")

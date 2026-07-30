@@ -159,6 +159,15 @@ udh_new_static(vc entropy)
 }
 
 vc
+udh_public_from_private(vc priv_key)
+{
+    SecByteBlock priv((const byte *)(const char *)priv_key, priv_key.len());
+    SecByteBlock pub(UDH->StaticPublicKeyLength());
+    UDH->GenerateStaticPublicKey(*Rng, priv, pub);
+    return vc(VC_BSTRING, (const char *)pub.BytePtr(), pub.SizeInBytes());
+}
+
+vc
 udh_gen_keys(vc DH_static, vc entropy)
 {
     SecByteBlock eph_priv(UDH->EphemeralPrivateKeyLength());
