@@ -101,7 +101,10 @@ public class NotificationClient extends QtActivity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        
+
+        // Set status bar to opaque white with dark icons
+        setStatusBarAppearance();
+
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 	if(DwycoApp.keep_screen_on)
@@ -194,6 +197,7 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
     @Override
     protected void onResume() {
         super.onResume();
+        setStatusBarAppearance();
 	if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 
@@ -204,6 +208,25 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
             }
         } else {
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        }
+    }
+
+    private void setStatusBarAppearance() {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                );
+            }
+        } else if (Build.VERSION.SDK_INT >= 23) {
+            int ui = getWindow().getDecorView().getSystemUiVisibility();
+            ui |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            getWindow().getDecorView().setSystemUiVisibility(ui);
         }
     }
 
