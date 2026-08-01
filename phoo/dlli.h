@@ -2236,6 +2236,14 @@ int DWYCOEXPORT dwyco_tox_get_user_status(char **out, int *len_out);
 int DWYCOEXPORT dwyco_uid_is_tox_friend(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_get_device_uid(char **out, int *len_out);
 
+int DWYCOEXPORT dwyco_tox_needs_password();
+int DWYCOEXPORT dwyco_tox_unlock(const char *pw, int pw_len);
+int DWYCOEXPORT dwyco_tox_set_profile_password(const char *pw, int pw_len);
+int DWYCOEXPORT dwyco_tox_has_profile_password();
+int DWYCOEXPORT dwyco_tox_file_is_encrypted(const char *path);
+int DWYCOEXPORT dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
+                                         int make_backup, char *err_buf, int err_buf_len);
+
 int DWYCOEXPORT dwyco_tox_available(void);
 
 #ifdef __cplusplus
