@@ -79,6 +79,10 @@ static ToxPlugin *Tox_plugin;
 static int Started;
 static ToxQueue *Tox_q;
 static vc Friend_cache;
+static DwString Save_file;
+static uint8_t *Active_password;
+static int Active_password_len;
+static int Needs_password;
 struct IncomingFileTransfer {
     DwString tmp_basename;
     int fd;
@@ -101,6 +105,79 @@ struct OutgoingFileTransfer {
     uint32_t tox_fnum;
 };
 static std::map<DwString, OutgoingFileTransfer> Outgoing_xfers;
+
+static void
+set_active_password(const uint8_t *pw, int pw_len)
+{
+    if(Active_password)
+    {
+        free(Active_password);
+        Active_password = NULL;
+        Active_password_len = 0;
+    }
+    if(pw && pw_len > 0)
+    {
+        Active_password = (uint8_t *)malloc((size_t)pw_len);
+        memcpy(Active_password, pw, (size_t)pw_len);
+        Active_password_len = pw_len;
+    }
+}
+
+static int
+file_exists(const DwString &path)
+{
+    struct stat st;
+    return stat(path.c_str(), &st) == 0;
+}
+
+static int
+copy_file(const DwString &src, const DwString &dst)
+{
+    FILE *in = fopen(src.c_str(), "rb");
+    if(!in)
+        return 0;
+    FILE *out = fopen(dst.c_str(), "wb");
+    if(!out)
+    {
+        fclose(in);
+        return 0;
+    }
+    char buf[65536];
+    size_t n;
+    int ret = 1;
+    while((n = fread(buf, 1, sizeof(buf), in)) > 0)
+    {
+        if(fwrite(buf, 1, n, out) != n)
+        {
+            ret = 0;
+            break;
+        }
+    }
+    if(ferror(in))
+        ret = 0;
+    fclose(in);
+    if(fclose(out) != 0)
+        ret = 0;
+    return ret;
+}
+
+static DwString
+backup_path_for_save(const DwString &save_path)
+{
+    (void)save_path;
+    DwString base = newfn("replaced_tox_save.tox");
+    if(!file_exists(base))
+        return base;
+    for(int i = 1; ; ++i)
+    {
+        DwString num;
+        num += i;
+        DwString cand = newfn(DwString("replaced_tox_save.") + num + ".tox");
+        if(!file_exists(cand))
+            return cand;
+    }
+    return base;
+}
 
 static void
 fail_outgoing(const vc &local_mid)
@@ -599,9 +676,17 @@ tox_bridge_init(const char *save_file)
     if(Started)
         return 1;
 
-    Tox_plugin = toxp_init(save_file, on_tox_event, NULL);
+    Save_file = save_file ? save_file : "tox_save.tox";
+    Needs_password = 0;
+    int status = TOXP_STATUS_FAILED;
+    Tox_plugin = toxp_init(Save_file.c_str(), Active_password, Active_password_len,
+                           on_tox_event, NULL, &status);
     if(!Tox_plugin)
+    {
+        if(status == TOXP_STATUS_NEEDS_PASSWORD)
+            Needs_password = 1;
         return 0;
+    }
 
     Started = 1;
     if(!Tox_q)
@@ -659,6 +744,103 @@ tox_bridge_shutdown()
     }
     Started = 0;
     GRTLOG("tox bridge: shutdown", 0, 0);
+}
+
+int
+tox_bridge_needs_password()
+{
+    return Needs_password;
+}
+
+int
+tox_bridge_unlock(const uint8_t *pw, int pw_len)
+{
+    if(Started)
+        return 1;
+    set_active_password(pw, pw_len);
+    return tox_bridge_init(Save_file.c_str());
+}
+
+int
+tox_bridge_has_password()
+{
+    return toxp_has_password(Tox_plugin);
+}
+
+int
+tox_bridge_set_password(const uint8_t *pw, int pw_len)
+{
+    if(!Tox_plugin)
+        return 0;
+    if(!toxp_set_password(Tox_plugin, pw, pw_len))
+        return 0;
+    set_active_password(pw, pw_len);
+    return 1;
+}
+
+int
+tox_bridge_file_is_encrypted(const char *path)
+{
+    return toxp_file_is_encrypted(path);
+}
+
+int
+tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                          int make_backup, char *err_buf, int err_buf_len)
+{
+    if(!src_path || !src_path[0] || !err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+
+    uint8_t *data = NULL;
+    size_t len = 0;
+    if(!toxp_import_prepare(src_path, src_pw, src_pw_len, &data, &len,
+                            err_buf, err_buf_len))
+    {
+        GRTLOG("tox: import prepare failed: %s", err_buf, 0);
+        return 0;
+    }
+
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(make_backup && file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up profile to %s", backup_path.c_str(), 0);
+        }
+        else
+        {
+            GRTLOG("tox: backup failed, continuing without backup", 0, 0);
+        }
+    }
+
+    // shut down the live instance, then replace the save file
+    tox_bridge_shutdown();
+
+    int ret = toxp_import_commit(Save_file.c_str(), data, len,
+                                 Active_password, Active_password_len,
+                                 err_buf, err_buf_len);
+    free(data);
+    if(!ret)
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        return 0;
+    }
+
+    if(!tox_bridge_init(Save_file.c_str()))
+    {
+        GRTLOG("tox: import re-init failed, restoring backup", 0, 0);
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        return 0;
+    }
+    GRTLOG("tox bridge: imported profile, re-initialized", 0, 0);
+    return 1;
 }
 
 void

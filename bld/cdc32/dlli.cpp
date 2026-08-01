@@ -9709,6 +9709,50 @@ dwyco_disable_tox()
 
 DWYCOEXPORT
 int
+dwyco_tox_needs_password()
+{
+    return dwyco::tox_bridge_needs_password() ? 1 : 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_unlock(const char *pw, int pw_len)
+{
+    return dwyco::tox_bridge_unlock((const uint8_t *)pw, pw_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_profile_password(const char *pw, int pw_len)
+{
+    return dwyco::tox_bridge_set_password((const uint8_t *)pw, pw_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_has_profile_password()
+{
+    return dwyco::tox_bridge_has_password() ? 1 : 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_file_is_encrypted(const char *path)
+{
+    return dwyco::tox_bridge_file_is_encrypted(path);
+}
+
+DWYCOEXPORT
+int
+dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
+                         int make_backup, char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_import_profile(src_path, (const uint8_t *)src_pw, src_pw_len,
+                                            make_backup, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_get_self_public_key(char **out, int *len_out)
 {
     return dwyco::tox_bridge_get_self_public_key(out, len_out);

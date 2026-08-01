@@ -28,6 +28,22 @@ void tox_bridge_shutdown();
 int tox_bridge_is_active();
 void tox_bridge_cleanup_incomplete();
 
+// encrypted-save support
+// bridge remembers the last profile password in memory (never persisted).
+int tox_bridge_needs_password();
+int tox_bridge_unlock(const uint8_t *pw, int pw_len);
+int tox_bridge_set_password(const uint8_t *pw, int pw_len);
+int tox_bridge_has_password();
+
+// import a qTox-style .tox file as the active profile. the existing profile
+// is validated/decrypted (src_pw), backed up to replaced_tox_save[.N].tox
+// unless make_backup is 0, the live instance is replaced while running, and
+// the current profile password (if any) is applied to the imported save.
+int tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                              int make_backup, char *err_buf, int err_buf_len);
+// probe a tox save file: returns 1 if it is toxencryptsave-encrypted, 0 otherwise
+int tox_bridge_file_is_encrypted(const char *path);
+
 // polling — call from dwyco timer loop
 void tox_bridge_poll();
 
