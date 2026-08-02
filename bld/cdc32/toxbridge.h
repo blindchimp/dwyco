@@ -48,6 +48,10 @@ int tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int s
 // probe a tox save file: returns 1 if it is toxencryptsave-encrypted, 0 otherwise
 int tox_bridge_file_is_encrypted(const char *path);
 
+// export the live profile's save data to dst_path, preserving the current
+// encryption state. on failure err_buf is filled with a message.
+int tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
+
 // polling — call from dwyco timer loop
 void tox_bridge_poll();
 

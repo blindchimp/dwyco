@@ -47,6 +47,11 @@ int toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
 // set/clear the password used to encrypt this profile's save data
 // (immediately re-encrypts the on-disk save). empty pw clears it.
 int toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len);
+// write the live profile's save data to dst_path, preserving the current
+// encryption state (encrypted if the profile has a password). on failure
+// err_buf (if provided) is filled with a message.
+int toxp_export_to_file(ToxPlugin *p, const char *dst_path,
+                        char *err_buf, int err_buf_len);
 int toxp_has_password(ToxPlugin *p);
 // verify that pw decrypts the profile's save data. returns 1 if the
 // password matches (or the profile has no password), 0 otherwise.

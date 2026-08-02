@@ -2948,7 +2948,10 @@ int
 DwycoCore::tox_set_name(const QString& name)
 {
     QByteArray bname = name.toUtf8();
-    return dwyco_tox_set_name(bname.constData(), bname.length());
+    int ret = dwyco_tox_set_name(bname.constData(), bname.length());
+    if(ret)
+        update_tox_self_name(tox_get_name());
+    return ret;
 }
 
 int
@@ -3112,6 +3115,17 @@ DwycoCore::tox_import_profile(const QString& path, const QString& pw, bool makeB
         emit tox_import_finished();
         return QString();
     }
+    return QString::fromUtf8(err_buf);
+}
+
+QString
+DwycoCore::tox_export_profile(const QString& path)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_export_profile(bpath.constData(), err_buf, sizeof(err_buf));
+    if(ret)
+        return QString();
     return QString::fromUtf8(err_buf);
 }
 

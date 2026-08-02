@@ -674,6 +674,63 @@ toxp_save(ToxPlugin *p)
 }
 
 int
+toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!p || !p->tox)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+        return 0;
+    }
+    if(!dst_path || !dst_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no destination file");
+        return 0;
+    }
+
+    size_t sz = tox_get_savedata_size(p->tox);
+    uint8_t *data = (uint8_t *)malloc(sz);
+    tox_get_savedata(p->tox, data);
+
+    const uint8_t *out_data = data;
+    size_t out_sz = sz;
+    uint8_t *enc_data = NULL;
+    if(p->pass_key)
+    {
+        out_sz = sz + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc_data = (uint8_t *)malloc(out_sz);
+        Tox_Err_Encryption err;
+        if(!tox_pass_key_encrypt(p->pass_key, data, sz, enc_data, &err))
+        {
+            fprintf(stderr, "toxd: export encrypt failed\n");
+            free(enc_data);
+            free(data);
+            snprintf(err_buf, (size_t)err_buf_len, "encryption failed");
+            return 0;
+        }
+        out_data = enc_data;
+    }
+
+    int ret = 0;
+    FILE *f = fopen(dst_path, "wb");
+    if(f)
+    {
+        if(fwrite(out_data, 1, out_sz, f) == out_sz)
+            ret = 1;
+        fclose(f);
+    }
+    if(!ret)
+        snprintf(err_buf, (size_t)err_buf_len, "could not write file");
+
+    if(enc_data)
+        free(enc_data);
+    free(data);
+    return ret;
+}
+
+int
 toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
                     uint8_t **out_data, size_t *out_len,
                     char *err_buf, int err_buf_len)
@@ -1273,6 +1330,7 @@ main(int argc, char **argv)
 
 #else
 
+#include <stdio.h>
 #include "toxd_plugin.h"
 
 ToxPlugin *
@@ -1290,6 +1348,16 @@ void
 toxp_save(ToxPlugin *p)
 {
     (void)p;
+}
+
+int
+toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_buf_len)
+{
+    (void)p;
+    (void)dst_path;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
 }
 
 void

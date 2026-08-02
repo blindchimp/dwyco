@@ -791,6 +791,20 @@ tox_bridge_file_is_encrypted(const char *path)
 }
 
 int
+tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!Tox_plugin)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+        return 0;
+    }
+    return toxp_export_to_file(Tox_plugin, dst_path, err_buf, err_buf_len);
+}
+
+int
 tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_pw_len,
                           int make_backup, char *err_buf, int err_buf_len)
 {

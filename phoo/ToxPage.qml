@@ -12,6 +12,7 @@ import dwyco
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtCore
 
 Page {
     anchors.fill: parent
@@ -63,6 +64,43 @@ Page {
         importFile = p
         importPw = pw
         importConfirmDialog.open()
+    }
+
+    function isInvisibleChar(c) {
+        var code = c.charCodeAt(0)
+        return code < 33 || /\s/.test(c)
+    }
+
+    function visiblePrefix(s, n) {
+        var out = ""
+        for (var i = 0; i < s.length && out.length < n; ++i) {
+            var c = s.charAt(i)
+            if (isInvisibleChar(c))
+                continue
+            out += c
+        }
+        return out
+    }
+
+    function sanitizeFilename(s) {
+        var out = ""
+        for (var i = 0; i < s.length; ++i) {
+            var c = s.charAt(i)
+            if (c === "/" || c === "\\" || c === ":" || c === "*" ||
+                c === "?" || c === "\"" || c === "<" || c === ">" || c === "|")
+                out += "_"
+            else
+                out += c
+        }
+        return out
+    }
+
+    function exportDefaultName() {
+        var name8 = sanitizeFilename(visiblePrefix(core.tox_get_name(), 8))
+        var id = core.tox_self_address
+        if (name8.length === 0)
+            return "tox-" + id.substring(0, 8) + ".tox"
+        return name8 + id.substring(0, 4) + ".tox"
     }
 
     Connections {
@@ -419,6 +457,18 @@ Page {
                 }
 
                 Button {
+                    text: "Export Profile..."
+                    onClicked: {
+                        var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
+                        if (locs.length > 0) {
+                            exportFileDialog.currentFolder = locs[0]
+                            exportFileDialog.currentFile = locs[0].toString() + "/" + exportDefaultName()
+                        }
+                        exportFileDialog.open()
+                    }
+                }
+
+                Button {
                     text: profileHasPassword() ? "Change Password" : "Set Password"
                     onClicked: {
                         setPwInput.text = ""
@@ -503,6 +553,29 @@ Page {
             } else {
                 startImportConfirm(p, "")
             }
+        }
+    }
+
+    FileDialog {
+        id: exportFileDialog
+        title: "Export Tox profile"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Tox profiles (*.tox)"]
+        onAccepted: {
+            var p = core.url_to_filename(selectedFile)
+            if(p === "") {
+                exportResultText.text = "Could not use that location."
+                exportResultDialog.open()
+                return
+            }
+            if(p.toLowerCase().lastIndexOf(".tox") !== p.length - 4)
+                p += ".tox"
+            var err = core.tox_export_profile(p)
+            if(err.length > 0)
+                exportResultText.text = "Export failed: " + err
+            else
+                exportResultText.text = "Profile exported to " + p
+            exportResultDialog.open()
         }
     }
 
@@ -630,6 +703,21 @@ Page {
 
         Label {
             id: importResultText
+            text: ""
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+    }
+
+    Dialog {
+        id: exportResultDialog
+        title: "Export Complete"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Ok
+
+        Label {
+            id: exportResultText
             text: ""
             wrapMode: Text.WordWrap
             Layout.fillWidth: true

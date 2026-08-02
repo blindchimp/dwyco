@@ -2230,6 +2230,7 @@ int DWYCOEXPORT dwyco_tox_check_password(const char *pw, int pw_len);
 int DWYCOEXPORT dwyco_tox_file_is_encrypted(const char *path);
 int DWYCOEXPORT dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
                                          int make_backup, char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
 
 typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_FRIEND_NUMBER "000"
