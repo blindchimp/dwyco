@@ -9737,6 +9737,13 @@ dwyco_tox_has_profile_password()
 
 DWYCOEXPORT
 int
+dwyco_tox_check_password(const char *pw, int pw_len)
+{
+    return dwyco::tox_bridge_check_password((const uint8_t *)pw, pw_len);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_file_is_encrypted(const char *path)
 {
     return dwyco::tox_bridge_file_is_encrypted(path);

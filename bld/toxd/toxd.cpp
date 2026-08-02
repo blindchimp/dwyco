@@ -875,6 +875,64 @@ toxp_file_is_encrypted(const char *path)
     return tox_is_data_encrypted(probe);
 }
 
+int
+toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
+{
+    if(!save_file || !save_file[0])
+        return 0;
+    FILE *f = fopen(save_file, "rb");
+    if(!f)
+        return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz >= 10 * 1024 * 1024)
+    {
+        fclose(f);
+        return 0;
+    }
+    uint8_t *raw = (uint8_t *)malloc((size_t)sz);
+    if(fread(raw, 1, (size_t)sz, f) != (size_t)sz)
+    {
+        fclose(f);
+        free(raw);
+        return 0;
+    }
+    fclose(f);
+
+    if(!tox_is_data_encrypted(raw))
+    {
+        free(raw);
+        return 1;
+    }
+    if(!pw || pw_len == 0)
+    {
+        free(raw);
+        return 0;
+    }
+    uint8_t salt[TOX_PASS_SALT_LENGTH];
+    if(!tox_get_salt(raw, salt, NULL))
+    {
+        free(raw);
+        return 0;
+    }
+    Tox_Err_Key_Derivation kerr;
+    Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len, salt, &kerr);
+    if(!key)
+    {
+        free(raw);
+        return 0;
+    }
+    size_t plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+    uint8_t *plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+    Tox_Err_Decryption derr;
+    int ret = tox_pass_key_decrypt(key, raw, (size_t)sz, plain, &derr);
+    free(plain);
+    free(raw);
+    tox_pass_key_free(key);
+    return ret;
+}
+
 void
 toxp_iterate(ToxPlugin *p)
 {

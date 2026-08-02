@@ -423,6 +423,7 @@ Page {
                     onClicked: {
                         setPwInput.text = ""
                         setPwConfirmInput.text = ""
+                        setPwOldInput.text = ""
                         setPwError.text = ""
                         setPwDialog.open()
                     }
@@ -431,7 +432,11 @@ Page {
                 Button {
                     text: "Remove Password"
                     visible: profileHasPassword()
-                    onClicked: removePwDialog.open()
+                    onClicked: {
+                        removePwInput.text = ""
+                        removePwError.text = ""
+                        removePwDialog.open()
+                    }
                 }
 
                 Item {
@@ -491,6 +496,7 @@ Page {
                 return
             }
             if(core.tox_file_is_encrypted(p)) {
+                importFile = p
                 importPwInput.text = ""
                 importPwError.text = ""
                 importPwDialog.open()
@@ -634,8 +640,11 @@ Page {
         id: unlockDialog
         title: "Tox profile is password-protected"
         modal: true
+        closePolicy: Dialog.NoAutoClose
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        onRejected: enable_tox_cb.checked = false
+        onOpened: unlockPwInput.forceActiveFocus()
 
         ColumnLayout {
             spacing: mm(1)
@@ -652,6 +661,7 @@ Page {
                 echoMode: TextInput.Password
                 placeholderText: "Password"
                 Layout.fillWidth: true
+                onAccepted: unlockButton.clicked()
             }
 
             Label {
@@ -670,10 +680,11 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: unlockDialog.close()
+                    onClicked: unlockDialog.reject()
                 }
 
                 Button {
+                    id: unlockButton
                     text: "Unlock"
                     enabled: unlockPwInput.text.length > 0
                     onClicked: {
@@ -705,6 +716,14 @@ Page {
                 text: "Choose a password. You will need to enter it each time Tox is enabled."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
+            }
+
+            TextField {
+                id: setPwOldInput
+                echoMode: TextInput.Password
+                placeholderText: "Current password"
+                Layout.fillWidth: true
+                visible: profileHasPassword()
             }
 
             TextField {
@@ -745,6 +764,17 @@ Page {
                     enabled: setPwInput.text.length > 0
                     onClicked: {
                         setPwError.text = ""
+                        if(profileHasPassword()) {
+                            if(setPwOldInput.text.length === 0) {
+                                setPwError.text = "Enter the current password."
+                                return
+                            }
+                            if(!core.tox_check_password(setPwOldInput.text)) {
+                                setPwError.text = "Current password is incorrect."
+                                setPwOldInput.text = ""
+                                return
+                            }
+                        }
                         if(setPwInput.text !== setPwConfirmInput.text) {
                             setPwError.text = "Passwords do not match."
                             return
@@ -778,6 +808,22 @@ Page {
                 Layout.fillWidth: true
             }
 
+            TextField {
+                id: removePwInput
+                echoMode: TextInput.Password
+                placeholderText: "Current password"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                id: removePwError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
             RowLayout {
                 Layout.fillWidth: true
 
@@ -790,10 +836,19 @@ Page {
 
                 Button {
                     text: "Remove Password"
+                    enabled: removePwInput.text.length > 0
                     onClicked: {
+                        removePwError.text = ""
+                        if(!core.tox_check_password(removePwInput.text)) {
+                            removePwError.text = "Current password is incorrect."
+                            removePwInput.text = ""
+                            return
+                        }
                         if(core.tox_set_profile_password("")) {
                             pwTick = !pwTick
                             removePwDialog.close()
+                        } else {
+                            removePwError.text = "Could not remove password."
                         }
                     }
                 }

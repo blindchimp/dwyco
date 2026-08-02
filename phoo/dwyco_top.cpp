@@ -3083,6 +3083,13 @@ DwycoCore::tox_has_profile_password()
 }
 
 bool
+DwycoCore::tox_check_password(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    return dwyco_tox_check_password(bpw.constData(), bpw.length()) != 0;
+}
+
+bool
 DwycoCore::tox_file_is_encrypted(const QString& path)
 {
     QByteArray bpath = path.toLocal8Bit();
@@ -3094,7 +3101,7 @@ DwycoCore::tox_import_profile(const QString& path, const QString& pw, bool makeB
 {
     QByteArray bpath = path.toLocal8Bit();
     QByteArray bpw = pw.toUtf8();
-    char err_buf[512];
+    char err_buf[512] = {0};
     int ret = dwyco_import_tox_profile(bpath.constData(), bpw.constData(), bpw.length(),
                                        makeBackup ? 1 : 0, err_buf, sizeof(err_buf));
     if(ret)

@@ -48,6 +48,9 @@ int toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
 // (immediately re-encrypts the on-disk save). empty pw clears it.
 int toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len);
 int toxp_has_password(ToxPlugin *p);
+// verify that pw decrypts the profile's save data. returns 1 if the
+// password matches (or the profile has no password), 0 otherwise.
+int toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len);
 // returns 1 if the file at path is a toxencryptsave-encrypted tox save
 int toxp_file_is_encrypted(const char *path);
 

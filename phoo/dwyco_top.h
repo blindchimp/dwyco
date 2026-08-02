@@ -367,6 +367,7 @@ public:
     Q_INVOKABLE bool tox_unlock(const QString& pw);
     Q_INVOKABLE bool tox_set_profile_password(const QString& pw);
     Q_INVOKABLE bool tox_has_profile_password();
+    Q_INVOKABLE bool tox_check_password(const QString& pw);
     Q_INVOKABLE bool tox_file_is_encrypted(const QString& path);
     Q_INVOKABLE QString tox_import_profile(const QString& path, const QString& pw, bool makeBackup);
     Q_INVOKABLE void copy_to_clipboard(const QString& text);

@@ -170,9 +170,7 @@ backup_path_for_save(const DwString &save_path)
         return base;
     for(int i = 1; ; ++i)
     {
-        DwString num;
-        num += i;
-        DwString cand = newfn(DwString("replaced_tox_save.") + num + ".tox");
+        DwString cand = newfn(DwString("replaced_tox_save.") + DwString::fromInt(i) + ".tox");
         if(!file_exists(cand))
             return cand;
     }
@@ -779,6 +777,14 @@ tox_bridge_set_password(const uint8_t *pw, int pw_len)
 }
 
 int
+tox_bridge_check_password(const uint8_t *pw, int pw_len)
+{
+    if(Save_file.length() == 0)
+        return 0;
+    return toxp_check_password(dwyco::newfn(Save_file).c_str(), pw, pw_len);
+}
+
+int
 tox_bridge_file_is_encrypted(const char *path)
 {
     return toxp_file_is_encrypted(path);
@@ -788,9 +794,14 @@ int
 tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_pw_len,
                           int make_backup, char *err_buf, int err_buf_len)
 {
-    if(!src_path || !src_path[0] || !err_buf || err_buf_len <= 0)
+    if(!err_buf || err_buf_len <= 0)
         return 0;
     err_buf[0] = 0;
+    if(!src_path || !src_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "cannot open %s", src_path ? src_path : "");
+        return 0;
+    }
 
     uint8_t *data = NULL;
     size_t len = 0;
@@ -818,11 +829,15 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
         }
     }
 
-    // shut down the live instance, then replace the save file
+    // shut down the live instance, then replace the save file.
+    // the imported profile keeps its own password/encryption state
+    // (src_pw): empty src_pw writes it unencrypted, otherwise it is
+    // re-encrypted with the same password it came with.
     tox_bridge_shutdown();
+    set_active_password(src_pw, src_pw_len);
 
     int ret = toxp_import_commit(Save_file.c_str(), data, len,
-                                 Active_password, Active_password_len,
+                                 src_pw, src_pw_len,
                                  err_buf, err_buf_len);
     free(data);
     if(!ret)
