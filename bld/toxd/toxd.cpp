@@ -28,8 +28,10 @@
 #include <errno.h>
 #ifdef LOCAL_TOXCORE
 #include <tox.h>
+#include <toxencryptsave.h>
 #else
 #include <tox/tox.h>
+#include <tox/toxencryptsave.h>
 #endif
 #include <sodium.h>
 #include <vector>
@@ -72,6 +74,9 @@ struct ToxPlugin
     DwString save_file{};
     FILE *log_file{};
     int bootstrapped{};
+    Tox_Pass_Key *pass_key{};
+    uint8_t *password{};
+    int password_len{};
 #if 0
     int lock_fd{-1};
     DwString lock_path;
@@ -116,6 +121,7 @@ tox_bootstrap(Tox *tox)
             continue;
         Tox_Err_Bootstrap err;
         tox_bootstrap(tox, addr, (uint16_t)port, pubkey, &err);
+        tox_add_tcp_relay(tox, addr, (uint16_t)port, pubkey, &err);
     }
 }
 
@@ -341,13 +347,33 @@ save_tox_state(ToxPlugin *p)
     uint8_t *data = (uint8_t *)malloc(sz);
     tox_get_savedata(p->tox, data);
 
+    const uint8_t *out_data = data;
+    size_t out_sz = sz;
+    uint8_t *enc_data = NULL;
+    if(p->pass_key)
+    {
+        out_sz = sz + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc_data = (uint8_t *)malloc(out_sz);
+        Tox_Err_Encryption err;
+        if(!tox_pass_key_encrypt(p->pass_key, data, sz, enc_data, &err))
+        {
+            fprintf(stderr, "toxd: save encrypt failed\n");
+            free(enc_data);
+            free(data);
+            return;
+        }
+        out_data = enc_data;
+    }
+
     FILE *f = fopen(tmp_path.c_str(), "wb");
     if(f)
     {
-        fwrite(data, 1, sz, f);
+        fwrite(out_data, 1, out_sz, f);
         fclose(f);
         rename(tmp_path.c_str(), save_path.c_str());
     }
+    if(enc_data)
+        free(enc_data);
     free(data);
 }
 
@@ -366,14 +392,16 @@ tox_write_log(Tox *tox, Tox_Log_Level level, const char *file,
 }
 
 static void
-load_or_create_tox(ToxPlugin *p)
+load_or_create_tox(ToxPlugin *p, int *status_out)
 {
+    *status_out = TOXP_STATUS_FAILED;
     DwString save_path = dwyco::newfn(p->save_file);
 
     Tox_Err_Options_New new_err;
     struct Tox_Options &opts = *tox_options_new(&new_err);
     tox_options_default(&opts);
     tox_options_set_experimental_disable_dns(&opts, true);
+    tox_options_set_udp_enabled(&opts, false);
 
     DwString log_path = dwyco::newfn("tox.log");
     p->log_file = fopen(log_path.c_str(), "a");
@@ -385,6 +413,8 @@ load_or_create_tox(ToxPlugin *p)
 
     uint8_t *savedata = NULL;
     size_t savedata_sz = 0;
+    int had_savedata = 0;
+    int was_encrypted = 0;
     FILE *f = fopen(save_path.c_str(), "rb");
     if(f)
     {
@@ -395,7 +425,10 @@ load_or_create_tox(ToxPlugin *p)
         {
             savedata = (uint8_t *)malloc((size_t)sz);
             if(fread(savedata, 1, (size_t)sz, f) == (size_t)sz)
+            {
                 savedata_sz = (size_t)sz;
+                had_savedata = 1;
+            }
             else
             {
                 free(savedata);
@@ -405,11 +438,77 @@ load_or_create_tox(ToxPlugin *p)
         fclose(f);
     }
 
+    if(savedata && tox_is_data_encrypted(savedata))
+    {
+        was_encrypted = 1;
+        if(!p->password || p->password_len == 0)
+        {
+            free(savedata);
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_NEEDS_PASSWORD;
+            return;
+        }
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt(savedata, salt, NULL))
+        {
+            free(savedata);
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_FAILED;
+            return;
+        }
+        Tox_Err_Key_Derivation kerr;
+        p->pass_key = tox_pass_key_derive_with_salt(p->password, (size_t)p->password_len,
+                                                    salt, &kerr);
+        if(!p->pass_key)
+        {
+            free(savedata);
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_FAILED;
+            return;
+        }
+        size_t plain_len = savedata_sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        uint8_t *plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+        Tox_Err_Decryption derr;
+        if(!tox_pass_key_decrypt(p->pass_key, savedata, savedata_sz, plain, &derr))
+        {
+            free(plain);
+            free(savedata);
+            tox_pass_key_free(p->pass_key);
+            p->pass_key = NULL;
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            // wrong password (or corrupt data); let the user try again
+            *status_out = TOXP_STATUS_NEEDS_PASSWORD;
+            return;
+        }
+        free(savedata);
+        savedata = plain;
+        savedata_sz = plain_len;
+    }
+
     if(savedata)
     {
-        opts.savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
-        opts.savedata_data = savedata;
-        opts.savedata_length = savedata_sz;
+        tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+        tox_options_set_savedata_data(&opts, savedata, savedata_sz);
     }
 
     Tox_Err_New err;
@@ -418,11 +517,32 @@ load_or_create_tox(ToxPlugin *p)
         free(savedata);
     if(!p->tox)
     {
+        if(was_encrypted)
+        {
+            // never silently mint a fresh identity from an encrypted save
+            if(p->pass_key)
+            {
+                tox_pass_key_free(p->pass_key);
+                p->pass_key = NULL;
+            }
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_FAILED;
+            return;
+        }
         tox_options_default(&opts);
         tox_options_set_experimental_disable_dns(&opts, true);
-        opts.savedata_type = TOX_SAVEDATA_TYPE_NONE;
+        tox_options_set_udp_enabled(&opts, false);
+        tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_NONE);
+
         p->tox = tox_new(&opts, &err);
     }
+
+    tox_options_free(&opts);
 
     if(p->tox)
     {
@@ -430,10 +550,11 @@ load_or_create_tox(ToxPlugin *p)
         tox_self_get_address(p->tox, address);
         char hex[TOX_ADDRESS_SIZE * 2 + 1];
         sodium_bin2hex(hex, sizeof(hex), address, TOX_ADDRESS_SIZE);
-        fprintf(stderr, "toxd: %s %s\n", savedata ? "loaded" : "created", hex);
+        fprintf(stderr, "toxd: %s %s\n", had_savedata ? "loaded" : "created", hex);
 
-        if(!savedata)
+        if(!had_savedata)
             save_tox_state(p);
+        *status_out = TOXP_STATUS_OK;
     }
 }
 
@@ -458,16 +579,30 @@ register_callbacks(Tox *tox)
 // --- plugin API ---
 
 ToxPlugin *
-toxp_init(const char *save_file, ToxpEventCB cb, void *userdata)
+toxp_init(const char *save_file, const uint8_t *password, int password_len,
+          ToxpEventCB cb, void *userdata, int *status_out)
 {
+    *status_out = TOXP_STATUS_FAILED;
     ToxPlugin *p = new ToxPlugin;
     p->event_cb = cb;
     p->event_userdata = userdata;
 
+    if(password && password_len > 0)
+    {
+        p->password = (uint8_t *)malloc((size_t)password_len);
+        memcpy(p->password, password, (size_t)password_len);
+        p->password_len = password_len;
+    }
+
     if(save_file && save_file[0])
         p->save_file = save_file;
     else
-        return 0;
+    {
+        if(p->password)
+            free(p->password);
+        delete p;
+        return NULL;
+    }
 
 #if 0
     DwString lock_path = DwString("%1/%2").arg(p->save_file, "toxd.lock");
@@ -485,13 +620,15 @@ toxp_init(const char *save_file, ToxpEventCB cb, void *userdata)
     }
     p->lock_path = lock_path;
 #endif
-    load_or_create_tox(p);
+    load_or_create_tox(p, status_out);
     if(!p->tox)
     {
 #if 0
         close(p->lock_fd);
         unlink(p->lock_path.c_str());
 #endif
+        if(p->password)
+            free(p->password);
         delete p;
         return NULL;
     }
@@ -514,6 +651,17 @@ toxp_shutdown(ToxPlugin *p)
         unlink(p->lock_path.c_str());
     }
 #endif
+    if(p->pass_key)
+    {
+        tox_pass_key_free(p->pass_key);
+        p->pass_key = NULL;
+    }
+    if(p->password)
+    {
+        free(p->password);
+        p->password = NULL;
+    }
+    p->password_len = 0;
     if(p->log_file)
         fclose(p->log_file);
     delete p;
@@ -523,6 +671,323 @@ void
 toxp_save(ToxPlugin *p)
 {
     save_tox_state(p);
+}
+
+int
+toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!p || !p->tox)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+        return 0;
+    }
+    if(!dst_path || !dst_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no destination file");
+        return 0;
+    }
+
+    size_t sz = tox_get_savedata_size(p->tox);
+    uint8_t *data = (uint8_t *)malloc(sz);
+    tox_get_savedata(p->tox, data);
+
+    const uint8_t *out_data = data;
+    size_t out_sz = sz;
+    uint8_t *enc_data = NULL;
+    if(p->pass_key)
+    {
+        out_sz = sz + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc_data = (uint8_t *)malloc(out_sz);
+        Tox_Err_Encryption err;
+        if(!tox_pass_key_encrypt(p->pass_key, data, sz, enc_data, &err))
+        {
+            fprintf(stderr, "toxd: export encrypt failed\n");
+            free(enc_data);
+            free(data);
+            snprintf(err_buf, (size_t)err_buf_len, "encryption failed");
+            return 0;
+        }
+        out_data = enc_data;
+    }
+
+    int ret = 0;
+    FILE *f = fopen(dst_path, "wb");
+    if(f)
+    {
+        if(fwrite(out_data, 1, out_sz, f) == out_sz)
+            ret = 1;
+        fclose(f);
+    }
+    if(!ret)
+        snprintf(err_buf, (size_t)err_buf_len, "could not write file");
+
+    if(enc_data)
+        free(enc_data);
+    free(data);
+    return ret;
+}
+
+int
+toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                    uint8_t **out_data, size_t *out_len,
+                    char *err_buf, int err_buf_len)
+{
+    *out_data = NULL;
+    *out_len = 0;
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+
+    FILE *f = fopen(src_path, "rb");
+    if(!f)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "cannot open %s", src_path);
+        return 0;
+    }
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz >= 10 * 1024 * 1024)
+    {
+        fclose(f);
+        snprintf(err_buf, (size_t)err_buf_len, "bad file size");
+        return 0;
+    }
+    uint8_t *raw = (uint8_t *)malloc((size_t)sz);
+    if(fread(raw, 1, (size_t)sz, f) != (size_t)sz)
+    {
+        fclose(f);
+        free(raw);
+        snprintf(err_buf, (size_t)err_buf_len, "read failed");
+        return 0;
+    }
+    fclose(f);
+
+    uint8_t *plain = raw;
+    size_t plain_len = (size_t)sz;
+    if(tox_is_data_encrypted(raw))
+    {
+        if(!src_pw || src_pw_len == 0)
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "profile is password protected");
+            return 0;
+        }
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt(raw, salt, NULL))
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "bad encrypted format");
+            return 0;
+        }
+        Tox_Err_Key_Derivation kerr;
+        Tox_Pass_Key *key = tox_pass_key_derive_with_salt(src_pw, (size_t)src_pw_len,
+                                                          salt, &kerr);
+        if(!key)
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "key derivation failed");
+            return 0;
+        }
+        plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+        Tox_Err_Decryption derr;
+        if(!tox_pass_key_decrypt(key, raw, (size_t)sz, plain, &derr))
+        {
+            free(plain);
+            free(raw);
+            tox_pass_key_free(key);
+            snprintf(err_buf, (size_t)err_buf_len, "wrong password or corrupt data");
+            return 0;
+        }
+        free(raw);
+        tox_pass_key_free(key);
+    }
+
+    // validate it is a loadable tox save
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, plain, plain_len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+    {
+        free(plain);
+        snprintf(err_buf, (size_t)err_buf_len, "not a valid tox save file");
+        return 0;
+    }
+    tox_kill(tmp);
+
+    *out_data = plain;
+    *out_len = plain_len;
+    return 1;
+}
+
+int
+toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
+                   const uint8_t *dst_pw, int dst_pw_len,
+                   char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    DwString save_path = dwyco::newfn(save_file);
+    DwString tmp_path = save_path + ".new";
+
+    const uint8_t *out_data = data;
+    size_t out_len = len;
+    uint8_t *enc = NULL;
+    Tox_Pass_Key *key = NULL;
+    if(dst_pw && dst_pw_len > 0)
+    {
+        Tox_Err_Key_Derivation kerr;
+        key = tox_pass_key_derive(dst_pw, (size_t)dst_pw_len, &kerr);
+        if(!key)
+        {
+            snprintf(err_buf, (size_t)err_buf_len, "key derivation failed");
+            return 0;
+        }
+        out_len = len + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc = (uint8_t *)malloc(out_len);
+        Tox_Err_Encryption eerr;
+        if(!tox_pass_key_encrypt(key, data, len, enc, &eerr))
+        {
+            free(enc);
+            tox_pass_key_free(key);
+            snprintf(err_buf, (size_t)err_buf_len, "encryption failed");
+            return 0;
+        }
+        out_data = enc;
+    }
+
+    FILE *f = fopen(tmp_path.c_str(), "wb");
+    int ret = 0;
+    if(f)
+    {
+        if(fwrite(out_data, 1, out_len, f) == out_len)
+            ret = 1;
+        fclose(f);
+        if(ret)
+        {
+            if(rename(tmp_path.c_str(), save_path.c_str()) != 0)
+                ret = 0;
+        }
+        if(!ret)
+            remove(tmp_path.c_str());
+    }
+    if(enc)
+        free(enc);
+    if(key)
+        tox_pass_key_free(key);
+    if(!ret)
+        snprintf(err_buf, (size_t)err_buf_len, "write failed");
+    return ret;
+}
+
+int
+toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
+{
+    if(p->pass_key)
+    {
+        tox_pass_key_free(p->pass_key);
+        p->pass_key = NULL;
+    }
+    if(pw && pw_len > 0)
+    {
+        Tox_Err_Key_Derivation kerr;
+        p->pass_key = tox_pass_key_derive(pw, (size_t)pw_len, &kerr);
+        if(!p->pass_key)
+            return 0;
+    }
+    if(p->tox)
+        save_tox_state(p);
+    return 1;
+}
+
+int
+toxp_has_password(ToxPlugin *p)
+{
+    return p && p->pass_key ? 1 : 0;
+}
+
+int
+toxp_file_is_encrypted(const char *path)
+{
+    if(!path)
+        return 0;
+    FILE *f = fopen(path, "rb");
+    if(!f)
+        return 0;
+    uint8_t probe[TOX_PASS_ENCRYPTION_EXTRA_LENGTH];
+    size_t n = fread(probe, 1, sizeof(probe), f);
+    fclose(f);
+    if(n < TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+        return 0;
+    return tox_is_data_encrypted(probe);
+}
+
+int
+toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
+{
+    if(!save_file || !save_file[0])
+        return 0;
+    FILE *f = fopen(save_file, "rb");
+    if(!f)
+        return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz >= 10 * 1024 * 1024)
+    {
+        fclose(f);
+        return 0;
+    }
+    uint8_t *raw = (uint8_t *)malloc((size_t)sz);
+    if(fread(raw, 1, (size_t)sz, f) != (size_t)sz)
+    {
+        fclose(f);
+        free(raw);
+        return 0;
+    }
+    fclose(f);
+
+    if(!tox_is_data_encrypted(raw))
+    {
+        free(raw);
+        return 1;
+    }
+    if(!pw || pw_len == 0)
+    {
+        free(raw);
+        return 0;
+    }
+    uint8_t salt[TOX_PASS_SALT_LENGTH];
+    if(!tox_get_salt(raw, salt, NULL))
+    {
+        free(raw);
+        return 0;
+    }
+    Tox_Err_Key_Derivation kerr;
+    Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len, salt, &kerr);
+    if(!key)
+    {
+        free(raw);
+        return 0;
+    }
+    size_t plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+    uint8_t *plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+    Tox_Err_Decryption derr;
+    int ret = tox_pass_key_decrypt(key, raw, (size_t)sz, plain, &derr);
+    free(plain);
+    free(raw);
+    tox_pass_key_free(key);
+    return ret;
 }
 
 void
@@ -865,6 +1330,7 @@ main(int argc, char **argv)
 
 #else
 
+#include <stdio.h>
 #include "toxd_plugin.h"
 
 ToxPlugin *
@@ -882,6 +1348,16 @@ void
 toxp_save(ToxPlugin *p)
 {
     (void)p;
+}
+
+int
+toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_buf_len)
+{
+    (void)p;
+    (void)dst_path;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
 }
 
 void

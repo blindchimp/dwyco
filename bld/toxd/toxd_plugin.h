@@ -14,15 +14,50 @@
 #define TOXD_PLUGIN_H
 
 #include "vc.h"
+#include <stdint.h>
+#include <stddef.h>
 
 struct ToxPlugin;
 
 typedef void (*ToxpEventCB)(const char *type, const vc &args, void *userdata);
 
-ToxPlugin *toxp_init(const char *save_file, ToxpEventCB cb, void *userdata);
+enum {
+    TOXP_STATUS_OK = 0,
+    TOXP_STATUS_NEEDS_PASSWORD = 1,
+    TOXP_STATUS_FAILED = 2
+};
+
+ToxPlugin *toxp_init(const char *save_file, const uint8_t *password, int password_len,
+                     ToxpEventCB cb, void *userdata, int *status_out);
 void toxp_shutdown(ToxPlugin *p);
 void toxp_save(ToxPlugin *p);
 void toxp_iterate(ToxPlugin *p);
+
+// import / password support
+// read a tox save file, decrypt it if needed (src_pw), and verify it is a
+// loadable tox save. on success *out_data (malloc'd) and *out_len are set,
+// caller must free(*out_data).
+int toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                        uint8_t **out_data, size_t *out_len,
+                        char *err_buf, int err_buf_len);
+// write validated save data to save_file, encrypting with dst_pw if non-empty.
+int toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
+                       const uint8_t *dst_pw, int dst_pw_len,
+                       char *err_buf, int err_buf_len);
+// set/clear the password used to encrypt this profile's save data
+// (immediately re-encrypts the on-disk save). empty pw clears it.
+int toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len);
+// write the live profile's save data to dst_path, preserving the current
+// encryption state (encrypted if the profile has a password). on failure
+// err_buf (if provided) is filled with a message.
+int toxp_export_to_file(ToxPlugin *p, const char *dst_path,
+                        char *err_buf, int err_buf_len);
+int toxp_has_password(ToxPlugin *p);
+// verify that pw decrypts the profile's save data. returns 1 if the
+// password matches (or the profile has no password), 0 otherwise.
+int toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len);
+// returns 1 if the file at path is a toxencryptsave-encrypted tox save
+int toxp_file_is_encrypted(const char *path);
 
 vc toxp_get_address(ToxPlugin *p);
 vc toxp_get_self_pubkey(ToxPlugin *p);

@@ -101,50 +101,11 @@ map_uid(const QByteArray& uid)
     return uid;
 }
 
-QSet<QByteArray>
-map_uids(const QSet<QByteArray>& from)
-{
-    QSet<QByteArray> to;
-    QSetIterator<QByteArray> i(from);
-    while(i.hasNext())
-    {
-        QByteArray uid = i.next();
-        to.insert(map_uid(uid));
-    }
-    return to;
-}
 
-void
-remove_mapped_uids(const QByteArray& uid, QSet<QByteArray>& set)
-{
-    DWYCO_LIST ulist;
-    if(dwyco_map_uid_to_uids(uid.constData(), uid.length(), &ulist))
-    {
-        simple_scoped qulist(ulist);
-        int n = qulist.rows();
-        for(int i = 0; i < n; ++i)
-        {
-            set.remove(qulist.get<QByteArray>(i));
-        }
-    }
 
-}
 
-void
-add_mapped_uids(const QByteArray& uid, QSet<QByteArray>& set)
-{
-    DWYCO_LIST ulist;
-    if(dwyco_map_uid_to_uids(uid.constData(), uid.length(), &ulist))
-    {
-        simple_scoped qulist(ulist);
-        int n = qulist.rows();
-        for(int i = 0; i < n; ++i)
-        {
-            set.insert(qulist.get<QByteArray>(i));
-        }
-    }
 
-}
+
 
 QByteArray
 time_till()
@@ -159,6 +120,33 @@ time_till()
     QByteArray ts = timestr.toLatin1();
     return ts;
 }
+
+// Convert a set of UIDs to their group representative UID using the DLL mapping.
+QSet<QByteArray>
+map_uids(const QSet<QByteArray>& from)
+{
+    QSet<QByteArray> to;
+    for (const QByteArray &uid : from)
+        to.insert(map_uid(uid));
+    return to;
+}
+
+// Add all UIDs (including group members) that map to the given uid into the provided set.
+void
+add_mapped_uids(const QByteArray& uid, QSet<QByteArray>& set)
+{
+    DWYCO_LIST ulist;
+    if(dwyco_map_uid_to_uids(uid.constData(), uid.length(), &ulist))
+    {
+        simple_scoped qulist(ulist);
+        int n = qulist.rows();
+        for(int i = 0; i < n; ++i)
+        {
+            set.insert(qulist.get<QByteArray>(i));
+        }
+    }
+}
+
 
 void
 send_reply_to(const QByteArray& uid, const char *msg)
@@ -230,7 +218,7 @@ load_pic_names(QString dirname)
 int
 send_pic(QByteArray buid)
 {
-    if(!(Subscribers.contains(buid) || Subscribers.contains(map_uid(buid))))
+    if(!Subscribers.contains(map_uid(buid)))
         return 0;
     if(Sent.contains(buid) || Sent.contains(map_uid(buid)))
         return 0;
@@ -409,28 +397,25 @@ main(int argc, char *argv[])
             txt = txt.toLower();
             if(txt.contains("yes"))
             {
-                if(Subscribers.contains(uid) || Subscribers.contains(map_uid(uid)))
-                {
-                    send_reply_to(uid, QByteArray("You are already subscribed. ") + ts);
-                }
-                else
-                {
-                    Subscribers.insert(uid);
-                    Subscribers.insert(map_uid(uid));
-                    save_it(Subscribers, "subscribers.qds");
-                    send_reply_to(uid, "I'll send you random pics every day you visit Dwyco. To stop me, send me a zap containing the word \"stop\".");
-                    if(!send_pic(uid))
+                if(Subscribers.contains(map_uid(uid)))
                     {
-                        send_reply_to(uid, ts);
+                        send_reply_to(uid, QByteArray("You are already subscribed. ") + ts);
                     }
-                }
+                    else
+                    {
+                        Subscribers.insert(map_uid(uid));
+                        save_it(Subscribers, "subscribers.qds");
+                        send_reply_to(uid, "I'll send you random pics every day you visit Dwyco. To stop me, send me a zap containing the word \"stop\".");
+                        if(!send_pic(uid))
+                        {
+                            send_reply_to(uid, ts);
+                        }
+                    }
 
             }
             else if(txt.contains("stop"))
             {
-                Subscribers.remove(uid);
                 Subscribers.remove(map_uid(uid));
-                remove_mapped_uids(uid, Subscribers);
                 save_it(Subscribers, "subscribers.qds");
                 send_reply_to(uid, "Ok, no more pic of the day. Thanks!");
             }

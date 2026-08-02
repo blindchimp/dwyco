@@ -364,6 +364,14 @@ public:
     Q_INVOKABLE bool is_tox_uid(const QString& uid);
     Q_INVOKABLE QString tox_get_self_public_key();
     Q_INVOKABLE QString tox_get_self_address();
+    Q_INVOKABLE bool tox_needs_password();
+    Q_INVOKABLE bool tox_unlock(const QString& pw);
+    Q_INVOKABLE bool tox_set_profile_password(const QString& pw);
+    Q_INVOKABLE bool tox_has_profile_password();
+    Q_INVOKABLE bool tox_check_password(const QString& pw);
+    Q_INVOKABLE bool tox_file_is_encrypted(const QString& path);
+    Q_INVOKABLE QString tox_import_profile(const QString& path, const QString& pw, bool makeBackup);
+    Q_INVOKABLE QString tox_export_profile(const QString& path);
     Q_INVOKABLE void copy_to_clipboard(const QString& text);
     Q_INVOKABLE void start_auto_away();
     Q_INVOKABLE void stop_auto_away();
@@ -460,6 +468,7 @@ signals:
     void tox_friend_status_changed(QString pseudo_uid, QString status);
     void tox_friend_user_status_changed(QString pseudo_uid, QString user_status);
     void tox_user_status_changed(QString user_status);
+    void tox_import_finished();
     void auto_away_state_changed(bool is_away);
 
 private:

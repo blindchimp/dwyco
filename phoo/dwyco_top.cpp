@@ -2967,7 +2967,10 @@ int
 DwycoCore::tox_set_name(const QString& name)
 {
     QByteArray bname = name.toUtf8();
-    return dwyco_tox_set_name(bname.constData(), bname.length());
+    int ret = dwyco_tox_set_name(bname.constData(), bname.length());
+    if(ret)
+        update_tox_self_name(tox_get_name());
+    return ret;
 }
 
 int
@@ -3066,6 +3069,83 @@ DwycoCore::tox_get_self_address()
     QByteArray ret(out, len_out);
     dwyco_free_array(out);
     return ret.toHex();
+}
+
+bool
+DwycoCore::tox_needs_password()
+{
+    return dwyco_tox_needs_password() != 0;
+}
+
+bool
+DwycoCore::tox_unlock(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    int ret = dwyco_tox_unlock(bpw.constData(), bpw.length());
+    if(ret)
+    {
+        update_tox_self_address(tox_get_self_address());
+        update_tox_self_name(tox_get_name());
+        reload_conv_list();
+    }
+    return ret != 0;
+}
+
+bool
+DwycoCore::tox_set_profile_password(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    return dwyco_tox_set_profile_password(bpw.constData(), bpw.length()) != 0;
+}
+
+bool
+DwycoCore::tox_has_profile_password()
+{
+    return dwyco_tox_has_profile_password() != 0;
+}
+
+bool
+DwycoCore::tox_check_password(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    return dwyco_tox_check_password(bpw.constData(), bpw.length()) != 0;
+}
+
+bool
+DwycoCore::tox_file_is_encrypted(const QString& path)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    return dwyco_tox_file_is_encrypted(bpath.constData()) != 0;
+}
+
+QString
+DwycoCore::tox_import_profile(const QString& path, const QString& pw, bool makeBackup)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    QByteArray bpw = pw.toUtf8();
+    char err_buf[512] = {0};
+    int ret = dwyco_import_tox_profile(bpath.constData(), bpw.constData(), bpw.length(),
+                                       makeBackup ? 1 : 0, err_buf, sizeof(err_buf));
+    if(ret)
+    {
+        update_tox_self_address(tox_get_self_address());
+        update_tox_self_name(tox_get_name());
+        reload_conv_list();
+        emit tox_import_finished();
+        return QString();
+    }
+    return QString::fromUtf8(err_buf);
+}
+
+QString
+DwycoCore::tox_export_profile(const QString& path)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_export_profile(bpath.constData(), err_buf, sizeof(err_buf));
+    if(ret)
+        return QString();
+    return QString::fromUtf8(err_buf);
 }
 
 void

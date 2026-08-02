@@ -11,6 +11,8 @@ import QtQuick
 import dwyco
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtCore
 
 Page {
     anchors.fill: parent
@@ -23,6 +25,14 @@ Page {
 
     property string origName: ""
     property string origStatus: ""
+    property string importFile: ""
+    property string importPw: ""
+    property bool pwTick: false
+
+    function profileHasPassword() {
+        pwTick
+        return core.tox_has_profile_password()
+    }
 
     function autoInitToxIdentity() {
         if (core.tox_get_name() === "" && core.tox_get_status_message() === "") {
@@ -34,6 +44,63 @@ Page {
             origName = genName
             origStatus = "toxing with DTox!"
         }
+    }
+
+    function refreshToxIdentity() {
+        toxNameInput.text_input = core.tox_get_name()
+        toxStatusInput.text_input = core.tox_get_status_message()
+        origName = toxNameInput.text_input
+        origStatus = toxStatusInput.text_input
+        autoInitToxIdentity()
+        pwTick = !pwTick
+        ToxFriendModel.load_friends()
+        var curStatus = core.tox_get_user_status()
+        var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
+        if(statusIdx >= 0)
+            userStatusCombo.currentIndex = statusIdx
+    }
+
+    function startImportConfirm(p, pw) {
+        importFile = p
+        importPw = pw
+        importConfirmDialog.open()
+    }
+
+    function isInvisibleChar(c) {
+        var code = c.charCodeAt(0)
+        return code < 33 || /\s/.test(c)
+    }
+
+    function visiblePrefix(s, n) {
+        var out = ""
+        for (var i = 0; i < s.length && out.length < n; ++i) {
+            var c = s.charAt(i)
+            if (isInvisibleChar(c))
+                continue
+            out += c
+        }
+        return out
+    }
+
+    function sanitizeFilename(s) {
+        var out = ""
+        for (var i = 0; i < s.length; ++i) {
+            var c = s.charAt(i)
+            if (c === "/" || c === "\\" || c === ":" || c === "*" ||
+                c === "?" || c === "\"" || c === "<" || c === ">" || c === "|")
+                out += "_"
+            else
+                out += c
+        }
+        return out
+    }
+
+    function exportDefaultName() {
+        var name8 = sanitizeFilename(visiblePrefix(core.tox_get_name(), 8))
+        var id = core.tox_self_address
+        if (name8.length === 0)
+            return "tox-" + id.substring(0, 8) + ".tox"
+        return name8 + id.substring(0, 4) + ".tox"
     }
 
     Connections {
@@ -52,6 +119,9 @@ Page {
             var statusIdx = ["none", "away", "busy"].indexOf(status)
             if(statusIdx >= 0)
                 userStatusCombo.currentIndex = statusIdx
+        }
+        function onTox_import_finished() {
+            refreshToxIdentity()
         }
     }
 
@@ -72,6 +142,12 @@ Page {
         var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
         if(statusIdx >= 0)
             userStatusCombo.currentIndex = statusIdx
+
+        if(core.tox_enabled && core.tox_needs_password()) {
+            unlockPwInput.text = ""
+            unlockError.text = ""
+            unlockDialog.open()
+        }
 
         var aaEnabled = core.get_local_setting("auto_away_enabled")
         autoAwayCb.checked = (aaEnabled === "1")
@@ -111,6 +187,11 @@ Page {
                             origName = toxNameInput.text_input
                             origStatus = toxStatusInput.text_input
                             autoInitToxIdentity()
+                            if(core.tox_needs_password()) {
+                                unlockPwInput.text = ""
+                                unlockError.text = ""
+                                unlockDialog.open()
+                            }
                         } else {
                             core.disable_tox()
                         }
@@ -358,6 +439,60 @@ Page {
                 Layout.fillWidth: true
                 onClicked: deleteFriendDialog.open()
             }
+
+            Label {
+                text: "Profile"
+                enabled: core.tox_enabled
+                font.bold: true
+                Layout.topMargin: mm(2)
+            }
+
+            RowLayout {
+                enabled: core.tox_enabled
+                spacing: mm(1)
+
+                Button {
+                    text: "Import qTox Profile..."
+                    onClicked: importFileDialog.open()
+                }
+
+                Button {
+                    text: "Export Profile..."
+                    onClicked: {
+                        var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
+                        if (locs.length > 0) {
+                            exportFileDialog.currentFolder = locs[0]
+                            exportFileDialog.currentFile = locs[0].toString() + "/" + exportDefaultName()
+                        }
+                        exportFileDialog.open()
+                    }
+                }
+
+                Button {
+                    text: profileHasPassword() ? "Change Password" : "Set Password"
+                    onClicked: {
+                        setPwInput.text = ""
+                        setPwConfirmInput.text = ""
+                        setPwOldInput.text = ""
+                        setPwError.text = ""
+                        setPwDialog.open()
+                    }
+                }
+
+                Button {
+                    text: "Remove Password"
+                    visible: profileHasPassword()
+                    onClicked: {
+                        removePwInput.text = ""
+                        removePwError.text = ""
+                        removePwDialog.open()
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
         }
 
     Dialog {
@@ -396,6 +531,416 @@ Page {
 
         onRejected: {
             trashMessagesCb.checked = false
+        }
+    }
+
+    FileDialog {
+        id: importFileDialog
+        title: "Choose a qTox profile (.tox) to import"
+        nameFilters: ["Tox profiles (*.tox)", "All files (*)"]
+        onAccepted: {
+            var p = core.url_to_filename(selectedFile)
+            if(p === "") {
+                importResultText.text = "Could not use that file."
+                importResultDialog.open()
+                return
+            }
+            if(core.tox_file_is_encrypted(p)) {
+                importFile = p
+                importPwInput.text = ""
+                importPwError.text = ""
+                importPwDialog.open()
+            } else {
+                startImportConfirm(p, "")
+            }
+        }
+    }
+
+    FileDialog {
+        id: exportFileDialog
+        title: "Export Tox profile"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Tox profiles (*.tox)"]
+        onAccepted: {
+            var p = core.url_to_filename(selectedFile)
+            if(p === "") {
+                exportResultText.text = "Could not use that location."
+                exportResultDialog.open()
+                return
+            }
+            if(p.toLowerCase().lastIndexOf(".tox") !== p.length - 4)
+                p += ".tox"
+            var err = core.tox_export_profile(p)
+            if(err.length > 0)
+                exportResultText.text = "Export failed: " + err
+            else
+                exportResultText.text = "Profile exported to " + p
+            exportResultDialog.open()
+        }
+    }
+
+    Dialog {
+        id: importPwDialog
+        title: "qTox profile is password-protected"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "This qTox profile was saved with a password. Enter it to import."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: importPwInput
+                echoMode: TextInput.Password
+                placeholderText: "qTox profile password"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                id: importPwError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: importPwDialog.close()
+                }
+
+                Button {
+                    text: "Next"
+                    onClicked: {
+                        importPwError.text = ""
+                        startImportConfirm(importFile, importPwInput.text)
+                        importPwDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: importConfirmDialog
+        title: "Import qTox Profile"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Importing this qTox profile will replace your current Tox identity and friend list. Message history is not stored in tox profiles and will not be imported."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            CheckBox {
+                id: noBackupCb
+                text: "Don't save a backup of the current profile"
+                checked: false
+            }
+
+            Label {
+                id: importConfirmError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: importConfirmDialog.close()
+                }
+
+                Button {
+                    text: "Import"
+                    onClicked: {
+                        importConfirmError.text = ""
+                        var err = core.tox_import_profile(importFile, importPw, !noBackupCb.checked)
+                        if(err.length > 0) {
+                            importConfirmError.text = "Import failed: " + err
+                        } else {
+                            importConfirmDialog.close()
+                            importResultText.text = "Imported. Your new Tox identity is now in use."
+                            importResultDialog.open()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: importResultDialog
+        title: "Import Complete"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Ok
+
+        Label {
+            id: importResultText
+            text: ""
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+    }
+
+    Dialog {
+        id: exportResultDialog
+        title: "Export Complete"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Ok
+
+        Label {
+            id: exportResultText
+            text: ""
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+    }
+
+    Dialog {
+        id: unlockDialog
+        title: "Tox profile is password-protected"
+        modal: true
+        closePolicy: Dialog.NoAutoClose
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+        onRejected: enable_tox_cb.checked = false
+        onOpened: unlockPwInput.forceActiveFocus()
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Enter the password for this Tox profile to use it."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: unlockPwInput
+                echoMode: TextInput.Password
+                placeholderText: "Password"
+                Layout.fillWidth: true
+                onAccepted: unlockButton.clicked()
+            }
+
+            Label {
+                id: unlockError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: unlockDialog.reject()
+                }
+
+                Button {
+                    id: unlockButton
+                    text: "Unlock"
+                    enabled: unlockPwInput.text.length > 0
+                    onClicked: {
+                        if(core.tox_unlock(unlockPwInput.text)) {
+                            unlockDialog.close()
+                            refreshToxIdentity()
+                        } else {
+                            unlockError.text = "Wrong password or corrupt profile. Try again."
+                            unlockPwInput.text = ""
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: setPwDialog
+        title: "Set Profile Password"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Choose a password. You will need to enter it each time Tox is enabled."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: setPwOldInput
+                echoMode: TextInput.Password
+                placeholderText: "Current password"
+                Layout.fillWidth: true
+                visible: profileHasPassword()
+            }
+
+            TextField {
+                id: setPwInput
+                echoMode: TextInput.Password
+                placeholderText: "New password"
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: setPwConfirmInput
+                echoMode: TextInput.Password
+                placeholderText: "Confirm password"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                id: setPwError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: setPwDialog.close()
+                }
+
+                Button {
+                    text: "Set Password"
+                    enabled: setPwInput.text.length > 0
+                    onClicked: {
+                        setPwError.text = ""
+                        if(profileHasPassword()) {
+                            if(setPwOldInput.text.length === 0) {
+                                setPwError.text = "Enter the current password."
+                                return
+                            }
+                            if(!core.tox_check_password(setPwOldInput.text)) {
+                                setPwError.text = "Current password is incorrect."
+                                setPwOldInput.text = ""
+                                return
+                            }
+                        }
+                        if(setPwInput.text !== setPwConfirmInput.text) {
+                            setPwError.text = "Passwords do not match."
+                            return
+                        }
+                        if(core.tox_set_profile_password(setPwInput.text)) {
+                            pwTick = !pwTick
+                            setPwDialog.close()
+                        } else {
+                            setPwError.text = "Could not set password."
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: removePwDialog
+        title: "Remove Profile Password"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Remove the password from this Tox profile? The profile will be saved without encryption."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: removePwInput
+                echoMode: TextInput.Password
+                placeholderText: "Current password"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                id: removePwError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: removePwDialog.close()
+                }
+
+                Button {
+                    text: "Remove Password"
+                    enabled: removePwInput.text.length > 0
+                    onClicked: {
+                        removePwError.text = ""
+                        if(!core.tox_check_password(removePwInput.text)) {
+                            removePwError.text = "Current password is incorrect."
+                            removePwInput.text = ""
+                            return
+                        }
+                        if(core.tox_set_profile_password("")) {
+                            pwTick = !pwTick
+                            removePwDialog.close()
+                        } else {
+                            removePwError.text = "Could not remove password."
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -230,7 +230,7 @@ QPixmap TrayIcon::makePixmap(int size) const
     // Apply color transformations to the 32x32 source
     if (offline) {
         // Flip upside down
-        img = img.flipped(Qt::Vertical);
+        img = img.mirrored(false, true);
         // Replace green pixels with red
         for (int y = 0; y < img.height(); ++y) {
             for (int x = 0; x < img.width(); ++x) {
