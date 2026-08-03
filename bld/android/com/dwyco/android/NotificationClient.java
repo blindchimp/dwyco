@@ -34,6 +34,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
@@ -194,6 +195,16 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
     @Override
     protected void onResume() {
         super.onResume();
+        // the camera activity hides the system bars while it is up; make sure
+        // they come back when we return to the app.
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
+            if (controller != null) {
+                controller.show(WindowInsets.Type.systemBars());
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        }
         setStatusBarAppearance();
 	if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
