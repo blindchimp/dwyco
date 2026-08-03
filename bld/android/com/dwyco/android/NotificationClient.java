@@ -34,8 +34,6 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.os.Vibrator;
 import android.view.View;
-import android.view.ViewGroup.LayoutParams;
-import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
@@ -102,8 +100,7 @@ public class NotificationClient extends QtActivity
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
-        // Set system bar appearance per-app (transparent on api 35+)
-        setSystemBarsAppearance();
+        setStatusBarAppearance();
 
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
@@ -197,39 +194,31 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
     @Override
     protected void onResume() {
         super.onResume();
-        setSystemBarsAppearance();
+        setStatusBarAppearance();
 	if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-
-        if (Build.VERSION.SDK_INT >= 30) {
-            WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
-            if (controller != null) {
-                controller.show(WindowInsets.Type.systemBars());
-            }
-        } else {
-            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
-        }
+	if(DwycoApp.keep_screen_on)
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
-    private void setSystemBarsAppearance() {
+    private void setStatusBarAppearance() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        // on api 35+ edge-to-edge is enforced and the colors are forced
-        // transparent, but set them anyway so older devices match the app theme.
+        // on api 35+ edge-to-edge is enforced and the bar colors are forced
+        // transparent, so the qml window color shows through there. set the
+        // colors anyway so older devices match the app theme.
         getWindow().setStatusBarColor(DwycoApp.status_bar_color);
         getWindow().setNavigationBarColor(DwycoApp.status_bar_color);
+        int appearance = DwycoApp.status_bar_dark_icons
+                ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                  | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                : 0;
+        int mask = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
         if (Build.VERSION.SDK_INT >= 30) {
             WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
             if (controller != null) {
-                int appearance = DwycoApp.status_bar_dark_icons
-                        ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                          | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                        : 0;
-                controller.setSystemBarsAppearance(
-                    appearance,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                );
+                controller.setSystemBarsAppearance(appearance, mask);
             }
         } else if (Build.VERSION.SDK_INT >= 26) {
             int ui = getWindow().getDecorView().getSystemUiVisibility();

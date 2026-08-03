@@ -169,16 +169,13 @@ ApplicationWindow {
     //width: Screen.width
     //height: Screen.height
     title: qsTr("Dwyco Rando")
-
     // on mobile the window content extends edge-to-edge under the transparent
-    // system bars; paint the brand color behind everything so the strip above
-    // the status bar and below the nav bar looks intentional.
-    Rectangle {
-        visible: is_mobile
-        anchors.fill: parent
-        z: -1
-        color: primary_dark
-    }
+    // system bars. the default Material window background is white, which shows
+    // through as a white strip behind the status/nav bars (and white icons on
+    // white). paint the window itself in the brand color so the strip above the
+    // status bar and below the nav bar matches the app and the (white) icons
+    // contrast properly.
+    color: is_mobile ? primary_dark : Material.backgroundColor
 
     MessageYN {
         id: confirm_delete2
