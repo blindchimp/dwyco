@@ -44,6 +44,14 @@ public class DwycoApp {
 
         final public static boolean is_rando = false;
 
+	// color used for the status/navigation bars. on api 35+ (edge-to-edge)
+	// these are forced transparent and only the icon appearance matters, but
+	// they are still used on older devices.
+        final public static int status_bar_color = android.graphics.Color.WHITE;
+	// true means the system bar icons should be dark (for a light/white bar).
+	// false means light/white icons (for a dark bar).
+        final public static boolean status_bar_dark_icons = true;
+
 	final public static boolean keep_screen_on = false;
 
 	// note: this is for telling the background running how to behave.

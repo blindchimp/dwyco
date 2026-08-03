@@ -139,7 +139,18 @@ ApplicationWindow {
     property bool is_mobile
     property bool hard_close: false
 
-    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+    // system bar safe area insets (status bar / navigation bar). edge-to-edge
+    // is enforced on android api 35+ when targeting sdk 36, so without this
+    // the qt quick content draws underneath the system bars. the QtQuick
+    // SafeArea attached type (qt 6.9+) reflects the window insets reported by
+    // the platform, and reports zero on desktop and once an ancestor has laid
+    // out its children inside the safe area.
+    property real safeTop: is_mobile ? contentItem.SafeArea.margins.top : 0
+    property real safeBottom: is_mobile ? contentItem.SafeArea.margins.bottom : 0
+    property real safeLeft: is_mobile ? contentItem.SafeArea.margins.left : 0
+    property real safeRight: is_mobile ? contentItem.SafeArea.margins.right : 0
+
+    is_mobile: {return Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     function datesec() {
         return Math.round(Date.now() / 1000)
@@ -158,6 +169,16 @@ ApplicationWindow {
     //width: Screen.width
     //height: Screen.height
     title: qsTr("Dwyco Rando")
+
+    // on mobile the window content extends edge-to-edge under the transparent
+    // system bars; paint the brand color behind everything so the strip above
+    // the status bar and below the nav bar looks intentional.
+    Rectangle {
+        visible: is_mobile
+        anchors.fill: parent
+        z: -1
+        color: primary_dark
+    }
 
     MessageYN {
         id: confirm_delete2
@@ -490,6 +511,10 @@ ApplicationWindow {
         id: stack
         //initialItem: userlist
         anchors.fill: parent
+        anchors.topMargin: safeTop
+        anchors.leftMargin: safeLeft
+        anchors.rightMargin: safeRight
+        anchors.bottomMargin: safeBottom
         visible: true
         onDepthChanged: {
 //            if(depth === 1)
@@ -737,6 +762,10 @@ ApplicationWindow {
         id: emergency_quit
         visible: core.emergency_exit !== 0
         anchors.fill: parent
+        anchors.topMargin: safeTop
+        anchors.leftMargin: safeLeft
+        anchors.rightMargin: safeRight
+        anchors.bottomMargin: safeBottom
         color: "yellow"
         z: 10
         RowLayout {

@@ -102,8 +102,8 @@ public class NotificationClient extends QtActivity
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
-        // Set status bar to opaque white with dark icons
-        setStatusBarAppearance();
+        // Set system bar appearance per-app (transparent on api 35+)
+        setSystemBarsAppearance();
 
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
@@ -197,7 +197,7 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
     @Override
     protected void onResume() {
         super.onResume();
-        setStatusBarAppearance();
+        setSystemBarsAppearance();
 	if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 
@@ -211,21 +211,39 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
         }
     }
 
-    private void setStatusBarAppearance() {
+    private void setSystemBarsAppearance() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        // on api 35+ edge-to-edge is enforced and the colors are forced
+        // transparent, but set them anyway so older devices match the app theme.
+        getWindow().setStatusBarColor(DwycoApp.status_bar_color);
+        getWindow().setNavigationBarColor(DwycoApp.status_bar_color);
         if (Build.VERSION.SDK_INT >= 30) {
             WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
             if (controller != null) {
+                int appearance = DwycoApp.status_bar_dark_icons
+                        ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                          | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                        : 0;
                 controller.setSystemBarsAppearance(
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    appearance,
                     WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
                 );
             }
+        } else if (Build.VERSION.SDK_INT >= 26) {
+            int ui = getWindow().getDecorView().getSystemUiVisibility();
+            if (DwycoApp.status_bar_dark_icons)
+                ui |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            else
+                ui &= ~(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+            getWindow().getDecorView().setSystemUiVisibility(ui);
         } else if (Build.VERSION.SDK_INT >= 23) {
             int ui = getWindow().getDecorView().getSystemUiVisibility();
-            ui |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (DwycoApp.status_bar_dark_icons)
+                ui |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            else
+                ui &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             getWindow().getDecorView().setSystemUiVisibility(ui);
         }
     }
