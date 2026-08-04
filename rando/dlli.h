@@ -520,6 +520,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_TOX_CRASHED 59
 #define DWYCO_SE_TOX_TYPING 60
 #define DWYCO_SE_TOX_FRIEND_USER_STATUS 61
+#define DWYCO_SE_TOX_AVATAR 62
 
 int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -2222,6 +2223,15 @@ int DWYCOEXPORT dwyco_tox_set_name(const char *name, int name_len);
 int DWYCOEXPORT dwyco_tox_set_status_message(const char *msg, int msg_len);
 int DWYCOEXPORT dwyco_tox_get_name(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_get_status_message(char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_needs_password();
+int DWYCOEXPORT dwyco_tox_unlock(const char *pw, int pw_len);
+int DWYCOEXPORT dwyco_tox_set_profile_password(const char *pw, int pw_len);
+int DWYCOEXPORT dwyco_tox_has_profile_password();
+int DWYCOEXPORT dwyco_tox_check_password(const char *pw, int pw_len);
+int DWYCOEXPORT dwyco_tox_file_is_encrypted(const char *path);
+int DWYCOEXPORT dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
+                                         int make_backup, char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
 
 typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_FRIEND_NUMBER "000"

@@ -83,6 +83,10 @@ int tox_bridge_file_send_data(uint32_t friend_number, uint32_t file_number,
                               uint64_t pos, const vc &data);
 int tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number);
 
+// tox avatars: retrieves the cached avatar image data for a friend.
+// returns 1 and fills avatar_data_out on success, 0 if none is available.
+int tox_bridge_get_avatar(const vc &pseudo_uid, vc &avatar_data_out);
+
 // pseudo-uid mapping
 vc tox_pubkey_to_pseudo_uid(const vc &pubkey);
 int tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out);

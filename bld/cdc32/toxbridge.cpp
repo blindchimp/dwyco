@@ -73,6 +73,10 @@ public:
     void recover_inprogress();
     vc get_qd_msgs(const vc &pseudo_uid);
     vc load_qd_body(const vc &local_mid);
+    int save_tox_avatar(const vc &uid, const vc &avatar_data, const vc &avatar_hash);
+    vc load_tox_avatar(const vc &uid);
+    int has_tox_avatar_hash(const vc &uid, const vc &avatar_hash);
+    int delete_tox_avatar(const vc &uid);
 };
 
 static ToxPlugin *Tox_plugin;
@@ -83,6 +87,7 @@ static DwString Save_file;
 static uint8_t *Active_password;
 static int Active_password_len;
 static int Needs_password;
+static const uint64_t TOX_AVATAR_MAX_SIZE = 128 * 1024;
 struct IncomingFileTransfer {
     DwString tmp_basename;
     int fd;
@@ -92,6 +97,14 @@ struct IncomingFileTransfer {
     vc pseudo_uid;
 };
 static std::map<DwString, IncomingFileTransfer> Incoming_xfers;
+
+struct IncomingAvatar {
+    DwString buf;
+    uint64_t expected_size;
+    vc pseudo_uid;
+    vc avatar_hash;
+};
+static std::map<DwString, IncomingAvatar> Incoming_avatars;
 
 struct OutgoingFileTransfer {
     DwString file_path;
@@ -397,8 +410,50 @@ process_tox_event(const char *type, const vc &args)
 
         if(kind == 1)
         {
-            GRTLOG("tox: rejecting avatar transfer fn=%d fnum=%d", fn, fnum);
-            toxp_file_cancel(Tox_plugin, fn, fnum);
+            // avatar transfers: name field is the 32-byte avatar hash.
+            if(size == 0)
+            {
+                // friend removed their avatar: drop cached copy, notify UI,
+                // and cancel the empty transfer.
+                if(Tox_q)
+                    Tox_q->delete_tox_avatar(pseudo);
+                GRTLOG("tox: avatar removed by friend fnum=%d", fnum, 0);
+                se_emit(SE_TOX_AVATAR, pseudo);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            if(size > TOX_AVATAR_MAX_SIZE)
+            {
+                GRTLOG("tox: rejecting avatar size=%llu fnum=%d",
+                       (unsigned long long)size, fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            vc avatar_hash(VC_BSTRING, (const char *)name_vc, name_vc.len());
+            if(Tox_q && Tox_q->has_tox_avatar_hash(pseudo, avatar_hash))
+            {
+                GRTLOG("tox: rejecting avatar (already have) fn=%d fnum=%d", fn, fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            if(!Tox_q)
+            {
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            int err = 0;
+            if(!toxp_file_accept(Tox_plugin, fn, fnum, &err))
+            {
+                GRTLOG("tox: avatar accept failed fnum=%d err=%d", fnum, err);
+                return;
+            }
+            IncomingAvatar av;
+            av.expected_size = size;
+            av.pseudo_uid = pseudo;
+            av.avatar_hash = avatar_hash;
+            Incoming_avatars[xfer_key(fn, fnum)] = av;
+            GRTLOG("tox: avatar recv accepted fnum=%d size=%llu",
+                   fnum, (unsigned long long)size);
             return;
         }
 
@@ -445,6 +500,41 @@ process_tox_event(const char *type, const vc &args)
         vc data = args[3];
 
         DwString key = xfer_key(fn, fnum);
+
+        // avatar transfers are buffered in memory, not written to disk
+        std::map<DwString, IncomingAvatar>::iterator avit = Incoming_avatars.find(key);
+        if(avit != Incoming_avatars.end())
+        {
+            IncomingAvatar &av = avit->second;
+            if(data.is_nil())
+            {
+                // EOF → avatar complete, persist
+                vc avatar_data(VC_BSTRING, av.buf.c_str(), (long)av.buf.length());
+                if(Tox_q && Tox_q->save_tox_avatar(av.pseudo_uid, avatar_data, av.avatar_hash))
+                {
+                    se_emit(SE_TOX_AVATAR, av.pseudo_uid);
+                    GRTLOG("tox: avatar recv complete fn=%d fnum=%d", fn, fnum);
+                }
+                else
+                {
+                    GRTLOG("tox: avatar save failed fn=%d fnum=%d", fn, fnum);
+                }
+                Incoming_avatars.erase(avit);
+            }
+            else
+            {
+                if((uint64_t)av.buf.length() + (uint64_t)data.len() > TOX_AVATAR_MAX_SIZE)
+                {
+                    GRTLOG("tox: avatar too large, cancelling fn=%d fnum=%d", fn, fnum);
+                    toxp_file_cancel(Tox_plugin, fn, fnum);
+                    Incoming_avatars.erase(avit);
+                    return;
+                }
+                av.buf += data;
+            }
+            return;
+        }
+
         std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
         if(it == Incoming_xfers.end())
             return;
@@ -719,6 +809,7 @@ tox_bridge_shutdown()
             close(it->second.fd);
     }
     Incoming_xfers.clear();
+    Incoming_avatars.clear();
 
     // clean up outgoing file transfers
     for(std::map<DwString, OutgoingFileTransfer>::iterator it = Outgoing_xfers.begin();
@@ -1115,6 +1206,15 @@ tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number)
 }
 
 int
+tox_bridge_get_avatar(const vc &pseudo_uid, vc &avatar_data_out)
+{
+    if(!Tox_q)
+        return 0;
+    avatar_data_out = Tox_q->load_tox_avatar(pseudo_uid);
+    return !avatar_data_out.is_nil();
+}
+
+int
 tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out)
 {
     if(Friend_cache.is_nil())
@@ -1327,6 +1427,11 @@ ToxQueue::init_schema(const DwString&)
                "local_mid TEXT, "
                "has_file INTEGER DEFAULT 0, "
                "created_at INTEGER DEFAULT (strftime('%s','now')))");
+    sql_simple("CREATE TABLE IF NOT EXISTS tox_avatars ("
+               "uid         BLOB PRIMARY KEY, "
+               "avatar_data BLOB, "
+               "avatar_hash BLOB, "
+               "time        INTEGER DEFAULT (strftime('%s','now')))");
     // migration: convert tox_uid_type to _tox CRDT tags, then drop
     vc check = sql_simple("SELECT name FROM sqlite_master WHERE type='table' AND name='tox_uid_type'");
     if(!check.is_nil() && check.num_elems() > 0)
@@ -1490,6 +1595,43 @@ ToxQueue::load_qd_body(const vc &local_mid)
     vc qqm;
     deserialize(blob, qqm);
     return direct_to_body2(qqm[QQM_MSG_VEC]);
+}
+
+int
+ToxQueue::save_tox_avatar(const vc &uid, const vc &avatar_data, const vc &avatar_hash)
+{
+    vc res = sql_simple("INSERT OR REPLACE INTO tox_avatars (uid, avatar_data, avatar_hash, time) "
+                        "VALUES (?1, ?2, ?3, strftime('%s','now'))",
+                        vcblob(uid), vcblob(avatar_data), vcblob(avatar_hash));
+    return !res.is_nil();
+}
+
+vc
+ToxQueue::load_tox_avatar(const vc &uid)
+{
+    vc res = sql_simple("SELECT avatar_data FROM tox_avatars WHERE uid=?1", vcblob(uid));
+    if(res.is_nil() || res.num_elems() == 0)
+        return vcnil;
+    return res[0][0];
+}
+
+int
+ToxQueue::has_tox_avatar_hash(const vc &uid, const vc &avatar_hash)
+{
+    vc res = sql_simple("SELECT avatar_hash FROM tox_avatars WHERE uid=?1", vcblob(uid));
+    if(res.is_nil() || res.num_elems() == 0)
+        return 0;
+    vc stored = res[0][0];
+    if(stored.len() != avatar_hash.len())
+        return 0;
+    return memcmp((const char *)stored, (const char *)avatar_hash, (size_t)stored.len()) == 0;
+}
+
+int
+ToxQueue::delete_tox_avatar(const vc &uid)
+{
+    vc res = sql_simple("DELETE FROM tox_avatars WHERE uid=?1", vcblob(uid));
+    return !res.is_nil();
 }
 
 int
