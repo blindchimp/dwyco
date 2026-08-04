@@ -83,6 +83,18 @@ int tox_bridge_file_send_data(uint32_t friend_number, uint32_t file_number,
                               uint64_t pos, const vc &data);
 int tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number);
 
+// tox avatars: retrieves the cached avatar image data for a friend.
+// returns 1 and fills avatar_data_out on success, 0 if none is available.
+int tox_bridge_get_avatar(const vc &pseudo_uid, vc &avatar_data_out);
+
+// tox avatars: set/clear our own avatar. set stores the image under both
+// the app self uid and the tox self pseudo uid, then broadcasts it to all
+// online friends (kind TOX_FILE_KIND_AVATAR, filename = tox_hash(image)).
+// clear deletes the stored copies and signals removal with a size-0 avatar
+// transfer.
+int tox_bridge_set_avatar(const vc &avatar_data);
+void tox_bridge_clear_avatar();
+
 // pseudo-uid mapping
 vc tox_pubkey_to_pseudo_uid(const vc &pubkey);
 int tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out);

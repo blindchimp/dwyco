@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(DWYCO_CONFDIR phoo_cmake)
 set(PHOO_VERSION "4.421")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
-set(PHOO_VERSION_CODE 2000145)
+set(PHOO_VERSION_CODE 2000147)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
     include(ExternalProject)
@@ -56,7 +56,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concur
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
 # strings. so we just hard code it for now.
 if(ANDROID)
-   set(QT_VERSION "6.10.2")
+   set(QT_VERSION "6.11.1")
 else()
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
@@ -98,6 +98,7 @@ set(SRCS
     callsm.cpp 
     chatlistmodel.cpp 
     dwycoprofilepreviewprovider.cpp 
+    dwyco_tox_avatar_provider.cpp
     convmodel.cpp 
     getinfo.cpp 
     ignoremodel.cpp 
@@ -247,7 +248,8 @@ set_target_properties(phoo PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
-    QT_ANDROID_TARGET_SDK_VERSION 35
+    QT_ANDROID_TARGET_SDK_VERSION 36
+    QT_ANDROID_COMPILE_SDK_VERSION "android-36"
 
 )
 set_property(TARGET phoo APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
@@ -302,22 +304,22 @@ if(ANDROID)
     )
 endif()
 
-if(ANDROID)
-    ExternalProject_Add(phoo_dynbld_ext
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld
-        CMAKE_ARGS
-            -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
-            -DANDROID_ABI=${ANDROID_ABI}
-            -DANDROID_PLATFORM=${ANDROID_PLATFORM}
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-            -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
-            -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}
-        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
-        INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}/libdwyco_jni.so
-    )
-    add_dependencies(phoo phoo_dynbld_ext)
-endif()
+# if(ANDROID)
+#     ExternalProject_Add(phoo_dynbld_ext
+#         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld
+#         CMAKE_ARGS
+#             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
+#             -DANDROID_ABI=${ANDROID_ABI}
+#             -DANDROID_PLATFORM=${ANDROID_PLATFORM}
+#             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+#             -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+#             -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}
+#         BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
+#         INSTALL_COMMAND ""
+#         BUILD_BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}/libdwyco_jni.so
+#     )
+#     add_dependencies(phoo phoo_dynbld_ext)
+# endif()
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo

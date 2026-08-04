@@ -37,6 +37,7 @@
 #include "ssmap.h"
 #include "dwycoimageprovider.h"
 #include "dwycoprofilepreviewprovider.h"
+#include "dwyco_tox_avatar_provider.h"
 #include "dwycovideopreviewprovider.h"
 #include "ignoremodel.h"
 #include "chatlistmodel.h"
@@ -713,6 +714,11 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_FRIEND_USER_STATUS:
         emit TheDwycoCore->sys_uid_resolved(huid);
         emit TheDwycoCore->tox_friend_user_status_changed(huid, QString::fromUtf8(namestr));
+        break;
+    case DWYCO_SE_TOX_AVATAR:
+        // tox friend avatar received/changed/removed: refresh the
+        // profile preview so it re-fetches the cached avatar
+        emit TheDwycoCore->sys_uid_resolved(huid);
         break;
     default:
         break;
@@ -2824,6 +2830,16 @@ DwycoCore::uid_to_profile_preview(QString uid)
 {
 
     QString u;
+    if(is_tox_uid(uid))
+    {
+        u = "image://tox_avatar/";
+        u += uid;
+        u += "/";
+        u += random_fn();
+        QUrl url;
+        url.setUrl(u);
+        return url;
+    }
     u = "image://profile_preview/";
     u += uid;
     u += "/";
@@ -2978,6 +2994,35 @@ DwycoCore::tox_set_status_message(const QString& msg)
 {
     QByteArray bmsg = msg.toUtf8();
     return dwyco_tox_set_status_message(bmsg.constData(), bmsg.length());
+}
+
+int
+DwycoCore::tox_set_avatar(const QString& file_path)
+{
+    QByteArray out_fn;
+    if(!load_and_resize(file_path.toUtf8(), out_fn, 64000))
+        return 0;
+    QFile f(out_fn);
+    if(!f.open(QIODevice::ReadOnly))
+        return 0;
+    QByteArray bdata = f.readAll();
+    f.close();
+    if(bdata.isEmpty())
+        return 0;
+    int ret = dwyco_tox_set_avatar(bdata.constData(), bdata.length());
+    if(out_fn != file_path.toUtf8())
+        QFile::remove(out_fn);
+    if(ret)
+        emit tox_avatar_changed();
+    return ret;
+}
+
+int
+DwycoCore::tox_clear_avatar()
+{
+    dwyco_tox_clear_avatar();
+    emit tox_avatar_changed();
+    return 1;
 }
 
 void
@@ -4031,6 +4076,7 @@ dwyco_register_qml(QQmlContext *root)
     Dwyco_video_provider = new DwycoImageProvider;
     root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
     root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);
+    root->engine()->addImageProvider("tox_avatar", new DwycoToxAvatarProvider);
     Dwyco_video_preview_provider = new DwycoVideoPreviewProvider;
     root->engine()->addImageProvider("dwyco_video_preview", Dwyco_video_preview_provider);
 

@@ -129,13 +129,15 @@ Item {
                         radius: width
                         color: "orange"
                     }
-                    ToxBadge {
-                        friendUid: uid
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        width: .3 * ppic.height
-                        height: .3 * ppic.height
-                    }
+                 }
+
+                ToxBadge {
+                    friendUid: uid
+                    Layout.minimumWidth: 14
+                    Layout.maximumWidth: 14
+                    Layout.minimumHeight: 14
+                    Layout.maximumHeight: 14
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                  Text {

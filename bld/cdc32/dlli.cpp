@@ -9947,6 +9947,44 @@ dwyco_tox_get_user_status(char **out, int *len_out)
 
 DWYCOEXPORT
 int
+dwyco_tox_get_avatar(const char *pseudo_uid, int pseudo_uid_len, char **out, int *len_out)
+{
+    vc puid(VC_BSTRING, pseudo_uid, (long)pseudo_uid_len);
+    vc data;
+    if(!dwyco::tox_bridge_get_avatar(puid, data))
+        return 0;
+    if(data.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[data.len()];
+        memcpy(*out, (const char *)data, data.len());
+    }
+    if(len_out)
+        *len_out = data.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_avatar(const char *data, int data_len)
+{
+    if(!data || data_len <= 0)
+        return 0;
+    vc avatar(VC_BSTRING, data, (long)data_len);
+    return dwyco::tox_bridge_set_avatar(avatar);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_clear_avatar()
+{
+    dwyco::tox_bridge_clear_avatar();
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_uid_is_tox_friend(const char *uid, int len_uid)
 {
     vc buid(VC_BSTRING, uid, len_uid);

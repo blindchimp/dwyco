@@ -7,9 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.328")
+set(RANDO_VERSION "4.329")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000189)
+set(RANDO_VERSION_CODE 3000190)
 set(QT_ANDROID_TARGET_SDK_VERSION 36)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
@@ -51,10 +51,27 @@ add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 # populate it with the java stuff would work. then change the package_source_dir to
 # be the created folder. this could help us avoid the .gitignore mickey-mouse in the androidinst3
 # dir. might look into a special cmake file
-# that just does an install as well. for now, we just let it happen at cmake
-# time instead of build time.
+# that just does an install as well.
+# java sources in ../bld/android/com/dwyco are copied to androidinst3 at
+# build time (via the androidjava target) so editing a java file only
+# triggers a re-copy + repackage, not a full reconfigure.
 if(ANDROID)
-file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
+set(DWYCO_JAVA_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../bld/android/com/dwyco)
+set(DWYCO_JAVA_DST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/dwyco)
+file(GLOB_RECURSE DWYCO_JAVA_SOURCES ${DWYCO_JAVA_SRC_DIR}/*.java)
+set(DWYCO_JAVA_OUTPUTS)
+foreach(_src IN LISTS DWYCO_JAVA_SOURCES)
+    file(RELATIVE_PATH _rel ${DWYCO_JAVA_SRC_DIR} ${_src})
+    set(_dst ${DWYCO_JAVA_DST_DIR}/${_rel})
+    add_custom_command(
+        OUTPUT ${_dst}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_src} ${_dst}
+        DEPENDS ${_src}
+        COMMENT "Copying ${_rel} to androidinst3"
+    )
+    list(APPEND DWYCO_JAVA_OUTPUTS ${_dst})
+endforeach()
+add_custom_target(androidjava DEPENDS ${DWYCO_JAVA_OUTPUTS})
 file(COPY ../../deploy-rando/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
 
@@ -84,6 +101,10 @@ qt_add_resources(SRCS
 qt_add_executable(rando
    ${SRCS}
 )
+
+if(ANDROID)
+    add_dependencies(rando androidjava)
+endif()
 
 qt_add_qml_module(rando
     URI dwyco
