@@ -98,6 +98,7 @@ set(SRCS
     callsm.cpp 
     chatlistmodel.cpp 
     dwycoprofilepreviewprovider.cpp 
+    dwyco_tox_avatar_provider.cpp
     convmodel.cpp 
     getinfo.cpp 
     ignoremodel.cpp 
