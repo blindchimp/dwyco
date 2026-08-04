@@ -959,6 +959,9 @@ tox_bridge_init(const char *save_file)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
     tox_bridge_rebuild_friend_cache();
+    vc self_pseudo = self_tox_pseudo();
+    if(!self_pseudo.is_nil())
+        tox_uid_tag_add(self_pseudo);
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
@@ -1542,6 +1545,9 @@ tox_bridge_rebuild_friend_cache()
 int
 tox_bridge_is_tox_uid(const vc &uid)
 {
+    vc self_pseudo = self_tox_pseudo();
+    if(!self_pseudo.is_nil() && uid == self_pseudo)
+        return 1;
     if(sql_is_initialized())
         return sql_mid_has_tag(to_hex(uid), "_tox") ? 1 : 0;
     if(Friend_cache.is_nil())
