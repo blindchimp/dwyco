@@ -2243,6 +2243,8 @@ int DWYCOEXPORT dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out);
 int DWYCOEXPORT dwyco_tox_set_user_status(const char *status);
 int DWYCOEXPORT dwyco_tox_get_user_status(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_get_avatar(const char *pseudo_uid, int pseudo_uid_len, char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_set_avatar(const char *data, int data_len);
+int DWYCOEXPORT dwyco_tox_clear_avatar();
 
 int DWYCOEXPORT dwyco_uid_is_tox_friend(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_get_device_uid(char **out, int *len_out);

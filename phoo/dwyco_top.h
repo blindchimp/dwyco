@@ -356,6 +356,8 @@ public:
     Q_INVOKABLE void tox_set_typing(const QString& uid, int typing);
     Q_INVOKABLE int tox_set_name(const QString& name);
     Q_INVOKABLE int tox_set_status_message(const QString& msg);
+    Q_INVOKABLE int tox_set_avatar(const QString& file_path);
+    Q_INVOKABLE int tox_clear_avatar();
     Q_INVOKABLE int tox_set_user_status(const QString& status);
     Q_INVOKABLE QString tox_get_user_status();
     Q_INVOKABLE QString tox_get_name();
@@ -469,6 +471,7 @@ signals:
     void tox_user_status_changed(QString user_status);
     void tox_import_finished();
     void auto_away_state_changed(bool is_away);
+    void tox_avatar_changed();
 
 private:
     bool eventFilter(QObject *obj, QEvent *event) override;
