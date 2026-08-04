@@ -1192,6 +1192,37 @@ toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size,
 }
 
 int
+toxp_file_send_avatar(ToxPlugin *p, uint32_t fn, const vc &hash, uint64_t size,
+                      uint32_t *fnum_out)
+{
+    const uint8_t *fname = (const uint8_t *)(const char *)hash;
+    size_t fnlen = (size_t)hash.len();
+
+    Tox_Err_File_Send err;
+    uint32_t fnum = tox_file_send(p->tox, fn, TOX_FILE_KIND_AVATAR, size, NULL, fname, fnlen, &err);
+    if(err != TOX_ERR_FILE_SEND_OK)
+        return 0;
+    if(fnum_out)
+        *fnum_out = fnum;
+    return 1;
+}
+
+int
+toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out)
+{
+    (void)p;
+    Tox_Hash hash;
+    size_t len = (size_t)data.len();
+    const uint8_t *bytes = NULL;
+    if(len > 0)
+        bytes = (const uint8_t *)(const char *)data;
+    if(!tox_hash(hash, bytes, len))
+        return 0;
+    hash_out = vc(VC_BSTRING, (const char *)hash, TOX_HASH_LENGTH);
+    return 1;
+}
+
+int
 toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos,
                     const vc &data)
 {

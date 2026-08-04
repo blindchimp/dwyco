@@ -119,6 +119,16 @@ struct OutgoingFileTransfer {
 };
 static std::map<DwString, OutgoingFileTransfer> Outgoing_xfers;
 
+struct OutgoingAvatar {
+    DwString data;
+    vc hash;
+    uint64_t size;
+    uint64_t sent_size;
+    uint32_t tox_fn;
+    uint32_t tox_fnum;
+};
+static std::map<DwString, OutgoingAvatar> Outgoing_avatars;
+
 static void
 set_active_password(const uint8_t *pw, int pw_len)
 {
@@ -207,6 +217,103 @@ static DwString
 xfer_key(uint32_t fn, uint32_t fnum)
 {
     return DwString::fromInt(fn) + "_" + DwString::fromInt(fnum);
+}
+
+static vc
+self_tox_pseudo()
+{
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return vcnil;
+    return tox_pubkey_to_pseudo_uid(pk);
+}
+
+static void
+cancel_outgoing_avatar_for(uint32_t fn)
+{
+    for(std::map<DwString, OutgoingAvatar>::iterator it = Outgoing_avatars.begin();
+        it != Outgoing_avatars.end(); )
+    {
+        if(it->second.tox_fn == fn)
+        {
+            toxp_file_cancel(Tox_plugin, it->second.tox_fn, it->second.tox_fnum);
+            it = Outgoing_avatars.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+// broadcast the current avatar (or its removal) to all online friends.
+// data is empty and size is 0 to signal avatar removal.
+static void
+send_avatar_to_friends(const vc &hash, const DwString &data, uint64_t size)
+{
+    if(!Tox_plugin)
+        return;
+    if(Friend_cache.is_nil())
+        tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc fnum;
+        vc status;
+        if(!entry.find("friend_number", fnum) || fnum.type() != VC_INT)
+            continue;
+        if(!entry.find("status", status) || status != vc("online"))
+            continue;
+        uint32_t fn = (uint32_t)(int)fnum;
+        cancel_outgoing_avatar_for(fn);
+        uint32_t tox_fnum;
+        if(!toxp_file_send_avatar(Tox_plugin, fn, hash, size, &tox_fnum))
+        {
+            GRTLOG("tox: avatar send init failed fn=%d", (int)fn, 0);
+            continue;
+        }
+        OutgoingAvatar av;
+        av.data = data;
+        av.hash = hash;
+        av.size = size;
+        av.sent_size = 0;
+        av.tox_fn = fn;
+        av.tox_fnum = tox_fnum;
+        Outgoing_avatars[xfer_key(fn, tox_fnum)] = av;
+        GRTLOG("tox: avatar send initiated fn=%d fnum=%d", (int)fn, (int)tox_fnum);
+    }
+}
+
+static void
+send_self_avatar_to(uint32_t fn)
+{
+    if(!Tox_plugin)
+        return;
+    vc pseudo = self_tox_pseudo();
+    if(pseudo.is_nil())
+        return;
+    vc avatar_data;
+    if(!Tox_q || !tox_bridge_get_avatar(pseudo, avatar_data) || avatar_data.is_nil())
+        return;
+    vc hash;
+    if(!toxp_avatar_hash(Tox_plugin, avatar_data, hash))
+        return;
+    cancel_outgoing_avatar_for(fn);
+    uint32_t tox_fnum;
+    if(!toxp_file_send_avatar(Tox_plugin, fn, hash, (uint64_t)avatar_data.len(), &tox_fnum))
+        return;
+    OutgoingAvatar av;
+    av.data = DwString((const char *)avatar_data, avatar_data.len());
+    av.hash = hash;
+    av.size = (uint64_t)avatar_data.len();
+    av.sent_size = 0;
+    av.tox_fn = fn;
+    av.tox_fnum = tox_fnum;
+    Outgoing_avatars[xfer_key(fn, tox_fnum)] = av;
+    GRTLOG("tox: avatar send initiated on connect fn=%d fnum=%d", (int)fn, (int)tox_fnum);
 }
 
 static void
@@ -371,6 +478,8 @@ process_tox_event(const char *type, const vc &args)
         tox_uid_tag_add(pseudo);
         GRTLOG("tox: friend %d online=%d", (int)fn, status == vc("online") ? 1 : 0);
         se_emit(SE_TOX_FRIEND_STATUS, pseudo, status);
+        if(status == vc("online"))
+            send_self_avatar_to(fn);
 
     } else if(strcmp(type, "friend_name") == 0 && args.num_elems() >= 3) {
         uint32_t fn = (uint32_t)(int)args[0];
@@ -603,6 +712,46 @@ process_tox_event(const char *type, const vc &args)
             length = (uint64_t)(long long)args[3];
 
         DwString key = xfer_key(fn, fnum);
+        std::map<DwString, OutgoingAvatar>::iterator avit = Outgoing_avatars.find(key);
+        if(avit != Outgoing_avatars.end())
+        {
+            OutgoingAvatar &av = avit->second;
+
+            // length == 0 signals toxcore has confirmed transfer complete
+            if(length == 0)
+            {
+                GRTLOG("tox: avatar send complete fn=%d fnum=%d", (int)fn, (int)fnum);
+                Outgoing_avatars.erase(avit);
+                return;
+            }
+
+            uint64_t read_len = length;
+            const uint64_t max_chunk = 65536;
+            if(read_len > max_chunk)
+                read_len = max_chunk;
+            if(position + read_len > av.size)
+                read_len = av.size > position ? av.size - position : 0;
+            if(read_len == 0)
+            {
+                GRTLOG("tox: avatar chunk request out of range fn=%d fnum=%d", (int)fn, (int)fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                Outgoing_avatars.erase(avit);
+                return;
+            }
+            vc chunk(VC_BSTRING, av.data.c_str() + position, (long)read_len);
+            if(toxp_file_send_data(Tox_plugin, fn, fnum, position, chunk))
+            {
+                av.sent_size += read_len;
+            }
+            else
+            {
+                GRTLOG("tox: avatar chunk send error fn=%d fnum=%d", (int)fn, (int)fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                Outgoing_avatars.erase(avit);
+            }
+            return;
+        }
+
         std::map<DwString, OutgoingFileTransfer>::iterator oit = Outgoing_xfers.find(key);
         if(oit == Outgoing_xfers.end())
             return;
@@ -683,6 +832,26 @@ process_tox_event(const char *type, const vc &args)
         uint32_t fnum = (uint32_t)(int)args[1];
         vc control = args[2];
         DwString key = xfer_key(fn, fnum);
+        std::map<DwString, IncomingAvatar>::iterator avit = Incoming_avatars.find(key);
+        if(avit != Incoming_avatars.end())
+        {
+            if(control == vc("cancel"))
+            {
+                GRTLOG("tox: incoming avatar cancelled by sender fn=%d fnum=%d", fn, fnum);
+                Incoming_avatars.erase(avit);
+            }
+            return;
+        }
+        std::map<DwString, OutgoingAvatar>::iterator oavit = Outgoing_avatars.find(key);
+        if(oavit != Outgoing_avatars.end())
+        {
+            if(control == vc("cancel"))
+            {
+                GRTLOG("tox: outgoing avatar cancelled by receiver fn=%d fnum=%d", fn, fnum);
+                Outgoing_avatars.erase(oavit);
+            }
+            return;
+        }
         std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
         if(it != Incoming_xfers.end())
         {
@@ -819,6 +988,7 @@ tox_bridge_shutdown()
             close(it->second.fd);
     }
     Outgoing_xfers.clear();
+    Outgoing_avatars.clear();
 
     if(Tox_q) {
         Tox_q->exit();
@@ -1212,6 +1382,64 @@ tox_bridge_get_avatar(const vc &pseudo_uid, vc &avatar_data_out)
         return 0;
     avatar_data_out = Tox_q->load_tox_avatar(pseudo_uid);
     return !avatar_data_out.is_nil();
+}
+
+int
+tox_bridge_set_avatar(const vc &avatar_data)
+{
+    if(!Tox_plugin || !Tox_q)
+        return 0;
+    if(avatar_data.is_nil())
+        return 0;
+    int len = avatar_data.len();
+    if(len == 0 || (uint64_t)len > TOX_AVATAR_MAX_SIZE)
+        return 0;
+
+    vc hash;
+    if(!toxp_avatar_hash(Tox_plugin, avatar_data, hash))
+        return 0;
+
+    // store under both the app self uid (self profile preview) and the
+    // tox self pseudo uid (matches what friends store for us)
+    int stored = 0;
+    if(Tox_q->save_tox_avatar(My_UID, avatar_data, hash))
+        stored = 1;
+    vc pseudo = self_tox_pseudo();
+    if(!pseudo.is_nil() && pseudo != My_UID)
+        if(Tox_q->save_tox_avatar(pseudo, avatar_data, hash))
+            stored = 1;
+    if(!stored)
+        return 0;
+
+    se_emit(SE_TOX_AVATAR, My_UID);
+
+    DwString data((const char *)avatar_data, avatar_data.len());
+    send_avatar_to_friends(hash, data, (uint64_t)len);
+    GRTLOG("tox: avatar set size=%d", len, 0);
+    return 1;
+}
+
+void
+tox_bridge_clear_avatar()
+{
+    if(!Tox_plugin || !Tox_q)
+        return;
+    Tox_q->delete_tox_avatar(My_UID);
+    vc pseudo = self_tox_pseudo();
+    if(!pseudo.is_nil() && pseudo != My_UID)
+        Tox_q->delete_tox_avatar(pseudo);
+
+    se_emit(SE_TOX_AVATAR, My_UID);
+
+    // empty data + size 0 signals avatar removal
+    vc hash;
+    if(!toxp_avatar_hash(Tox_plugin, vc(""), hash))
+    {
+        static const char zero_hash[32] = {0};
+        hash = vc(VC_BSTRING, zero_hash, 32);
+    }
+    send_avatar_to_friends(hash, DwString(), 0);
+    GRTLOG("tox: avatar cleared", 0, 0);
 }
 
 int
