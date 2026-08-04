@@ -460,13 +460,13 @@ ApplicationWindow {
     // Loader {
     //     id: cam
 
-        property string next_state
-        property string ok_text: "Send"
-        anchors.fill: parent
-        anchors.topMargin: safeTop
-        anchors.bottomMargin: safeBottom
-        visible: false
-        active: visible
+        // property string next_state
+        // property string ok_text: "Send"
+        // anchors.fill: parent
+        // anchors.topMargin: safeTop
+        // anchors.bottomMargin: safeBottom
+        // visible: false
+        // active: visible
 
     //     onLoaded: {
     //         item.state_on_close = cam.next_state
