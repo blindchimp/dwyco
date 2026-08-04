@@ -136,12 +136,19 @@ Page {
             refreshToxIdentity()
         }
         function onTox_avatar_changed() {
-            toxAvatarImg.source = ""
-            toxAvatarImg.source = core.uid_to_profile_preview(core.tox_self_address.substring(0,20))
+            refreshToxAvatar()
         }
-        // function onTox_self_addressChanged() {
-        //     refreshToxAvatar()
-        // }
+        function onTox_self_addressChanged() {
+            refreshToxAvatar()
+        }
+        function onTox_enabledChanged() {
+            refreshToxAvatar()
+        }
+    }
+
+    onVisibleChanged: {
+        if(visible)
+            refreshToxAvatar()
     }
 
     Component.onCompleted: {
@@ -177,7 +184,7 @@ Page {
             if(tidx >= 0)
                 autoAwayTimeout.currentIndex = tidx
         }
-        //refreshToxAvatar()
+        refreshToxAvatar()
     }
 
     Timer {
@@ -483,7 +490,6 @@ Page {
                     Layout.maximumHeight: parent.height
                     sourceSize.width: 256
                     sourceSize.height: 256
-                    source: core.uid_to_profile_preview(core.tox_self_address.substring(0,20))
                 }
 
                 Button {
