@@ -127,6 +127,16 @@ ApplicationWindow {
     property int qt_application_state: 0
     property bool is_mobile
     property bool hard_close: false
+    property real safeTop: {
+        if (Qt.platform.os !== "android" && Qt.platform.os !== "ios") return 0
+        var h = Screen.safeAreaMargins.top
+        return h > 0 ? h : Screen.pixelDensity * 24
+    }
+    property real safeBottom: {
+        if (Qt.platform.os !== "android" && Qt.platform.os !== "ios") return 0
+        var h = Screen.safeAreaMargins.bottom
+        return h > 0 ? h : Screen.pixelDensity * 24
+    }
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
     // let's be serious, ca 2024 there is no practical choice regarding distribution
@@ -450,11 +460,13 @@ ApplicationWindow {
     // Loader {
     //     id: cam
 
-    //     property string next_state
-    //     property string ok_text: "Send"
-    //     anchors.fill: parent
-    //     visible: false
-    //     active: visible
+        property string next_state
+        property string ok_text: "Send"
+        anchors.fill: parent
+        anchors.topMargin: safeTop
+        anchors.bottomMargin: safeBottom
+        visible: false
+        active: visible
 
     //     onLoaded: {
     //         item.state_on_close = cam.next_state
@@ -892,6 +904,8 @@ ApplicationWindow {
         id: stack
         //initialItem: userlist
         anchors.fill: parent
+        anchors.topMargin: safeTop
+        anchors.bottomMargin: safeBottom
         visible: {pwdialog.allow_access === 1}
         onDepthChanged: {
             if(depth === 1)
@@ -1139,6 +1153,8 @@ ApplicationWindow {
         id: force_quit
         visible: device_group.quitnow
         anchors.fill: parent
+        anchors.topMargin: safeTop
+        anchors.bottomMargin: safeBottom
         color: "orange"
         z: 10
         RowLayout {
@@ -1167,6 +1183,8 @@ ApplicationWindow {
         id: emergency_quit
         visible: core.emergency_exit !== 0
         anchors.fill: parent
+        anchors.topMargin: safeTop
+        anchors.bottomMargin: safeBottom
         color: "yellow"
         z: 10
         RowLayout {
