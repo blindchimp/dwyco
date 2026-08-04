@@ -16,7 +16,7 @@
 
 #/home/dwight/android682_arm64-v8a/bin/qt-cmake -S /home/dwight/git/dwyco/rando -B /tmp/r -GNinja
 #-D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" 
-QTDIR=$HOME/Qt/6.11.1/android_arm64_v8a
+QTDIR=$HOME/Qt/6.11.1/android_x86_64
 export PATH=$QTDIR/bin:$PATH
 if [ "$(uname)" = "Darwin" ]; then
     export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
@@ -26,12 +26,12 @@ else
     SDK_ROOT="$HOME/Android/Sdk"
     NDK_PATH="$SDK_ROOT/ndk/28.2.13676358"
 fi
-rm -rf build
+rm -rf /tmp/r
 
 qt-cmake \
 -D QT_QMAKE_EXECUTABLE="$QTDIR/bin/qmake" \
 -D CMAKE_BUILD_TYPE=Release \
--S $HOME/git/dwyco/rando -B build -GNinja \
+-S $HOME/git/dwyco/rando -B /tmp/r -GNinja \
 -D QT_NO_GLOBAL_APK_TARGET_PART_OF_ALL:BOOL=OFF \
 -D ANDROID_SDK_ROOT=$SDK_ROOT \
 -D ANDROID_NDK_ROOT=$NDK_PATH \
