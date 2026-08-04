@@ -135,9 +135,10 @@ Page {
         function onTox_import_finished() {
             refreshToxIdentity()
         }
-        //function onTox_avatar_changed() {
-        //    refreshToxAvatar()
-        //}
+        function onTox_avatar_changed() {
+            toxAvatarImg.source = ""
+            toxAvatarImg.source = core.uid_to_profile_preview(core.tox_self_address.substring(0,20))
+        }
         // function onTox_self_addressChanged() {
         //     refreshToxAvatar()
         // }
@@ -471,23 +472,26 @@ Page {
                 visible: core.tox_enabled
                 spacing: mm(1)
 
-                CircularImage2 {
+
+                Image {
                     id: toxAvatarImg
-                    width: mm(20)
-                    height: mm(20)
-                    sourceSize: Qt.size(width * 2, height * 2)
+                    width: 32
+                    height: 32
                     fillMode: Image.PreserveAspectCrop
                     Layout.alignment: Qt.AlignVCenter
+                    source: core.uid_to_profile_preview(core.tox_self_address.substring(0,20))
                 }
 
                 Button {
                     text: "Set Picture..."
                     onClicked: avatarFileDialog.open()
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 Button {
                     text: "Remove Picture"
                     onClicked: core.tox_clear_avatar()
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 Item {

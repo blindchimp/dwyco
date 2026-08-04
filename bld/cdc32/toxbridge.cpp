@@ -1402,19 +1402,16 @@ tox_bridge_set_avatar(const vc &avatar_data)
     if(!toxp_avatar_hash(Tox_plugin, avatar_data, hash))
         return 0;
 
-    // store under both the app self uid (self profile preview) and the
-    // tox self pseudo uid (matches what friends store for us)
     int stored = 0;
-    if(Tox_q->save_tox_avatar(My_UID, avatar_data, hash))
-        stored = 1;
+
     vc pseudo = self_tox_pseudo();
-    if(!pseudo.is_nil() && pseudo != My_UID)
+    if(!pseudo.is_nil())
         if(Tox_q->save_tox_avatar(pseudo, avatar_data, hash))
             stored = 1;
     if(!stored)
         return 0;
 
-    se_emit(SE_TOX_AVATAR, My_UID);
+    se_emit(SE_TOX_AVATAR, pseudo);
 
     DwString data((const char *)avatar_data, avatar_data.len());
     send_avatar_to_friends(hash, data, (uint64_t)len);
@@ -1427,12 +1424,12 @@ tox_bridge_clear_avatar()
 {
     if(!Tox_plugin || !Tox_q)
         return;
-    Tox_q->delete_tox_avatar(My_UID);
+
     vc pseudo = self_tox_pseudo();
-    if(!pseudo.is_nil() && pseudo != My_UID)
+    if(!pseudo.is_nil())
         Tox_q->delete_tox_avatar(pseudo);
 
-    se_emit(SE_TOX_AVATAR, My_UID);
+    se_emit(SE_TOX_AVATAR, pseudo);
 
     // empty data + size 0 signals avatar removal
     vc hash;
