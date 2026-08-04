@@ -30,7 +30,6 @@ Page {
     property bool pwTick: false
 
     function profileHasPassword() {
-        pwTick
         return core.tox_has_profile_password()
     }
 
@@ -103,6 +102,19 @@ Page {
         return name8 + id.substring(0, 4) + ".tox"
     }
 
+    function toxSelfPseudoUid() {
+        return core.tox_get_self_public_key().substring(0, 20)
+    }
+
+    function refreshToxAvatar() {
+        var pseudo = toxSelfPseudoUid()
+        if (pseudo.length === 0) {
+            toxAvatarImg.source = ""
+            return
+        }
+        toxAvatarImg.source = core.uid_to_profile_preview(pseudo)
+    }
+
     Connections {
         target: core
         function onAuto_away_state_changed(isAway) {
@@ -123,6 +135,12 @@ Page {
         function onTox_import_finished() {
             refreshToxIdentity()
         }
+        //function onTox_avatar_changed() {
+        //    refreshToxAvatar()
+        //}
+        // function onTox_self_addressChanged() {
+        //     refreshToxAvatar()
+        // }
     }
 
     Component.onCompleted: {
@@ -158,6 +176,7 @@ Page {
             if(tidx >= 0)
                 autoAwayTimeout.currentIndex = tidx
         }
+        //refreshToxAvatar()
     }
 
     Timer {
@@ -449,6 +468,35 @@ Page {
 
             RowLayout {
                 enabled: core.tox_enabled
+                visible: core.tox_enabled
+                spacing: mm(1)
+
+                CircularImage2 {
+                    id: toxAvatarImg
+                    width: mm(20)
+                    height: mm(20)
+                    sourceSize: Qt.size(width * 2, height * 2)
+                    fillMode: Image.PreserveAspectCrop
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                Button {
+                    text: "Set Picture..."
+                    onClicked: avatarFileDialog.open()
+                }
+
+                Button {
+                    text: "Remove Picture"
+                    onClicked: core.tox_clear_avatar()
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+
+            RowLayout {
+                enabled: core.tox_enabled
                 spacing: mm(1)
 
                 Button {
@@ -576,6 +624,19 @@ Page {
             else
                 exportResultText.text = "Profile exported to " + p
             exportResultDialog.open()
+        }
+    }
+
+    FileDialog {
+        id: avatarFileDialog
+        title: "Choose a profile picture"
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp *.gif)", "All files (*)"]
+        currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
+        onAccepted: {
+            var p = core.url_to_filename(selectedFile)
+            if(p === "")
+                return
+            core.tox_set_avatar(p)
         }
     }
 
