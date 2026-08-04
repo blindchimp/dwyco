@@ -475,10 +475,14 @@ Page {
 
                 Image {
                     id: toxAvatarImg
-                    width: 32
-                    height: 32
                     fillMode: Image.PreserveAspectCrop
                     Layout.alignment: Qt.AlignVCenter
+                    Layout.minimumWidth: parent.height
+                    Layout.maximumWidth: parent.height
+                    Layout.minimumHeight: parent.height
+                    Layout.maximumHeight: parent.height
+                    sourceSize.width: 256
+                    sourceSize.height: 256
                     source: core.uid_to_profile_preview(core.tox_self_address.substring(0,20))
                 }
 
