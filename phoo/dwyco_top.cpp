@@ -2811,7 +2811,7 @@ DwycoCore::uid_to_profile_preview(QString uid)
 {
 
     QString u;
-    if(is_tox_uid(uid) || (get_tox_enabled() && uid == get_my_uid()))
+    if(is_tox_uid(uid))
     {
         u = "image://tox_avatar/";
         u += uid;
@@ -2980,7 +2980,10 @@ DwycoCore::tox_set_status_message(const QString& msg)
 int
 DwycoCore::tox_set_avatar(const QString& file_path)
 {
-    QFile f(file_path);
+    QByteArray out_fn;
+    if(!load_and_resize(file_path.toUtf8(), out_fn, 64000))
+        return 0;
+    QFile f(out_fn);
     if(!f.open(QIODevice::ReadOnly))
         return 0;
     QByteArray bdata = f.readAll();
@@ -2988,6 +2991,8 @@ DwycoCore::tox_set_avatar(const QString& file_path)
     if(bdata.isEmpty())
         return 0;
     int ret = dwyco_tox_set_avatar(bdata.constData(), bdata.length());
+    if(out_fn != file_path.toUtf8())
+        QFile::remove(out_fn);
     if(ret)
         emit tox_avatar_changed();
     return ret;
