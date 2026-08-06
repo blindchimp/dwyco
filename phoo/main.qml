@@ -895,6 +895,24 @@ ApplicationWindow {
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
+    SoundEffect {
+        id: sound_plink
+        source: "qrc:/androidinst3/assets/plink.wav"
+        volume: {dwy_quiet ? 0.0 : 1.0}
+        muted: dwy_quiet
+    }
+    // one (batched) plink when a pal tox contact comes online
+    Connections {
+        target: core
+        function onPal_came_online() {
+            if(dwy_quiet)
+                return
+            if(Qt.platform.os == "android")
+                notificationClient.beep()
+            else
+                sound_plink.play()
+        }
+    }
     // SoundEffect {
     //     id: sound_alert
     //     source: "qrc:/androidinst3/assets/space-incoming.wav"

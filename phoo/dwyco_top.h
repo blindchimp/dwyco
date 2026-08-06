@@ -17,6 +17,8 @@
 #include <QNetworkReply>
 #include <QThread>
 #include <QEvent>
+#include <QSet>
+#include <QTimer>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -473,12 +475,19 @@ signals:
     void auto_away_state_changed(bool is_away);
     void tox_avatar_changed();
 
+    // debounced: fires once when one or more pal tox contacts come online
+    void pal_came_online();
+
 private:
     bool eventFilter(QObject *obj, QEvent *event) override;
     static void DWYCOCALLCONV dwyco_activity_callback(int timeout);
     bool m_is_auto_away;
     QString m_saved_tox_status;
     void set_user_status_impl(const QString& status);
+    void schedule_tox_plink();
+
+    QSet<QString> m_tox_online_uids;
+    QTimer *m_tox_plink_timer = nullptr;
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
     static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);
