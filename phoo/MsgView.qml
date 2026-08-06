@@ -93,6 +93,18 @@ Page {
         console.log("VIEW_SOURCE", msgviewer.view_source)
     }
 
+    Shortcut {
+        sequence: "Esc"
+        enabled: !is_mobile && clean_button.checked
+        onActivated: clean_button.checked = false
+    }
+
+    Timer {
+        id: hideOverlayTimer
+        interval: 2500
+        onTriggered: exit_overlay.opacity = 0
+    }
+
 //    fav: { (mid.length > 0) ?
 //             (core.get_fav_message(mid) === 1) : false
 //    }
@@ -376,7 +388,16 @@ Page {
 
                 onPressed: {
                     dragging = true
-
+                    if(!is_mobile && clean_button.checked) {
+                        exit_overlay.opacity = 1
+                        hideOverlayTimer.restart()
+                    }
+                }
+                onPositionChanged: {
+                    if(!is_mobile && clean_button.checked) {
+                        exit_overlay.opacity = 1
+                        hideOverlayTimer.restart()
+                    }
                 }
                 onClicked: {
                     core.stop_zap_view(view_id)
@@ -387,6 +408,25 @@ Page {
                     clean_button.checked = false
                 }
             }
+        }
+
+        ToolButton {
+            id: exit_overlay
+            visible: !is_mobile && clean_button.checked
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 8
+            z: 10
+            opacity: 0
+            Behavior on opacity { NumberAnimation { duration: 250 } }
+            contentItem: Image {
+                source: mi("ic_fullscreen_exit_black_24dp.png")
+            }
+            background: Rectangle {
+                color: "#66000000"
+                radius: width / 2
+            }
+            onClicked: clean_button.checked = false
         }
     }
     TextArea {
