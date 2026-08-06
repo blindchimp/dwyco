@@ -159,6 +159,26 @@ ApplicationWindow {
         }
     }
 
+    property int last_msg_ts: 0
+    property int beep_seconds: 180
+
+    function receivedMsgBeep() {
+        var now = datesec()
+        var quiet_gap = now - last_msg_ts
+        last_msg_ts = now
+        if(dwy_quiet)
+            return
+        var not_viewing = Qt.platform.os === "android"
+                          ? (qt_application_state !== 0)
+                          : !applicationWindow1.active
+        if(not_viewing || quiet_gap >= beep_seconds)
+            beep()
+    }
+
+    onActiveChanged: {
+        console.log("window active ", applicationWindow1.active)
+    }
+
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
@@ -1075,7 +1095,7 @@ ApplicationWindow {
             }
             //notificationClient.notification = "New messages"
 
-              beep()
+              receivedMsgBeep()
 
         }
 
