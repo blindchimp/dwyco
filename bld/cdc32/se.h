@@ -97,6 +97,7 @@ enum dwyco_sys_event {
     SE_TOX_TYPING,
     SE_TOX_FRIEND_USER_STATUS,
     SE_TOX_AVATAR,
+    SE_TOX_DISABLED_BY_REMOTE,
 };
 
 // at this point, the id can be a uid or a mid

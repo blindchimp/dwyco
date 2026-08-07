@@ -144,6 +144,9 @@ Page {
         function onTox_enabledChanged() {
             refreshToxAvatar()
         }
+        function onTox_disabled_by_remote() {
+            disabledByRemoteDialog.open()
+        }
     }
 
     onVisibleChanged: {
@@ -555,7 +558,81 @@ Page {
                     Layout.fillWidth: true
                 }
             }
+
+            Label {
+                text: "Synced Profiles"
+                enabled: core.tox_enabled
+                visible: core.tox_enabled
+                font.bold: true
+                Layout.topMargin: mm(2)
+            }
+
+            RowLayout {
+                enabled: core.tox_enabled
+                visible: core.tox_enabled
+                spacing: mm(1)
+
+                Button {
+                    text: "Publish My Profile"
+                    onClicked: {
+                        if(core.tox_publish_save())
+                            syncResultsText.text = "Profile published to group."
+                        else
+                            syncResultsText.text = "Could not publish profile."
+                        syncResultsDialog.open()
+                    }
+                }
+
+                            Button {
+                text: "Refresh"
+                onClicked: syncedSavesModel = core.tox_list_saves()
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
         }
+
+        ListView {
+            id: syncedSaveList
+            property var syncedSavesModel: core.tox_list_saves()
+            model: syncedSaveList.syncedSavesModel
+            enabled: core.tox_enabled
+            visible: core.tox_enabled
+            Layout.fillWidth: true
+            Layout.preferredHeight: mm(20)
+            clip: true
+            spacing: mm(1)
+            ScrollBar.vertical: ScrollBar { }
+            delegate: ColumnLayout {
+                width: ListView.view.width
+                spacing: mm(0.5)
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: mm(1)
+                    Label {
+                        text: "ID " + modelData.pubkey.substring(0, 12) + "..."
+                        font.family: "monospace"
+                        font.pixelSize: 10
+                        Layout.fillWidth: true
+                    }
+                    Label {
+                        text: modelData.size + " B"
+                        font.pixelSize: 10
+                    }
+                }
+                Button {
+                    text: "Use This Profile"
+                    Layout.fillWidth: true
+                    onClicked: {
+                        confirmSelectSave.mid = modelData.mid
+                        confirmSelectSave.pubkey = modelData.pubkey
+                        confirmSelectDialog.open()
+                    }
+                }
+            }
+        }
+    }
 
     Dialog {
         id: deleteFriendDialog
@@ -593,6 +670,78 @@ Page {
 
         onRejected: {
             trashMessagesCb.checked = false
+        }
+    }
+
+    QtObject {
+        id: confirmSelectSave
+        property string mid: ""
+        property string pubkey: ""
+    }
+
+    Dialog {
+        id: confirmSelectDialog
+        title: "Use Synced Profile?"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        anchors.centerIn: Overlay.overlay
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Activate the profile with tox ID " + confirmSelectSave.pubkey.substring(0, 12) + "...?"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+            Label {
+                text: "This changes your tox identity. Any device currently using this identity will be disabled."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+        }
+
+        onAccepted: {
+            var err = core.tox_select_save(confirmSelectSave.mid)
+            if(err.length > 0)
+                syncResultsText.text = "Select failed: " + err
+            else {
+                syncResultsText.text = "Profile activated."
+                syncedSaveList.syncedSavesModel = core.tox_list_saves()
+            }
+            syncResultsDialog.open()
+        }
+    }
+
+    Dialog {
+        id: syncResultsDialog
+        title: "Synced Profiles"
+        standardButtons: Dialog.Ok
+        modal: true
+        anchors.centerIn: Overlay.overlay
+
+        Label {
+            id: syncResultsText
+            wrapMode: Text.WordWrap
+        }
+    }
+
+    Dialog {
+        id: disabledByRemoteDialog
+        title: "Tox Disabled"
+        standardButtons: Dialog.Ok
+        modal: true
+        anchors.centerIn: Overlay.overlay
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+            Label {
+                text: "This tox identity is now in use on another device. Tox has been disabled here."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
         }
     }
 

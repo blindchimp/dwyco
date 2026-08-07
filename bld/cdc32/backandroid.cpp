@@ -357,6 +357,8 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
             sql("insert into static_uid_tags values('_ignore')");
             sql("insert into static_uid_tags values('_pal')");
             sql("insert into static_uid_tags values('_leader')");
+            sql("insert into static_uid_tags values('_tox_save')");
+            sql("insert into static_uid_tags values('_tox_active')");
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
                 "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"

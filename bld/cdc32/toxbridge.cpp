@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
@@ -927,6 +928,9 @@ on_tox_event(const char *type, const vc &args, void *userdata)
     process_tox_event(type, args);
 }
 
+static void publish_active_claim(const vc &pubkey);
+static void remove_own_active_claims();
+
 int
 tox_bridge_init(const char *save_file)
 {
@@ -963,6 +967,9 @@ tox_bridge_init(const char *save_file)
     if(!self_pseudo.is_nil())
         tox_uid_tag_add(self_pseudo);
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
+    vc pk = tox_bridge_get_pubkey();
+    if(!pk.is_nil())
+        publish_active_claim(pk);
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
 }
@@ -1136,6 +1143,300 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
     return 1;
 }
 
+static vc
+make_save_mid(const vc &pubkey, const vc &save_bytes)
+{
+    DwString s;
+    s += to_hex(pubkey);
+    s += "_";
+    s += to_hex(save_bytes);
+    return vc(VC_BSTRING, s.c_str(), (long)s.length());
+}
+
+// remove any locally-published _tox_save entries that carry the given pubkey,
+// so re-publishing replaces stale versions. returns 1 if anything removed.
+static int
+remove_saves_for_pubkey(const vc &pubkey)
+{
+    DwString ph = to_hex(pubkey);
+    ph += "_";
+    vc mids = sql_get_tagged_mids2("_tox_save");
+    int removed = 0;
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        DwString m((const char *)mids[i][0], (long)mids[i][0].len());
+        if(m.find(ph.c_str()) == 0)
+        {
+            sql_remove_mid_tag(mids[i][0], "_tox_save");
+            removed = 1;
+        }
+    }
+    return removed;
+}
+
+int
+tox_bridge_publish_save()
+{
+    if(!Tox_plugin || !Started)
+    {
+        GRTLOG("tox: publish save ignored, tox not running", 0, 0);
+        return 0;
+    }
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return 0;
+
+    // flush the live profile to disk then read the on-disk bytes verbatim,
+    // preserving any encryption/password state.
+    toxp_save(Tox_plugin);
+    DwString path = newfn(Save_file.c_str());
+    if(!file_exists(path))
+        return 0;
+    FILE *f = fopen(path.c_str(), "rb");
+    if(!f)
+        return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    vc bytes;
+    if(sz > 0 && sz < 10 * 1024 * 1024)
+    {
+        char *buf = new char[sz];
+        if(fread(buf, 1, (size_t)sz, f) == (size_t)sz)
+            bytes = vc(VC_BSTRING, buf, (long)sz);
+        delete [] buf;
+    }
+    fclose(f);
+    if(bytes.is_nil())
+        return 0;
+
+    remove_saves_for_pubkey(pk);
+    vc mid = make_save_mid(pk, bytes);
+    safe_add_crdt_tag(mid, "_tox_save");
+    GRTLOG("tox: published profile save, %d bytes", (int)bytes.len(), 0);
+    return 1;
+}
+
+vc
+tox_bridge_list_saves()
+{
+    vc mids = sql_get_tagged_mids2("_tox_save");
+    vc out(VC_VECTOR);
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        DwString m((const char *)mids[i][0], (long)mids[i][0].len());
+        int uscore = m.find_first_of("_");
+        if(uscore <= 0 || uscore >= (int)m.length() - 1)
+            continue;
+        DwString hex_pk(m.c_str(), 0, uscore);
+        DwString hex_bytes(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
+        vc row(VC_VECTOR);
+        row.append(mids[i][0]);
+        row.append(vc(VC_BSTRING, hex_pk.c_str(), (long)hex_pk.length()));
+        row.append(vc((long)(hex_bytes.length() / 2)));
+        out.append(row);
+    }
+    return out;
+}
+
+// a small struct + helpers are unnecessary; parse the composite mid to recover
+// just the save payload bytes for activation.
+static int
+save_payload_from_mid(const vc &mid, vc &bytes_out)
+{
+    DwString m((const char *)mid, (long)mid.len());
+    int uscore = m.find_first_of("_");
+    if(uscore <= 0 || uscore >= (int)m.length() - 1)
+        return 0;
+    DwString hex_bytes(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
+    vc b = from_hex(vc(VC_BSTRING, hex_bytes.c_str(), (long)hex_bytes.length()));
+    if(b.is_nil())
+        return 0;
+    bytes_out = b;
+    return 1;
+}
+
+// write save bytes to the active Save_file atomically (tmp + rename).
+static int
+write_save_bytes(const vc &bytes)
+{
+    DwString save_path = newfn(Save_file.c_str());
+    DwString tmp_path = save_path + ".new";
+    FILE *f = fopen(tmp_path.c_str(), "wb");
+    int ret = 0;
+    if(f)
+    {
+        if(fwrite((const char *)bytes, 1, (size_t)bytes.len(), f) == (size_t)bytes.len())
+            ret = 1;
+        fclose(f);
+        if(ret)
+        {
+            if(rename(tmp_path.c_str(), save_path.c_str()) != 0)
+                ret = 0;
+        }
+        if(!ret)
+            remove(tmp_path.c_str());
+    }
+    return ret;
+}
+
+int
+tox_bridge_select_save(const vc &mid, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    vc payload;
+    if(!save_payload_from_mid(mid, payload))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "bad save tag");
+        return 0;
+    }
+    if(payload.is_nil() || payload.len() <= 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "empty save");
+        return 0;
+    }
+
+    // back up the profile currently on disk.
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up profile to %s", backup_path.c_str(), 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+    // write the synced bytes verbatim (keeps any encryption).
+    if(!write_save_bytes(payload))
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        snprintf(err_buf, (size_t)err_buf_len, "write failed");
+        return 0;
+    }
+
+    if(!tox_bridge_init(Save_file.c_str()))
+    {
+        // either needs a password (unlock flow will re-init) or truly failed.
+        if(!tox_bridge_needs_password() && have_backup)
+            copy_file(backup_path, save_path);
+        return 1;
+    }
+    GRTLOG("tox bridge: selected synced profile", 0, 0);
+    return 1;
+}
+
+static vc
+tox_self_pubkey_hex()
+{
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return vcnil;
+    return to_hex(pk);
+}
+
+// remove locally-owned _tox_active claims (any whose trailing uid token is
+// our own dwyco uid), so a device only has one active claim at a time.
+static void
+remove_own_active_claims()
+{
+    DwString hmy = to_hex(My_UID);
+    vc rows = sql_get_tagged_mids_with_time("_tox_active");
+    for(int i = 0; i < rows.num_elems(); ++i)
+    {
+        DwString m((const char *)rows[i][0], (long)rows[i][0].len());
+        int uscore = m.find_last_of("_");
+        if(uscore < 0 || uscore >= (int)m.length() - 1)
+            continue;
+        DwString tail(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
+        if(tail == hmy)
+            sql_remove_mid_tag(rows[i][0], "_tox_active");
+    }
+}
+
+// publish a _tox_active claim for the given pubkey on behalf of this device.
+static void
+publish_active_claim(const vc &pubkey)
+{
+    vc ph = to_hex(pubkey);
+    if(ph.is_nil())
+        return;
+    // replace any existing claim for this identity.
+    vc rows = sql_get_tagged_mids_with_time("_tox_active");
+    DwString prefix = ph;
+    prefix += "_";
+    for(int i = 0; i < rows.num_elems(); ++i)
+    {
+        DwString m((const char *)rows[i][0], (long)rows[i][0].len());
+        if(m.find(prefix.c_str()) == 0)
+            sql_remove_mid_tag(rows[i][0], "_tox_active");
+    }
+    DwString mid;
+    mid += ph;
+    mid += "_";
+    mid += to_hex(My_UID);
+    safe_add_crdt_tag(vc(VC_BSTRING, mid.c_str(), (long)mid.length()), "_tox_active");
+}
+
+// check whether a different device currently holds the claim for my tox
+// identity. if so, shut down and emit the disable-by-remote event.
+// resolution is last-writer-wins on (time, uid_hex): the newest claim wins
+// for a given identity.
+void
+tox_bridge_check_active_conflict()
+{
+    if(!Started || !Tox_plugin)
+        return;
+    static long long last_check = 0;
+    long long now = time(0);
+    if(now - last_check < 1)
+        return;
+    last_check = now;
+    vc ph = tox_self_pubkey_hex();
+    if(ph.is_nil())
+        return;
+    DwString prefix = ph;
+    prefix += "_";
+    vc rows = sql_get_tagged_mids_with_time("_tox_active");
+    DwString hmy = to_hex(My_UID);
+
+    // scan all claims for our identity, tracking the newest one (time, uid).
+    long long best_time = -1;
+    DwString best_tail;
+    for(int i = 0; i < rows.num_elems(); ++i)
+    {
+        DwString m((const char *)rows[i][0], (long)rows[i][0].len());
+        if(m.find(prefix.c_str()) != 0)
+            continue;
+        int uscore = m.find_last_of("_");
+        if(uscore < 0 || uscore >= (int)m.length() - 1)
+            continue;
+        DwString tail(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
+        long long t = 0;
+        if(rows[i].num_elems() > 1)
+            t = (long long)rows[i][1];
+        if(t > best_time || (t == best_time && best_tail < tail))
+        {
+            best_time = t;
+            best_tail = tail;
+        }
+    }
+    if(best_tail.length() > 0 && best_tail != hmy)
+    {
+        GRTLOG("tox bridge: identity claimed by another device, disabling", 0, 0);
+        tox_bridge_shutdown();
+        remove_own_active_claims();
+        se_emit(SE_TOX_DISABLED_BY_REMOTE, vcnil);
+    }
+}
+
 void
 tox_bridge_cleanup_incomplete()
 {
@@ -1192,6 +1493,11 @@ tox_bridge_poll()
         return;
 
     toxp_iterate(Tox_plugin);
+
+    // if another device activated our tox identity, disable ourselves.
+    tox_bridge_check_active_conflict();
+    if(!Started)
+        return;
 
     // reset stale in-progress text-only messages so they get retried
     // (handles lost read receipts). file transfers are one-shot and must

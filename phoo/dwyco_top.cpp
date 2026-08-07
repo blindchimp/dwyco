@@ -696,6 +696,16 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         emit TheDwycoCore->tox_connection_status_changed(0);
         reload_conv_list();
         break;
+    case DWYCO_SE_TOX_DISABLED_BY_REMOTE:
+        // another device activated this tox identity, so this device was
+        // told to stop using it.
+        TheDwycoCore->set_tox_enabled(false);
+        TheDwycoCore->update_tox_connected(0);
+        emit TheDwycoCore->tox_connection_status_changed(0);
+        TheDwycoCore->set_local_setting("tox_enabled", "0");
+        emit TheDwycoCore->tox_disabled_by_remote();
+        reload_conv_list();
+        break;
     case DWYCO_SE_TOX_FRIEND_NAME:
         // tox friend name changed — re-resolve display name
         emit TheDwycoCore->sys_uid_resolved(huid);
@@ -3208,6 +3218,48 @@ DwycoCore::tox_export_profile(const QString& path)
     int ret = dwyco_tox_export_profile(bpath.constData(), err_buf, sizeof(err_buf));
     if(ret)
         return QString();
+    return QString::fromUtf8(err_buf);
+}
+
+bool
+DwycoCore::tox_publish_save()
+{
+    return dwyco_tox_publish_save() != 0;
+}
+
+QVariantList
+DwycoCore::tox_list_saves()
+{
+    QVariantList out;
+    DWYCO_LIST saves = 0;
+    if(!dwyco_tox_list_saves(&saves))
+        return out;
+    simple_scoped l(saves);
+    int rows = l.rows();
+    for(int i = 0; i < rows; ++i)
+    {
+        QVariantMap m;
+        // "000" = composite tag mid as hex text, "001" = pubkey hex, "002" = size
+        m["mid"] = QString::fromLatin1(l.get<QByteArray>(i, "000"));
+        m["pubkey"] = QString::fromLatin1(l.get<QByteArray>(i, "001"));
+        m["size"] = (qint64)l.get_long(i, "002");
+        out.append(m);
+    }
+    return out;
+}
+
+QString
+DwycoCore::tox_select_save(const QString& midText)
+{
+    QByteArray bmid = midText.toLatin1();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_select_save(bmid.constData(), bmid.length(), err_buf, sizeof(err_buf));
+    if(ret)
+    {
+        reload_conv_list();
+        emit tox_import_finished();
+        return QString();
+    }
     return QString::fromUtf8(err_buf);
 }
 

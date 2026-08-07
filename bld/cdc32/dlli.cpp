@@ -9767,6 +9767,33 @@ dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
 
 DWYCOEXPORT
 int
+dwyco_tox_publish_save()
+{
+    return dwyco::tox_bridge_publish_save();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_list_saves(DWYCO_LIST *list_out)
+{
+    vc saves = dwyco::tox_bridge_list_saves();
+    if(saves.is_nil())
+        return 0;
+    if(list_out)
+        *list_out = (DWYCO_LIST)new vc(saves);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_select_save(const char *mid_hex, int mid_hex_len, char *err_buf, int err_buf_len)
+{
+    vc mid(VC_BSTRING, mid_hex, (long)mid_hex_len);
+    return dwyco::tox_bridge_select_save(mid, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_get_self_public_key(char **out, int *len_out)
 {
     return dwyco::tox_bridge_get_self_public_key(out, len_out);

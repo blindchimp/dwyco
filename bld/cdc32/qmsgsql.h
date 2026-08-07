@@ -56,6 +56,8 @@ void sql_remove_tag(vc tag);
 void sql_remove_mid_tag(vc mid, vc tag);
 vc sql_get_tagged_mids(vc tag);
 vc sql_get_tagged_mids2(vc tag);
+// like sql_get_tagged_mids2 but returns rows of (mid, time) sorted by time
+vc sql_get_tagged_mids_with_time(vc tag);
 vc sql_get_tagged_mids_older_than(vc tag, int days);
 vc sql_get_tagged_idx(vc tag, int order_by_tag_time);
 int sql_mid_has_tag(vc mid, vc tag);

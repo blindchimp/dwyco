@@ -59,6 +59,15 @@ void tox_bridge_poll();
 vc tox_bridge_get_address();
 vc tox_bridge_get_pubkey();
 
+// synced-profile management (group-shared tox saves via CRDT tags):
+// publish the live profile's save bytes to the group; list available synced
+// saves; activate one (replacing the local profile); resolve conflicts so only
+// one device runs a given tox identity at a time.
+int tox_bridge_publish_save();
+vc tox_bridge_list_saves();
+int tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len);
+void tox_bridge_check_active_conflict();
+
 // contact management
 int tox_bridge_friend_add(const vc &address, const vc &message);
 int tox_bridge_friend_add_norequest(const vc &pubkey);

@@ -90,6 +90,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_TOX_TYPING,
     DWYCO_SE_TOX_FRIEND_USER_STATUS,
     DWYCO_SE_TOX_AVATAR,
+    DWYCO_SE_TOX_DISABLED_BY_REMOTE,
     -1,
 };
 
@@ -539,6 +540,16 @@ se_process()
             break;
 
         case SE_TOX_CRASHED:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_DISABLED_BY_REMOTE:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            0, 0,

@@ -191,6 +191,8 @@ QMsgSql::init_schema_fav()
     sql_simple("insert into static_crdt_tags values('_tox_friend')");
     sql_simple("insert into static_crdt_tags values('_tox_device')");
     sql_simple("insert into static_crdt_tags values('_tox')");
+    sql_simple("insert into static_crdt_tags values('_tox_save')");
+    sql_simple("insert into static_crdt_tags values('_tox_active')");
     commit_transaction();
 }
 
@@ -1612,6 +1614,8 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_tox_friend')");
     sql_simple("insert into static_uid_tags values('_tox_device')");
     sql_simple("insert into static_uid_tags values('_tox')");
+    sql_simple("insert into static_uid_tags values('_tox_save')");
+    sql_simple("insert into static_uid_tags values('_tox_active')");
 
     // this is just a scratch table, i put it up here to avoid "create temp"
     // during normal operations...
@@ -3082,6 +3086,28 @@ sql_get_tagged_mids2(vc tag)
     {
         sql_start_transaction();
         res = sql_simple("select distinct(mid) from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)",
+                         tag);
+        sql_commit_transaction();
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        res = vc(VC_VECTOR);
+    }
+    return res;
+}
+
+// this returns all mids with given tag regardless of download state,
+// as (mid, time) rows ordered by time ascending (oldest first).
+vc
+sql_get_tagged_mids_with_time(vc tag)
+{
+    vc res;
+    try
+    {
+        sql_start_transaction();
+        res = sql_simple("select mid, time from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid) "
+                         "group by mid order by time asc",
                          tag);
         sql_commit_transaction();
     }
