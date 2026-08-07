@@ -1220,8 +1220,10 @@ tox_bridge_publish_save()
 vc
 tox_bridge_list_saves()
 {
-    vc mids = sql_get_tagged_mids2("_tox_save");
     vc out(VC_VECTOR);
+    if(!sql_is_initialized())
+        return out;
+    vc mids = sql_get_tagged_mids2("_tox_save");
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         DwString m((const char *)mids[i][0], (long)mids[i][0].len());

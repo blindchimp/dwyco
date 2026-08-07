@@ -28,6 +28,7 @@ Page {
     property string importFile: ""
     property string importPw: ""
     property bool pwTick: false
+    property bool hasPw: profileHasPassword()
 
     function profileHasPassword() {
         return core.tox_has_profile_password()
@@ -52,6 +53,7 @@ Page {
         origStatus = toxStatusInput.text_input
         autoInitToxIdentity()
         pwTick = !pwTick
+        hasPw = profileHasPassword()
         ToxFriendModel.load_friends()
         var curStatus = core.tox_get_user_status()
         var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
@@ -134,6 +136,14 @@ Page {
         }
         function onTox_import_finished() {
             refreshToxIdentity()
+            refreshToxAvatar()
+            syncedSaveList.currentIndex = -1
+            syncedSaveList.syncedSavesModel = core.tox_list_saves()
+            if(core.tox_needs_password()) {
+                unlockPwInput.text = ""
+                unlockError.text = ""
+                unlockDialog.open()
+            }
         }
         function onTox_avatar_changed() {
             refreshToxAvatar()
@@ -142,7 +152,10 @@ Page {
             refreshToxAvatar()
         }
         function onTox_enabledChanged() {
+            enable_tox_cb.checked = core.tox_enabled
             refreshToxAvatar()
+            if(core.tox_enabled)
+                refreshToxIdentity()
         }
         function onTox_disabled_by_remote() {
             disabledByRemoteDialog.open()
@@ -534,7 +547,7 @@ Page {
                 }
 
                 Button {
-                    text: profileHasPassword() ? "Change Password" : "Set Password"
+                    text: hasPw ? "Change Password" : "Set Password"
                     onClicked: {
                         setPwInput.text = ""
                         setPwConfirmInput.text = ""
@@ -546,7 +559,7 @@ Page {
 
                 Button {
                     text: "Remove Password"
-                    visible: profileHasPassword()
+                    visible: hasPw
                     onClicked: {
                         removePwInput.text = ""
                         removePwError.text = ""
@@ -585,7 +598,7 @@ Page {
 
                             Button {
                 text: "Refresh"
-                onClicked: syncedSavesModel = core.tox_list_saves()
+                onClicked: syncedSaveList.syncedSavesModel = core.tox_list_saves()
             }
 
             Item {
@@ -595,7 +608,7 @@ Page {
 
         ListView {
             id: syncedSaveList
-            property var syncedSavesModel: core.tox_list_saves()
+            property var syncedSavesModel: core.tox_enabled ? core.tox_list_saves() : []
             model: syncedSaveList.syncedSavesModel
             enabled: core.tox_enabled
             visible: core.tox_enabled
@@ -603,33 +616,57 @@ Page {
             Layout.preferredHeight: mm(20)
             clip: true
             spacing: mm(1)
+            currentIndex: -1
+            highlight: Rectangle {
+                color: amber_accent
+                opacity: 0.3
+            }
+            highlightMoveDuration: 200
             ScrollBar.vertical: ScrollBar { }
-            delegate: ColumnLayout {
+            delegate: Item {
                 width: ListView.view.width
-                spacing: mm(0.5)
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: mm(1)
-                    Label {
-                        text: "ID " + modelData.pubkey.substring(0, 12) + "..."
-                        font.family: "monospace"
-                        font.pixelSize: 10
-                        Layout.fillWidth: true
-                    }
-                    Label {
-                        text: modelData.size + " B"
-                        font.pixelSize: 10
+                height: mm(9)
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: syncedSaveList.currentIndex = index
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    color: "transparent"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: mm(1)
+                        spacing: mm(1)
+
+                        Label {
+                            text: "ID " + modelData.pubkey.substring(0, 12) + "..."
+                            font.family: "monospace"
+                            font.pixelSize: 10
+                            Layout.fillWidth: true
+                        }
+                        Label {
+                            text: modelData.size + " B"
+                            font.pixelSize: 10
+                        }
                     }
                 }
-                Button {
-                    text: "Use This Profile"
-                    Layout.fillWidth: true
-                    onClicked: {
-                        confirmSelectSave.mid = modelData.mid
-                        confirmSelectSave.pubkey = modelData.pubkey
-                        confirmSelectDialog.open()
-                    }
-                }
+            }
+        }
+
+        Button {
+            text: "Use This Profile"
+            visible: core.tox_enabled
+            enabled: core.tox_enabled && syncedSaveList.currentIndex >= 0
+            Layout.fillWidth: true
+            onClicked: {
+                var m = syncedSaveList.model[syncedSaveList.currentIndex]
+                confirmSelectSave.mid = m.mid
+                confirmSelectSave.pubkey = m.pubkey
+                confirmSelectDialog.open()
             }
         }
     }
@@ -704,13 +741,13 @@ Page {
 
         onAccepted: {
             var err = core.tox_select_save(confirmSelectSave.mid)
-            if(err.length > 0)
+            if(err.length > 0) {
                 syncResultsText.text = "Select failed: " + err
-            else {
+                syncResultsDialog.open()
+            } else if(!core.tox_needs_password()) {
                 syncResultsText.text = "Profile activated."
-                syncedSaveList.syncedSavesModel = core.tox_list_saves()
+                syncResultsDialog.open()
             }
-            syncResultsDialog.open()
         }
     }
 
@@ -1035,7 +1072,7 @@ Page {
                 echoMode: TextInput.Password
                 placeholderText: "Current password"
                 Layout.fillWidth: true
-                visible: profileHasPassword()
+                visible: hasPw
             }
 
             TextField {
@@ -1093,6 +1130,7 @@ Page {
                         }
                         if(core.tox_set_profile_password(setPwInput.text)) {
                             pwTick = !pwTick
+                            hasPw = profileHasPassword()
                             setPwDialog.close()
                         } else {
                             setPwError.text = "Could not set password."
@@ -1158,6 +1196,7 @@ Page {
                         }
                         if(core.tox_set_profile_password("")) {
                             pwTick = !pwTick
+                            hasPw = profileHasPassword()
                             removePwDialog.close()
                         } else {
                             removePwError.text = "Could not remove password."
