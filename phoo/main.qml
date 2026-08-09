@@ -127,16 +127,16 @@ ApplicationWindow {
     property int qt_application_state: 0
     property bool is_mobile
     property bool hard_close: false
-    property real safeTop: {
-        if (Qt.platform.os !== "android" && Qt.platform.os !== "ios") return 0
-        var h = Screen.safeAreaMargins.top
-        return h > 0 ? h : Screen.pixelDensity * 24
-    }
-    property real safeBottom: {
-        if (Qt.platform.os !== "android" && Qt.platform.os !== "ios") return 0
-        var h = Screen.safeAreaMargins.bottom
-        return h > 0 ? h : Screen.pixelDensity * 24
-    }
+    // system bar safe area insets (status bar / navigation bar). edge-to-edge
+    // is enforced on android api 35+ when targeting sdk 36, so without this
+    // the qt quick content draws underneath the system bars. the QtQuick
+    // SafeArea attached type (qt 6.9+) reflects the window insets reported by
+    // the platform, and reports zero on desktop and once an ancestor has laid
+    // out its children inside the safe area.
+    property real safeTop: is_mobile ? contentItem.SafeArea.margins.top : 0
+    property real safeBottom: is_mobile ? contentItem.SafeArea.margins.bottom : 0
+    property real safeLeft: is_mobile ? contentItem.SafeArea.margins.left : 0
+    property real safeRight: is_mobile ? contentItem.SafeArea.margins.right : 0
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
     // let's be serious, ca 2024 there is no practical choice regarding distribution
@@ -202,6 +202,13 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
+    // on mobile the window content extends edge-to-edge under the transparent
+    // system bars. the default Material window background is white, which shows
+    // through as a white strip behind the status/nav bars (and white icons on
+    // white). paint the window itself in the brand color so the strip above the
+    // status bar and below the nav bar matches the app and the (white) icons
+    // contrast properly.
+    color: is_mobile ? primary_dark : Material.backgroundColor
     title: {
         qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
                                                  " (" + core.active_group_name + " " + core.percent_synced + "%)" :
@@ -906,6 +913,8 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.topMargin: safeTop
         anchors.bottomMargin: safeBottom
+        anchors.leftMargin: safeLeft
+        anchors.rightMargin: safeRight
         visible: {pwdialog.allow_access === 1}
         onDepthChanged: {
             if(depth === 1)
@@ -1155,6 +1164,8 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.topMargin: safeTop
         anchors.bottomMargin: safeBottom
+        anchors.leftMargin: safeLeft
+        anchors.rightMargin: safeRight
         color: "orange"
         z: 10
         RowLayout {
@@ -1185,6 +1196,8 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.topMargin: safeTop
         anchors.bottomMargin: safeBottom
+        anchors.leftMargin: safeLeft
+        anchors.rightMargin: safeRight
         color: "yellow"
         z: 10
         RowLayout {
