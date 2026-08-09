@@ -1119,7 +1119,9 @@ ApplicationWindow {
                     themsglist.reload_model()
 
                 }
-
+                if(status === DwycoCore.MSG_SEND_FAIL && core.is_tox_uid(recipient)) {
+                    chatbox.showToast("Tox message could not be sent (likely it is too long.)")
+                }
             }
         }
 

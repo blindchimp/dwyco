@@ -55,6 +55,7 @@ static inline ssize_t pwrite_compat(int fd, const void *buf, size_t count, long 
 
 // toxcore error codes — only the ones we check on the bridge side
 #define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
+#define TOX_MAX_MESSAGE_LENGTH 1372
 
 namespace dwyco {
 
@@ -1873,6 +1874,8 @@ tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_acti
     uint32_t fn;
     if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
         return 0;
+    if(text.len() > TOX_MAX_MESSAGE_LENGTH)
+        return 0;
     vc local_mid = to_hex(gen_id());
     vc body = make_msg_body(My_UID, text);
     vc qqm(VC_VECTOR);
@@ -1926,14 +1929,14 @@ tox_bridge_send_queued()
     uint32_t fn;
     if(!tox_pseudo_uid_to_friend_number(recipient_pseudo, &fn))
     {
-        Tox_q->mark_failed(row_id);
+        Tox_q->remove_message(local_mid);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         return;
     }
     vc qqm_blob = Tox_q->load_qqm_blob(row_id);
     if(qqm_blob.is_nil())
     {
-        Tox_q->mark_failed(row_id);
+        Tox_q->remove_message(local_mid);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         return;
     }
@@ -2008,7 +2011,7 @@ tox_bridge_send_queued()
     else if(ret == 0)
     {
         // permanent failure
-        Tox_q->mark_failed(row_id);
+        Tox_q->remove_message(local_mid);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         GRTLOG("tox: send permanent failure, error=%d", tox_error, 0);
     }
