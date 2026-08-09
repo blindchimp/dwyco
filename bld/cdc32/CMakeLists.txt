@@ -46,7 +46,7 @@ if(ANDROID)
 	set(EXTRA_FILES glob/glob.c winemu.cc linid.cpp dwybg_wrap.c)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glob)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/winemu)
-	add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
+	add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=8000)
 endif()
 
 
@@ -68,6 +68,7 @@ add_compile_definitions(
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
 )
+
 
 add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 # i forgot, adding this tracing stuff confuses the shit
