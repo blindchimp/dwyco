@@ -29,7 +29,19 @@ Page {
     property string android_img_filename
     property int ind_typing: 0
 
-    function can_send_to(uid) {
+    function utf8len(s) {
+        var len = 0
+        for (var i = 0; i < s.length; i++) {
+            var c = s.charCodeAt(i)
+            if (c < 0x80) len += 1
+            else if (c < 0x800) len += 2
+            else if (c < 0xD800 || c > 0xDFFF) len += 3
+            else { i++; len += 4 }
+        }
+        return len
+    }
+
+    function can_send_to(uid, msg) {
         if (!core.is_tox_uid(uid))
             return true
         if (!core.tox_enabled) {
@@ -37,8 +49,13 @@ Page {
             return false
         }
         for (var i = 0; i < ToxFriendModel.count; i++) {
-            if (ToxFriendModel.get(i).pubkey.substring(0, 20) === uid)
+            if (ToxFriendModel.get(i).pubkey.substring(0, 20) === uid) {
+                if (utf8len(core.strip_html(msg)) > 1372) {
+                    showToast("Tox message could not be sent (likely it is too long.)")
+                    return false
+                }
                 return true
+            }
         }
         showToast("Tox contact not in current friend list. Message cannot be delivered.")
         return false
@@ -1130,7 +1147,7 @@ Page {
 
         onAccepted: {
             if(textField1.length > 0) {
-                if(!can_send_to(to_uid))
+                if(!can_send_to(to_uid, textField1.text))
                     return
                 core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.start_control(to_uid)
@@ -1225,7 +1242,7 @@ Page {
 
         //text: "send"
         onClicked: {
-            if(!can_send_to(to_uid))
+            if(!can_send_to(to_uid, textField1.text))
                 return
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
