@@ -16,6 +16,7 @@
 #include <QAbstractItemModelTester>
 #endif
 #include <QSet>
+#include <QStringList>
 
 void hack_unread_count();
 void reload_conv_list();
@@ -147,6 +148,38 @@ ConvListModel::at_least_one_selected()
     }
     return false;
 
+}
+
+QString
+ConvListModel::selected_display_names(int max_n) const
+{
+    QStringList names;
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+            names.append(c->get_display());
+    }
+    if(names.size() <= max_n)
+        return names.join(", ");
+    QString out = names.mid(0, max_n).join(", ");
+    out += " and " + QString::number(names.size() - max_n) + " more";
+    return out;
+}
+
+int
+ConvListModel::selected_count() const
+{
+    int n = 0;
+    int total = count();
+    for(int i = 0; i < total; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+            ++n;
+    }
+    return n;
 }
 
 
@@ -557,6 +590,24 @@ ConvSortFilterModel::at_least_one_selected()
         ::abort();
     return m->at_least_one_selected();
 
+}
+
+QString
+ConvSortFilterModel::selected_display_names()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_display_names();
+}
+
+int
+ConvSortFilterModel::get_selected_count()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_count();
 }
 
 void

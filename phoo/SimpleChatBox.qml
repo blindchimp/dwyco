@@ -510,6 +510,7 @@ Page {
                         MenuItem {
                             text: "Trash msgs..."
                             onTriggered: {
+                                confirm_trash.text = "Trash ALL (including HIDDEN) msgs from " + core.uid_to_name(to_uid) + "?"
                                 confirm_trash.visible = true
                             }
                             MessageYN {

@@ -422,6 +422,7 @@ ApplicationWindow {
         MenuItem {
             text: "Block and Delete user"
             onTriggered: {
+                confirm_block_delete.text = "Delete ALL messages from " + core.uid_to_name(chatbox.to_uid) + " and BLOCK them?"
                 confirm_block_delete.visible = true
             }
             MessageYN {
