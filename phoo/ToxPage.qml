@@ -683,6 +683,7 @@ Page {
             width: parent.width
 
             Label {
+                id: deleteFriendLabel
                 text: "Delete this friend and remove them from your contact list?"
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -692,6 +693,24 @@ Page {
                 id: trashMessagesCb
                 text: "Also trash all messages with this friend"
                 checked: false
+            }
+
+            Label {
+                text: "This will also TRASH all messages with this friend."
+                color: "red"
+                visible: trashMessagesCb.checked
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+        }
+
+        onOpened: {
+            var f = ToxFriendModel.get(friendList.currentIndex)
+            if(f) {
+                var nm = f.name
+                if(nm === "")
+                    nm = "(no name)"
+                deleteFriendLabel.text = "Delete friend \"" + nm + "\" (" + f.pubkey.substring(0, 8) + ") and remove them from your contact list?"
             }
         }
 

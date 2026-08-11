@@ -43,9 +43,23 @@ Menu {
     MenuItem {
         text: "Delete forever"
         onTriggered: {
-            core.delete_message(uid, mid)
-            themsglist.invalidate_model_filter()
-            stack.pop()
+            confirm_delete.text = "Delete this message from " + core.uid_to_name(uid) + " FOREVER on ALL devices?"
+            confirm_delete.visible = true
+        }
+        MessageYN {
+            id: confirm_delete
+            title: "Delete forever?"
+            text: "Delete this message forever?"
+            informativeText: "No UNDO"
+            onYesClicked: {
+                core.delete_message(uid, mid)
+                themsglist.invalidate_model_filter()
+                stack.pop()
+                close()
+            }
+            onNoClicked: {
+                close()
+            }
         }
     }
     MenuItem {

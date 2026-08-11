@@ -9,6 +9,7 @@
 #include "toxfriendmodel.h"
 #include "dlli.h"
 #include "dwycolist2.h"
+#include "getinfo.h"
 
 ToxFriendModel::ToxFriendModel(QObject *parent) :
     QQmlObjectListModel<ToxFriend>(parent, QByteArray(), "pubkey")
@@ -42,7 +43,10 @@ ToxFriendModel::load_friends()
             append(f);
         }
         f->update_friend_number(fn);
-        f->update_name(qfl.get<QByteArray>(i, DWYCO_TF_NAME));
+        QString nm = QString::fromUtf8(qfl.get<QByteArray>(i, DWYCO_TF_NAME));
+        if(nm.trimmed().isEmpty())
+            nm = dwyco_info_to_display(pk.left(10));
+        f->update_name(nm);
         f->update_status(qfl.get<QByteArray>(i, DWYCO_TF_STATUS));
         f->update_user_status(qfl.get<QByteArray>(i, DWYCO_TF_USER_STATUS));
         f->update_counter = cnt;

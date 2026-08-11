@@ -13,12 +13,28 @@ Menu {
         text: queued ? "Cancel send" : "Trash msg"
         onTriggered: {
             if(queued) {
-                core.delete_message(uid, mid)
+                confirm_cancel_send.text = "Cancel sending this message to " + core.uid_to_name(uid) + "? The unsent message will be DELETED."
+                confirm_cancel_send.visible = true
             } else {
                 core.set_tag_message(mid, "_trash")
+                themsglist.reload_model()
+                stack.pop()
             }
-            themsglist.reload_model()
-            stack.pop()
+        }
+        MessageYN {
+            id: confirm_cancel_send
+            title: "Cancel send?"
+            text: "Cancel sending this message?"
+            informativeText: "The unsent message will be DELETED. (No UNDO)"
+            onYesClicked: {
+                core.delete_message(uid, mid)
+                themsglist.reload_model()
+                stack.pop()
+                close()
+            }
+            onNoClicked: {
+                close()
+            }
         }
     }
 

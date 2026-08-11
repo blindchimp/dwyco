@@ -385,15 +385,29 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
+                                confirm_clear.visible = true
+                            }
+                            MessageYN {
+                                id: confirm_clear
+                                title: "Clear msgs?"
+                                text: "Delete ALL (non-FAVORITE) messages from " + core.uid_to_name(chatbox.to_uid) + "?"
+                                informativeText: "This KEEPS FAVORITE messages."
 
-                                themsglist.reload_model()
+                                onYesClicked: {
+                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNoClicked: {
+                                    close()
+                                }
                             }
                         }
 
                         MenuItem {
                             text: "Delete user"
                             onTriggered: {
+                                confirm_delete.text = "Delete ALL messages from " + core.uid_to_name(chatbox.to_uid) + "?"
                                 confirm_delete.visible = true
                             }
                             MessageDialog {

@@ -89,7 +89,7 @@ public:
         audio_poll_timer->setTimerType(Qt::PreciseTimer);
         audio_poll_timer->setSingleShot(false);
         connect(audio_poll_timer, SIGNAL(timeout()), this, SLOT(qt_pushmore()));
-        audio_poll_timer->start(10);
+        audio_poll_timer->start(5);
     }
 
     ~mumble() {
@@ -173,10 +173,12 @@ public slots:
 
 
         audio_output = new QAudioSink(af);
-        audio_output->setBufferSize(3 * AUDBUF_LEN);
+        audio_output->setBufferSize(AUDBUF_LEN);
+        qDebug() << "QAudioSink requested buffer:" << AUDBUF_LEN << "bytes";
         connect(audio_output, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handle_stateChange(QAudio::State)));
         audio_output->setVolume(1.0);
         qio_dev = audio_output->start();
+        qDebug() << "QAudioSink actual bufferSize:" << audio_output->bufferSize() << "bytesFree:" << audio_output->bytesFree();
 
     }
 
