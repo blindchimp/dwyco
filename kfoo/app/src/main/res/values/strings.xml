@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kfoo</string>
+
+    <string name="status_connecting">Connecting…</string>
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_creating">Creating account…</string>
+    <string name="status_init">Initializing…</string>
+
+    <string name="new_account_title">Create your account</string>
+    <string name="handle_hint">Handle</string>
+    <string name="email_hint">Email</string>
+    <string name="create_account">Create account</string>
+
+    <string name="conversations_title">Conversations</string>
+    <string name="no_conversations">No conversations yet</string>
+
+    <string name="message_hint">Message</string>
+    <string name="send">Send</string>
+    <string name="back">Back</string>
+    <string name="my_uid">My UID: %1$s</string>
+</resources>
