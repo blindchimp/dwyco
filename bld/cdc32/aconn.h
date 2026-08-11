@@ -15,6 +15,7 @@
 namespace dwyco {
 
 void init_aconn();
+void aconn_exit();
 void turn_accept_off();
 void turn_accept_on();
 void poll_listener();
