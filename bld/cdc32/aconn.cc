@@ -350,6 +350,15 @@ init_aconn()
 
 }
 
+void
+aconn_exit()
+{
+    stop_broadcaster();
+    stop_discover();
+    set_listen_state(0);
+    Inhibit_accept = 0;
+}
+
 static
 vc
 strip_port(vc ip)

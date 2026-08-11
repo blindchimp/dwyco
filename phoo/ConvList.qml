@@ -68,6 +68,7 @@ Page {
                 MenuItem {
                     text: "Block and delete"
                     onTriggered: {
+                        confirm_delete.text = "Delete ALL messages from " + ConvListModel.selected_display_names() + " and BLOCK them?"
                         confirm_delete.visible = true
                     }
                     MessageYN {

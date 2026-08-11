@@ -703,7 +703,26 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_FRIEND_STATUS:
         // tox friend online/offline — re-resolve display
         emit TheDwycoCore->sys_uid_resolved(huid);
-        emit TheDwycoCore->tox_friend_status_changed(huid, QString::fromUtf8(namestr));
+        {
+            QString status = QString::fromUtf8(namestr);
+            emit TheDwycoCore->tox_friend_status_changed(huid, status);
+            // plink when a pal tox contact transitions to online (a uid can be
+            // favorited/pal'd like any other). batching is handled so a burst of
+            // friends coming online at once (e.g. first login) yields just one sound.
+            if(status == "online")
+            {
+                if(!TheDwycoCore->m_tox_online_uids.contains(huid))
+                {
+                    TheDwycoCore->m_tox_online_uids.insert(huid);
+                    if(TheDwycoCore->get_pal(huid))
+                        TheDwycoCore->schedule_tox_plink();
+                }
+            }
+            else if(status == "offline")
+            {
+                TheDwycoCore->m_tox_online_uids.remove(huid);
+            }
+        }
         break;
     case DWYCO_SE_TOX_TYPING:
     {
@@ -2682,6 +2701,24 @@ DwycoCore::get_pal(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     return dwyco_is_pal(buid.constData(), buid.length());
+}
+
+void
+DwycoCore::schedule_tox_plink()
+{
+    if(!m_tox_plink_timer)
+    {
+        m_tox_plink_timer = new QTimer(this);
+        m_tox_plink_timer->setSingleShot(true);
+        m_tox_plink_timer->setInterval(700);
+        connect(m_tox_plink_timer, &QTimer::timeout, this, [this]() {
+            emit pal_came_online();
+        });
+    }
+    // if a burst of pals is coming online, keep the (already running) timer
+    // so only a single pal_came_online is emitted once it finally elapses.
+    if(!m_tox_plink_timer->isActive())
+        m_tox_plink_timer->start();
 }
 
 void

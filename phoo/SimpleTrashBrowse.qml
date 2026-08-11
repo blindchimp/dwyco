@@ -73,6 +73,7 @@ Page {
                 MenuItem {
                     text: "Delete forever"
                     onTriggered: {
+                        confirm_delete.text = "Delete " + model.get_selected_count() + " selected msgs on ALL devices?"
                         confirm_delete.visible = true
                     }
                     MessageYN {
@@ -192,6 +193,7 @@ Page {
                         MenuItem {
                             text: "Empty Trash"
                             onTriggered: {
+                                confirm_empty.text = "Delete ALL " + model.rowCount() + " trashed msgs on ALL devices?"
                                 confirm_empty.visible = true
                             }
                             MessageYN {

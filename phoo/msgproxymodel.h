@@ -48,6 +48,7 @@ public:
     Q_INVOKABLE void tag_all_selected(QByteArray tag);
     Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE int get_selected_count();
 
     int mid_to_index(QByteArray mid);
 public slots:

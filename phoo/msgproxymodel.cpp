@@ -162,6 +162,12 @@ msgproxy_model::at_least_one_selected()
 	return selected.count() > 0;
 }
 
+int
+msgproxy_model::get_selected_count()
+{
+    return selected.count();
+}
+
 // forwarded data operations
 
 void

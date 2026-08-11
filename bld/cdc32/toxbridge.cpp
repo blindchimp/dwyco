@@ -55,6 +55,7 @@ static inline ssize_t pwrite_compat(int fd, const void *buf, size_t count, long 
 
 // toxcore error codes — only the ones we check on the bridge side
 #define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
+#define TOX_MAX_MESSAGE_LENGTH 1372
 
 namespace dwyco {
 
@@ -209,7 +210,7 @@ fail_outgoing(const vc &local_mid)
     vc res = Tox_q->sql_simple("SELECT recipient_pseudo FROM tox_outbox WHERE local_mid=?1", local_mid);
     vc recip;
     if(!res.is_nil() && res.num_elems() > 0)
-        recip = res[0][0];
+        recip = from_hex(res[0][0]);
     se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recip);
 }
 
@@ -442,7 +443,7 @@ process_tox_event(const char *type, const vc &args)
             if(!tox_friend_number_to_pseudo_uid(fn, pseudo))
                 pseudo = vcnil;
             if(!pseudo.is_nil())
-                pseudo = vcblob(pseudo);
+                pseudo = to_hex(pseudo);
             vc res = Tox_q->sql_simple(
                 "SELECT id, local_mid, qqm_blob FROM tox_outbox "
                 "WHERE recipient_pseudo=?1 AND tox_mid=?2 AND status=1",
@@ -1652,14 +1653,14 @@ ToxQueue::init_schema(const DwString&)
     sql_simple("CREATE TABLE IF NOT EXISTS tox_outbox ("
                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                "qqm_blob BLOB, "
-               "recipient_pseudo BLOB, "
+               "recipient_pseudo TEXT, "
                "status INTEGER DEFAULT 0, "
                "tox_mid INTEGER, "
                "local_mid TEXT, "
                "has_file INTEGER DEFAULT 0, "
                "created_at INTEGER DEFAULT (strftime('%s','now')))");
     sql_simple("CREATE TABLE IF NOT EXISTS tox_avatars ("
-               "uid         BLOB PRIMARY KEY, "
+               "uid         TEXT PRIMARY KEY, "
                "avatar_data BLOB, "
                "avatar_hash BLOB, "
                "time        INTEGER DEFAULT (strftime('%s','now')))");
@@ -1699,13 +1700,36 @@ ToxQueue::init_schema(const DwString&)
     }
     if(!has_col)
         (void)sql_simple("ALTER TABLE tox_outbox ADD COLUMN has_file INTEGER DEFAULT 0");
+    // migration: convert legacy binary pseudo-uid columns to hex.
+    // new rows store the 10-byte pseudo uid as 20 hex chars; any row that
+    // is not 20 chars is treated as legacy binary and hex-encoded in place.
+    {
+        vc bin_outbox = sql_simple("SELECT id, recipient_pseudo FROM tox_outbox "
+                                   "WHERE recipient_pseudo IS NOT NULL "
+                                   "AND length(recipient_pseudo) != 20");
+        for(int i = 0; i < bin_outbox.num_elems(); ++i)
+        {
+            vc hex_uid = to_hex(bin_outbox[i][1]);
+            sql_simple("UPDATE tox_outbox SET recipient_pseudo=?1 WHERE id=?2",
+                       hex_uid, bin_outbox[i][0]);
+        }
+        vc bin_avatar = sql_simple("SELECT uid FROM tox_avatars "
+                                   "WHERE uid IS NOT NULL "
+                                   "AND length(uid) != 20");
+        for(int i = 0; i < bin_avatar.num_elems(); ++i)
+        {
+            vc hex_uid = to_hex(bin_avatar[i][0]);
+            sql_simple("UPDATE tox_avatars SET uid=?1 WHERE uid=?2",
+                       hex_uid, vcblob(bin_avatar[i][0]));
+        }
+    }
 }
 
 int
 ToxQueue::enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file)
 {
     vc blob_arg = vcblob(qqm_blob);
-    vc pseudo_arg = vcblob(recipient_pseudo);
+    vc pseudo_arg = to_hex(recipient_pseudo);
     vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, recipient_pseudo, status, local_mid, has_file) "
                         "VALUES (?1, ?2, 0, ?3, ?4)",
                         blob_arg, pseudo_arg, local_mid, vc(has_file));
@@ -1721,7 +1745,7 @@ ToxQueue::dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id)
         return vcnil;
     vc row = res[0];
     if(row_id) *row_id = (int64_t)(long long)row[0];
-    if(recipient_pseudo_out) *recipient_pseudo_out = row[1];
+    if(recipient_pseudo_out) *recipient_pseudo_out = from_hex(row[1]);
     if(local_mid_out) *local_mid_out = row[2];
     return vctrue;
 }
@@ -1792,7 +1816,7 @@ ToxQueue::get_qd_msgs(const vc &pseudo_uid)
         rows = sql_simple("SELECT local_mid, recipient_pseudo, qqm_blob "
                           "FROM tox_outbox WHERE recipient_pseudo=?1 "
                           "AND status IN (0,1,3) ORDER BY id",
-                          vcblob(pseudo_uid));
+                          to_hex(pseudo_uid));
     if(rows.is_nil())
         return ret;
     int n = rows.num_elems();
@@ -1805,7 +1829,7 @@ ToxQueue::get_qd_msgs(const vc &pseudo_uid)
         vc qqm;
         deserialize(blob, qqm);
         vc v(VC_VECTOR);
-        v[0] = recipient;
+        v[0] = from_hex(recipient);
         v[1] = local_mid;
         v[2] = qqm[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
         v[3] = qqm[QQM_MSG_VEC][QQM_BODY_ATTACHMENT];
@@ -1833,14 +1857,14 @@ ToxQueue::save_tox_avatar(const vc &uid, const vc &avatar_data, const vc &avatar
 {
     vc res = sql_simple("INSERT OR REPLACE INTO tox_avatars (uid, avatar_data, avatar_hash, time) "
                         "VALUES (?1, ?2, ?3, strftime('%s','now'))",
-                        vcblob(uid), vcblob(avatar_data), vcblob(avatar_hash));
+                        to_hex(uid), vcblob(avatar_data), vcblob(avatar_hash));
     return !res.is_nil();
 }
 
 vc
 ToxQueue::load_tox_avatar(const vc &uid)
 {
-    vc res = sql_simple("SELECT avatar_data FROM tox_avatars WHERE uid=?1", vcblob(uid));
+    vc res = sql_simple("SELECT avatar_data FROM tox_avatars WHERE uid=?1", to_hex(uid));
     if(res.is_nil() || res.num_elems() == 0)
         return vcnil;
     return res[0][0];
@@ -1849,7 +1873,7 @@ ToxQueue::load_tox_avatar(const vc &uid)
 int
 ToxQueue::has_tox_avatar_hash(const vc &uid, const vc &avatar_hash)
 {
-    vc res = sql_simple("SELECT avatar_hash FROM tox_avatars WHERE uid=?1", vcblob(uid));
+    vc res = sql_simple("SELECT avatar_hash FROM tox_avatars WHERE uid=?1", to_hex(uid));
     if(res.is_nil() || res.num_elems() == 0)
         return 0;
     vc stored = res[0][0];
@@ -1861,7 +1885,7 @@ ToxQueue::has_tox_avatar_hash(const vc &uid, const vc &avatar_hash)
 int
 ToxQueue::delete_tox_avatar(const vc &uid)
 {
-    vc res = sql_simple("DELETE FROM tox_avatars WHERE uid=?1", vcblob(uid));
+    vc res = sql_simple("DELETE FROM tox_avatars WHERE uid=?1", to_hex(uid));
     return !res.is_nil();
 }
 
@@ -1872,6 +1896,8 @@ tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_acti
         return 0;
     uint32_t fn;
     if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    if(text.len() > TOX_MAX_MESSAGE_LENGTH)
         return 0;
     vc local_mid = to_hex(gen_id());
     vc body = make_msg_body(My_UID, text);
@@ -1926,14 +1952,14 @@ tox_bridge_send_queued()
     uint32_t fn;
     if(!tox_pseudo_uid_to_friend_number(recipient_pseudo, &fn))
     {
-        Tox_q->mark_failed(row_id);
+        Tox_q->remove_message(local_mid);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         return;
     }
     vc qqm_blob = Tox_q->load_qqm_blob(row_id);
     if(qqm_blob.is_nil())
     {
-        Tox_q->mark_failed(row_id);
+        Tox_q->remove_message(local_mid);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         return;
     }
@@ -2008,7 +2034,7 @@ tox_bridge_send_queued()
     else if(ret == 0)
     {
         // permanent failure
-        Tox_q->mark_failed(row_id);
+        Tox_q->remove_message(local_mid);
         se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
         GRTLOG("tox: send permanent failure, error=%d", tox_error, 0);
     }
@@ -2034,7 +2060,7 @@ tox_bridge_kill_message(const vc &local_mid)
                                 local_mid);
     if(res.is_nil() || res.num_elems() == 0)
         return 0;
-    vc recipient = res[0][0];
+    vc recipient = from_hex(res[0][0]);
 
     // cancel any active file transfer for this message
     for(auto it = Outgoing_xfers.begin(); it != Outgoing_xfers.end(); )
