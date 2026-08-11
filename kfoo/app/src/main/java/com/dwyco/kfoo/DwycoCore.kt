@@ -31,10 +31,37 @@ object DwycoCore : NativeEvents {
         listener = l
     }
 
+    private val assetNames = listOf(
+        "dwyco.dh", "dsadwyco.pub", "license.txt", "no_img.png",
+        "online.wav", "relaxed-call.wav", "relaxed-incoming.wav",
+        "relaxed-online.wav", "relaxed-zap.wav",
+        "space-call.wav", "space-incoming.wav", "space-online.wav",
+        "space-zap.wav", "v21.ver", "zap.wav"
+    )
+
+    private fun provisionDataDir(context: Context, userDir: File) {
+        userDir.mkdirs()
+        for (name in assetNames) {
+            context.assets.open(name).use { input ->
+                File(userDir, name).outputStream().use { output -> input.copyTo(output) }
+            }
+        }
+        val servers2 = File(userDir, "servers2")
+        if (!servers2.exists()) {
+            context.assets.open("servers2").use { input ->
+                servers2.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
+    }
+
     fun init(context: Context): Boolean {
         if (initialized) return true
-        val userDir = File(context.filesDir, "dwyco").absolutePath
-        val tmpDir = File(context.cacheDir, "dwyco/tmp").absolutePath
+        val userFile = File(context.filesDir, "dwyco")
+        val tmpFile = File(context.cacheDir, "dwyco/tmp")
+        provisionDataDir(context, userFile)
+        tmpFile.mkdirs()
+        val userDir = userFile.absolutePath
+        val tmpDir = tmpFile.absolutePath
         DwycoNative.nativeSetEventSink(this)
         val ok = DwycoNative.nativeInit(null, userDir, tmpDir) != 0
         if (!ok) return false

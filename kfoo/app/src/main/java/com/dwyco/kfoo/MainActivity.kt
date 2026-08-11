@@ -42,6 +42,7 @@ class MainActivity : Activity(), DwycoCore.CoreListener {
             startActivity(Intent(this, ChatActivity::class.java).putExtra(ChatActivity.EXTRA_UID, uid))
         }
         bootstrapBtn.setOnClickListener { doBootstrap() }
+        handleInput.setText("Ktest")
 
         DwycoCore.setListener(this)
         if (!DwycoCore.init(this)) {
@@ -69,8 +70,8 @@ class MainActivity : Activity(), DwycoCore.CoreListener {
     private fun doBootstrap() {
         val handle = handleInput.text.toString().trim()
         val email = emailInput.text.toString().trim()
-        if (handle.isEmpty() || email.isEmpty()) {
-            Toast.makeText(this, "Enter a handle and email", Toast.LENGTH_SHORT).show()
+        if (handle.isEmpty()) {
+            Toast.makeText(this, "Enter a handle", Toast.LENGTH_SHORT).show()
             return
         }
         statusText.text = getString(R.string.status_creating)
