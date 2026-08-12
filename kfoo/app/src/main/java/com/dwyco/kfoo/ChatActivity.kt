@@ -64,6 +64,7 @@ class ChatActivity : Activity(), DwycoCore.CoreListener {
     }
 
     private fun refreshMessages() {
+        DwycoCore.fetchPendingMessages(peerUid)
         val msgs = DwycoCore.loadMessages(peerUid)
         messages.clear()
         messages.addAll(msgs.map { (if (it.isSent) "You: " else "Them: ") + it.text })

@@ -23,6 +23,7 @@ class MainActivity : Activity(), DwycoCore.CoreListener {
 
     private val conversations = mutableListOf<String>()
     private lateinit var adapter: ArrayAdapter<String>
+    private var chatServerSwitched = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +85,8 @@ class MainActivity : Activity(), DwycoCore.CoreListener {
         conversations.clear()
         conversations.addAll(uids)
         adapter.notifyDataSetChanged()
+        for (uid in uids)
+            DwycoCore.fetchPendingMessages(uid)
         statusText.text = if (uids.isEmpty())
             getString(R.string.no_conversations)
         else
@@ -96,6 +99,10 @@ class MainActivity : Activity(), DwycoCore.CoreListener {
         if (success) {
             bootstrapForm.visibility = View.GONE
             refreshConversations()
+            if (!chatServerSwitched) {
+                chatServerSwitched = true
+                DwycoCore.switchToChatServer(0)
+            }
         }
     }
 

@@ -19,6 +19,7 @@ object DwycoEvents {
     const val USER_UID_RESOLVED = 10
     const val USER_PROFILE_INVALIDATE = 11
     const val USER_MSG_IDX_UPDATED = 12
+    const val USER_MSG_IDX_UPDATED_PREPEND = 13
     const val MSG_SEND_START = 14
     const val MSG_SEND_FAIL = 15
     const val MSG_SEND_SUCCESS = 16
@@ -35,10 +36,12 @@ object DwycoNative {
     external fun nativeIsNewAccount(): Int
     external fun nativeBootstrap(handle: String, email: String): Int
     external fun nativeStartup(): Int
+    external fun nativeSwitchToChatServer(index: Int): Int
     external fun nativeServiceChannels(): Int
     external fun nativeSendText(uidHex: String, text: String): Int
     external fun nativeGetConversations(): Array<String>
     external fun nativeGetMessages(uidHex: String): Array<String>
+    external fun nativeFetchPendingMessages(uidHex: String): Int
     external fun nativeGetMyUid(): String
     external fun nativeExit(): Int
 }

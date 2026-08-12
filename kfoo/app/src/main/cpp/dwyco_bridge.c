@@ -169,6 +169,7 @@ login_result_cb(const char *str, int what)
     if(env)
     {
         jstring js = js_bytes(env, str, str ? (int)strlen(str) : 0, 0);
+        LOGE("login_result what=%d str=%s", what, str ? str : "(null)");
         (*env)->CallVoidMethod(env, g_sink, g_m_login, js, what);
         (*env)->DeleteLocalRef(env, js);
     }
@@ -301,6 +302,14 @@ Java_com_dwyco_kfoo_DwycoNative_nativeStartup(JNIEnv *env, jobject thiz)
 }
 
 JNIEXPORT jint JNICALL
+Java_com_dwyco_kfoo_DwycoNative_nativeSwitchToChatServer(JNIEnv *env, jobject thiz, jint index)
+{
+    int r = dwyco_switch_to_chat_server(index);
+    LOGE("switch_to_chat_server(%d) -> %d", index, r);
+    return r;
+}
+
+JNIEXPORT jint JNICALL
 Java_com_dwyco_kfoo_DwycoNative_nativeServiceChannels(JNIEnv *env, jobject thiz)
 {
     int spin = 0;
@@ -331,6 +340,75 @@ Java_com_dwyco_kfoo_DwycoNative_nativeSendText(JNIEnv *env, jobject thiz,
     (*env)->ReleaseStringUTFChars(env, uidHex, huid);
     (*env)->ReleaseStringUTFChars(env, text, txt);
     return compid;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dwyco_kfoo_DwycoNative_nativeFetchPendingMessages(JNIEnv *env, jobject thiz, jstring uidHex)
+{
+    const char *huid = (*env)->GetStringUTFChars(env, uidHex, 0);
+    char bin[64];
+    int blen = hex_decode(huid, bin, sizeof bin);
+    DWYCO_MSG_IDX mi = 0;
+    int rows = 0;
+    int i;
+    int fetched = 0;
+    if(blen > 0 && dwyco_get_message_index(&mi, bin, blen))
+    {
+        dwyco_list_numelems(mi, &rows, 0);
+        for(i = 0; i < rows; ++i)
+        {
+            const char *out;
+            int len, type;
+            char midbuf[256];
+            if(dwyco_list_get(mi, i, DWYCO_MSG_IDX_MID, &out, &len, &type) &&
+               type != DWYCO_TYPE_NIL && len < (int)sizeof midbuf)
+            {
+                DWYCO_SAVED_MSG_LIST sm;
+                memcpy(midbuf, out, len);
+                midbuf[len] = 0;
+                if(dwyco_get_saved_message3(&sm, midbuf) != DWYCO_GSM_SUCCESS)
+                {
+                    if(dwyco_fetch_server_message(midbuf, 0, 0, 0, 0) != 0)
+                        ++fetched;
+                }
+                else
+                    dwyco_list_release(sm);
+            }
+        }
+        dwyco_list_release(mi);
+    }
+    {
+        DWYCO_UNFETCHED_MSG_LIST uml;
+        if(dwyco_get_unfetched_messages(&uml, 0, 0))
+        {
+            int urows = 0;
+            dwyco_list_numelems(uml, &urows, 0);
+            for(i = 0; i < urows; ++i)
+            {
+                const char *out;
+                int len, type;
+                if(dwyco_list_get(uml, i, DWYCO_QMS_ID, &out, &len, &type) &&
+                   type != DWYCO_TYPE_NIL && len < (int)sizeof bin)
+                {
+                    char midbuf[256];
+                    DWYCO_SAVED_MSG_LIST sm;
+                    memcpy(midbuf, out, len);
+                    midbuf[len] = 0;
+                    if(dwyco_get_saved_message3(&sm, midbuf) != DWYCO_GSM_SUCCESS)
+                    {
+                        if(dwyco_fetch_server_message(midbuf, 0, 0, 0, 0) != 0)
+                            ++fetched;
+                    }
+                    else
+                        dwyco_list_release(sm);
+                }
+            }
+            dwyco_list_release(uml);
+        }
+    }
+    LOGE("fetch_pending_messages(%s) fetched=%d", huid, fetched);
+    (*env)->ReleaseStringUTFChars(env, uidHex, huid);
+    return fetched;
 }
 
 JNIEXPORT jobjectArray JNICALL

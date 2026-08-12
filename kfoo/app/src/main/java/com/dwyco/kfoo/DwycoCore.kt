@@ -96,6 +96,9 @@ object DwycoCore : NativeEvents {
     fun bootstrap(handle: String, email: String): Int =
         DwycoNative.nativeBootstrap(handle, email)
 
+    fun switchToChatServer(index: Int = 0): Int =
+        DwycoNative.nativeSwitchToChatServer(index)
+
     fun sendText(uidHex: String, text: String): Int =
         DwycoNative.nativeSendText(uidHex, text)
 
@@ -110,6 +113,9 @@ object DwycoCore : NativeEvents {
             else null
         }
 
+    fun fetchPendingMessages(uidHex: String): Int =
+        DwycoNative.nativeFetchPendingMessages(uidHex)
+
     fun exit() {
         running = false
         DwycoNative.nativeExit()
@@ -122,7 +128,11 @@ object DwycoCore : NativeEvents {
     override fun onSystemEvent(cmd: Int, id: Int, uidHex: String, name: String, type: Int, value: String, qid: Int, extra: Int) {
         mainHandler.post {
             when (cmd) {
-                DwycoEvents.USER_MSG_RECEIVED -> listener?.onNewMessage(uidHex)
+                DwycoEvents.USER_MSG_RECEIVED,
+                DwycoEvents.USER_ADD,
+                DwycoEvents.USER_MSG_IDX_UPDATED,
+                DwycoEvents.USER_MSG_IDX_UPDATED_PREPEND,
+                DwycoEvents.MSG_DOWNLOAD_OK -> listener?.onNewMessage(uidHex)
                 DwycoEvents.USER_UID_RESOLVED -> listener?.onResolvedName(uidHex, name)
             }
         }
