@@ -1365,8 +1365,16 @@ main(int argc, char **argv)
 #include "toxd_plugin.h"
 
 ToxPlugin *
-toxp_init(const char *, ToxpEventCB, void *)
+toxp_init(const char *save_file, const uint8_t *password, int password_len,
+          ToxpEventCB cb, void *userdata, int *status_out)
 {
+    (void)save_file;
+    (void)password;
+    (void)password_len;
+    (void)cb;
+    (void)userdata;
+    if(status_out)
+        *status_out = TOXP_STATUS_FAILED;
     return nullptr;
 }
 
@@ -1388,6 +1396,70 @@ toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_b
     (void)dst_path;
     if(err_buf && err_buf_len > 0)
         snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                    uint8_t **out_data, size_t *out_len,
+                    char *err_buf, int err_buf_len)
+{
+    (void)src_path;
+    (void)src_pw;
+    (void)src_pw_len;
+    if(out_data)
+        *out_data = NULL;
+    if(out_len)
+        *out_len = 0;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
+                   const uint8_t *dst_pw, int dst_pw_len,
+                   char *err_buf, int err_buf_len)
+{
+    (void)save_file;
+    (void)data;
+    (void)len;
+    (void)dst_pw;
+    (void)dst_pw_len;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
+{
+    (void)p;
+    (void)pw;
+    (void)pw_len;
+    return 0;
+}
+
+int
+toxp_has_password(ToxPlugin *p)
+{
+    (void)p;
+    return 0;
+}
+
+int
+toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
+{
+    (void)save_file;
+    (void)pw;
+    (void)pw_len;
+    return 0;
+}
+
+int
+toxp_file_is_encrypted(const char *path)
+{
+    (void)path;
     return 0;
 }
 
@@ -1530,6 +1602,27 @@ toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size,
     (void)name;
     (void)size;
     (void)fnum_out;
+    return 0;
+}
+
+int
+toxp_file_send_avatar(ToxPlugin *p, uint32_t fn, const vc &hash, uint64_t size,
+                      uint32_t *fnum_out)
+{
+    (void)p;
+    (void)fn;
+    (void)hash;
+    (void)size;
+    (void)fnum_out;
+    return 0;
+}
+
+int
+toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out)
+{
+    (void)p;
+    (void)data;
+    (void)hash_out;
     return 0;
 }
 
