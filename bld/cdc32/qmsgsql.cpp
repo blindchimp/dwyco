@@ -3239,6 +3239,18 @@ sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
     try
     {
         //sql_start_transaction();
+        vc any_msgs = sql_simple(
+                        with_create_uidset(1)
+                        "select 1 from gi where assoc_uid in (select * from uidset) "
+                        "and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                        "limit 1",
+                        to_hex(uid)
+                        );
+        if(any_msgs.num_elems() != 1)
+        {
+            //sql_commit_transaction();
+            return 0;
+        }
 #if 0
         vc res = sql_simple(
                     with_create_uidset(2) ","

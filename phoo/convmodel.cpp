@@ -22,7 +22,7 @@ void hack_unread_count();
 void reload_conv_list();
 
 ConvListModel *TheConvListModel;
-static QSet<QString> s_tox_friend_prefixes;
+static QSet<QByteArray> s_tox_friend_prefixes;
 
 void
 Conversation::load_external_state(const QByteArray& uid)
@@ -75,7 +75,7 @@ ConvListModel::refresh_tox_friend_cache()
     for(int i = 0; i < n; ++i)
     {
         QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
-        QString pkhex = pk.toHex();
+        QByteArray pkhex = pk.toHex();
         if(pkhex.length() >= 20)
             s_tox_friend_prefixes.insert(pkhex.left(20));
     }
@@ -428,6 +428,16 @@ ConvListModel::load_users_to_model()
         c->update_counter = cnt;
     }
 #endif
+
+    // add all tox friends, even if they don't have any messages
+    // extant.
+    for (auto i = s_tox_friend_prefixes.cbegin(), end = s_tox_friend_prefixes.cend(); i != end; ++i)
+    {
+        Conversation *c = add_uid_to_model(QByteArray::fromHex(*i));
+        c->update_counter = cnt;
+    }
+
+
 
     // find removed items
     // there is probably a faster way of doing this, but
