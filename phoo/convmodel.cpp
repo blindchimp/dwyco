@@ -327,15 +327,32 @@ ConvListModel::block_all_selected()
 }
 
 void
+ConvListModel::new_msg_received(QString huid, QString txt, QString mid)
+{
+    QByteArray uid = QByteArray::fromHex(huid.toLatin1());
+    Conversation *c = getByUid(huid);
+    if(!c)
+        add_uid_to_model(uid);
+    decorate(huid, txt, mid);
+}
+
+void
+ConvListModel::new_msg_uid(QString huid)
+{
+    QByteArray uid = QByteArray::fromHex(huid.toLatin1());
+    Conversation *c = getByUid(huid);
+    if(!c)
+        add_uid_to_model(uid);
+    decorate(huid, "", "");
+}
+
+void
 ConvListModel::decorate(QString huid, QString txt, QString mid)
 {
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
     Conversation *c = getByUid(huid);
     if(!c)
-    {
-        add_uid_to_model(uid);
         return;
-    }
     //int cnt = uid_unviewed_msgs_count(uid);
     //c->update_unseen_count(cnt);
     c->update_any_unread(uid_has_unviewed_msgs(uid));

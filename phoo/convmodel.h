@@ -92,6 +92,8 @@ public slots:
     // clear the internal cache of images that may refer to uid's profile.
     void uid_invalidate_profile(const QString& huid);
     void uid_resolved(const QString& huid);
+    void new_msg_received(QString huid, QString txt, QString mid);
+    void new_msg_uid(QString huid);
     void decorate(QString huid, QString txt, QString mid);
     void decorate(QString huid);
 };
