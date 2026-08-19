@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SRC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEPS_DIR="$SCRIPT_DIR/tox-deps"
 TC_SRC="$SRC_DIR/../c-toxcore"
-SODIUM_SRC="$SCRIPT_DIR/_build_sodium_src"
+SODIUM_SRC="$HOME/git/libsodium-cmake"
 
 ABIS="armeabi-v7a arm64-v8a x86 x86_64"
 
@@ -32,8 +32,8 @@ fi
 
 # --- libsodium via robinlinden/libsodium-cmake (pure CMake, no autotools) ---
 if [ ! -d "$SODIUM_SRC" ]; then
-    echo "=== Cloning libsodium-cmake ==="
-    git clone --recursive https://github.com/robinlinden/libsodium-cmake.git "$SODIUM_SRC"
+    echo "ERROR: libsodium-cmake not found at $SODIUM_SRC — please ensure it exists before running this script."
+    exit 1
 fi
 
 for ABI in $ABIS; do
