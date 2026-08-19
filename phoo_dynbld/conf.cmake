@@ -2,7 +2,7 @@ set(DWYCO_APP "phoo")
 set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
 
-option(DWYCO_TOXCORE "Build with toxcore support" OFF)
+option(DWYCO_TOXCORE "Build with toxcore support" ON)
 if(DWYCO_TOXCORE)
     add_compile_definitions(DWYCO_TOXCORE)
 endif()
