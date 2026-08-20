@@ -287,6 +287,7 @@ SimpleSql::sync_off()
     int tmp = check_txn;
     check_txn = 0;
     sql_simple("pragma synchronous=off;");
+    sql_simple("pragma foreign_keys=on;");
     check_txn = tmp;
 }
 
