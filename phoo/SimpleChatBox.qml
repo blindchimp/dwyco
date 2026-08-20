@@ -226,6 +226,13 @@ Page {
                         height: parent.height
 
                     }
+                    ToxBadge {
+                        friendUid: chatbox_page.to_uid
+                        anchors.right: top_toolbar_img.right
+                        anchors.bottom: top_toolbar_img.bottom
+                        width: .3 * top_toolbar_img.height
+                        height: .3 * top_toolbar_img.height
+                    }
                     Text {
                         id: top_toolbar_text
                         //width: dp(160)
