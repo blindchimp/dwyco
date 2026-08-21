@@ -1334,33 +1334,28 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             if(tag == ign)
                 reload_ignore = true;
             static vc tox_friend("_tox_friend");
-            if(tag == tox_friend)
+            // note: the mid is hex(pseudo_uid) and the friend's display name
+            // rides along in the tag payload. tags sent by old clients carry
+            // no payload and are ignored.
+            if(tag == tox_friend && !payload.is_nil())
             {
-                DwString m((const char *)mid);
-                int uscore = m.find_first_of("_");
-                if(uscore > 0 && uscore < m.length() - 1)
+                vc uid = from_hex(mid);
+                vc name = payload;
+                if(!uid.is_nil() && name != vc(""))
                 {
-                    DwString uid_hex(m.c_str(), 0, uscore);
-                    DwString name_hex = m;
-                    name_hex.erase(0, uscore + 1);
-                    vc uid = from_hex(vc(VC_BSTRING, uid_hex.c_str(), uid_hex.length()));
-                    vc name = from_hex(vc(VC_BSTRING, name_hex.c_str(), name_hex.length()));
-                    if(!uid.is_nil() && !name.is_nil())
-                    {
-                        vc info(VC_VECTOR);
-                        info[QIR_FROM] = uid;
-                        info[QIR_HANDLE] = name;
-                        info[QIR_EMAIL] = "";
-                        info[QIR_USER_SPECED_ID] = "";
-                        info[QIR_FIRST] = "";
-                        info[QIR_LAST] = "";
-                        info[QIR_DESCRIPTION] = "";
-                        info[QIR_LOCATION] = "";
-                        Session_infos.add_kv(uid, info);
-                        vc hex_uid = to_hex(uid);
-                        if(!sql_mid_has_tag(hex_uid, "_tox"))
-                            sql_add_tag(hex_uid, "_tox");
-                    }
+                    vc info(VC_VECTOR);
+                    info[QIR_FROM] = uid;
+                    info[QIR_HANDLE] = name;
+                    info[QIR_EMAIL] = "";
+                    info[QIR_USER_SPECED_ID] = "";
+                    info[QIR_FIRST] = "";
+                    info[QIR_LAST] = "";
+                    info[QIR_DESCRIPTION] = "";
+                    info[QIR_LOCATION] = "";
+                    Session_infos.add_kv(uid, info);
+                    vc hex_uid = to_hex(uid);
+                    if(!sql_mid_has_tag(hex_uid, "_tox"))
+                        sql_add_tag(hex_uid, "_tox");
                 }
             }
         }
@@ -1390,15 +1385,10 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             static vc tox_friend("_tox_friend");
             if(tag == tox_friend)
             {
-                DwString m((const char *)mid);
-                int uscore = m.find_first_of("_");
-                if(uscore > 0 && uscore < m.length() - 1)
-                {
-                    DwString uid_hex(m.c_str(), 0, uscore);
-                    vc uid = from_hex(vc(VC_BSTRING, uid_hex.c_str(), uid_hex.length()));
-                    if(!uid.is_nil())
-                        Session_infos.del(uid);
-                }
+                // note: the mid is hex(pseudo_uid)
+                vc uid = from_hex(mid);
+                if(!uid.is_nil())
+                    Session_infos.del(uid);
             }
         }
         else
@@ -1695,6 +1685,15 @@ init_qmsg_sql()
     sql_simple("delete from mt.gmt where guid in (select guid from gtomb)");
     // in case payload got orphaned, probably because of debugging
     sql_simple("delete from mt.gmt_payload where guid in (select guid from gtomb)");
+
+    // old versions of the tox bridge encoded extra info in tag mids
+    // ("hex(pseudo_uid)_hex(name)"). those tags now keep only hex(pseudo_uid)
+    // in the mid and carry the name in the payload, so get rid of the
+    // old-style rows. hex mids never contain '_', so this is precise.
+    // note: current_clients is empty here, so no taglog entries are made,
+    // but the rows get tombstoned locally so sync imports won't bring
+    // them back. every client does this same cleanup on its own at init.
+    sql_simple("delete from mt.gmt where (tag = '_tox_friend' or tag = '_tox_mid') and instr(mid, '_') > 0");
 
     sql_commit_transaction();
     // this happens one time, the sql file names are changed and old
@@ -3036,12 +3035,15 @@ sql_add_tag(vc mid, vc tag, vc payload)
 
 // returns the payload associated with a tag item, or vcnil if the tag
 // has no payload (or doesn't exist / is tombstoned).
+// note: if a mid has multiple tag rows for the same tag (eg. a tox friend
+// was renamed), the most recently added row wins.
 vc
 sql_get_tag_payload(vc mid, vc tag)
 {
     vc res = sql_simple("select gp.payload from gmt, mt.gmt_payload as gp using(guid) "
-                "where mid = ?1 and tag = ?2 "
-                "and not exists(select 1 from mt.gtomb where guid = gmt.guid) limit 1", mid, tag);
+                "where gmt.mid = ?1 and tag = ?2 "
+                "and not exists(select 1 from mt.gtomb where guid = gmt.guid) "
+                "order by gmt.time desc limit 1", mid, tag);
     if(res.num_elems() == 0)
         return vcnil;
     return res[0][0];

@@ -318,15 +318,24 @@ send_self_avatar_to(uint32_t fn)
 }
 
 static void
-safe_add_crdt_tag(const vc &mid, const vc &tag)
+safe_add_crdt_tag(const vc &mid, const vc &tag, const vc &payload = vcnil)
 {
     vc existing = sql_get_tagged_mids2(tag);
     for(int i = 0; i < existing.num_elems(); ++i)
     {
         if(existing[i][0] == mid)
-            return;
+        {
+            if(payload.is_nil())
+                return;
+            // note: if the mid is already tagged but with a different
+            // payload (eg. friend renamed), we fall through and add a new
+            // tag row. readers use the latest row.
+            vc pl = sql_get_tag_payload(mid, tag);
+            if(!pl.is_nil() && pl == payload)
+                return;
+        }
     }
-    sql_add_tag(mid, tag);
+    sql_add_tag(mid, tag, payload);
 }
 
 vc
@@ -497,11 +506,7 @@ process_tox_event(const char *type, const vc &args)
             Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
             if(!same)
                 save_info(Session_infos, "sinfo");
-            DwString composite;
-            composite += to_hex(pseudo);
-            composite += "_";
-            composite += to_hex(name);
-            safe_add_crdt_tag(composite, "_tox_friend");
+            safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
         }
 
     } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
@@ -1274,11 +1279,7 @@ tox_bridge_friend_add(const vc &address, const vc &message)
         if(!name.is_nil() && name != vc(""))
         {
             Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
-            DwString composite;
-            composite += to_hex(pseudo);
-            composite += "_";
-            composite += to_hex(name);
-            safe_add_crdt_tag(composite, "_tox_friend");
+            safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
         }
         return 1;
     }
@@ -1305,11 +1306,7 @@ tox_bridge_friend_add_norequest(const vc &pubkey)
         if(!name.is_nil() && name != vc(""))
         {
             Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
-            DwString composite;
-            composite += to_hex(pseudo);
-            composite += "_";
-            composite += to_hex(name);
-            safe_add_crdt_tag(composite, "_tox_friend");
+            safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
         }
         return 1;
     }
@@ -1529,11 +1526,7 @@ tox_bridge_rebuild_friend_cache()
             {
                 vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
                 Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
-                DwString composite;
-                composite += to_hex(pseudo);
-                composite += "_";
-                composite += to_hex(name);
-                safe_add_crdt_tag(composite, "_tox_friend");
+                safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
             }
         }
         GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);
