@@ -23,6 +23,7 @@
 #include "qdirth.h"
 #include "qmsg.h"
 #include "backandroid.h"
+#include "toxbridge.h"
 #include <thread>
 #include <future>
 #include <chrono>
@@ -845,7 +846,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 spin || // service_channels wants us to spin
                 Response_q.num_elems() > 0 || // we have items that need processing now
                 MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
-                dwyco::sproto::any_quick_transitions()
+                dwyco::sproto::any_quick_transitions() ||
+                dwyco::tox_bridge_is_active()
                 //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
                 )
         {
@@ -1240,7 +1242,8 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
             spin || // service_channels wants us to spin
             Response_q.num_elems() > 0 || // we have items that need processing now
             MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
-            dwyco::sproto::any_quick_transitions()
+            dwyco::sproto::any_quick_transitions() ||
+            dwyco::tox_bridge_is_active()
             //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
             )
         {

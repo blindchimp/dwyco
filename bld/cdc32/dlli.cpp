@@ -8479,32 +8479,26 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
     // Fallback for tox friend info synced via CRDT tags
     // (clients without tox enabled)
     {
-        vc mids = sql_get_tagged_mids2("_tox_friend");
-        DwString target((const char *)to_hex(buid));
-        target += "_";
-        for(int i = 0; i < mids.num_elems(); ++i)
+        vc name;
+        if(sql_is_initialized() && sql_mid_has_tag(to_hex(buid), "_tox_friend"))
         {
-            DwString m((const char *)mids[i][0]);
-            if(m.find(target.c_str()) == 0)
-            {
-                DwString name_hex = m;
-                name_hex.erase(0, target.length());
-                vc name = from_hex(vc(VC_BSTRING, name_hex.c_str(), name_hex.length()));
-                if(!name.is_nil() && name != vc(""))
-                    Session_infos.add_kv(buid, dwyco::make_tox_info_vec(buid, name));
-                else
-                    name = to_hex(buid);
-                vc v(VC_VECTOR);
-                v.append(name);
-                v.append("");
-                v.append("");
-                v.append(0);
-                v.append(0);
-                v.append("");
-                vc v1(VC_VECTOR);
-                v1[0] = v;
-                return dwyco_list_from_vc(v1);
-            }
+            // note: the mid is hex(pseudo_uid), the friend's display name
+            // rides along in the tag payload.
+            name = sql_get_tag_payload(to_hex(buid), "_tox_friend");
+            if(!name.is_nil() && name != vc(""))
+                Session_infos.add_kv(buid, dwyco::make_tox_info_vec(buid, name));
+            else
+                name = to_hex(buid);
+            vc v(VC_VECTOR);
+            v.append(name);
+            v.append("");
+            v.append("");
+            v.append(0);
+            v.append(0);
+            v.append("");
+            vc v1(VC_VECTOR);
+            v1[0] = v;
+            return dwyco_list_from_vc(v1);
         }
     }
 
@@ -9988,16 +9982,10 @@ int
 dwyco_uid_is_tox_friend(const char *uid, int len_uid)
 {
     vc buid(VC_BSTRING, uid, len_uid);
-    vc mids = sql_get_tagged_mids2("_tox_friend");
-    DwString target((const char *)to_hex(buid));
-    target += "_";
-    for(int i = 0; i < mids.num_elems(); ++i)
-    {
-        DwString m((const char *)mids[i][0]);
-        if(m.find(target.c_str()) == 0)
-            return 1;
-    }
-    return 0;
+    // note: the mid of a "_tox_friend" tag is just hex(pseudo_uid)
+    if(!sql_is_initialized())
+        return 0;
+    return sql_mid_has_tag(to_hex(buid), "_tox_friend");
 }
 
 DWYCOEXPORT

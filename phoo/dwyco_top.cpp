@@ -2155,7 +2155,8 @@ DwycoCore::init()
     connect(this, SIGNAL(decorate_user(QString)), TheChatListModel, SLOT(decorate(QString)));
     connect(this, SIGNAL(ignore_event(QString)), TheChatListModel, SLOT(ignore_state_change(QString)));
 
-    connect(this, SIGNAL(new_msg(QString,QString,QString)), TheConvListModel, SLOT(decorate(QString,QString,QString)));
+    connect(this, SIGNAL(new_msg(QString,QString,QString)), TheConvListModel, SLOT(new_msg_received(QString,QString,QString)));
+    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(new_msg_uid(QString)));
     connect(this, SIGNAL(decorate_user(QString)), TheConvListModel, SLOT(decorate(QString)));
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheConvListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheConvListModel, SLOT(uid_invalidate_profile(QString)));
