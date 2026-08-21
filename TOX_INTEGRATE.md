@@ -36,7 +36,7 @@ When a pseudo-UID needs to be resolved to a display name, the system tries these
 
 1. **In-memory `Friend_cache`** (static `vc` vector in `toxbridge.cpp`): Full friend list with `{friend_number, pubkey, name, status, user_status}`. Updated each poll cycle.
 2. **`Session_infos` map** (in-memory): Maps `pseudo_uid -> {name, ...}`. Populated from friend cache rebuild and from CRDT tag imports.
-3. **CRDT `_tox_friend` tags** (SQLite message DB): Tags stored as `hex(pseudo_uid) + "_" + hex(name)`, synced across devices. Allows non-tox clients to see tox friend names.
+3. **CRDT `_tox_friend` tags** (SQLite message DB): Tag mid is `hex(pseudo_uid)`, friend name carried in the tag payload, synced across devices. Allows non-tox clients to see tox friend names.
 4. **Fallback**: Display the hex-encoded pseudo-UID if nothing else found.
 
 ### Forward/Reverse Lookups
@@ -159,9 +159,9 @@ Received messages go through `store_direct()` (the normal Dwyco message storage 
 
 ### CRDT Tags for Cross-Device Sync
 
-- `_tox_friend` tag: Composite value `hex(pseudo_uid) + "_" + hex(name)` replicates friend name mappings to all paired devices
+- `_tox_friend` tag: mid is `hex(pseudo_uid)`, the friend's display name rides in the CRDT tag payload. Replicates friend name mappings to all paired devices
 - `_tox_device` tag: Value `hex(My_UID)` identifies the Dwyco UID that has tox enabled
-- These tags are registered as static CRDT tags in `qmsgsql.cpp` and parsed in `import_remote_tupdate()`
+- These tags are registered as static CRDT tags in `qmsgsql.cpp` and processed in `import_remote_tupdate()` (which reads the friend name from the tag payload)
 - Allows non-tox clients on the same account to see tox friend names
 
 ## System Event Definitions
