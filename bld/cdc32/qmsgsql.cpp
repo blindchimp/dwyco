@@ -182,6 +182,14 @@ QMsgSql::init_schema_fav()
     }
     start_transaction();
     sql_simple("create table if not exists mt.static_crdt_tags(tag text primary key on conflict ignore not null on conflict fail)");
+    // note: payloads are opaque blobs that ride along with crdt tag items.
+    // they are keyed by guid, and are ignored by the sync machinery except
+    // for transport. payload is set at tag creation time and is immutable
+    // for a given guid (changing it means re-adding the tag with a new guid).
+    sql_simple("create table if not exists mt.gmt_payload("
+               "guid text not null collate nocase primary key on conflict replace, "
+               "mid text, "
+               "payload blob)");
     sql_simple("insert into static_crdt_tags values('_fav')");
     sql_simple("insert into static_crdt_tags values('_hid')");
     sql_simple("insert into static_crdt_tags values('_ignore')");
@@ -593,6 +601,12 @@ sql_dump_mi()
                "time, "
                "guid "
                "from mt.gmt where tag in (select * from mt.static_crdt_tags) group by guid");
+    // note: payloads ride along with their tag items. old clients never reference
+    // this table when importing a dump, so they ignore it entirely.
+    s.sql_simple("create table dump.msg_payload(guid text collate nocase, mid text not null, payload blob)");
+    s.sql_simple("insert into dump.msg_payload select gp.guid, gp.mid, gp.payload from mt.gmt_payload as gp "
+               "join mt.gmt on gp.guid = gmt.guid "
+               "where gmt.tag in (select * from mt.static_crdt_tags) group by gp.guid");
     s.sql_simple("insert into dump.tomb select * from mt.gtomb");
     //
     s.sql_simple("create table dump.id(delta_id text)");
@@ -714,9 +728,15 @@ package_downstream_sends(const vc& remote_uid)
         // guid's in the tag set (at some point i put the receiving uid in there, so we can get
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
+        //
+        // note: the payload (if any) must come before the op column, since the wire format
+        // requires op to be the last element of the tupdate vector. old clients ignore
+        // the extra element, new clients detect it by the number of elements.
 
-        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
-                             "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
+        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, gp.payload, tl.op from mt.gmt as mt2 "
+                             "join mt.taglog as tl on mt2.mid = tl.mid and mt2.tag = tl.tag "
+                             "left join mt.gmt_payload as gp on gp.guid = mt2.guid "
+                             "where tl.to_uid = ?1 and tl.op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
         const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
@@ -929,6 +949,11 @@ remove_sync_state()
         sql_simple("delete from dir_meta");
         sql_simple("delete from midlog");
         sql_simple("delete from mt.taglog");
+        // don't remove all the payloads, as they may still be referenced from gmt.
+        // the trigger that removes payloads on gmt delete should have gotten
+        // everything properly.
+        //sql_simple("delete from mt.gmt_payload");
+
         sql_simple("delete from deltas");
         sql_commit_transaction();
         // note: we might be getting called while inside a nested
@@ -1062,6 +1087,21 @@ import_remote_mi(const vc& remote_uid)
             update_tags = true;
         s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+
+        // note: only dumps from newer clients have a msg_payload table. old dumps
+        // are imported as before, just without payloads.
+        const vc haspl = s.sql_simple("select 1 from mi2.sqlite_master where type = 'table' and name = 'msg_payload'");
+        if(haspl.num_elems() > 0)
+        {
+            s.sql_simple("insert or ignore into mt.gmt_payload(guid, mid, payload) "
+                         "select guid, mid, payload from mi2.msg_payload "
+                         "where guid in (select guid from mt.gmt)");
+            // note: this is a merge operation, so the following wo AI lines are wrong.
+            // it's ok to limit the import to what guid we currently have, but assuming
+            // the imported guid set covers the totality of guid's is wrong.
+            // AI: get rid of any payloads whose tag row was ignored or removed above
+            // AI: s.sql_simple("delete from mt.gmt_payload where guid not in (select guid from mt.gmt)");
+        }
 
         // probably makes a lot of sense to clean out unknown uid's, if we have
         // an "authoritative" idea what the current group membership is. it will keep
@@ -1258,8 +1298,24 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             const vc& tag = vals[1];
             const vc& tm = vals[2];
             const vc& guid = vals[3];
+            // note: payload is an optional element that rides just before the op.
+            // old clients don't send it, so its presence is detected by the number
+            // of elements. a nil payload means the item has no payload.
+            vc payload;
+            if(vals.num_elems() >= 6)
+                payload = vals[4];
 
-            sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid)", mid, tag, tm, huid, guid);
+            // note: we only keep the payload if the tag row was actually inserted
+            // (first writer wins for a given guid).
+            const vc ins = sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid) returning 1", mid, tag, tm, huid, guid);
+            if(ins.num_elems() > 0 && !payload.is_nil())
+            {
+                // note: wrap in a ("blob", value) vector so embedded 0's survive.
+                vc b(VC_VECTOR);
+                b[0] = "blob";
+                b[1] = payload;
+                sql_simple("insert or replace into mt.gmt_payload (guid, mid, payload) values(?1, ?2, ?3)", guid, mid, b);
+            }
             vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
             {
@@ -1440,6 +1496,12 @@ setup_update_triggers()
     // based on update to mt...
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+    // note: this one must be unconditional (unlike the sync-related triggers in
+    // setup_crdt_triggers, which are only created when in a group), since it is
+    // local hygiene: payload rows must not outlive their gmt rows. all destruction
+    // of gmt rows goes through "delete from gmt", so this covers every path.
+    sql_simple("create temp trigger pgmt_clean after delete on mt.gmt begin "
+               "delete from gmt_payload where guid = old.guid; end");
 #if 0
     sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
@@ -1594,6 +1656,8 @@ init_qmsg_sql()
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
     sql_simple("delete from gi where mid in (select mid from msg_tomb)");
 
+
+
     // triggers use this table when reflecting changes downstream.
     // to disable the trigger, remove the tags from this table
     sql_simple("create temp table crdt_tags(tag text not null)");
@@ -1623,6 +1687,14 @@ init_qmsg_sql()
 
     setup_crdt_triggers();
     setup_update_triggers();
+
+    // clean up tags a little bit. note that this is before we are connected
+    // with anyone, so taglog should not get populated by this, and
+    // the cleanup triggers for payloads are temp, so the payloads should get
+    // cleaned too.
+    sql_simple("delete from mt.gmt where guid in (select guid from gtomb)");
+    // in case payload got orphaned, probably because of debugging
+    sql_simple("delete from mt.gmt_payload where guid in (select guid from gtomb)");
 
     sql_commit_transaction();
     // this happens one time, the sql file names are changed and old
@@ -2926,25 +2998,53 @@ sql_index_all()
 
 static
 void
-sql_insert_record_mt(vc mid, vc tag)
+sql_insert_record_mt(vc mid, vc tag, vc payload)
 {
-    sql_simple("insert into mt.gmt (mid, tag, time, guid, uid) values(?1,?2,strftime('%s','now'), lower(hex(randomblob(10))), ?3)",
-               mid, tag, to_hex(My_UID));
+    vc guid = sql_simple("select lower(hex(randomblob(10)))")[0][0];
+    sql_simple("insert into mt.gmt (mid, tag, time, guid, uid) values(?1,?2,strftime('%s','now'), ?3, ?4)",
+               mid, tag, guid, to_hex(My_UID));
+    if(!payload.is_nil())
+    {
+        // note: wrap in a ("blob", value) vector so the binding layer uses
+        // sqlite3_bind_blob and embedded 0's in the payload are preserved.
+        vc b(VC_VECTOR);
+        b[0] = "blob";
+        b[1] = payload;
+        sql_simple("insert or replace into mt.gmt_payload (guid, mid, payload) values(?1, ?2, ?3)", guid, mid, b);
+    }
 }
 
 void
-sql_add_tag(vc mid, vc tag)
+sql_add_tag(vc mid, vc tag, vc payload)
 {
     try
     {
         sql_start_transaction();
-        sql_insert_record_mt(mid, tag);
+        // testing
+        if(strcmp(tag, "_hid") == 0)
+        {
+            payload = "mumble";
+        }
+        sql_insert_record_mt(mid, tag, payload);
         sql_commit_transaction();
     }
     catch (...)
     {
         sql_rollback_transaction();
     }
+}
+
+// returns the payload associated with a tag item, or vcnil if the tag
+// has no payload (or doesn't exist / is tombstoned).
+vc
+sql_get_tag_payload(vc mid, vc tag)
+{
+    vc res = sql_simple("select gp.payload from gmt, mt.gmt_payload as gp using(guid) "
+                "where mid = ?1 and tag = ?2 "
+                "and not exists(select 1 from mt.gtomb where guid = gmt.guid) limit 1", mid, tag);
+    if(res.num_elems() == 0)
+        return vcnil;
+    return res[0][0];
 }
 
 void
@@ -3026,7 +3126,7 @@ sql_fav_set_fav(vc mid, int fav)
         // make sense, and can lead to a lot of thrashing, so just ignore multiple attempts
         // to create favorites
         if(!sql_fav_is_fav(mid))
-            sql_insert_record_mt(mid, "_fav");
+            sql_insert_record_mt(mid, "_fav", vcnil);
     }
 }
 
