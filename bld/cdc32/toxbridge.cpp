@@ -229,6 +229,22 @@ self_tox_pseudo()
     return tox_pubkey_to_pseudo_uid(pk);
 }
 
+// tag a received tox message with the pseudo_id of the local tox client
+// that received it, so other devices in the device group know which
+// tox client was involved. payload is the raw pseudo_uid.
+// note: mids are unique per message, so plain sql_add_tag is used here
+// (safe_add_crdt_tag would scan every mid carrying this tag).
+static void
+tag_msg_tox_mid(const vc &mid, const vc &sender_pseudo)
+{
+    if(uid_ignored(sender_pseudo))
+        return;
+    vc self = self_tox_pseudo();
+    if(self.is_nil())
+        return;
+    sql_add_tag(mid, "_tox_mid", self);
+}
+
 static void
 cancel_outgoing_avatar_for(uint32_t fn)
 {
@@ -439,6 +455,7 @@ process_tox_event(const char *type, const vc &args)
         qqm[QQM_LOCAL_ID] = to_hex(gen_id());
 
         store_direct(0, qqm, 0);
+        tag_msg_tox_mid(qqm[QQM_LOCAL_ID], pseudo);
 
         se_emit(SE_TOX_MESSAGE, pseudo);
 
@@ -678,6 +695,7 @@ process_tox_event(const char *type, const vc &args)
                 qqm[QQM_LOCAL_ID] = to_hex(gen_id());
 
                 store_direct(0, qqm, 0);
+                tag_msg_tox_mid(qqm[QQM_LOCAL_ID], xfer.pseudo_uid);
                 se_emit(SE_TOX_MESSAGE, xfer.pseudo_uid);
                 GRTLOG("tox: file recv complete fn=%d fnum=%d", fn, fnum);
             }

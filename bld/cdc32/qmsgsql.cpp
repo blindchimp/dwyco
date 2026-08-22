@@ -199,6 +199,7 @@ QMsgSql::init_schema_fav()
     sql_simple("insert into static_crdt_tags values('_tox_friend')");
     sql_simple("insert into static_crdt_tags values('_tox_device')");
     sql_simple("insert into static_crdt_tags values('_tox')");
+    sql_simple("insert into static_crdt_tags values('_tox_mid')");
     commit_transaction();
 }
 
