@@ -8152,6 +8152,20 @@ dwyco_mid_has_tag(const char *mid, const char *tag)
 
 DWYCOEXPORT
 int
+dwyco_get_mid_tag_payload(const char *mid, const char *tag, DWYCO_LIST *payload_out)
+{
+    if(!payload_out || !mid || !*mid || !tag || !*tag)
+        return 0;
+    vc res = sql_get_tag_payload(vc(mid), vc(tag));
+    vc v(VC_VECTOR);
+    v[0] = res;
+    *payload_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+
+DWYCOEXPORT
+int
 dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
 {
     vc buid(VC_BSTRING, uid, len_uid);
