@@ -115,6 +115,7 @@ struct OutgoingFileTransfer {
     DwString original_filename;
     int64_t row_id;
     vc local_mid;
+    vc recipient_pseudo;
     uint32_t tox_fn;
     uint32_t tox_fnum;
 };
@@ -229,20 +230,66 @@ self_tox_pseudo()
     return tox_pubkey_to_pseudo_uid(pk);
 }
 
-// tag a received tox message with the pseudo_id of the local tox client
-// that received it, so other devices in the device group know which
+// tag a tox message with the pseudo_id of the local tox client that
+// sent or received it, so other devices in the device group know which
 // tox client was involved. payload is the raw pseudo_uid.
+// peer_pseudo is the friend's pseudo uid on either side of the exchange,
+// used only to skip ignored uids.
 // note: mids are unique per message, so plain sql_add_tag is used here
 // (safe_add_crdt_tag would scan every mid carrying this tag).
 static void
-tag_msg_tox_mid(const vc &mid, const vc &sender_pseudo)
+tag_msg_tox_mid(const vc &mid, const vc &peer_pseudo)
 {
-    if(uid_ignored(sender_pseudo))
+    if(uid_ignored(peer_pseudo))
         return;
     vc self = self_tox_pseudo();
     if(self.is_nil())
         return;
     sql_add_tag(mid, "_tox_mid", self);
+}
+
+// first-run backfill: messages stored under a tox friend's uid before
+// _tox_mid tagging existed get attributed to this device's tox client.
+// idempotent: mids that already carry the tag are skipped, so later
+// runs find nothing to do.
+static void
+backfill_tox_mid_tags()
+{
+    if(!sql_is_initialized())
+        return;
+    vc self = self_tox_pseudo();
+    if(self.is_nil() || Friend_cache.is_nil())
+        return;
+    int n = Friend_cache.num_elems();
+    int ntagged = 0;
+    try
+    {
+        qmsgsql::sql_start_transaction();
+        for(int i = 0; i < n; ++i)
+        {
+            vc entry = Friend_cache[i];
+            vc pubkey;
+            if(!entry.find("pubkey", pubkey))
+                continue;
+            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+            if(pseudo.is_nil() || uid_ignored(pseudo))
+                continue;
+            vc mids = sql_untagged_mids_at_uid(pseudo, "_tox_mid");
+            for(int j = 0; j < mids.num_elems(); ++j)
+            {
+                sql_add_tag(mids[j], "_tox_mid", self);
+                ++ntagged;
+            }
+        }
+        qmsgsql::sql_commit_transaction();
+    }
+    catch(...)
+    {
+        qmsgsql::sql_rollback_transaction();
+        GRTLOG("tox: backfill of _tox_mid tags failed", 0, 0);
+        return;
+    }
+    GRTLOG("tox: backfilled %d messages with _tox_mid", ntagged, 0);
 }
 
 static void
@@ -487,6 +534,7 @@ process_tox_event(const char *type, const vc &args)
                     if(save_info(qqm, tmpfn))
                     {
                         do_local_store(tmpfn, local_mid);
+                        tag_msg_tox_mid(local_mid, from_hex(pseudo));
                         unlink(newfn(tmpfn).c_str());
                     }
                 }
@@ -799,6 +847,7 @@ process_tox_event(const char *type, const vc &args)
                         if(save_info(qqm, tmpfn))
                         {
                                 do_local_store(tmpfn, xfer.local_mid);
+                                tag_msg_tox_mid(xfer.local_mid, xfer.recipient_pseudo);
                                 DeleteFile(newfn(tmpfn).c_str());
                         }
                     }
@@ -987,6 +1036,7 @@ tox_bridge_init(const char *save_file)
     if(!self_pseudo.is_nil())
         tox_uid_tag_add(self_pseudo);
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
+    backfill_tox_mid_tags();
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
 }
@@ -2026,6 +2076,7 @@ tox_bridge_send_queued()
         xfer.original_filename = orig_name;
         xfer.row_id = row_id;
         xfer.local_mid = local_mid;
+        xfer.recipient_pseudo = recipient_pseudo;
         xfer.tox_fn = fn;
         xfer.tox_fnum = fnum;
         Outgoing_xfers[xfer_key(fn, fnum)] = xfer;
