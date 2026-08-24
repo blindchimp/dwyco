@@ -86,6 +86,10 @@ struct backup_sql : public SimpleSql
                    "uid text not null, "
                    "guid text not null collate nocase, "
                    "unique(mid, tag, uid, guid) on conflict ignore)");
+        sql_simple("create table if not exists tags_payload("
+                   "guid text not null collate nocase primary key on conflict replace, "
+                   "mid text, "
+                   "payload blob)");
     }
 };
 
@@ -362,6 +366,9 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
                 );
             sql("update main.tags set uid = ?1", to_hex(My_UID));
+            sql("insert into main.tags_payload(guid, mid, payload) "
+                "select guid, mid, payload from mt.gmt_payload "
+                "where guid in (select guid from main.tags)");
             sql_commit_transaction();
         }
         catch(...)
@@ -789,9 +796,9 @@ restore_msg(const vc& uid, const vc& mid)
 }
 
 int
-restore_msgs(const char *cfn, int msgs_only)
+restore_msgs(const char *cfn, int no_fnmod, int msgs_only)
 {
-    // note: this filename is coming from the user's external
+    // note: this filename could be coming from the user's external
     // filesystem, so we don't want to subject it to the same
     // filename munging we do for internal names
     DwString fn(cfn);
@@ -800,7 +807,7 @@ restore_msgs(const char *cfn, int msgs_only)
     if(Db)
         return 0;
     Db = new backup_sql(cfn);
-    if(!Db->init(SQLITE_OPEN_READWRITE, true))
+    if(!Db->init(SQLITE_OPEN_READWRITE, no_fnmod ? true : false))
     {
         delete Db;
         Db = 0;
@@ -839,6 +846,21 @@ restore_msgs(const char *cfn, int msgs_only)
         sql_start_transaction();
         sql("insert into mt.gmt select * from main.tags");
         sql_commit_transaction();
+
+        // merge in tag payloads from the backup, if present.
+        // backups made before payloads existed don't have this table
+        try
+        {
+            sql_start_transaction();
+            sql("insert or replace into mt.gmt_payload(guid, mid, payload) "
+                "select guid, mid, payload from main.tags_payload "
+                "where guid in (select guid from mt.gmt)");
+            sql_commit_transaction();
+        }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
     }
     catch(...)
     {

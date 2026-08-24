@@ -16,7 +16,7 @@ int android_get_backup_state();
 int android_set_backup_state(int i);
 int desktop_days_since_last_backup();
 int desktop_days_since_backup_created();
-int restore_msgs(const char *fn, int msgs_only);
+int restore_msgs(const char *fn, int no_fnmod, int msgs_only);
 extern int Enable_backups;
 extern int Backup_freq;
 }
