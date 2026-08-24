@@ -357,10 +357,17 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
         try
         {
             sql_start_transaction();
+            // XXX fix this: not exactly sure why this table is here. if we are initialized, there is
+            // a temp table with this info. maybe need to promote it to actual table
+            // so we can reference it properly
             sql("create temp table static_uid_tags(tag text not null)");
             sql("insert into static_uid_tags values('_ignore')");
             sql("insert into static_uid_tags values('_pal')");
             sql("insert into static_uid_tags values('_leader')");
+            sql("insert into static_uid_tags values('_tox_friend')");
+            sql("insert into static_uid_tags values('_tox_device')");
+            sql("insert into static_uid_tags values('_tox')");
+
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
                 "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
