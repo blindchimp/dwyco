@@ -91,6 +91,22 @@ Page {
             }
             Layout.fillWidth: true
         }
+        Button {
+            visible: dwyco_debug
+            text: "Debug: create backup"
+            onClicked: {
+                core.debug_create_backup(0, 0)
+            }
+            Layout.fillWidth: true
+        }
+        Button {
+            visible: dwyco_debug
+            text: "Debug: unified backup"
+            onClicked: {
+                core.debug_unified_backup("foo.sql", 0, 24)
+            }
+            Layout.fillWidth: true
+        }
         Item {
             Layout.fillHeight: true
         }

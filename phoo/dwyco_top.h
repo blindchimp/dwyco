@@ -349,6 +349,10 @@ public:
     Q_INVOKABLE int load_backup();
     Q_INVOKABLE int get_android_backup_state();
 
+    // debug/testing hooks for the backup api
+    Q_INVOKABLE int debug_create_backup(int days_to_run, int days_to_rebuild);
+    Q_INVOKABLE int debug_unified_backup(const QString& fn, int include_account_info, int max_size_mb);
+
     Q_INVOKABLE QString map_to_representative(const QString& uid);
 
     Q_INVOKABLE void enable_tox();
