@@ -863,6 +863,14 @@ int DWYCOEXPORT dwyco_valid_tag_exists(const char *tag);
 // downloaded.
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
+
+// returns 0 if the inputs are malformed (null or empty mid/tag,
+// null list pointer.) otherwise returns 1 and payload_out contains
+// a valid 1 element dwyco_list holding the payload associated with
+// the (mid, tag) pair. the element is nil (DWYCO_TYPE_NIL) if the
+// tag exists but has no payload.
+int DWYCOEXPORT dwyco_get_mid_tag_payload(const char *mid, const char *tag, DWYCO_LIST *payload_out);
+
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_mid_disposition(const char *mid);
