@@ -3278,7 +3278,7 @@ DwycoCore::tox_list_saves()
     for(int i = 0; i < rows; ++i)
     {
         QVariantMap m;
-        // "000" = composite tag mid as hex text, "001" = pubkey hex, "002" = size
+        // "000" = tag mid as hex text (== pubkey hex), "001" = pubkey hex, "002" = size
         m["mid"] = QString::fromLatin1(l.get<QByteArray>(i, "000"));
         m["pubkey"] = QString::fromLatin1(l.get<QByteArray>(i, "001"));
         m["size"] = (qint64)l.get_long(i, "002");

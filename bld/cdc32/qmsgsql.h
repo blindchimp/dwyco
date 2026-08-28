@@ -53,6 +53,11 @@ int sql_fav_has_fav(vc from_uid);
 
 void sql_add_tag(vc mid, vc tag, vc payload = vcnil);
 vc sql_get_tag_payload(vc mid, vc tag);
+// returns the mid's winning (time, payload) row for a tag as a (time, payload)
+// vector, or an empty vector if none. the winning row is the latest by time,
+// ties broken by the lexicographically largest payload (matches the
+// last-writer-wins resolution used for _tox_active claims).
+vc sql_get_tag_payload_with_time(vc mid, vc tag);
 void sql_remove_tag(vc tag);
 void sql_remove_mid_tag(vc mid, vc tag);
 vc sql_get_tagged_mids(vc tag);

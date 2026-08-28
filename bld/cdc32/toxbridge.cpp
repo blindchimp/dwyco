@@ -1219,29 +1219,20 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
     return 1;
 }
 
-static vc
-make_save_mid(const vc &pubkey, const vc &save_bytes)
-{
-    DwString s;
-    s += to_hex(pubkey);
-    s += "_";
-    s += to_hex(save_bytes);
-    return vc(VC_BSTRING, s.c_str(), (long)s.length());
-}
-
 // remove any locally-published _tox_save entries that carry the given pubkey,
-// so re-publishing replaces stale versions. returns 1 if anything removed.
+// so re-publishing replaces stale versions. matches the payload-format mid
+// (hex(pubkey)) plus any legacy 'hex(pubkey)_...' composite mids. returns 1 if
+// anything removed.
 static int
 remove_saves_for_pubkey(const vc &pubkey)
 {
     DwString ph = to_hex(pubkey);
-    ph += "_";
     vc mids = sql_get_tagged_mids2("_tox_save");
     int removed = 0;
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         DwString m((const char *)mids[i][0], (long)mids[i][0].len());
-        if(m.find(ph.c_str()) == 0)
+        if(m == ph || m.find((ph + "_").c_str()) == 0)
         {
             sql_remove_mid_tag(mids[i][0], "_tox_save");
             removed = 1;
@@ -1287,8 +1278,8 @@ tox_bridge_publish_save()
         return 0;
 
     remove_saves_for_pubkey(pk);
-    vc mid = make_save_mid(pk, bytes);
-    safe_add_crdt_tag(mid, "_tox_save");
+    // the tag mid is hex(pubkey); the profile bytes ride in the tag payload.
+    safe_add_crdt_tag(to_hex(pk), "_tox_save", bytes);
     GRTLOG("tox: published profile save, %d bytes", (int)bytes.len(), 0);
     return 1;
 }
@@ -1299,38 +1290,35 @@ tox_bridge_list_saves()
     vc out(VC_VECTOR);
     if(!sql_is_initialized())
         return out;
+    // the tag mid is hex(pubkey); the profile bytes ride in the tag payload.
     vc mids = sql_get_tagged_mids2("_tox_save");
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        DwString m((const char *)mids[i][0], (long)mids[i][0].len());
-        int uscore = m.find_first_of("_");
-        if(uscore <= 0 || uscore >= (int)m.length() - 1)
+        vc hex_pk = mids[i][0];
+        DwString hp((const char *)hex_pk, (long)hex_pk.len());
+        if(hp.find_first_of("_") != -1 || hp.length() == 0)
             continue;
-        DwString hex_pk(m.c_str(), 0, uscore);
-        DwString hex_bytes(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
+        vc payload = sql_get_tag_payload(hex_pk, "_tox_save");
+        if(payload.is_nil() || payload.len() <= 0)
+            continue;
         vc row(VC_VECTOR);
-        row.append(mids[i][0]);
-        row.append(vc(VC_BSTRING, hex_pk.c_str(), (long)hex_pk.length()));
-        row.append(vc((long)(hex_bytes.length() / 2)));
+        row.append(hex_pk);
+        row.append(hex_pk);
+        row.append(vc((long)payload.len()));
         out.append(row);
     }
     return out;
 }
 
-// a small struct + helpers are unnecessary; parse the composite mid to recover
-// just the save payload bytes for activation.
+// recover the save payload bytes for a synced _tox_save tag mid
+// (mid == hex(pubkey), payload holds the raw profile bytes).
 static int
 save_payload_from_mid(const vc &mid, vc &bytes_out)
 {
-    DwString m((const char *)mid, (long)mid.len());
-    int uscore = m.find_first_of("_");
-    if(uscore <= 0 || uscore >= (int)m.length() - 1)
+    vc payload = sql_get_tag_payload(mid, "_tox_save");
+    if(payload.is_nil() || payload.len() <= 0)
         return 0;
-    DwString hex_bytes(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
-    vc b = from_hex(vc(VC_BSTRING, hex_bytes.c_str(), (long)hex_bytes.length()));
-    if(b.is_nil())
-        return 0;
-    bytes_out = b;
+    bytes_out = payload;
     return 1;
 }
 
@@ -1420,26 +1408,26 @@ tox_self_pubkey_hex()
     return to_hex(pk);
 }
 
-// remove locally-owned _tox_active claims (any whose trailing uid token is
-// our own dwyco uid), so a device only has one active claim at a time.
+// remove locally-owned _tox_active claims (any whose tag payload is our own
+// dwyco uid), so a device only has one active claim at a time.
 static void
 remove_own_active_claims()
 {
     DwString hmy = to_hex(My_UID);
-    vc rows = sql_get_tagged_mids_with_time("_tox_active");
+    vc rows = sql_get_tagged_mids2("_tox_active");
     for(int i = 0; i < rows.num_elems(); ++i)
     {
-        DwString m((const char *)rows[i][0], (long)rows[i][0].len());
-        int uscore = m.find_last_of("_");
-        if(uscore < 0 || uscore >= (int)m.length() - 1)
+        vc payload = sql_get_tag_payload(rows[i][0], "_tox_active");
+        if(payload.is_nil())
             continue;
-        DwString tail(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
-        if(tail == hmy)
+        DwString p((const char *)payload, (long)payload.len());
+        if(p == hmy)
             sql_remove_mid_tag(rows[i][0], "_tox_active");
     }
 }
 
 // publish a _tox_active claim for the given pubkey on behalf of this device.
+// the tag mid is hex(pubkey); the claiming dwyco uid rides in the payload.
 static void
 publish_active_claim(const vc &pubkey)
 {
@@ -1447,20 +1435,8 @@ publish_active_claim(const vc &pubkey)
     if(ph.is_nil())
         return;
     // replace any existing claim for this identity.
-    vc rows = sql_get_tagged_mids_with_time("_tox_active");
-    DwString prefix = ph;
-    prefix += "_";
-    for(int i = 0; i < rows.num_elems(); ++i)
-    {
-        DwString m((const char *)rows[i][0], (long)rows[i][0].len());
-        if(m.find(prefix.c_str()) == 0)
-            sql_remove_mid_tag(rows[i][0], "_tox_active");
-    }
-    DwString mid;
-    mid += ph;
-    mid += "_";
-    mid += to_hex(My_UID);
-    safe_add_crdt_tag(vc(VC_BSTRING, mid.c_str(), (long)mid.length()), "_tox_active");
+    sql_remove_mid_tag(ph, "_tox_active");
+    safe_add_crdt_tag(ph, "_tox_active", to_hex(My_UID));
 }
 
 // check whether a different device currently holds the claim for my tox
@@ -1480,33 +1456,16 @@ tox_bridge_check_active_conflict()
     vc ph = tox_self_pubkey_hex();
     if(ph.is_nil())
         return;
-    DwString prefix = ph;
-    prefix += "_";
-    vc rows = sql_get_tagged_mids_with_time("_tox_active");
     DwString hmy = to_hex(My_UID);
 
-    // scan all claims for our identity, tracking the newest one (time, uid).
-    long long best_time = -1;
-    DwString best_tail;
-    for(int i = 0; i < rows.num_elems(); ++i)
-    {
-        DwString m((const char *)rows[i][0], (long)rows[i][0].len());
-        if(m.find(prefix.c_str()) != 0)
-            continue;
-        int uscore = m.find_last_of("_");
-        if(uscore < 0 || uscore >= (int)m.length() - 1)
-            continue;
-        DwString tail(m.c_str(), uscore + 1, (long)m.length() - (uscore + 1));
-        long long t = 0;
-        if(rows[i].num_elems() > 1)
-            t = (long long)rows[i][1];
-        if(t > best_time || (t == best_time && best_tail < tail))
-        {
-            best_time = t;
-            best_tail = tail;
-        }
-    }
-    if(best_tail.length() > 0 && best_tail != hmy)
+    // check the winning claim for our identity. the tag mid is hex(pubkey) and
+    // the claiming dwyco uid is the payload; multiple rows can exist for the
+    // same mid, so use the latest-claim lookup (time desc, payload desc).
+    vc winner = sql_get_tag_payload_with_time(ph, "_tox_active");
+    if(winner.num_elems() < 2)
+        return;
+    DwString claimant((const char *)winner[1], (long)winner[1].len());
+    if(claimant != hmy)
     {
         GRTLOG("tox bridge: identity claimed by another device, disabling", 0, 0);
         tox_bridge_shutdown();

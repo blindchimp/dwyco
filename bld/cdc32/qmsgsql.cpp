@@ -1692,13 +1692,13 @@ init_qmsg_sql()
     sql_simple("delete from mt.gmt_payload where guid in (select guid from gtomb)");
 
     // old versions of the tox bridge encoded extra info in tag mids
-    // ("hex(pseudo_uid)_hex(name)"). those tags now keep only hex(pseudo_uid)
-    // in the mid and carry the name in the payload, so get rid of the
-    // old-style rows. hex mids never contain '_', so this is precise.
+    // ("hex(pseudo_uid)_hex(name)", "hex(pubkey)_<data>"). those tags now keep
+    // only a hex mid and carry the extra data in the tag payload, so get rid
+    // of the old-style rows. hex mids never contain '_', so this is precise.
     // note: current_clients is empty here, so no taglog entries are made,
     // but the rows get tombstoned locally so sync imports won't bring
     // them back. every client does this same cleanup on its own at init.
-    sql_simple("delete from mt.gmt where (tag = '_tox_friend' or tag = '_tox_mid') and instr(mid, '_') > 0");
+    sql_simple("delete from mt.gmt where (tag = '_tox_friend' or tag = '_tox_mid' or tag = '_tox_save' or tag = '_tox_active') and instr(mid, '_') > 0");
 
     sql_commit_transaction();
     // this happens one time, the sql file names are changed and old
@@ -3071,6 +3071,26 @@ sql_get_tag_payload(vc mid, vc tag)
     if(res.num_elems() == 0)
         return vcnil;
     return res[0][0];
+}
+
+// returns the winning (time, payload) row for a mid's tag as a 2-element
+// vector, or an empty vector if the tag doesn't exist / is tombstoned.
+// the winning row is the latest by time, with ties broken by the larger
+// payload, mirroring the last-writer-wins rule used for _tox_active claims.
+vc
+sql_get_tag_payload_with_time(vc mid, vc tag)
+{
+    vc res = sql_simple("select gmt.time, gp.payload from gmt, mt.gmt_payload as gp using(guid) "
+                "where gmt.mid = ?1 and tag = ?2 "
+                "and not exists(select 1 from mt.gtomb where guid = gmt.guid) "
+                "and gp.payload is not null "
+                "order by gmt.time desc, gp.payload desc limit 1", mid, tag);
+    if(res.num_elems() == 0)
+        return vc(VC_VECTOR);
+    vc ret(VC_VECTOR);
+    ret.append(res[0][0]);
+    ret.append(res[0][1]);
+    return ret;
 }
 
 void
