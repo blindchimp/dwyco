@@ -90,10 +90,16 @@ Page {
 
     }
 
-    ColumnLayout {
+    ScrollView {
+        id: settings_scroll
         anchors.fill: parent
         anchors.margins: mm(2)
-        spacing: mm(1)
+        clip: true
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+        ColumnLayout {
+            width: settings_scroll.availableWidth
+            spacing: mm(1)
 
         CheckBox {
             id: cb_pin_expire
@@ -223,11 +229,6 @@ Page {
             Layout.fillWidth: true
         }
 
-
-        Item {
-            Layout.fillHeight: true
-        }
-
         ItemDelegate {
             id: obliterate_button
             text: qsTr("<font color='red'>Obliterate Account</font>")
@@ -250,6 +251,7 @@ Page {
             Layout.fillWidth: true
         }
 
+    }
     }
 
     Warning {

@@ -215,7 +215,10 @@ ApplicationWindow {
     // what we want. for desktop versions, not sure what might be
     // best.
     width: 800
-    height: 600
+    // on desktop give the window enough default height to show the
+    // settings and tox pages without clipping their controls. mobile
+    // goes fullscreen anyway, so leave it at 600.
+    height: is_mobile ? 600 : 850
     // this might be helpful for windows users, as they
     // seem to get confused with multiple windows running around
     // at the same time.
