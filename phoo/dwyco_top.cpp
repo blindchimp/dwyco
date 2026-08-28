@@ -29,6 +29,13 @@
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
 #include "dwycolist2.h"
+
+// for debug_unified_backup(), we don't want to add the cdc32 include
+// dir to this project's include path (it has its own dlli.h), so just
+// declare it here.
+namespace dwyco {
+int unified_backup(const char *fn, int include_account_info, int max_size_mb);
+}
 #include <QSet>
 #include "getinfo.h"
 #include "msgrawmodel.h"
@@ -2329,6 +2336,19 @@ int
 DwycoCore::get_android_backup_state()
 {
     return dwyco_get_android_backup_state();
+}
+
+int
+DwycoCore::debug_create_backup(int days_to_run, int days_to_rebuild)
+{
+    return dwyco_create_backup(days_to_run, days_to_rebuild);
+}
+
+int
+DwycoCore::debug_unified_backup(const QString& fn, int include_account_info, int max_size_mb)
+{
+    QByteArray b = fn.toLatin1();
+    return dwyco::unified_backup(b.constData(), include_account_info, max_size_mb);
 }
 
 QString

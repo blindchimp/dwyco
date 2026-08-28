@@ -309,18 +309,84 @@ DirectSend::send_with_attachment()
         send_direct();
         return;
     }
-    // for now, if there is an attachment to send, but it is a
-    // proxy connection, just fail so the msg can go via regular
-    // server channel. this should be fixed eventually.
+
+    if(xfer_channel)
+    {
+        // we can't coordinate multiple file transfers
+        // at the same time (really rare case for this
+        // messenger). but, this should never happen
+        // since this class serializes message sends
+        // anyway.
+        oopanic("multiple file transfers");
+        return;
+    }
+
     if(!mp->proxy_info.is_nil())
     {
-        vc r = msg_to_send[QQM_RECIP_VEC][0];
+        // proxy path: use relay to carry a secondary reliable channel
+        // for the file. This mirrors the media aux-channel setup
+        // (mmchan.cc:local_media_setup_new) where an "aux_r" ctrl
+        // is sent to prompt the peer to rendezvous on the same proxy.
+        vc aux(VC_VECTOR);
+        aux[0] = "aux_r";
+        mp->send_ctrl(aux);
 
-        se_sig.emit(SE_MSG_SEND_FAIL, qfn, r);
-        // hack, undo the direct send block we just put on
-        No_direct_msgs.del(uid);
+        MMChannel *m = new MMChannel;
+        m->tube = new DummyTube;
+        DwString proxy_ip((const char *)mp->proxy_info[0]);
+        int proxy_port = (int)mp->proxy_info[1];
+        // DummyTube::connect just stores the remote; the actual
+        // TCP connect happens in gen_channel
+        m->tube->connect(proxy_ip.c_str(), 0, 0);
+        m->start_service();
 
-        delete_later(this);
+        int chan = -1;
+        int a;
+        if((a = m->tube->gen_channel(proxy_port, chan)) == SSERR)
+        {
+            TRACK_ADD(DS_direct_xfer_gen_chan_fail, 1);
+            m->schedule_destroy(MMChannel::HARD);
+            fail();
+        }
+        else
+        {
+            TRACK_ADD(DS_direct_xfer_setups, 1);
+            m->remote_filename = file_basename;
+            m->local_filename = file_basename;
+            m->zap_send = 1;
+            m->destroy_callback = eo_direct_xfer;
+            m->dcb_arg2 = 0;
+            m->dcb_arg3 = vp;
+            m->status_callback = set_status;
+            m->scb_arg1 = 0;
+            m->scb_arg2 = vp;
+            m->set_progress_status("Sending audio/video...");
+            m->init_config(1);
+            m->recv_matches(mp->remote_cfg);
+            m->session_id = mp->session_id;
+
+            m->connect_failed = 1;
+
+            m->timer1.set_oneshot(1);
+            m->timer1.load(CHANNEL_SETUP_TIMEOUT);
+            m->timer1.reset();
+            m->timer1.start();
+            m->timer1_callback = xfer_chan_setup_timeout;
+            m->t1cb_arg3 = vp;
+            m->chan_established_callback = xfer_chan_call_succeeded;
+
+            m->set_string_id("<<Zap Msg Send via Proxy>>");
+            m->start_service();
+            xfer_channel = m;
+            xfer_chan_id = m->myid;
+
+            m->agreed_key = mp->agreed_key;
+            sproto *s = new sproto(chan, file_send, m->vp);
+
+            m->simple_protos[chan] = s;
+            s->start();
+
+        }
         return;
     }
 
@@ -649,6 +715,28 @@ DirectSend::fail()
     MMChannel *m = MMChannel::channel_by_id(send_chan_id);
     if(m)
         m->schedule_destroy(MMChannel::HARD);
+    // note: the path through here can originate from a failed attachment send
+    // too. this probably needs to be rethought.
+
+    // more aggressive cleanup: find the top level control channel
+    // (which was what the stuff above was trying to do, but didn't
+    // work if the fail is via attachment xfer.
+
+    if(xfer_channel)
+    {
+        xfer_channel->schedule_destroy(MMChannel::HARD);
+        xfer_channel = 0;
+    }
+
+    // MMChannel *mp = get_send_channel(uid);
+    // if(mp)
+    // {
+    //     // dropping the control channel
+    //     // will tear down remote proxy on both
+    //     // sides.
+    //     mp->schedule_destroy(MMChannel::HARD);
+    // }
+
     delete_later(this);
     TRACK_ADD(DS_fail, 1);
 

@@ -199,6 +199,7 @@ QMsgSql::init_schema_fav()
     sql_simple("insert into static_crdt_tags values('_tox_friend')");
     sql_simple("insert into static_crdt_tags values('_tox_device')");
     sql_simple("insert into static_crdt_tags values('_tox')");
+    sql_simple("insert into static_crdt_tags values('_tox_mid')");
     commit_transaction();
 }
 
@@ -2722,6 +2723,30 @@ sql_get_non_local_messages_at_uid_recent(vc uid, int max_count)
     }
 }
 
+// returns all mids stored at uid (both sent and received) that do not
+// already carry a live (untombstoned) row for the given tag.
+// used by the tox _tox_mid backfill on first run after the tag was added.
+vc
+sql_untagged_mids_at_uid(const vc &uid, const vc &tag)
+{
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple("select mid from gi where assoc_uid = ?1 "
+                            "and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                            "and not exists(select 1 from gmt where gmt.mid = gi.mid and gmt.tag = ?2 "
+                            "and not exists(select 1 from mt.gtomb where guid = gmt.guid))",
+                            to_hex(uid), tag);
+        sql_commit_transaction();
+        return flatten(res);
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        return vc(VC_VECTOR);
+    }
+}
+
 
 int
 msg_index_count(vc uid)
@@ -3019,11 +3044,6 @@ sql_add_tag(vc mid, vc tag, vc payload)
     try
     {
         sql_start_transaction();
-        // testing
-        if(strcmp(tag, "_hid") == 0)
-        {
-            payload = "mumble";
-        }
         sql_insert_record_mt(mid, tag, payload);
         sql_commit_transaction();
     }

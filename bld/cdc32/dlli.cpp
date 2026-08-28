@@ -8152,6 +8152,20 @@ dwyco_mid_has_tag(const char *mid, const char *tag)
 
 DWYCOEXPORT
 int
+dwyco_get_mid_tag_payload(const char *mid, const char *tag, DWYCO_LIST *payload_out)
+{
+    if(!payload_out || !mid || !*mid || !tag || !*tag)
+        return 0;
+    vc res = sql_get_tag_payload(vc(mid), vc(tag));
+    vc v(VC_VECTOR);
+    v[0] = res;
+    *payload_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+
+DWYCOEXPORT
+int
 dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
 {
     vc buid(VC_BSTRING, uid, len_uid);
@@ -9352,7 +9366,13 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
 {
     if(Current_alternate)
         return 0;
-    if(!restore_msgs(bu_fn, msgs_only))
+
+    // the user is selecting a file from their filesystem to restore
+    // so don't apply fnmod stuff. this is for cdc-x, which does a
+    // copy out to the users local directory, which they have to
+    // manage themselves. contrast to android, where the backup is
+    // created in a standard place, then google backs it up automatically.
+    if(!restore_msgs(bu_fn, 1, msgs_only))
         return 0;
 
     special_backup_bailout();
@@ -9384,7 +9404,8 @@ dwyco_restore_android_backup()
 {
     if(Current_alternate)
         return 0;
-    if(!restore_msgs("aback.sql", 1))
+    // find the backup file in a standard place, so apply fnmod tweaks.
+    if(!restore_msgs("aback.sql", 0, 1))
         return 0;
     special_backup_bailout();
     return 1;

@@ -20,7 +20,9 @@
 #include <stdlib.h>
 #include "msgrawmodel.h"
 #include "msgproxymodel.h"
+#include "convmodel.h"
 #include "dlli.h"
+#include "dwycolist2.h"
 
 #define SM (dynamic_cast<msglist_raw *>(sourceModel()))
 
@@ -34,9 +36,11 @@ msgproxy_model::msgproxy_model(QObject *p) :
     filter_show_hidden = 1;
     filter_show_trash = false;
     filter_only_video = 0;
+    filter_tox_active = false;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     QObject::connect(this, &msgproxy_model::uidChanged, m, &msglist_raw::set_uid);
+    QObject::connect(this, &msgproxy_model::uidChanged, this, &msgproxy_model::update_tox_filter);
     QObject::connect(this, &msgproxy_model::tagChanged, m, &msglist_raw::set_tag);
     QObject::connect(m, &msglist_raw::invalidate_item, this, &msgproxy_model::refilter);
 #ifdef DWYCO_MODEL_TEST
@@ -111,6 +115,33 @@ msgproxy_model::set_show_video_only(int show_video_only)
     filter_only_video = show_video_only;
     invalidateFilter();
     selected.clear();
+}
+
+// when the conversation is with a tox friend, remember this device's
+// tox pseudo uid so filterAcceptsRow can hide messages that were
+// sent/received by another device's tox client in the device group.
+// conversations with non-friends ("Tox Other") show all messages.
+void
+msgproxy_model::update_tox_filter()
+{
+    filter_tox_active = false;
+    active_pseudo.clear();
+    QByteArray buid = QByteArray::fromHex(get_uid().toLatin1());
+    if(!buid.isEmpty() &&
+        dwyco_tox_is_tox_uid(buid.constData(), buid.length()) &&
+        ConvListModel::is_uid_tox_friend(buid))
+    {
+        char *out;
+        int len_out;
+        if(dwyco_tox_get_self_public_key(&out, &len_out))
+        {
+            // the pseudo uid is the first 10 bytes of the tox public key
+            active_pseudo = QByteArray(out, len_out).left(10);
+            dwyco_free_array(out);
+            filter_tox_active = true;
+        }
+    }
+    invalidateFilter();
 }
 
 void
@@ -253,6 +284,18 @@ msgproxy_model::filterAcceptsRow(int source_row, const QModelIndex &source_paren
         int hidden = dwyco_mid_has_tag(mid.toByteArray().constData(), "_hid");
         if(hidden)
             return false;
+    }
+
+    if(filter_tox_active)
+    {
+        QVariant mid = alm->data(qmis, msglist_raw::MID);
+        DWYCO_LIST l;
+        if(dwyco_get_mid_tag_payload(mid.toByteArray().constData(), "_tox_mid", &l))
+        {
+            simple_scoped pl(l);
+            if(!pl.is_nil(0, DWYCO_NO_COLUMN) && pl.get<QByteArray>(0) != active_pseudo)
+                return false;
+        }
     }
 
     return true;

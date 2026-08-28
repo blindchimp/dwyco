@@ -86,6 +86,10 @@ struct backup_sql : public SimpleSql
                    "uid text not null, "
                    "guid text not null collate nocase, "
                    "unique(mid, tag, uid, guid) on conflict ignore)");
+        sql_simple("create table if not exists tags_payload("
+                   "guid text not null collate nocase primary key on conflict replace, "
+                   "mid text, "
+                   "payload blob)");
     }
 };
 
@@ -353,15 +357,25 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
         try
         {
             sql_start_transaction();
+            // XXX fix this: not exactly sure why this table is here. if we are initialized, there is
+            // a temp table with this info. maybe need to promote it to actual table
+            // so we can reference it properly
             sql("create temp table static_uid_tags(tag text not null)");
             sql("insert into static_uid_tags values('_ignore')");
             sql("insert into static_uid_tags values('_pal')");
             sql("insert into static_uid_tags values('_leader')");
+            sql("insert into static_uid_tags values('_tox_friend')");
+            sql("insert into static_uid_tags values('_tox_device')");
+            sql("insert into static_uid_tags values('_tox')");
+
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
                 "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
                 );
             sql("update main.tags set uid = ?1", to_hex(My_UID));
+            sql("insert into main.tags_payload(guid, mid, payload) "
+                "select guid, mid, payload from mt.gmt_payload "
+                "where guid in (select guid from main.tags)");
             sql_commit_transaction();
         }
         catch(...)
@@ -789,9 +803,9 @@ restore_msg(const vc& uid, const vc& mid)
 }
 
 int
-restore_msgs(const char *cfn, int msgs_only)
+restore_msgs(const char *cfn, int no_fnmod, int msgs_only)
 {
-    // note: this filename is coming from the user's external
+    // note: this filename could be coming from the user's external
     // filesystem, so we don't want to subject it to the same
     // filename munging we do for internal names
     DwString fn(cfn);
@@ -800,7 +814,7 @@ restore_msgs(const char *cfn, int msgs_only)
     if(Db)
         return 0;
     Db = new backup_sql(cfn);
-    if(!Db->init(SQLITE_OPEN_READWRITE, true))
+    if(!Db->init(SQLITE_OPEN_READWRITE, no_fnmod ? true : false))
     {
         delete Db;
         Db = 0;
@@ -839,6 +853,21 @@ restore_msgs(const char *cfn, int msgs_only)
         sql_start_transaction();
         sql("insert into mt.gmt select * from main.tags");
         sql_commit_transaction();
+
+        // merge in tag payloads from the backup, if present.
+        // backups made before payloads existed don't have this table
+        try
+        {
+            sql_start_transaction();
+            sql("insert or replace into mt.gmt_payload(guid, mid, payload) "
+                "select guid, mid, payload from main.tags_payload "
+                "where guid in (select guid from mt.gmt)");
+            sql_commit_transaction();
+        }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
     }
     catch(...)
     {

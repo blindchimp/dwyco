@@ -791,6 +791,12 @@ toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
             snprintf(err_buf, (size_t)err_buf_len, "key derivation failed");
             return 0;
         }
+        if(sz < TOX_PASS_ENCRYPTION_EXTRA_LENGTH || sz > 10 * 1024 * 1024)
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "bogus size");
+            return 0;
+        }
         plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
         plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
         Tox_Err_Decryption derr;
@@ -976,6 +982,11 @@ toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
     Tox_Err_Key_Derivation kerr;
     Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len, salt, &kerr);
     if(!key)
+    {
+        free(raw);
+        return 0;
+    }
+    if(sz < TOX_PASS_ENCRYPTION_EXTRA_LENGTH || sz > 10 * 1024 * 1024)
     {
         free(raw);
         return 0;
