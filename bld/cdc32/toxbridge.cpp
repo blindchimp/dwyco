@@ -172,6 +172,8 @@ copy_file(const DwString &src, const DwString &dst)
     int ret = 1;
     while((n = fread(buf, 1, sizeof(buf), in)) > 0)
     {
+        if(n < sizeof(buf) && ferror(in))
+            break;
         if(fwrite(buf, 1, n, out) != n)
         {
             ret = 0;
