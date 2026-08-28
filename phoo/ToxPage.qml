@@ -399,7 +399,6 @@ Page {
                 enabled: core.tox_enabled
                 visible: core.tox_enabled
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 implicitHeight: mm(40)
 
                 ListView {
@@ -602,80 +601,80 @@ Page {
                     }
                 }
 
-                            Button {
-                text: "Refresh"
-                onClicked: syncedSaveList.syncedSavesModel = core.tox_list_saves()
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-        }
-    }
-
-        ListView {
-            id: syncedSaveList
-            property var syncedSavesModel: core.tox_enabled ? core.tox_list_saves() : []
-            model: syncedSaveList.syncedSavesModel
-            enabled: core.tox_enabled
-            visible: core.tox_enabled
-            Layout.fillWidth: true
-            Layout.preferredHeight: mm(20)
-            clip: true
-            spacing: mm(1)
-            currentIndex: -1
-            highlight: Rectangle {
-                color: amber_accent
-                opacity: 0.3
-            }
-            highlightMoveDuration: 200
-            ScrollBar.vertical: ScrollBar { }
-            delegate: Item {
-                width: ListView.view.width
-                height: mm(9)
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: syncedSaveList.currentIndex = index
+                Button {
+                    text: "Refresh"
+                    onClicked: syncedSaveList.syncedSavesModel = core.tox_list_saves()
                 }
 
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 2
-                    color: "transparent"
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
 
-                    RowLayout {
+            ListView {
+                id: syncedSaveList
+                property var syncedSavesModel: core.tox_enabled ? core.tox_list_saves() : []
+                model: syncedSaveList.syncedSavesModel
+                enabled: core.tox_enabled
+                visible: core.tox_enabled
+                Layout.fillWidth: true
+                Layout.preferredHeight: mm(20)
+                clip: true
+                spacing: mm(1)
+                currentIndex: -1
+                highlight: Rectangle {
+                    color: amber_accent
+                    opacity: 0.3
+                }
+                highlightMoveDuration: 200
+                ScrollBar.vertical: ScrollBar { }
+                delegate: Item {
+                    width: ListView.view.width
+                    height: mm(9)
+
+                    MouseArea {
                         anchors.fill: parent
-                        anchors.margins: mm(1)
-                        spacing: mm(1)
+                        onClicked: syncedSaveList.currentIndex = index
+                    }
 
-                        Label {
-                            text: "ID " + modelData.pubkey.substring(0, 12) + "..."
-                            font.family: "monospace"
-                            font.pixelSize: 10
-                            Layout.fillWidth: true
-                        }
-                        Label {
-                            text: modelData.size + " B"
-                            font.pixelSize: 10
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        color: "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: mm(1)
+                            spacing: mm(1)
+
+                            Label {
+                                text: "ID " + modelData.pubkey.substring(0, 12) + "..."
+                                font.family: "monospace"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                            }
+                            Label {
+                                text: modelData.size + " B"
+                                font.pixelSize: 10
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Button {
-            text: "Use This Profile"
-            visible: core.tox_enabled
-            enabled: core.tox_enabled && syncedSaveList.currentIndex >= 0
-            Layout.fillWidth: true
-            onClicked: {
-                var m = syncedSaveList.model[syncedSaveList.currentIndex]
-                confirmSelectSave.mid = m.mid
-                confirmSelectSave.pubkey = m.pubkey
-                confirmSelectDialog.open()
+            Button {
+                text: "Use This Profile"
+                visible: core.tox_enabled
+                enabled: core.tox_enabled && syncedSaveList.currentIndex >= 0
+                Layout.fillWidth: true
+                onClicked: {
+                    var m = syncedSaveList.model[syncedSaveList.currentIndex]
+                    confirmSelectSave.mid = m.mid
+                    confirmSelectSave.pubkey = m.pubkey
+                    confirmSelectDialog.open()
+                }
             }
-        }
+    }
     }
 
     Dialog {
