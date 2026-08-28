@@ -2309,8 +2309,7 @@ DwycoCore::power_clean()
 void
 DwycoCore::obliterate()
 {
-    return;
-#if 0
+#if 1
     hangup_all_calls();
     dwyco_disconnect_chat_server();
     // TODO: leave all phoo messenger groups (send group-leave to members)
