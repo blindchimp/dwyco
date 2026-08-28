@@ -1190,10 +1190,13 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
         }
     }
 
-    // shut down the live instance, then replace the save file.
+    // shut down the live instance (if any), then replace the save file.
     // the imported profile keeps its own password/encryption state
     // (src_pw): empty src_pw writes it unencrypted, otherwise it is
     // re-encrypted with the same password it came with.
+    // NOTE: tox is deliberately NOT re-initialized here; importing a profile
+    // is a profile-file operation and tox stays disabled until the user
+    // re-enables it via the UI.
     tox_bridge_shutdown();
     set_active_password(src_pw, src_pw_len);
 
@@ -1207,15 +1210,7 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
             copy_file(backup_path, save_path);
         return 0;
     }
-
-    if(!tox_bridge_init(Save_file.c_str()))
-    {
-        GRTLOG("tox: import re-init failed, restoring backup", 0, 0);
-        if(have_backup)
-            copy_file(backup_path, save_path);
-        return 0;
-    }
-    GRTLOG("tox bridge: imported profile, re-initialized", 0, 0);
+    GRTLOG("tox bridge: imported profile (tox left disabled)", 0, 0);
     return 1;
 }
 
@@ -1388,14 +1383,10 @@ tox_bridge_select_save(const vc &mid, char *err_buf, int err_buf_len)
         return 0;
     }
 
-    if(!tox_bridge_init(Save_file.c_str()))
-    {
-        // either needs a password (unlock flow will re-init) or truly failed.
-        if(!tox_bridge_needs_password() && have_backup)
-            copy_file(backup_path, save_path);
-        return 1;
-    }
-    GRTLOG("tox bridge: selected synced profile", 0, 0);
+    // NOTE: tox is deliberately NOT re-initialized here; selecting a synced
+    // profile is a profile-file operation and tox stays disabled until the
+    // user re-enables it via the UI.
+    GRTLOG("tox bridge: selected synced profile (tox left disabled)", 0, 0);
     return 1;
 }
 

@@ -26,7 +26,6 @@ Page {
     property string origName: ""
     property string origStatus: ""
     property string importFile: ""
-    property string importPw: ""
     property bool pwTick: false
     property bool hasPw: profileHasPassword()
 
@@ -62,9 +61,24 @@ Page {
     }
 
     function startImportConfirm(p, pw) {
-        importFile = p
-        importPw = pw
-        importConfirmDialog.open()
+        activateProfile.mode = "import"
+        activateProfile.file = p
+        activateProfile.pw = pw
+        activateProfile.pubkey = ""
+        activateProfile.mid = ""
+        activateConfirmDialog.open()
+    }
+
+    function doActivateProfile() {
+        var err
+        if(activateProfile.mode === "select")
+            err = core.tox_select_save(activateProfile.mid)
+        else
+            err = core.tox_import_profile(activateProfile.file, activateProfile.pw,
+                                          !noBackupCb.checked)
+        if(err.length > 0)
+            return err
+        return ""
     }
 
     function isInvisibleChar(c) {
@@ -135,15 +149,12 @@ Page {
                 userStatusCombo.currentIndex = statusIdx
         }
         function onTox_import_finished() {
-            refreshToxIdentity()
+            // a profile was swapped on disk but tox was left disabled, so only
+            // refresh the profile list; the password/identity flow happens when
+            // the user next ticks "Enable Tox".
             refreshToxAvatar()
             syncedSaveList.currentIndex = -1
             syncedSaveList.syncedSavesModel = core.tox_list_saves()
-            if(core.tox_needs_password()) {
-                unlockPwInput.text = ""
-                unlockError.text = ""
-                unlockDialog.open()
-            }
         }
         function onTox_avatar_changed() {
             refreshToxAvatar()
@@ -490,7 +501,6 @@ Page {
 
             Label {
                 text: "Profile"
-                enabled: core.tox_enabled
                 font.bold: true
                 Layout.topMargin: mm(2)
             }
@@ -531,7 +541,6 @@ Page {
             }
 
             RowLayout {
-                enabled: core.tox_enabled
                 spacing: mm(1)
 
                 Button {
@@ -541,6 +550,7 @@ Page {
 
                 Button {
                     text: "Export Profile..."
+                    enabled: core.tox_enabled
                     onClicked: {
                         var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
                         if (locs.length > 0) {
@@ -553,6 +563,7 @@ Page {
 
                 Button {
                     text: hasPw ? "Change Password" : "Set Password"
+                    enabled: core.tox_enabled
                     onClicked: {
                         setPwInput.text = ""
                         setPwConfirmInput.text = ""
@@ -565,6 +576,7 @@ Page {
                 Button {
                     text: "Remove Password"
                     visible: hasPw
+                    enabled: core.tox_enabled
                     onClicked: {
                         removePwInput.text = ""
                         removePwError.text = ""
@@ -579,19 +591,16 @@ Page {
 
             Label {
                 text: "Synced Profiles"
-                enabled: core.tox_enabled
-                visible: core.tox_enabled
                 font.bold: true
                 Layout.topMargin: mm(2)
             }
 
             RowLayout {
-                enabled: core.tox_enabled
-                visible: core.tox_enabled
                 spacing: mm(1)
 
                 Button {
                     text: "Publish My Profile"
+                    enabled: core.tox_enabled
                     onClicked: {
                         if(core.tox_publish_save())
                             syncResultsText.text = "Profile published to group."
@@ -613,10 +622,8 @@ Page {
 
             ListView {
                 id: syncedSaveList
-                property var syncedSavesModel: core.tox_enabled ? core.tox_list_saves() : []
+                property var syncedSavesModel: core.tox_list_saves()
                 model: syncedSaveList.syncedSavesModel
-                enabled: core.tox_enabled
-                visible: core.tox_enabled
                 Layout.fillWidth: true
                 Layout.preferredHeight: mm(20)
                 clip: true
@@ -664,14 +671,16 @@ Page {
 
             Button {
                 text: "Use This Profile"
-                visible: core.tox_enabled
-                enabled: core.tox_enabled && syncedSaveList.currentIndex >= 0
+                enabled: syncedSaveList.currentIndex >= 0
                 Layout.fillWidth: true
                 onClicked: {
                     var m = syncedSaveList.model[syncedSaveList.currentIndex]
-                    confirmSelectSave.mid = m.mid
-                    confirmSelectSave.pubkey = m.pubkey
-                    confirmSelectDialog.open()
+                    activateProfile.mode = "select"
+                    activateProfile.mid = m.mid
+                    activateProfile.pubkey = m.pubkey
+                    activateProfile.file = ""
+                    activateProfile.pw = ""
+                    activateConfirmDialog.open()
                 }
             }
     }
@@ -736,49 +745,94 @@ Page {
     }
 
     QtObject {
-        id: confirmSelectSave
+        id: activateProfile
+        property string mode: ""
         property string mid: ""
         property string pubkey: ""
+        property string file: ""
+        property string pw: ""
     }
 
     Dialog {
-        id: confirmSelectDialog
-        title: "Use Synced Profile?"
-        standardButtons: Dialog.Ok | Dialog.Cancel
+        id: activateConfirmDialog
+        title: "Activate Profile?"
+        standardButtons: Dialog.NoButton
         modal: true
         anchors.centerIn: Overlay.overlay
+        onOpened: {
+            activateConfirmError.text = ""
+            noBackupCb.checked = false
+            if(activateProfile.mode === "select")
+                activateConfirmText.text = "Activate the published profile with tox ID " + activateProfile.pubkey.substring(0, 12) + "...?"
+            else
+                activateConfirmText.text = "Activate this imported profile:\n" + activateProfile.file
+        }
 
         ColumnLayout {
             spacing: mm(1)
             width: parent.width
 
             Label {
-                text: "Activate the profile with tox ID " + confirmSelectSave.pubkey.substring(0, 12) + "...?"
+                id: activateConfirmText
+                text: ""
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
-            Label {
-                text: "This changes your tox identity. Any device currently using this identity will be disabled."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-        }
 
-        onAccepted: {
-            var err = core.tox_select_save(confirmSelectSave.mid)
-            if(err.length > 0) {
-                syncResultsText.text = "Select failed: " + err
-                syncResultsDialog.open()
-            } else if(!core.tox_needs_password()) {
-                syncResultsText.text = "Profile activated."
-                syncResultsDialog.open()
+            Label {
+                text: "This changes your tox identity. Any device currently using this identity will be disabled. Tox will stay disabled here; tick \"Enable Tox\" to go online with the new identity."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            CheckBox {
+                id: noBackupCb
+                text: "Don't save a backup of the current profile"
+                checked: false
+            }
+
+            Label {
+                id: activateConfirmError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: activateConfirmDialog.close()
+                }
+
+                Button {
+                    text: "Activate"
+                    onClicked: {
+                        activateConfirmError.text = ""
+                        var err = doActivateProfile()
+                        if(err.length > 0) {
+                            activateConfirmError.text = "Activation failed: " + err
+                        } else {
+                            activateConfirmDialog.close()
+                            noBackupCb.checked = false
+                            enable_tox_cb.checked = false
+                            syncResultsText.text = "Profile activated. Tox is disabled; tick \"Enable Tox\" to go online with the new identity."
+                            syncResultsDialog.open()
+                        }
+                    }
+                }
             }
         }
     }
 
     Dialog {
         id: syncResultsDialog
-        title: "Synced Profiles"
+        title: "Profile"
         standardButtons: Dialog.Ok
         modal: true
         anchors.centerIn: Overlay.overlay
@@ -814,8 +868,8 @@ Page {
         onAccepted: {
             var p = core.url_to_filename(selectedFile)
             if(p === "") {
-                importResultText.text = "Could not use that file."
-                importResultDialog.open()
+                syncResultsText.text = "Could not use that file."
+                syncResultsDialog.open()
                 return
             }
             if(core.tox_file_is_encrypted(p)) {
@@ -917,81 +971,6 @@ Page {
                     }
                 }
             }
-        }
-    }
-
-    Dialog {
-        id: importConfirmDialog
-        title: "Import qTox Profile"
-        modal: true
-        anchors.centerIn: Overlay.overlay
-        standardButtons: Dialog.NoButton
-
-        ColumnLayout {
-            spacing: mm(1)
-            width: parent.width
-
-            Label {
-                text: "Importing this qTox profile will replace your current Tox identity and friend list. Message history is not stored in tox profiles and will not be imported."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-
-            CheckBox {
-                id: noBackupCb
-                text: "Don't save a backup of the current profile"
-                checked: false
-            }
-
-            Label {
-                id: importConfirmError
-                text: ""
-                color: "red"
-                visible: text.length > 0
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                Item { Layout.fillWidth: true }
-
-                Button {
-                    text: "Cancel"
-                    onClicked: importConfirmDialog.close()
-                }
-
-                Button {
-                    text: "Import"
-                    onClicked: {
-                        importConfirmError.text = ""
-                        var err = core.tox_import_profile(importFile, importPw, !noBackupCb.checked)
-                        if(err.length > 0) {
-                            importConfirmError.text = "Import failed: " + err
-                        } else {
-                            importConfirmDialog.close()
-                            importResultText.text = "Imported. Your new Tox identity is now in use."
-                            importResultDialog.open()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    Dialog {
-        id: importResultDialog
-        title: "Import Complete"
-        modal: true
-        anchors.centerIn: Overlay.overlay
-        standardButtons: Dialog.Ok
-
-        Label {
-            id: importResultText
-            text: ""
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
         }
     }
 

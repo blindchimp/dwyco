@@ -3240,8 +3240,14 @@ DwycoCore::tox_import_profile(const QString& path, const QString& pw, bool makeB
                                        makeBackup ? 1 : 0, err_buf, sizeof(err_buf));
     if(ret)
     {
-        update_tox_self_address(tox_get_self_address());
-        update_tox_self_name(tox_get_name());
+        // importing a profile is a file-only operation: tox is left disabled
+        // until the user re-enables it, so reset the app-level enabled state.
+        stop_auto_away();
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        emit tox_connection_status_changed(0);
         reload_conv_list();
         emit tox_import_finished();
         return QString();
@@ -3295,6 +3301,14 @@ DwycoCore::tox_select_save(const QString& midText)
     int ret = dwyco_tox_select_save(bmid.constData(), bmid.length(), err_buf, sizeof(err_buf));
     if(ret)
     {
+        // selecting a synced profile is a file-only operation: tox is left
+        // disabled until the user re-enables it, so reset the app-level state.
+        stop_auto_away();
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        emit tox_connection_status_changed(0);
         reload_conv_list();
         emit tox_import_finished();
         return QString();
