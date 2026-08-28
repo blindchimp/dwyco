@@ -43,14 +43,20 @@ class MMCall;
 // are simply shuffled around locally, and corresponding start/success
 // signals are emitted immediately from the "send_message" call.
 //
-// (the following is a deficiency, and needs to be fixed.)
-// if you are sending a message with an attachment, and the link that
-// is eventually setup is via a server proxy, this class fails immediately
-// (presumably so you can send it via server.) if the link is direct
-// the send occurs normally.
-// note: attachments that are considered "small" (about 20k, but server configurable) are sent
-// inline, and that works both direct and via proxy.
+// Large attachments are sent via a secondary reliable channel.
+// For direct connections this is a direct TCP channel to the peer's
+// listening port; for proxy connections an "aux_r" is sent on the
+// control channel to rendezvous a second channel via the relay
+// (same mechanism as media aux channels in mmchan.cc).
+// Small attachments (<= Inline_attach_size) are sent inline via
+// the control channel and work over either transport.
 //
+// note: because of a design deficiency in the file transfer stuff,
+// we have to limit ourselves to one transfer at a time. if a second
+// transfer is attempted, it is "failed", assuming the caller will
+// queue the message to the server. this is unfortunate because i think
+// the "no direct attachment" filter gets set in this case, causing all
+// subsequent messages to go via server. this should really be remedied.
 
 class DirectSend : public ssns::trackable
 {
