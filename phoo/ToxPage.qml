@@ -194,10 +194,16 @@ Page {
         onTriggered: ToxFriendModel.load_friends()
     }
 
-    ColumnLayout {
+    ScrollView {
+        id: tox_scroll
         anchors.fill: parent
         anchors.margins: mm(2)
-        spacing: mm(1)
+        clip: true
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+        ColumnLayout {
+            width: tox_scroll.availableWidth
+            spacing: mm(1)
 
             RowLayout {
                 spacing: mm(1)
@@ -556,6 +562,7 @@ Page {
                 }
             }
         }
+    }
 
     Dialog {
         id: deleteFriendDialog
