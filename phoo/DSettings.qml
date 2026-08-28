@@ -90,10 +90,16 @@ Page {
 
     }
 
-    ColumnLayout {
+    ScrollView {
+        id: settings_scroll
         anchors.fill: parent
         anchors.margins: mm(2)
-        spacing: mm(1)
+        clip: true
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+        ColumnLayout {
+            width: settings_scroll.availableWidth
+            spacing: mm(1)
 
         CheckBox {
             id: cb_pin_expire
@@ -223,12 +229,85 @@ Page {
             Layout.fillWidth: true
         }
 
-
-        Item {
-            Layout.fillHeight: true
+        ItemDelegate {
+            id: obliterate_button
+            text: qsTr("<font color='red'>Obliterate Account</font>")
+            onClicked: {
+                if(core.group_private_key_valid === 1) {
+                    obliterate_in_group.visible = true
+                    return
+                }
+                obliterate_confirm1.visible = true
+            }
+            Layout.fillWidth: true
         }
 
+        ItemDelegate {
+            id: obliterate_help_button
+            text: qsTr("What does Obliterate do?")
+            onClicked: {
+                obliterate_help.visible = true
+            }
+            Layout.fillWidth: true
+        }
 
+    }
+    }
+
+    Warning {
+        id: obliterate_help
+        visible: false
+        z: 3
+        warning: "Obliterate removes ALL local data from this device:\n\n" +
+              "- All messages stored on this device\n" +
+              "- All contacts and PAL entries\n" +
+              "- Your profile and account data\n" +
+              "- Your Tox identity and friends\n" +
+              "- All backups and temporary files\n" +
+              "- All settings and preferences\n\n" +
+              "The data will be removed from:\n" + core.user_dir + "\n\n" +
+              "After obliteration, the app will quit. " +
+              "You can then uninstall the app, or restart to create a new account."
+        oops_text: ""
+    }
+
+    MessageYN {
+        id: obliterate_in_group
+        title: "Cannot obliterate"
+        text: "You are currently in a device group. Leave the group before obliterating."
+        informativeText: "Click Yes to leave the group now. The app will quit. When you restart the app, obliterate will be available."
+        onYesClicked: {
+            core.start_gj2("", "")
+            applicationWindow1.expire_immediate = true
+            applicationWindow1.hard_close = true
+            Qt.quit()
+        }
+        onNoClicked: {
+        }
+    }
+
+    MessageYN {
+        id: obliterate_confirm1
+        title: "Obliterate account?"
+        text: "This will PERMANENTLY delete all messages stored on this device, all contacts, all account data, and your Tox identity.\n\nFiles will be removed from:\n" + core.user_dir
+        informativeText: "This cannot be undone. Are you sure?"
+        onYesClicked: {
+            obliterate_confirm2.visible = true
+        }
+        onNoClicked: {
+        }
+    }
+
+    MessageYN {
+        id: obliterate_confirm2
+        title: "Final confirmation"
+        text: "Obliterate EVERYTHING? There is no undo.\n\nPath: " + core.user_dir
+        informativeText: "The app will quit when complete."
+        onYesClicked: {
+            core.obliterate()
+        }
+        onNoClicked: {
+        }
     }
 
 }
