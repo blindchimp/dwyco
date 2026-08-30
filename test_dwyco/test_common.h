@@ -51,4 +51,20 @@ install_app_files(const char *user_dir)
     closedir(d);
 }
 
+// Set a user-readable name + description for a freshly created
+// account so it is easy to identify in server logs. Must be called
+// after dwyco_init() and before dwyco_finish_startup(); no-op when
+// the account already exists.
+static void
+test_bootstrap_profile(const char *handle, const char *desc)
+{
+    if (!dwyco_get_create_new_account())
+        return;
+    if (!handle) handle = "dwytest";
+    if (!desc) desc = "dwytest account";
+    dwyco_create_bootstrap_profile(handle, (int)strlen(handle),
+        desc, (int)strlen(desc), "", 0, "", 0);
+    printf("    Bootstrap profile: %s - %s\n", handle, desc);
+}
+
 #endif

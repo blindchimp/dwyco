@@ -82,7 +82,7 @@ clear_events(void)
 }
 
 static void
-init(const char *user_dir)
+init(const char *user_dir, const char *account_name)
 {
     char sys_dir[512], tmp_dir[512];
     snprintf(sys_dir, sizeof(sys_dir), "%s/sys", user_dir);
@@ -99,6 +99,8 @@ init(const char *user_dir)
     dwyco_set_client_version("dwytest", 7);
 
     ASSERT(dwyco_init() != 0);
+    std::string desc = std::string(account_name) + " test account (" + user_dir + ")";
+    test_bootstrap_profile(account_name, desc.c_str());
     dwyco_finish_startup();
     dwyco_set_disposition("foreground", 10);
 
@@ -194,7 +196,7 @@ mode_send(int argc, char **argv)
     }
     peer_uid[peer_uid_len] = 0;
 
-    init(user_dir);
+    init(user_dir, "dwytest-send");
 
     // Get my UID
     const char *my_uid;
@@ -283,7 +285,7 @@ mode_recv(int argc, char **argv)
     }
     peer_uid[peer_uid_len] = 0;
 
-    init(user_dir);
+    init(user_dir, "dwytest-recv");
 
     // The sender writes the coord file (atomically) once the message
     // has been sent. Wait for it to appear before reading it.

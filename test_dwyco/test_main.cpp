@@ -185,6 +185,8 @@ init_test(const char *user_dir)
     dwyco_set_client_version("dwytest", 7);
 
     ASSERT(dwyco_init() != 0);
+    std::string desc = std::string("dwytest-local test account (") + user_dir + ")";
+    test_bootstrap_profile("dwytest-local", desc.c_str());
     dwyco_finish_startup();
     dwyco_set_disposition("foreground", 10);
 
