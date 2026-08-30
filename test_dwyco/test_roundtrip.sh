@@ -20,9 +20,10 @@ USERA_UID="$2"
 USERB_DIR="$3"
 USERB_UID="$4"
 COORD_FILE="/tmp/dwytest_roundtrip_coord.$$"
+RECV_LOG="/tmp/dwytest_roundtrip_recv.$$.log"
 
 cleanup() {
-    rm -f "$COORD_FILE"
+    rm -f "$COORD_FILE" "$RECV_LOG"
 }
 trap cleanup EXIT
 
@@ -40,22 +41,37 @@ run_test() {
     echo "  Text: '$text'"
     echo "  No forward: $no_forward"
 
-    # Sender
+    rm -f "$COORD_FILE"
+
+    # Receiver must be online when the message is sent (messages are
+    # only delivered to a connected peer), so start it first. It waits
+    # for the coord file, then polls for the incoming message.
+    echo "--- Starting receiver ---"
+    ./dwytest_peer recv "$USERA_DIR" "$COORD_FILE" "$USERB_UID" > "$RECV_LOG" 2>&1 &
+    RECV_PID=$!
+
+    echo "--- Waiting ${delay}s for receiver to come online ---"
+    sleep "$delay"
+
     echo "--- Sending ---"
     if ! ./dwytest_peer send "$USERB_DIR" "$COORD_FILE" "$USERA_UID" "$text" "$no_forward"; then
+        wait "$RECV_PID" 2>/dev/null
+        cat "$RECV_LOG"
         echo "FAIL: send failed"
         FAIL=$((FAIL + 1))
         return
     fi
 
-    # Wait for delivery
-    echo "--- Waiting ${delay}s ---"
-    sleep "$delay"
-
-    # Receiver
-    echo "--- Receiving ---"
-    if ! ./dwytest_peer recv "$USERA_DIR" "$COORD_FILE" "$USERB_UID"; then
+    echo "--- Waiting for receiver to verify ---"
+    if ! wait "$RECV_PID"; then
+        cat "$RECV_LOG"
         echo "FAIL: receive failed"
+        FAIL=$((FAIL + 1))
+        return
+    fi
+    if ! grep -q "Receive OK" "$RECV_LOG"; then
+        cat "$RECV_LOG"
+        echo "FAIL: receiver did not confirm"
         FAIL=$((FAIL + 1))
         return
     fi

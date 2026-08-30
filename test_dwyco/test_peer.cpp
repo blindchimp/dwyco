@@ -8,6 +8,7 @@
 
 #include "dlli.h"
 #include "test_common.h"
+#include "dwyco_new_msg.h"
 
 #define ASSERT(cond) do { \
     if (!(cond)) { \
@@ -24,9 +25,6 @@ struct Event {
 };
 static std::vector<Event> g_events;
 static int g_login_done;
-static int g_fetch_id;
-static int g_fetch_what;
-static char g_fetch_msgid[256];
 
 static void DWYCOCALLCONV
 sys_event_cb(int cmd, int ctx_id, const char *uid, int len_uid,
@@ -56,37 +54,10 @@ emergency_cb(int problem, int must_exit, const char *msg)
 }
 
 static void DWYCOCALLCONV
-fetch_cb(int id, int what, const char *msgid, void *arg)
-{
-    g_fetch_id = id;
-    g_fetch_what = what;
-    if (msgid) {
-        strncpy(g_fetch_msgid, msgid, sizeof(g_fetch_msgid) - 1);
-        g_fetch_msgid[sizeof(g_fetch_msgid) - 1] = 0;
-    }
-}
-
-static void
 service_once(void)
 {
     int spin;
     dwyco_service_channels(&spin);
-}
-
-static int
-wait_for(int target_cmd, int timeout_ms)
-{
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        for (auto &e : g_events)
-            if (e.cmd == target_cmd) return 1;
-    }
-    return 0;
 }
 
 static int
@@ -100,21 +71,6 @@ wait_login(int timeout_ms)
         usleep(next * 1000);
         elapsed += next;
         if (g_login_done) return 1;
-    }
-    return 0;
-}
-
-static int
-wait_for_fetch(int timeout_ms)
-{
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (g_fetch_id) return 1;
     }
     return 0;
 }
@@ -170,7 +126,11 @@ static void
 write_coord(const char *fn, const char *pers_id, int pers_len,
     const char *text, int text_len, int no_forward, const char *msg_id)
 {
-    FILE *f = fopen(fn, "w");
+    // write to a temp file and rename so the receiver never
+    // observes a partially-written coord file.
+    char tmp[1024];
+    snprintf(tmp, sizeof(tmp), "%s.tmp", fn);
+    FILE *f = fopen(tmp, "w");
     ASSERT(f);
     if (pers_id && pers_len > 0)
         fprintf(f, "pers_id=%.*s\n", pers_len, pers_id);
@@ -180,6 +140,7 @@ write_coord(const char *fn, const char *pers_id, int pers_len,
     if (msg_id)
         fprintf(f, "msg_id=%s\n", msg_id);
     fclose(f);
+    rename(tmp, fn);
 }
 
 static int
@@ -324,6 +285,23 @@ mode_recv(int argc, char **argv)
 
     init(user_dir);
 
+    // The sender writes the coord file (atomically) once the message
+    // has been sent. Wait for it to appear before reading it.
+    printf("  Waiting for coord file...\n");
+    int elapsed = 0;
+    while (elapsed < 30000) {
+        FILE *cf = fopen(coord_fn, "r");
+        if (cf) { fclose(cf); break; }
+        usleep(250 * 1000);
+        elapsed += 250;
+    }
+    if (elapsed >= 30000) {
+        fprintf(stderr, "Timed out waiting for coord file\n");
+        free(peer_uid);
+        shutdown();
+        return 1;
+    }
+
     // Read expected text from coord file
     std::string expected_pers_id, expected_text;
     int expected_no_forward = 0;
@@ -334,104 +312,60 @@ mode_recv(int argc, char **argv)
     printf("  Expected text: '%s'\n", expected_text.c_str());
     printf("  Expected no_forward: %d\n", expected_no_forward);
 
-    // Wait for SE_USER_MSG_RECEIVED
+    // Wait for a message. Messages are only delivered while both peers
+    // are online, so the receiver must stay connected and service
+    // channels until the send happens. New server messages are handled
+    // via the canonical dwyco_new_msg flow (rescan -> process remote
+    // msgs -> hand out the _inbox-tagged message).
     printf("  Waiting for message...\n");
-    clear_events();
-    if (!wait_for(DWYCO_SE_USER_MSG_RECEIVED, 60000)) {
-        fprintf(stderr, "Timed out waiting for message\n");
-        free(peer_uid);
-        shutdown();
-        return 1;
-    }
-    printf("  Message received event\n");
+    elapsed = 0;
+    while (elapsed < 60000) {
+        int spin, next;
+        next = dwyco_service_channels(&spin);
+        if (next <= 0 || next > 100) next = 100;
+        usleep(next * 1000);
+        elapsed += next;
 
-    // Get unfetched messages from peer
-    DWYCO_UNFETCHED_MSG_LIST unfetched = 0;
-    int res = dwyco_get_unfetched_messages(&unfetched, peer_uid, peer_uid_len);
-    ASSERT(res != 0);
-    ASSERT(unfetched != 0);
-
-    int rows, cols;
-    dwyco_list_numelems(unfetched, &rows, &cols);
-    printf("  Unfetched messages: %d\n", rows);
-    ASSERT(rows >= 1);
-
-    // Fetch each message
-    for (int i = 0; i < rows; i++) {
-        const char *msg_id;
-        int msg_id_len, type;
-        res = dwyco_list_get(unfetched, i, DWYCO_QMS_ID, &msg_id, &msg_id_len, &type);
-        if (!res || !msg_id) continue;
-
-        printf("  Fetching message %d: %.*s\n", i, msg_id_len, msg_id);
-
-        g_fetch_id = 0;
-        g_fetch_what = 0;
-        memset(g_fetch_msgid, 0, sizeof(g_fetch_msgid));
-
-        int fid = dwyco_fetch_server_message(std::string(msg_id, msg_id_len).c_str(),
-            fetch_cb, 0, 0, 0);
-        ASSERT(fid != 0);
-
-        if (!wait_for_fetch(30000)) {
-            fprintf(stderr, "Fetch timed out\n");
-            continue;
+        if (dwyco_get_rescan_messages()) {
+            dwyco_set_rescan_messages(0);
+            process_remote_msgs();
         }
 
-        printf("  Fetch result: what=%d msgid=%s\n", g_fetch_what, g_fetch_msgid);
-        ASSERT(g_fetch_what == DWYCO_MSG_DOWNLOAD_OK ||
-               g_fetch_what == DWYCO_MSG_DOWNLOAD_SAVE_FAILED);
+        int zviewer, has_att;
+        DwString ruid, txt, mid;
+        if (dwyco_new_msg(ruid, txt, zviewer, mid, has_att)) {
+            printf("  New msg from=%s text='%.*s'\n",
+                DwString::to_hex(ruid).c_str(), txt.length(), txt.c_str());
 
-        // Save the message
-        res = dwyco_save_message(std::string(msg_id, msg_id_len).c_str());
-        ASSERT(res != 0);
-        printf("  Message saved\n");
+            DwString expected_bin(peer_uid, peer_uid_len);
+            int match = (ruid == expected_bin);
+            // Mark processed and clean up, as the bots do
+            processed_msg(mid);
+            dwyco_delete_saved_message(ruid.c_str(), ruid.length(), mid.c_str());
+            dwyco_delete_unfetched_message(mid.c_str());
 
-        // Now retrieve the saved message body
-        DWYCO_SAVED_MSG_LIST body = 0;
-        res = dwyco_get_saved_message(&body, peer_uid, peer_uid_len,
-            std::string(msg_id, msg_id_len).c_str());
-        if (res && body) {
-            // Get body text
-            DWYCO_LIST text_list = dwyco_get_body_text(body);
-            if (text_list) {
-                int text_rows, text_cols;
-                dwyco_list_numelems(text_list, &text_rows, &text_cols);
-                printf("  Body text rows: %d\n", text_rows);
-
-                // Get the text string
-                const char *body_text;
-                int body_text_len, body_type;
-                res = dwyco_list_get(text_list, 0, DWYCO_NO_COLUMN,
-                    &body_text, &body_text_len, &body_type);
-                if (res && body_text) {
-                    printf("  Body text: '%.*s'\n", body_text_len, body_text);
-                    // Verify against expected
-                    if (!expected_text.empty()) {
-                        ASSERT(body_text_len == (int)expected_text.length());
-                        ASSERT(memcmp(body_text, expected_text.c_str(),
-                               body_text_len) == 0);
-                        printf("  Text MATCH\n");
-                    }
-                }
-                dwyco_list_release(text_list);
+            if (!match) {
+                printf("  Msg was from another uid, ignoring\n");
+                continue;
             }
-            dwyco_list_release(body);
+
+            if (!expected_text.empty()) {
+                ASSERT(txt.length() == (int)expected_text.length());
+                ASSERT(memcmp(txt.c_str(), expected_text.c_str(),
+                       txt.length()) == 0);
+                printf("  Text MATCH\n");
+            }
+
+            free(peer_uid);
+            shutdown();
+            printf("  Receive OK\n");
+            return 0;
         }
-
-        // Delete saved message
-        dwyco_delete_saved_message(peer_uid, peer_uid_len,
-            std::string(msg_id, msg_id_len).c_str());
-
-        // Delete unfetched
-        dwyco_delete_unfetched_message(std::string(msg_id, msg_id_len).c_str());
     }
-
-    dwyco_list_release(unfetched);
+    fprintf(stderr, "Timed out waiting for message\n");
     free(peer_uid);
     shutdown();
-    printf("  Receive OK\n");
-    return 0;
+    return 1;
 }
 
 int

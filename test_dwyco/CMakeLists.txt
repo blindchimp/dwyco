@@ -49,8 +49,8 @@ if(APPLE)
     list(APPEND BASELIBS -ldl)
 endif()
 
-add_executable(dwytest_local test_main.cpp )
+add_executable(dwytest_local test_main.cpp dwyco_new_msg.cpp )
 target_link_libraries(dwytest_local PRIVATE ${BASELIBS})
 
-add_executable(dwytest_peer test_peer.cpp )
+add_executable(dwytest_peer test_peer.cpp dwyco_new_msg.cpp )
 target_link_libraries(dwytest_peer PRIVATE ${BASELIBS})

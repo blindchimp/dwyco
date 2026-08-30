@@ -9,6 +9,7 @@
 
 #include "dlli.h"
 #include "test_common.h"
+#include "dwyco_new_msg.h"
 
 #define ASSERT(cond) do { \
     if (!(cond)) { \
@@ -582,6 +583,27 @@ test_tag_uid_has_tag(void)
     ASSERT(dwyco_uid_count_tag(g_peer_uid, g_peer_uid_len, tag) >= 0);
 }
 
+// ===== SERVER MESSAGE TESTS =====
+
+static void
+test_server_msg_helpers(void)
+{
+    // All of these are local db lookups and are safe before server login.
+
+    // No unfetched messages means nothing to do.
+    int res = process_remote_msgs();
+    ASSERT(res == 0 || res == 1);
+
+    // Nothing tagged _inbox means no new message.
+    DwString uid, txt, mid;
+    int zviewer, has_att;
+    ASSERT(dwyco_new_msg(uid, txt, zviewer, mid, has_att) == 0);
+
+    // processed_msg on an untagged mid must not crash.
+    DwString bogus("deadbeef");
+    processed_msg(bogus);
+}
+
 // ===== PAL TESTS =====
 
 static void
@@ -698,6 +720,9 @@ main(int argc, char **argv)
         printf("  Login OK\n");
     else
         printf("  Login timeout (server-dependent tests may fail)\n");
+
+    printf("\nServer Messages:\n");
+    RUN_TEST(server_msg_helpers);
 
     printf("\nComposition:\n");
     RUN_TEST(compose_empty);
