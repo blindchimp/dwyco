@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 
 #include "dlli.h"
+#include "test_common.h"
 
 #define ASSERT(cond) do { \
     if (!(cond)) { \
@@ -77,7 +78,8 @@ sys_event_cb(int cmd, int ctx_id, const char *uid, int len_uid,
 static void DWYCOCALLCONV
 login_result_cb(const char *str, int what)
 {
-    if (what == 1)
+    // 1 = login ok, 2 = new account created (and logged in)
+    if (what == 1 || what == 2)
         g_state.login_status = 1;
 }
 
@@ -123,6 +125,21 @@ service_until(int target_cmd, int timeout_ms)
     return 0;
 }
 
+static int
+wait_login(int timeout_ms)
+{
+    int elapsed = 0;
+    while (elapsed < timeout_ms) {
+        int spin;
+        int next = dwyco_service_channels(&spin);
+        if (next <= 0 || next > 50) next = 50;
+        usleep(next * 1000);
+        elapsed += next;
+        if (g_state.login_status) return 1;
+    }
+    return 0;
+}
+
 static void
 clear_events(void)
 {
@@ -158,6 +175,7 @@ init_test(const char *user_dir)
     snprintf(tmp_dir, sizeof(tmp_dir), "%s/tmp", user_dir);
     mkdir(user_dir, 0755);
     mkdir(tmp_dir, 0755);
+    install_app_files(user_dir);
 
     dwyco_set_fn_prefixes(user_dir, user_dir, tmp_dir);
     dwyco_set_system_event_callback(sys_event_cb);
@@ -675,7 +693,7 @@ main(int argc, char **argv)
 
     // Wait for login with timeout
     printf("  Waiting for server login...\n");
-    int logged_in = service_until(DWYCO_SE_SERVER_LOGIN, 30000);
+    int logged_in = wait_login(5000);
     if (logged_in)
         printf("  Login OK\n");
     else

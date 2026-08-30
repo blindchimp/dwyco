@@ -3,6 +3,8 @@ project(dwytest LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_definitions(DWYCO_TEST_APP_DIR="${CMAKE_CURRENT_SOURCE_DIR}/app")
+
 set(DWYCO_CONFDIR test_dwyco_cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
