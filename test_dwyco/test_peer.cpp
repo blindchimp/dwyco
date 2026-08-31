@@ -152,7 +152,7 @@ wait_peer_online(const char *peer_uid, int peer_uid_len, int timeout_ms)
     while (elapsed < timeout_ms) {
         int spin, next;
         next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 100) next = 100;
+        if (next <= 0 || next > 50) next = 50;
         usleep(next * 1000);
         elapsed += next;
         if (dwyco_uid_online(peer_uid, peer_uid_len)) return 1;
@@ -264,7 +264,7 @@ mode_send(int argc, char **argv)
     while (elapsed < 90000) {
         int spin, next;
         next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 100) next = 100;
+        if (next <= 0 || next > 50) next = 50;
         usleep(next * 1000);
         elapsed += next;
         for (auto &e : g_events) {
@@ -348,7 +348,7 @@ mode_recv(int argc, char **argv)
     while (elapsed < 120000) {
         int spin, next;
         next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 100) next = 100;
+        if (next <= 0 || next > 50) next = 50;
         usleep(next * 1000);
         elapsed += next;
 
@@ -356,7 +356,7 @@ mode_recv(int argc, char **argv)
             static size_t last_printed = 0;
             if (gi < last_printed) continue;
             int c = g_events[gi].cmd;
-            printf("  DBG ev[%d]=%d val=%.24s\n", (int)gi, c, g_events[gi].value.c_str());
+            printf("  DBG ev[%d]=%d (%s) val=%.24s\n", (int)gi, c, dwyco_se_name_lookup(c), g_events[gi].value.c_str());
             last_printed = gi + 1;
         }
 
