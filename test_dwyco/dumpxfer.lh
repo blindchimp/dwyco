@@ -1,0 +1,15 @@
+#
+# run with one filename argument
+# ./vc dumpxfer.lh filename
+#
+# it prints the representation to stdout
+# or an error message.
+#
+lbind(a openfile(__argv[0] rb))
+if(getfile(<a> b) prog(
+	printl(<b>)
+)
+;else
+prog(
+printl(|BAD FORMAT|)
+))
