@@ -136,6 +136,8 @@ init(const char *user_dir, const char *account_name)
     printf("  Login OK\n");
 }
 
+static int g_server_mode;
+
 static void
 shutdown(void)
 {
@@ -231,14 +233,18 @@ mode_send(int argc, char **argv)
 
     // Wait until the receiver is online before sending, so the message is
     // delivered directly rather than parked on the server.
-    printf("  Waiting for peer to come online...\n");
-    if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
-        fprintf(stderr, "Peer never came online\n");
-        free(peer_uid);
-        shutdown();
-        return 1;
+    if (!g_server_mode) {
+        printf("  Waiting for peer to come online...\n");
+        if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
+            fprintf(stderr, "Peer never came online\n");
+            free(peer_uid);
+            shutdown();
+            return 1;
+        }
+        printf("  Peer online\n");
+    } else {
+        printf("  Server mode: skipping peer online check\n");
     }
-    printf("  Peer online\n");
 
     // Send
     int cid;
@@ -331,14 +337,18 @@ mode_recv(int argc, char **argv)
     // Stay online so the sender can see us and deliver the message
     // directly. Wait for the sender to come online before polling for
     // the incoming message.
-    printf("  Waiting for sender to come online...\n");
-    if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
-        fprintf(stderr, "Sender never came online\n");
-        free(peer_uid);
-        shutdown();
-        return 1;
+    if (!g_server_mode) {
+        printf("  Waiting for sender to come online...\n");
+        if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
+            fprintf(stderr, "Sender never came online\n");
+            free(peer_uid);
+            shutdown();
+            return 1;
+        }
+        printf("  Sender online\n");
+    } else {
+        printf("  Server mode: skipping sender online check\n");
     }
-    printf("  Sender online\n");
 
     // Wait for a message. New server messages are handled via the
     // canonical dwyco_new_msg flow (rescan -> process remote msgs ->
@@ -413,17 +423,28 @@ main(int argc, char **argv)
 {
     if (argc < 2) {
         fprintf(stderr, "Usage:\n");
-        fprintf(stderr, "  %s send <user_dir> <peer_uid_hex> <text> [no_forward] [attachment_path]\n", argv[0]);
-        fprintf(stderr, "  %s recv <user_dir> <peer_uid_hex>\n", argv[0]);
+        fprintf(stderr, "  %s [--server] send <user_dir> <peer_uid_hex> <text> [no_forward] [attachment_path]\n", argv[0]);
+        fprintf(stderr, "  %s [--server] recv <user_dir> <peer_uid_hex>\n", argv[0]);
         return 1;
     }
 
-    if (strcmp(argv[1], "send") == 0)
-        return mode_send(argc, argv);
-    else if (strcmp(argv[1], "recv") == 0)
-        return mode_recv(argc, argv);
+    int arg_start = 1;
+    if (argc > 1 && strcmp(argv[1], "--server") == 0) {
+        g_server_mode = 1;
+        arg_start = 2;
+    }
+
+    if (arg_start >= argc) {
+        fprintf(stderr, "Missing mode after --server\n");
+        return 1;
+    }
+
+    if (strcmp(argv[arg_start], "send") == 0)
+        return mode_send(argc - arg_start + 1, argv + arg_start - 1);
+    else if (strcmp(argv[arg_start], "recv") == 0)
+        return mode_recv(argc - arg_start + 1, argv + arg_start - 1);
     else {
-        fprintf(stderr, "Unknown mode: %s\n", argv[1]);
+        fprintf(stderr, "Unknown mode: %s\n", argv[arg_start]);
         return 1;
     }
 }
