@@ -1,4 +1,5 @@
 * Use CMake files to understand the project. Ignore the qmake files.
+* ignore what is in the build directory
 * ignore trc_wrappers.cpp, it is auto-generated for debugging the api.
 * when you make changes, create a temporary directory to check if it compiles.
 * assume DWYCO_VC_CONV is defined
@@ -9,4 +10,4 @@
 * SUPER EXTREMELY CRITICAL: the hand-written database code stores all binary uid's as HEXADECIMAL ASCII strings (uid.toHex()). the reason this is done is to avoid having to use "blobs" everywhere for very commmon uid columns in tables. it is also a lot easier to debug a database with hex strings.
 * as a convention, convert uid's to hex only near the site where they are about to be stored in the database. when reading them out of the database, convert them back to binary for consumption by callers.
 * use the dumpxfer.lh script to dump out files in the client directory that are not sqlite databases. most files are encoded using dwyco xfer format. the script is invoked as "./vc dumpxfer.lh filename"
-
+* if you need to create clients for testing, make them in /tmp/dwyXYZ where XYZ is an arbitrary identifier.

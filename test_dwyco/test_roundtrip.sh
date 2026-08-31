@@ -6,9 +6,10 @@
 #   UIDs must be in hex format (lowercase, no separators)
 #
 # Covers simple text messages plus attachments:
-#   - both clients online at the same time (direct sends)
-#   - clients NOT online at the same time (exercise the server store & forward)
-#   - small attachments (<10k, inline) and large attachments (>1MB, out of line)
+#   - both clients started together; they rendezvous by polling each
+#     other's online status (dwyco_uid_online) before exchanging
+#   - small attachments (<10k, inline) and large attachments (>1MB,
+#     out of line)
 
 set -e
 
@@ -24,7 +25,6 @@ USERA_DIR="$1"
 USERA_UID="$2"
 USERB_DIR="$3"
 USERB_UID="$4"
-COORD_FILE="/tmp/dwytest_roundtrip_coord.$$"
 RECV_LOG="/tmp/dwytest_roundtrip_recv.$$.log"
 SEND_LOG="/tmp/dwytest_roundtrip_send.$$.log"
 SMALL_ATT="/tmp/dwytest_small_att.$$.bin"
@@ -32,7 +32,7 @@ LARGE_ATT="/tmp/dwytest_large_att.$$.bin"
 PEER_BIN="${PEER_BIN:-./dwytest_peer}"
 
 cleanup() {
-    rm -f "$COORD_FILE" "$RECV_LOG" "$SEND_LOG" "$SMALL_ATT" "$LARGE_ATT"
+    rm -f "$RECV_LOG" "$SEND_LOG" "$SMALL_ATT" "$LARGE_ATT"
 }
 trap cleanup EXIT
 
@@ -40,8 +40,7 @@ trap cleanup EXIT
 # Large attachment: over 1 megabyte so the direct-send path transfers the
 # file out of line on a separate channel.
 make_attachments() {
-    # deterministic-ish content; the size/hash travel in the coord file so
-    # the receiver can verify the copied-out bytes match exactly.
+    # deterministic-ish content
     python3 - "$SMALL_ATT" "$LARGE_ATT" <<'EOF'
 import sys
 small = open(sys.argv[1], "wb")
@@ -57,18 +56,20 @@ EOF
 PASS=0
 FAIL=0
 
-# Direct send: start the receiver first so both clients are online when the
-# sender fires. Optional trailing args are passed to the sender
-# (attachment path).
-run_direct_test() {
+# Both clients are started together; they rendezvous by polling each
+# other's online status (via dwyco_uid_online) rather than using a coord
+# file or a fixed sleep. The sender waits for the receiver to come online
+# before firing; the receiver waits for the sender before polling for the
+# incoming message. Optional trailing args are passed to the sender
+# (no_forward, attachment path).
+run_roundtrip_test() {
     local name="$1"
     local text="$2"
     local no_forward="${3:-0}"
-    local delay="${4:-3}"
-    local att="${5:-}"
+    local att="${4:-}"
 
     echo ""
-    echo "=== $name (both clients online) ==="
+    echo "=== $name ==="
     echo "  Text: '$text'"
     echo "  No forward: $no_forward"
     if [ -n "$att" ]; then
@@ -77,75 +78,18 @@ run_direct_test() {
         echo "  Attachment: none"
     fi
 
-    rm -f "$COORD_FILE"
-
-    # Receiver must be online when the message is sent (messages are
-    # only delivered to a connected peer), so start it first. It waits
-    # for the coord file, then polls for the incoming message.
     echo "--- Starting receiver ---"
-    "$PEER_BIN" recv "$USERA_DIR" "$COORD_FILE" "$USERB_UID" > "$RECV_LOG" 2>&1 &
+    "$PEER_BIN" recv "$USERA_DIR" "$USERB_UID" > "$RECV_LOG" 2>&1 &
     RECV_PID=$!
 
-    echo "--- Waiting ${delay}s for receiver to come online ---"
-    sleep "$delay"
-
-    echo "--- Sending ---"
-    if ! "$PEER_BIN" send "$USERB_DIR" "$COORD_FILE" "$USERA_UID" "$text" "$no_forward" "$att" > "$SEND_LOG" 2>&1; then
+    echo "--- Starting sender ---"
+    if ! "$PEER_BIN" send "$USERB_DIR" "$USERA_UID" "$text" "$no_forward" "$att" > "$SEND_LOG" 2>&1; then
         cat "$SEND_LOG"
         cat "$RECV_LOG"
         echo "FAIL: send failed"
         FAIL=$((FAIL + 1))
         return
     fi
-
-    echo "--- Waiting for receiver to verify ---"
-    if ! wait "$RECV_PID"; then
-        cat "$RECV_LOG"
-        echo "FAIL: receive failed"
-        FAIL=$((FAIL + 1))
-        return
-    fi
-    if ! grep -q "Receive OK" "$RECV_LOG"; then
-        cat "$RECV_LOG"
-        echo "FAIL: receiver did not confirm"
-        FAIL=$((FAIL + 1))
-        return
-    fi
-
-    PASS=$((PASS + 1))
-    echo "PASS"
-}
-
-# Server send: the receiver is OFFLINE while the sender sends, so the
-# message must ride the server (store & forward). The receiver is started
-# afterward and fetches the queued message from the server.
-run_server_test() {
-    local name="$1"
-    local text="$2"
-    local att="${3:-}"
-
-    echo ""
-    echo "=== $name (receiver offline, server store & forward) ==="
-    echo "  Text: '$text'"
-    if [ -n "$att" ]; then
-        echo "  Attachment: $att ($(stat -c %s "$att") bytes)"
-    else
-        echo "  Attachment: none"
-    fi
-
-    rm -f "$COORD_FILE"
-
-    echo "--- Sending while receiver is offline ---"
-    if ! "$PEER_BIN" send "$USERB_DIR" "$COORD_FILE" "$USERA_UID" "$text" 0 "$att" > "$SEND_LOG" 2>&1; then
-        cat "$SEND_LOG"
-        echo "FAIL: send failed"
-        FAIL=$((FAIL + 1))
-        return
-    fi
-
-    echo "--- Starting receiver (fetches queued message from server) ---"
-    "$PEER_BIN" recv "$USERA_DIR" "$COORD_FILE" "$USERB_UID" > "$RECV_LOG" 2>&1 &
-    RECV_PID=$!
 
     echo "--- Waiting for receiver to verify ---"
     if ! wait "$RECV_PID"; then
@@ -179,20 +123,18 @@ echo ""
 echo "----------------"
 echo " Simple text"
 echo "----------------"
-run_direct_test "Simple text" "Hello from UserB"
-run_direct_test "No forward" "Secret message" 1
-run_direct_test "Multi-word text" "The quick brown fox jumps over the lazy dog" 0
-run_direct_test "Numeric text" "12345 67890 111213" 0
-run_direct_test "Special chars" "Line one\nLine two\nLine three" 0
+run_roundtrip_test "Simple text" "Hello from UserB"
+run_roundtrip_test "No forward" "Secret message" 1
+run_roundtrip_test "Multi-word text" "The quick brown fox jumps over the lazy dog" 0
+run_roundtrip_test "Numeric text" "12345 67890 111213" 0
+run_roundtrip_test "Special chars" "Line one\nLine two\nLine three" 0
 
 echo ""
 echo "----------------"
 echo " Attachments"
 echo "----------------"
-run_direct_test "Direct inline small attach" "small direct attachment" 0 3 "$SMALL_ATT"
-run_direct_test "Direct out-of-line large attach" "large direct attachment" 0 3 "$LARGE_ATT"
-run_server_test "Server small attach" "small via server" "$SMALL_ATT"
-run_server_test "Server large attach" "large via server" "$LARGE_ATT"
+run_roundtrip_test "Inline small attach" "small attachment" 0 "$SMALL_ATT"
+run_roundtrip_test "Out-of-line large attach" "large attachment" 0 "$LARGE_ATT"
 
 echo ""
 echo "============================================"

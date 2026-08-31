@@ -54,3 +54,12 @@ target_link_libraries(dwytest_local PRIVATE ${BASELIBS})
 
 add_executable(dwytest_peer test_peer.cpp dwyco_new_msg.cpp )
 target_link_libraries(dwytest_peer PRIVATE ${BASELIBS})
+
+add_executable(dump_uid dump_uid.cpp )
+target_link_libraries(dump_uid PRIVATE ${BASELIBS})
+
+add_executable(add_pal add_pal.cpp )
+target_link_libraries(add_pal PRIVATE ${BASELIBS})
+
+add_executable(create_account create_account.cpp )
+target_link_libraries(create_account PRIVATE ${BASELIBS})
