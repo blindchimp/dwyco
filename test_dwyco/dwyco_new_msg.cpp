@@ -136,4 +136,5 @@ void
 processed_msg(DwString& mid)
 {
     dwyco_unset_msg_tag(mid.c_str(), "_inbox");
+    dwyco_delete_unfetched_message(mid.c_str());
 }
