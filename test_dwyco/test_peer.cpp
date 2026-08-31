@@ -234,11 +234,25 @@ mode_send(int argc, char **argv)
 
     // Convert hex peer UID to binary
     int peer_hex_len = strlen(peer_hex);
+    if (peer_hex_len != 20) {
+        fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
+            peer_hex_len, peer_hex);
+        return 1;
+    }
     int peer_uid_len = peer_hex_len / 2;
     char *peer_uid = (char *)malloc(peer_uid_len + 1);
+    if (peer_uid_len != 10) {
+        fprintf(stderr, "Peer UID must be 10 bytes\n");
+        free(peer_uid);
+        return 1;
+    }
     for (int i = 0; i < peer_uid_len; i++) {
         unsigned int b;
-        sscanf(peer_hex + i * 2, "%2x", &b);
+        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) {
+            fprintf(stderr, "Invalid hex peer UID: %s\n", peer_hex);
+            free(peer_uid);
+            return 1;
+        }
         peer_uid[i] = (char)b;
     }
     peer_uid[peer_uid_len] = 0;
@@ -249,6 +263,12 @@ mode_send(int argc, char **argv)
     const char *my_uid;
     int my_uid_len;
     dwyco_get_my_uid(&my_uid, &my_uid_len);
+    if (my_uid_len != 10) {
+        fprintf(stderr, "My UID is not 10 bytes (got %d)\n", my_uid_len);
+        free(peer_uid);
+        shutdown();
+        return 1;
+    }
     printf("  My UID (hex): ");
     for (int i = 0; i < my_uid_len; i++)
         printf("%02x", (unsigned char)my_uid[i]);
@@ -348,11 +368,25 @@ mode_recv(int argc, char **argv)
     const char *peer_hex = argv[4];
 
     int peer_hex_len = strlen(peer_hex);
+    if (peer_hex_len != 20) {
+        fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
+            peer_hex_len, peer_hex);
+        return 1;
+    }
     int peer_uid_len = peer_hex_len / 2;
     char *peer_uid = (char *)malloc(peer_uid_len + 1);
+    if (peer_uid_len != 10) {
+        fprintf(stderr, "Peer UID must be 10 bytes\n");
+        free(peer_uid);
+        return 1;
+    }
     for (int i = 0; i < peer_uid_len; i++) {
         unsigned int b;
-        sscanf(peer_hex + i * 2, "%2x", &b);
+        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) {
+            fprintf(stderr, "Invalid hex peer UID: %s\n", peer_hex);
+            free(peer_uid);
+            return 1;
+        }
         peer_uid[i] = (char)b;
     }
     peer_uid[peer_uid_len] = 0;

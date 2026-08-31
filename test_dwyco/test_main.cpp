@@ -194,6 +194,8 @@ init_test(const char *user_dir)
     int uid_len;
     dwyco_get_my_uid(&uid, &uid_len);
     ASSERT(uid_len > 0 && uid_len < (int)sizeof(g_state.my_uid));
+    // All UIDs are 10 bytes per project convention.
+    ASSERT(uid_len == 10);
     memcpy(g_state.my_uid, uid, uid_len);
     g_state.my_uid_len = uid_len;
 }
@@ -702,10 +704,23 @@ main(int argc, char **argv)
     const char *user_dir = "/tmp/dwytest";
     if (argc > 1) user_dir = argv[1];
     if (argc > 2) {
-        g_peer_uid_len = strlen(argv[2]);
-        if (g_peer_uid_len > (int)sizeof(g_peer_uid) - 1)
-            g_peer_uid_len = sizeof(g_peer_uid) - 1;
-        memcpy(g_peer_uid, argv[2], g_peer_uid_len);
+        // The peer UID is passed on the command line as a hex string.
+        // Convert it to the 10-byte binary form the C API expects.
+        int peer_hex_len = strlen(argv[2]);
+        if (peer_hex_len != 20) {
+            fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
+                peer_hex_len, argv[2]);
+            return 1;
+        }
+        g_peer_uid_len = peer_hex_len / 2;
+        for (int i = 0; i < g_peer_uid_len; i++) {
+            unsigned int b;
+            if (sscanf(argv[2] + i * 2, "%2x", &b) != 1) {
+                fprintf(stderr, "Invalid hex peer UID: %s\n", argv[2]);
+                return 1;
+            }
+            g_peer_uid[i] = (char)b;
+        }
         g_has_peer = 1;
     }
 
