@@ -1678,6 +1678,14 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // create an old-style info vec
             prf_set_cached(uid);
+            {
+                vc gid = map_uid_to_gid(uid);
+                if(!gid.is_nil())
+                {
+                    save_group_profile(gid, m[1]);
+                    prf_group_set_cached(gid);
+                }
+            }
             const vc ai = make_best_local_info(uid, 0);
             v = vc(VC_VECTOR);
             v[QIR_FROM] = uid;
