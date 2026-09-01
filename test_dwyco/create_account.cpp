@@ -48,7 +48,7 @@ wait_login(int timeout_ms)
 int
 main(int argc, char **argv)
 {
-    if (argc < 2) { fprintf(stderr, "usage: %s <user_dir>\n", argv[0]); return 1; }
+    if (argc < 2) { fprintf(stderr, "usage: %s <user_dir> [-] (wait 2 minutes before exiting, 3 args means exit immediately)\n", argv[0]); return 1; }
     const char *user_dir = argv[1];
     char sys_dir[512], tmp_dir[512];
     snprintf(sys_dir, sizeof(sys_dir), "%s/sys", user_dir);
@@ -70,7 +70,7 @@ main(int argc, char **argv)
     dwyco_set_disposition("foreground", 10);
 
     printf("  Waiting for login...\n");
-    if (!wait_login(15000)) {
+    if (!wait_login(120000)) {
         fprintf(stderr, "Login timeout\n");
         dwyco_exit();
         return 1;
@@ -85,6 +85,11 @@ main(int argc, char **argv)
     for (int i = 0; i < uid_len; i++)
         printf("%02x", (unsigned char)uid[i]);
     printf("\n");
+    if(argc < 3)
+    {
+        g_login_done = 0;
+        wait_login(120000);
+    }
     dwyco_exit();
     return 0;
 }
