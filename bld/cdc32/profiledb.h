@@ -49,6 +49,16 @@ void prf_invalidate(vc uid);
 void prf_set_cached(vc uid);
 vc find_alt_pubkey(vc alt_name, vc& uid_out);
 
+// device group profile (keyed by gid, not by ephemeral member uid)
+// the gid is a binary 10 byte group id (from DH_alternate::get_gid)
+int load_group_profile(const vc &gid, vc& prf_out);
+int save_group_profile(vc gid, vc prf);
+//void clean_group_profile_cache(int days_old, int max_left);
+int prf_group_already_cached(const vc &gid);
+void prf_group_force_check(vc gid);
+void prf_group_invalidate(vc gid);
+void prf_group_set_cached(vc gid);
+
 #define PRF_PACK 0
 #define PRF_MEDIA 1
 #define PRF_CHKSUM 2

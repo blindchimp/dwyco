@@ -4493,7 +4493,14 @@ extra_get_done_viewer(vc m, void *t, vc vcb, ValidPtr )
     if(vid_empty && img_empty)
     {
         if(!dontsave)
+        {
             save_profile(vcb[1], m[1]);
+            {
+                vc gid = map_uid_to_gid(vcb[1]);
+                if(!gid.is_nil())
+                    save_group_profile(gid, m[1]);
+            }
+        }
         (*cb)(-1, 0, s1, s1.len(), s2, s2.len(), s3, s3.len(), 0, vcb[1], vcb[1].len(), reviewed, regular, t);
         prf_set_cached(vcb[1]);
         return;
@@ -4521,7 +4528,14 @@ extra_get_done_viewer(vc m, void *t, vc vcb, ValidPtr )
     }
     fclose(f);
     if(!dontsave)
+    {
         save_profile(vcb[1], m[1]);
+        {
+            vc gid = map_uid_to_gid(vcb[1]);
+            if(!gid.is_nil())
+                save_group_profile(gid, m[1]);
+        }
+    }
     prf_set_cached(vcb[1]);
     if(SlippyTube::is_dwyco_media(newfn(fn)))
     {
@@ -4687,6 +4701,371 @@ dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, in
         return viewid;
     }
     return viewid;
+}
+
+// device-group profile get. this mirrors extra_get_done_viewer, but in
+// addition to saving the fetched profile under the (ephemeral) member uid
+// it also stores it under the device group id (gid), so it is shared by all
+// members of the group. vcb[0] user callback, vcb[1] member uid,
+// vcb[2] group id (gid).
+static
+void
+extra_get_done_group_viewer(vc m, void *t, vc vcb, ValidPtr )
+{
+    DwycoProfileCallback cb = (DwycoProfileCallback)(void *)vcb[0];
+    if(!cb)
+    {
+        GRTLOG("group profile get callback: no user defined callback in place, group profile processing will not happen properly", 0, 0);
+        return;
+    }
+    vc gid = vcb[2];
+    int dontsave = 0;
+    if(m[1].is_nil() || (m[1].type() == VC_STRING && m[1] == vc("ok")))
+    {
+        // server says we have the latest copy of the
+        // profile locally
+        vc prf;
+        // prefer the group profile if we have it locally cached
+        vc gprf;
+        if(!gid.is_nil() && load_group_profile(gid, gprf))
+        {
+            m[1] = gprf;
+            dontsave = 1;
+        }
+        else if(!load_profile(vcb[1], prf))
+        {
+            if(m[1].is_nil())
+                (*cb)(0, m[2], 0, 0, 0, 0, 0, 0, 0, vcb[1], vcb[1].len(), 0, 0, t);
+            else
+                (*cb)(0, "corrupted cache", 0, 0, 0, 0, 0, 0, 0, vcb[1], vcb[1].len(), 0, 0, t);
+            return;
+        }
+        else
+        {
+            if(!m[1].is_nil())
+                prf_set_cached(vcb[1]);
+            dontsave = 1;
+            m[1] = prf;
+        }
+    }
+    else if(m[1].type() != VC_VECTOR)
+    {
+        (*cb)(0, "corrupted msg", 0, 0, 0, 0, 0, 0, 0, vcb[1], vcb[1].len(), 0, 0, t);
+        return;
+    }
+
+    vc ret = m[1];
+    vc pack;
+    vc s1 = "";
+    vc s2 = "";
+    vc s3 = "";
+
+    if(deserialize(ret[PRF_PACK], pack))
+    {
+        s1 = pack[vc("handle")];
+        s2 = pack[vc("desc")];
+        s3 = pack[vc("loc")];
+    }
+    vc vid = ret[PRF_MEDIA];
+    int regular = (int)ret[PRF_REGULAR];
+    int reviewed = (int)ret[PRF_REVIEWED];
+    vc img = ret[PRF_IMAGE];
+
+    int vid_empty = (vid.is_nil() || vid.len() == 0);
+    int img_empty = (img.is_nil() || img.len() == 0);
+
+    if(vid_empty && img_empty)
+    {
+        if(!dontsave)
+        {
+            save_profile(vcb[1], m[1]);
+            if(!gid.is_nil())
+                save_group_profile(gid, m[1]);
+        }
+        (*cb)(-1, 0, s1, s1.len(), s2, s2.len(), s3, s3.len(), 0, vcb[1], vcb[1].len(), reviewed, regular, t);
+        prf_set_cached(vcb[1]);
+        if(!gid.is_nil())
+            prf_group_set_cached(gid);
+        return;
+    }
+
+    vc str_to_dump = vid_empty ? img : vid;
+
+    // use random filename instead of uid (in the past.)
+    // don't think anything relied on uid, and it fails
+    // in cases where multiple viewers are needed on the same
+    // uid.
+    DwString fn = gen_random_filename();
+    fn += vid_empty ? ".fle" : ".dyc";
+    FILE *f = fopen(newfn(fn).c_str(), "wb");
+    if(!f)
+    {
+        (*cb)(-1, 0, s1, s1.len(), s2, s2.len(), s3, s3.len(), 0, vcb[1], vcb[1].len(), reviewed, regular, t);
+        return;
+    }
+    if(fwrite((const char *)str_to_dump, 1, str_to_dump.len(), f) != str_to_dump.len())
+    {
+        fclose(f);
+        (*cb)(-1, 0, s1, s1.len(), s2, s2.len(), s3, s3.len(), 0, vcb[1], vcb[1].len(), reviewed, regular, t);
+        return;
+    }
+    fclose(f);
+    if(!dontsave)
+    {
+        save_profile(vcb[1], m[1]);
+        if(!gid.is_nil())
+            save_group_profile(gid, m[1]);
+    }
+    prf_set_cached(vcb[1]);
+    if(!gid.is_nil())
+        prf_group_set_cached(gid);
+    if(SlippyTube::is_dwyco_media(newfn(fn)))
+    {
+        // create a zap viewer and send that to the callback for them to play
+        int viewid = dwyco_make_zap_view_file(fn.c_str());
+        (*cb)(viewid, 0, s1, s1.len(), s2, s2.len(), s3, s3.len(), newfn(fn).c_str(), vcb[1], vcb[1].len(), reviewed, regular, t);
+
+    }
+    else
+    {
+        // profile might be some kind of other media like a pic
+        // rename to .fle and let callback know
+        (*cb)(-2, 0, s1, s1.len(), s2, s2.len(), s3, s3.len(), newfn(fn).c_str(), vcb[1], vcb[1].len(), reviewed, regular, t);
+    }
+}
+
+DWYCOEXPORT
+int
+dwyco_set_group_profile_from_composer(int compid, const char *txt, int txt_len, DwycoProfileCallback cb, void *arg)
+{
+    ValidPtr p = cookie_to_ptr(compid);
+    if(!p.is_valid())
+    {
+        GRTLOG("set_group_profile_from_composer: bad composer id (%d)", compid, 0);
+        return 0;
+    }
+    TMsgCompose *m = (TMsgCompose *)(void *)p;
+    vc v(VC_VECTOR);
+    v[0] = vc(VC_BSTRING, txt, txt_len);
+    DwString tot;
+    if(m->actual_filename.length() > 0)
+    {
+        FILE *f = fopen(m->actual_filename.c_str(), "rb");
+        if(!f)
+        {
+            GRTLOG("set_group_profile_from_composer: cant open file \"%s\"", m->actual_filename.c_str(), 0);
+            return 0;
+        }
+        while(!feof(f))
+        {
+            char buf[2048];
+            int n;
+            n = fread(buf, 1, sizeof(buf), f);
+            if(n < sizeof(buf) && !feof(f))
+            {
+                GRTLOG("set_group_profile_from_composer: read error on file \"%s\"", m->actual_filename.c_str(), 0);
+                fclose(f);
+                return 0;
+            }
+            DwString a(buf, 0, n);
+            tot += a;
+        }
+        if(tot.length() + v[0].len() > 65000)
+        {
+            GRTLOG("set_group_profile_from_composer: file \"%s\" too big (>65000)", m->actual_filename.c_str(), 0);
+            fclose(f);
+            return 0;
+        }
+        v[1] = vc(VC_BSTRING, tot.c_str(), tot.length());
+        fclose(f);
+    }
+    // compat hack, if this is a file zap, move it to another slot in the
+    // profile command so old software doesn't get confused.
+    if(dwyco_is_file_zap(compid))
+    {
+        v[2] = v[1];
+        v[1] = vcnil;
+    }
+
+    // build the full profile vector, mirroring save_profile's shape.
+    // note: the file-zap compat hack above moves the media to v[2], so
+    // grab it from whichever slot holds it so the group profile stored
+    // locally keeps the image/media.
+    vc prf(VC_VECTOR);
+    prf[PRF_PACK] = v[0];
+    prf[PRF_MEDIA] = v[1].is_nil() ? v[2] : v[1];
+    prf[PRF_CHKSUM] = "";
+    prf[PRF_REVIEWED] = 0;
+    prf[PRF_REGULAR] = 0;
+    prf[PRF_IMAGE] = vcnil;
+
+    vc gid;
+    if(Current_alternate)
+    {
+        gid = Current_alternate->get_gid();
+    }
+
+    // store the singular group profile locally, keyed by gid
+    if(!gid.is_nil())
+        save_group_profile(gid, prf);
+
+    vc vv(VC_VECTOR);
+    vv[0] = vc(VC_INT_DTOR, (vc_int_dtor_fun)0, (void *)cb);
+    vv[1] = My_UID;
+    vv[2] = v;
+    dirth_send_set_info(My_UID, v, QckDone(extra_info_done, arg, vv));
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_group_profile(const char *uid, int len_uid, DwycoProfileCallback cb, void *arg)
+{
+    vc u(VC_BSTRING, uid, len_uid);
+    vc gid = map_uid_to_gid(u);
+    // not in a group, fall back to the individual uid profile
+    if(gid.is_nil())
+        return dwyco_get_profile_to_viewer(uid, len_uid, cb, arg);
+
+    vc vv(VC_VECTOR);
+    vv[0] = vc((long long)cb);
+    vv[1] = u;
+    vv[2] = gid;
+#if 1
+    if(prf_group_already_cached(gid))
+    {
+        vc resp(VC_VECTOR);
+        vc v;
+        v = "ok";
+        resp[0] = v;
+        dirth_q_local_action(resp, QckDone(extra_get_done_group_viewer, arg, vv));
+    }
+    else
+    {
+#endif
+        vc prf;
+        vc cache_check;
+        if(load_group_profile(gid, prf))
+            cache_check = prf[PRF_CHKSUM]; // dwyco/cdcx profile
+        else if(load_profile(u, prf))
+            cache_check = prf[PRF_CHKSUM];
+        dirth_send_get_info(My_UID, u, cache_check, QckDone(extra_get_done_group_viewer, arg, vv));
+#if 1
+    }
+#endif
+    return 1;
+}
+
+static
+int
+get_group_profile_media(vc uid, vc gid, DwString& fn_out)
+{
+    vc prf;
+    if(!load_group_profile(gid, prf))
+        return 0;
+
+    vc ret = prf;
+    vc vid = ret[PRF_MEDIA];
+    vc img = ret[PRF_IMAGE];
+
+    int vid_empty = (vid.is_nil() || vid.len() == 0);
+    int img_empty = (img.is_nil() || img.len() == 0);
+
+    if(vid_empty && img_empty)
+    {
+        return -1;
+    }
+
+    vc str_to_dump = vid_empty ? img : vid;
+
+    DwString fn = gen_random_filename();
+    fn += vid_empty ? ".fle" : ".dyc";
+    FILE *f = fopen(newfn(fn).c_str(), "wb");
+    if(!f)
+    {
+        return 0;
+    }
+    if(fwrite((const char *)str_to_dump, 1, str_to_dump.len(), f) != str_to_dump.len())
+    {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+
+    if(SlippyTube::is_dwyco_media(newfn(fn)))
+    {
+        int viewid = dwyco_make_zap_view_file(fn.c_str());
+        return viewid;
+    }
+    else
+    {
+        fn_out = newfn(fn);
+        return -2;
+    }
+
+    return 0;
+}
+
+// NOTE: if this returns -2, you must call dwyco_free_array on the fn_out you get
+
+DWYCOEXPORT
+int
+dwyco_get_group_profile_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out)
+{
+    vc u(VC_BSTRING, uid, len_uid);
+    vc gid = map_uid_to_gid(u);
+    if(gid.is_nil())
+        return dwyco_get_profile_to_viewer_sync(uid, len_uid, fn_out, len_fn_out);
+
+    int viewid;
+    DwString fn;
+    if(fn_out)
+        *fn_out = 0;
+
+    viewid = get_group_profile_media(u, gid, fn);
+    // either it failed (we don't have it now) or it just doesn't have
+    // any media, in either case, we can't provide a preview
+    if(viewid == 0 || viewid == -1)
+        return viewid;
+    // if it is a pic, just return the filename, they will have to preview
+    // in some client-specific way.
+    //
+    if(viewid == -2)
+    {
+        if(fn_out)
+        {
+            *fn_out = new char[fn.length() + 1];
+            (*fn_out)[fn.length()] = 0;
+            memcpy(*fn_out, fn.c_str(), fn.length());
+            if(len_fn_out)
+                *len_fn_out = fn.length() + 1;
+        }
+        return viewid;
+    }
+    return viewid;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_group_profile_by_name(const char *gname, int len_gname, DwycoProfileCallback cb, void *arg)
+{
+    vc g(VC_BSTRING, gname, len_gname);
+    vc uid_out;
+    if(find_alt_pubkey(g, uid_out).is_nil() || uid_out.is_nil())
+    {
+        // couldn't resolve the group name to a member uid, no profile
+        vc vv(VC_VECTOR);
+        vv[0] = vc((long long)cb);
+        vv[1] = uid_out;
+        vv[2] = vcnil;
+        vc resp(VC_VECTOR);
+        vc v;
+        v = vcnil;
+        resp[0] = v;
+        dirth_q_local_action(resp, QckDone(extra_get_done_group_viewer, arg, vv));
+        return 1;
+    }
+    return dwyco_get_group_profile((const char *)uid_out, uid_out.len(), cb, arg);
 }
 
 static
@@ -8530,8 +8909,36 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
     v.append(ai[2]);
     v.append(ai[1]);
 
-    vc prf;
-    if(load_profile(buid, prf))
+    // for a uid that is part of a device group, prefer the singular
+    // group profile over the member uid's own profile, so the displayed
+    // handle/desc/loc don't depend on which ephemeral uid you're viewing.
+    vc gid = map_uid_to_gid(buid);
+    vc prf(VC_VECTOR);
+    vc pack;
+    if(!gid.is_nil() && load_group_profile(gid, prf))
+    {
+        if(deserialize(prf[PRF_PACK], pack))
+        {
+            v[0] = pack[vc("handle")];
+            v[1] = pack[vc("loc")];
+            v[2] = pack[vc("desc")];
+        }
+    }
+    else if(load_profile(buid, prf))
+    {
+        if(deserialize(prf[PRF_PACK], pack))
+        {
+            v[0] = pack[vc("handle")];
+            v[1] = pack[vc("loc")];
+            v[2] = pack[vc("desc")];
+        }
+    }
+    else
+    {
+        prf = vc(VC_VECTOR);
+    }
+
+    if(prf.type() == VC_VECTOR && prf.num_elems() > PRF_REGULAR)
     {
         v.append(prf[PRF_REVIEWED]);
         v.append(prf[PRF_REGULAR]);

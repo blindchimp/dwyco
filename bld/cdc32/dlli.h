@@ -590,6 +590,35 @@ int DWYCOEXPORT dwyco_create_bootstrap_profile(const char *handle, int len_handl
 // note: output is to static area, must be copied out immediately
 int DWYCOEXPORT dwyco_make_profile_pack(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email, const char **str_out, int *len_str_out);
 
+// these are similar to the profile functions above, but they store/retrieve
+// a profile keyed to the current device GROUP (the group id / gid) rather
+// than to an individual (ephemeral) member uid. this lets a group have one
+// profile that isn't confused by which device's uid you happen to be viewing.
+//
+// set the profile for the current device group. inside a group this stores
+// a single group profile; it also updates the server profile for My_UID for
+// backward compat. returns 1 on success.
+int DWYCOEXPORT dwyco_set_group_profile_from_composer(int compid, const char *text, int len_text,
+        DwycoProfileCallback cb, void *arg);
+
+// get the profile for the device group that the given member uid belongs to.
+// resolves the uid to its group id, then returns the group profile. if the
+// uid is not in a group, this falls back to the uid's own profile (same as
+// dwyco_get_profile_to_viewer). the callback semantics are the same as
+// dwyco_get_profile_to_viewer. returns 1 on success.
+int DWYCOEXPORT dwyco_get_group_profile(const char *uid, int len_uid, DwycoProfileCallback cb, void *arg);
+
+// synchronous version of dwyco_get_group_profile. this returns whatever is
+// currently in the local group profile cache without querying the server.
+// same return value semantics as dwyco_get_profile_to_viewer_sync.
+int DWYCOEXPORT dwyco_get_group_profile_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+
+// get the device-group profile for the group named by the given group name
+// (alt_name, e.g. "jane@mumble"). resolves the name to a member uid, then
+// to the group id. same callback semantics as dwyco_get_profile_to_viewer.
+// returns 1 on success.
+int DWYCOEXPORT dwyco_get_group_profile_by_name(const char *gname, int len_gname, DwycoProfileCallback cb, void *arg);
+
 //
 // WARNING: this char-by-char chat interface isn't used any more, as most
 // applications these days do line-by-line chat.
