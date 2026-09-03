@@ -63,3 +63,9 @@ target_link_libraries(add_pal PRIVATE ${BASELIBS})
 
 add_executable(create_account create_account.cpp )
 target_link_libraries(create_account PRIVATE ${BASELIBS})
+
+add_executable(dwycobg ${CMAKE_CURRENT_SOURCE_DIR}/../dwycobg/dwycobg.cpp)
+target_link_libraries(dwycobg PRIVATE ${BASELIBS})
+
+add_executable(join_group join_group.cpp)
+target_link_libraries(join_group PRIVATE ${BASELIBS})
