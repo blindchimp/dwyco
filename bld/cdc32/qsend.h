@@ -57,7 +57,25 @@ public:
         INHIBIT_ENCRYPTION = 2
     };
     enum enc_mode force_encryption;
+
+    // msg sends to a device group would normally send a message
+    // back to the sender as well. setting this to 1 will inhibit
+    // that behavior. note that this is stored with the message
+    // on the server, so once it is completed successfully, it is
+    // part of the message and the server uses this information
+    // for all processing of the message.
     int no_self_send;
+
+    // normally, the server knows what uid's are in a group at
+    // any time, and will automatically compute which uid's see which messages
+    // if the uid is in a group. setting no_group to 1 will cause the
+    // server to treat the message as a simple p2p messages. only
+    // the explicit recipient in the message will see it regardless
+    // of group membership. like "no_self_send", this is stored as part
+    // of the message, and cannot be changed after it is successfully
+    // sent to the server. this is useful for situations where you
+    // are implementing some protocol or feature where broadcasting a message
+    // isn't desirable.
     int no_group;
 
     int send_message();
@@ -78,6 +96,12 @@ public:
 private:
 
     int cancel_op;
+
+    // set this to 1 causes "send_message" to simply do the processing
+    // (like encryption and queuing the message) without starting the
+    // send state-machine. this is useful in situations where you are
+    // sending a lot of messages at once and just want the queuing
+    // thing to spool them out slowly over time.
     int defer_send;
 
     vc msg;
