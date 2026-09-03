@@ -494,8 +494,16 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
+// the group key was successfully acquired, YOU MUST EXIT
+// and restart the program as soon as possible.
+// NOTE: you also receive this message when you LEAVE
+// all groups (ie, enter the "no group" state.
 #define DWYCO_SE_GRP_JOIN_OK 33
+
+// the group join failed, but not because of
+// an incorrect password.
 #define DWYCO_SE_GRP_JOIN_FAIL 34
+
 #define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
 
 
@@ -951,6 +959,33 @@ int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
+// with a non-empty gname, this starts the process of putting
+// this device into the device group named "gname".
+//
+// if gname is empty, it removes this device from any group.
+// 
+// the results of the operation are signaled by group status messages.
+//
+// if this returns 0, the operation cannot be started. if it returns 1
+// the operation is started, but may ultimately fail.
+//
+// NOTE: you cannot "switch groups", you must first exit all groups, then
+// re-enter the group you want.
+//
+// also note: IF YOU RECEIVE A successful group-enter message, the server
+// DOES NOT KNOW you are in the requested group until AFTER the first time
+// you successfully log in while in the group.
+//
+// SPECIAL NOTE: the password is used ONLY directly with other group
+// members when trying to acquire the group private key. it is NEVER
+// sent to the server. for security reasons, when negotiating with
+// other clients for the key, incorrect passwords result in no
+// response from the remote client. this means that if you give the
+// wrong password, the group enter protocol will never complete.
+// it is up to the client to provide either a timeout, or some
+// other means of verifying the password before using it, if that
+// is wanted.
+//
 int DWYCOEXPORT dwyco_start_gj2(const char *gname, const char *password);
 
 int DWYCOEXPORT dwyco_is_ignored(const char *uid, int len_uid);
