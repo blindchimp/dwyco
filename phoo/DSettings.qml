@@ -258,16 +258,19 @@ Page {
         id: obliterate_help
         visible: false
         z: 3
+        link_text: "How obliterate works for server data."
+        link_url: "http://www.dwyco.com/dist/oblit.html"
         warning: "Obliterate removes this app's local data from this device:\n\n" +
               "- All messages stored on this device\n" +
               "- All contacts and PAL entries\n" +
               "- Your profile and account data\n" +
               "- Your Tox identity and friends\n" +
-              "- All temporary files\n" +
               "- All settings and preferences\n\n" +
               "The data will be removed from:\n" + core.user_dir + "\n\n" +
-              "After obliteration, the app will quit. " +
-              "You can then uninstall the app, or restart to create a new account."
+              "After obliteration, the app will quit.\n" +
+              "You can then uninstall the app, or restart to create a new account.\n\n" +
+                 "WARNING: obliterate does NOT delete automatic backups, which are\n" +
+                 "usually copied to your Documents folder."
         oops_text: ""
     }
 
