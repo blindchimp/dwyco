@@ -258,12 +258,12 @@ Page {
         id: obliterate_help
         visible: false
         z: 3
-        warning: "Obliterate removes ALL local data from this device:\n\n" +
+        warning: "Obliterate removes this app's local data from this device:\n\n" +
               "- All messages stored on this device\n" +
               "- All contacts and PAL entries\n" +
               "- Your profile and account data\n" +
               "- Your Tox identity and friends\n" +
-              "- All backups and temporary files\n" +
+              "- All temporary files\n" +
               "- All settings and preferences\n\n" +
               "The data will be removed from:\n" + core.user_dir + "\n\n" +
               "After obliteration, the app will quit. " +
