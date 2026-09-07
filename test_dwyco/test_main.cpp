@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 
 #include "dlli.h"
+#include "test_common.h"
+#include "dwyco_new_msg.h"
 
 #define ASSERT(cond) do { \
     if (!(cond)) { \
@@ -77,7 +79,8 @@ sys_event_cb(int cmd, int ctx_id, const char *uid, int len_uid,
 static void DWYCOCALLCONV
 login_result_cb(const char *str, int what)
 {
-    if (what == 1)
+    // 1 = login ok, 2 = new account created (and logged in)
+    if (what == 1 || what == 2)
         g_state.login_status = 1;
 }
 
@@ -123,6 +126,21 @@ service_until(int target_cmd, int timeout_ms)
     return 0;
 }
 
+static int
+wait_login(int timeout_ms)
+{
+    int elapsed = 0;
+    while (elapsed < timeout_ms) {
+        int spin;
+        int next = dwyco_service_channels(&spin);
+        if (next <= 0 || next > 50) next = 50;
+        usleep(next * 1000);
+        elapsed += next;
+        if (g_state.login_status) return 1;
+    }
+    return 0;
+}
+
 static void
 clear_events(void)
 {
@@ -158,6 +176,7 @@ init_test(const char *user_dir)
     snprintf(tmp_dir, sizeof(tmp_dir), "%s/tmp", user_dir);
     mkdir(user_dir, 0755);
     mkdir(tmp_dir, 0755);
+    install_app_files(user_dir);
 
     dwyco_set_fn_prefixes(user_dir, user_dir, tmp_dir);
     dwyco_set_system_event_callback(sys_event_cb);
@@ -166,6 +185,8 @@ init_test(const char *user_dir)
     dwyco_set_client_version("dwytest", 7);
 
     ASSERT(dwyco_init() != 0);
+    std::string desc = std::string("dwytest-local test account (") + user_dir + ")";
+    test_bootstrap_profile("dwytest-local", desc.c_str());
     dwyco_finish_startup();
     dwyco_set_disposition("foreground", 10);
 
@@ -173,6 +194,8 @@ init_test(const char *user_dir)
     int uid_len;
     dwyco_get_my_uid(&uid, &uid_len);
     ASSERT(uid_len > 0 && uid_len < (int)sizeof(g_state.my_uid));
+    // All UIDs are 10 bytes per project convention.
+    ASSERT(uid_len == 10);
     memcpy(g_state.my_uid, uid, uid_len);
     g_state.my_uid_len = uid_len;
 }
@@ -564,6 +587,27 @@ test_tag_uid_has_tag(void)
     ASSERT(dwyco_uid_count_tag(g_peer_uid, g_peer_uid_len, tag) >= 0);
 }
 
+// ===== SERVER MESSAGE TESTS =====
+
+static void
+test_server_msg_helpers(void)
+{
+    // All of these are local db lookups and are safe before server login.
+
+    // No unfetched messages means nothing to do.
+    int res = process_remote_msgs();
+    ASSERT(res == 0 || res == 1);
+
+    // Nothing tagged _inbox means no new message.
+    DwString uid, txt, mid;
+    int zviewer, has_att;
+    ASSERT(dwyco_new_msg(uid, txt, zviewer, mid, has_att) == 0);
+
+    // processed_msg on an untagged mid must not crash.
+    DwString bogus("deadbeef");
+    processed_msg(bogus);
+}
+
 // ===== PAL TESTS =====
 
 static void
@@ -660,10 +704,23 @@ main(int argc, char **argv)
     const char *user_dir = "/tmp/dwytest";
     if (argc > 1) user_dir = argv[1];
     if (argc > 2) {
-        g_peer_uid_len = strlen(argv[2]);
-        if (g_peer_uid_len > (int)sizeof(g_peer_uid) - 1)
-            g_peer_uid_len = sizeof(g_peer_uid) - 1;
-        memcpy(g_peer_uid, argv[2], g_peer_uid_len);
+        // The peer UID is passed on the command line as a hex string.
+        // Convert it to the 10-byte binary form the C API expects.
+        int peer_hex_len = strlen(argv[2]);
+        if (peer_hex_len != 20) {
+            fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
+                peer_hex_len, argv[2]);
+            return 1;
+        }
+        g_peer_uid_len = peer_hex_len / 2;
+        for (int i = 0; i < g_peer_uid_len; i++) {
+            unsigned int b;
+            if (sscanf(argv[2] + i * 2, "%2x", &b) != 1) {
+                fprintf(stderr, "Invalid hex peer UID: %s\n", argv[2]);
+                return 1;
+            }
+            g_peer_uid[i] = (char)b;
+        }
         g_has_peer = 1;
     }
 
@@ -675,11 +732,14 @@ main(int argc, char **argv)
 
     // Wait for login with timeout
     printf("  Waiting for server login...\n");
-    int logged_in = service_until(DWYCO_SE_SERVER_LOGIN, 30000);
+    int logged_in = wait_login(5000);
     if (logged_in)
         printf("  Login OK\n");
     else
         printf("  Login timeout (server-dependent tests may fail)\n");
+
+    printf("\nServer Messages:\n");
+    RUN_TEST(server_msg_helpers);
 
     printf("\nComposition:\n");
     RUN_TEST(compose_empty);

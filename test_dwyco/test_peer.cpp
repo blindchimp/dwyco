@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 
 #include "dlli.h"
+#include "dwycolist2.h"
+#include "test_common.h"
+#include "dwyco_new_msg.h"
 
 #define ASSERT(cond) do { \
     if (!(cond)) { \
@@ -14,6 +17,29 @@
         exit(1); \
     } \
 } while(0)
+
+// FNV-1a 64-bit hash over a file's bytes. Returns the file size on
+// success, or -1 if the file cannot be opened/read.
+static long
+file_hash(const char *path, unsigned long long *hash_out)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+    unsigned long long h = 14695981039346656037ULL;
+    long size = 0;
+    char buf[8192];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+        size += (long)n;
+        for (size_t i = 0; i < n; ++i) {
+            h ^= (unsigned char)buf[i];
+            h *= 1099511628211ULL;
+        }
+    }
+    fclose(f);
+    if (hash_out) *hash_out = h;
+    return size;
+}
 
 // Event recording
 struct Event {
@@ -23,9 +49,6 @@ struct Event {
 };
 static std::vector<Event> g_events;
 static int g_login_done;
-static int g_fetch_id;
-static int g_fetch_what;
-static char g_fetch_msgid[256];
 
 static void DWYCOCALLCONV
 sys_event_cb(int cmd, int ctx_id, const char *uid, int len_uid,
@@ -43,7 +66,8 @@ sys_event_cb(int cmd, int ctx_id, const char *uid, int len_uid,
 static void DWYCOCALLCONV
 login_cb(const char *str, int what)
 {
-    if (what == 1) g_login_done = 1;
+    // 1 = login ok, 2 = new account created (and logged in)
+    if (what == 1 || what == 2) g_login_done = 1;
 }
 
 static void DWYCOCALLCONV
@@ -54,17 +78,6 @@ emergency_cb(int problem, int must_exit, const char *msg)
 }
 
 static void DWYCOCALLCONV
-fetch_cb(int id, int what, const char *msgid, void *arg)
-{
-    g_fetch_id = id;
-    g_fetch_what = what;
-    if (msgid) {
-        strncpy(g_fetch_msgid, msgid, sizeof(g_fetch_msgid) - 1);
-        g_fetch_msgid[sizeof(g_fetch_msgid) - 1] = 0;
-    }
-}
-
-static void
 service_once(void)
 {
     int spin;
@@ -72,7 +85,7 @@ service_once(void)
 }
 
 static int
-wait_for(int target_cmd, int timeout_ms)
+wait_login(int timeout_ms)
 {
     int elapsed = 0;
     while (elapsed < timeout_ms) {
@@ -81,23 +94,7 @@ wait_for(int target_cmd, int timeout_ms)
         if (next <= 0 || next > 50) next = 50;
         usleep(next * 1000);
         elapsed += next;
-        for (auto &e : g_events)
-            if (e.cmd == target_cmd) return 1;
-    }
-    return 0;
-}
-
-static int
-wait_for_fetch(int timeout_ms)
-{
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (g_fetch_id) return 1;
+        if (g_login_done) return 1;
     }
     return 0;
 }
@@ -109,7 +106,7 @@ clear_events(void)
 }
 
 static void
-init(const char *user_dir)
+init(const char *user_dir, const char *account_name)
 {
     char sys_dir[512], tmp_dir[512];
     snprintf(sys_dir, sizeof(sys_dir), "%s/sys", user_dir);
@@ -117,6 +114,7 @@ init(const char *user_dir)
     mkdir(sys_dir, 0755);
     mkdir(user_dir, 0755);
     mkdir(tmp_dir, 0755);
+    install_app_files(user_dir);
 
     dwyco_set_fn_prefixes(sys_dir, user_dir, tmp_dir);
     dwyco_set_system_event_callback(sys_event_cb);
@@ -125,16 +123,20 @@ init(const char *user_dir)
     dwyco_set_client_version("dwytest", 7);
 
     ASSERT(dwyco_init() != 0);
+    std::string desc = std::string(account_name) + " test account (" + user_dir + ")";
+    test_bootstrap_profile(account_name, desc.c_str());
     dwyco_finish_startup();
     dwyco_set_disposition("foreground", 10);
 
     printf("  Waiting for login...\n");
-    if (!wait_for(DWYCO_SE_SERVER_LOGIN, 30000)) {
+    if (!wait_login(5000)) {
         fprintf(stderr, "Login timeout\n");
         exit(1);
     }
     printf("  Login OK\n");
 }
+
+static int g_server_mode;
 
 static void
 shutdown(void)
@@ -142,92 +144,114 @@ shutdown(void)
     dwyco_exit();
 }
 
-// Coordination file format:
-//   pers_id=<hex>\n
-//   text=<message text>\n
-//   no_forward=<0|1>\n
-//   msg_id=<server msg id>\n
-
-static void
-write_coord(const char *fn, const char *pers_id, int pers_len,
-    const char *text, int text_len, int no_forward, const char *msg_id)
-{
-    FILE *f = fopen(fn, "w");
-    ASSERT(f);
-    if (pers_id && pers_len > 0)
-        fprintf(f, "pers_id=%.*s\n", pers_len, pers_id);
-    if (text && text_len > 0)
-        fprintf(f, "text=%.*s\n", text_len, text);
-    fprintf(f, "no_forward=%d\n", no_forward);
-    if (msg_id)
-        fprintf(f, "msg_id=%s\n", msg_id);
-    fclose(f);
-}
-
+// Wait up to timeout_ms for the given peer (binary uid) to come online,
+// servicing channels so the discovery/broadcast state stays current.
+// Returns 1 once the peer is online, 0 on timeout.
 static int
-read_coord(const char *fn, std::string &pers_id, std::string &text,
-    int &no_forward, std::string &msg_id)
+wait_peer_online(const char *peer_uid, int peer_uid_len, int timeout_ms)
 {
-    FILE *f = fopen(fn, "r");
-    if (!f) return 0;
-    char buf[1024];
-    while (fgets(buf, sizeof(buf), f)) {
-        char *eq = strchr(buf, '=');
-        if (!eq) continue;
-        *eq = 0;
-        char *val = eq + 1;
-        // strip newline
-        size_t len = strlen(val);
-        while (len > 0 && (val[len-1] == '\n' || val[len-1] == '\r'))
-            val[--len] = 0;
-        if (strcmp(buf, "pers_id") == 0) pers_id = val;
-        else if (strcmp(buf, "text") == 0) text = val;
-        else if (strcmp(buf, "no_forward") == 0) no_forward = atoi(val);
-        else if (strcmp(buf, "msg_id") == 0) msg_id = val;
+    int elapsed = 0;
+    while (elapsed < timeout_ms) {
+        int spin, next;
+        next = dwyco_service_channels(&spin);
+        if (next <= 0 || next > 50) next = 50;
+        usleep(next * 1000);
+        elapsed += next;
+        if (dwyco_uid_online(peer_uid, peer_uid_len)) return 1;
     }
-    fclose(f);
-    return 1;
+    return 0;
 }
 
 // ===== SEND MODE =====
-// Usage: dwytest_peer send <user_dir> <coord_file> <peer_uid> <text> [no_forward]
+// Usage: dwytest_peer send <user_dir> <peer_uid> <text> [no_forward] [attachment_path]
 static int
 mode_send(int argc, char **argv)
 {
-    if (argc < 6) {
-        fprintf(stderr, "Usage: dwytest_peer send <user_dir> <coord_file> <peer_uid_hex> <text> [no_forward]\n");
+    if (argc < 5) {
+        fprintf(stderr, "Usage: dwytest_peer send <user_dir> <peer_uid_hex> <text> [no_forward] [attachment_path]\n");
         return 1;
     }
     const char *user_dir = argv[2];
-    const char *coord_fn = argv[3];
-    const char *peer_hex = argv[4];
-    const char *msg_text = argv[5];
-    int no_forward = (argc > 6) ? atoi(argv[6]) : 0;
+    const char *peer_hex = argv[3];
+    const char *msg_text = argv[4];
+    int no_forward = (argc > 5) ? atoi(argv[5]) : 0;
+    const char *att_path = (argc > 6 && strlen(argv[6]) > 0) ? argv[6] : 0;
 
     // Convert hex peer UID to binary
     int peer_hex_len = strlen(peer_hex);
+    if (peer_hex_len != 20) {
+        fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
+            peer_hex_len, peer_hex);
+        return 1;
+    }
     int peer_uid_len = peer_hex_len / 2;
     char *peer_uid = (char *)malloc(peer_uid_len + 1);
+    if (peer_uid_len != 10) {
+        fprintf(stderr, "Peer UID must be 10 bytes\n");
+        free(peer_uid);
+        return 1;
+    }
     for (int i = 0; i < peer_uid_len; i++) {
         unsigned int b;
-        sscanf(peer_hex + i * 2, "%2x", &b);
+        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) {
+            fprintf(stderr, "Invalid hex peer UID: %s\n", peer_hex);
+            free(peer_uid);
+            return 1;
+        }
         peer_uid[i] = (char)b;
     }
     peer_uid[peer_uid_len] = 0;
 
-    init(user_dir);
+    init(user_dir, "dwytest-send");
 
     // Get my UID
     const char *my_uid;
     int my_uid_len;
     dwyco_get_my_uid(&my_uid, &my_uid_len);
+    if (my_uid_len != 10) {
+        fprintf(stderr, "My UID is not 10 bytes (got %d)\n", my_uid_len);
+        free(peer_uid);
+        shutdown();
+        return 1;
+    }
     printf("  My UID (hex): ");
     for (int i = 0; i < my_uid_len; i++)
         printf("%02x", (unsigned char)my_uid[i]);
     printf("\n");
 
+    // Sanity-check the attachment file is readable before sending.
+    if (att_path) {
+        unsigned long long h = 0;
+        if (file_hash(att_path, &h) < 0) {
+            fprintf(stderr, "Cannot read attachment '%s'\n", att_path);
+            free(peer_uid);
+            shutdown();
+            return 1;
+        }
+        printf("  Attachment: '%s'\n", att_path);
+    }
+
+    // Wait until the receiver is online before sending, so the message is
+    // delivered directly rather than parked on the server.
+    if (!g_server_mode) {
+        printf("  Waiting for peer to come online...\n");
+        if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
+            fprintf(stderr, "Peer never came online\n");
+            free(peer_uid);
+            shutdown();
+            return 1;
+        }
+        printf("  Peer online\n");
+    } else {
+        printf("  Server mode: skipping peer online check\n");
+    }
+
     // Send
-    int cid = dwyco_make_zap_composition(0);
+    int cid;
+    if (att_path)
+        cid = dwyco_make_file_zap_composition(att_path, strlen(att_path));
+    else
+        cid = dwyco_make_zap_composition(0);
     ASSERT(cid > 0);
 
     const char *pers_id;
@@ -243,37 +267,28 @@ mode_send(int argc, char **argv)
     clear_events();
     int got_result = 0;
     int elapsed = 0;
-    while (elapsed < 30000) {
+    while (elapsed < 90000) {
         int spin, next;
         next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 100) next = 100;
+        if (next <= 0 || next > 50) next = 50;
         usleep(next * 1000);
         elapsed += next;
         for (auto &e : g_events) {
             if (e.cmd == DWYCO_SE_MSG_SEND_SUCCESS) {
                 printf("  Send success\n");
                 got_result = 1;
-                // e.value may contain the server msg_id
-                write_coord(coord_fn, pers_id, pers_len,
-                    msg_text, strlen(msg_text), no_forward,
-                    e.value.c_str());
                 break;
             }
             if (e.cmd == DWYCO_SE_MSG_SEND_FAIL) {
                 printf("  Send fail\n");
                 got_result = 1;
-                write_coord(coord_fn, pers_id, pers_len,
-                    msg_text, strlen(msg_text), no_forward, 0);
                 break;
             }
         }
         if (got_result) break;
     }
-    if (!got_result) {
+    if (!got_result)
         printf("  Send timed out\n");
-        write_coord(coord_fn, pers_id, pers_len,
-            msg_text, strlen(msg_text), no_forward, 0);
-    }
 
     dwyco_delete_zap_composition(cid);
     free(peer_uid);
@@ -282,138 +297,125 @@ mode_send(int argc, char **argv)
 }
 
 // ===== RECEIVE MODE =====
-// Usage: dwytest_peer recv <user_dir> <coord_file> <peer_uid_hex>
+// Usage: dwytest_peer recv <user_dir> <peer_uid_hex>
 static int
 mode_recv(int argc, char **argv)
 {
-    if (argc < 5) {
-        fprintf(stderr, "Usage: dwytest_peer recv <user_dir> <coord_file> <peer_uid_hex>\n");
+    if (argc < 4) {
+        fprintf(stderr, "Usage: dwytest_peer recv <user_dir> <peer_uid_hex>\n");
         return 1;
     }
     const char *user_dir = argv[2];
-    const char *coord_fn = argv[3];
-    const char *peer_hex = argv[4];
+    const char *peer_hex = argv[3];
 
     int peer_hex_len = strlen(peer_hex);
+    if (peer_hex_len != 20) {
+        fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
+            peer_hex_len, peer_hex);
+        return 1;
+    }
     int peer_uid_len = peer_hex_len / 2;
     char *peer_uid = (char *)malloc(peer_uid_len + 1);
+    if (peer_uid_len != 10) {
+        fprintf(stderr, "Peer UID must be 10 bytes\n");
+        free(peer_uid);
+        return 1;
+    }
     for (int i = 0; i < peer_uid_len; i++) {
         unsigned int b;
-        sscanf(peer_hex + i * 2, "%2x", &b);
+        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) {
+            fprintf(stderr, "Invalid hex peer UID: %s\n", peer_hex);
+            free(peer_uid);
+            return 1;
+        }
         peer_uid[i] = (char)b;
     }
     peer_uid[peer_uid_len] = 0;
 
-    init(user_dir);
+    init(user_dir, "dwytest-recv");
 
-    // Read expected text from coord file
-    std::string expected_pers_id, expected_text;
-    int expected_no_forward = 0;
-    std::string sent_msg_id;
-    read_coord(coord_fn, expected_pers_id, expected_text,
-        expected_no_forward, sent_msg_id);
+    // Stay online so the sender can see us and deliver the message
+    // directly. Wait for the sender to come online before polling for
+    // the incoming message.
+    if (!g_server_mode) {
+        printf("  Waiting for sender to come online...\n");
+        if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
+            fprintf(stderr, "Sender never came online\n");
+            free(peer_uid);
+            shutdown();
+            return 1;
+        }
+        printf("  Sender online\n");
+    } else {
+        printf("  Server mode: skipping sender online check\n");
+    }
 
-    printf("  Expected text: '%s'\n", expected_text.c_str());
-    printf("  Expected no_forward: %d\n", expected_no_forward);
-
-    // Wait for SE_USER_MSG_RECEIVED
+    // Wait for a message. New server messages are handled via the
+    // canonical dwyco_new_msg flow (rescan -> process remote msgs ->
+    // hand out the _inbox-tagged message).
     printf("  Waiting for message...\n");
-    clear_events();
-    if (!wait_for(DWYCO_SE_USER_MSG_RECEIVED, 60000)) {
-        fprintf(stderr, "Timed out waiting for message\n");
-        free(peer_uid);
-        shutdown();
-        return 1;
-    }
-    printf("  Message received event\n");
+    int elapsed = 0;
+    while (elapsed < 120000) {
+        int spin, next;
+        next = dwyco_service_channels(&spin);
+        if (next <= 0 || next > 50) next = 50;
+        usleep(next * 1000);
+        elapsed += next;
 
-    // Get unfetched messages from peer
-    DWYCO_UNFETCHED_MSG_LIST unfetched = 0;
-    int res = dwyco_get_unfetched_messages(&unfetched, peer_uid, peer_uid_len);
-    ASSERT(res != 0);
-    ASSERT(unfetched != 0);
-
-    int rows, cols;
-    dwyco_list_numelems(unfetched, &rows, &cols);
-    printf("  Unfetched messages: %d\n", rows);
-    ASSERT(rows >= 1);
-
-    // Fetch each message
-    for (int i = 0; i < rows; i++) {
-        const char *msg_id;
-        int msg_id_len, type;
-        res = dwyco_list_get(unfetched, i, DWYCO_QMS_ID, &msg_id, &msg_id_len, &type);
-        if (!res || !msg_id) continue;
-
-        printf("  Fetching message %d: %.*s\n", i, msg_id_len, msg_id);
-
-        g_fetch_id = 0;
-        g_fetch_what = 0;
-        memset(g_fetch_msgid, 0, sizeof(g_fetch_msgid));
-
-        int fid = dwyco_fetch_server_message(std::string(msg_id, msg_id_len).c_str(),
-            fetch_cb, 0, 0, 0);
-        ASSERT(fid != 0);
-
-        if (!wait_for_fetch(30000)) {
-            fprintf(stderr, "Fetch timed out\n");
-            continue;
+        for (size_t gi = 0; gi < g_events.size(); ++gi) {
+            static size_t last_printed = 0;
+            if (gi < last_printed) continue;
+            int c = g_events[gi].cmd;
+            printf("  DBG ev[%d]=%d (%s) val=%.24s\n", (int)gi, c, dwyco_se_name_lookup(c), g_events[gi].value.c_str());
+            last_printed = gi + 1;
         }
 
-        printf("  Fetch result: what=%d msgid=%s\n", g_fetch_what, g_fetch_msgid);
-        ASSERT(g_fetch_what == DWYCO_MSG_DOWNLOAD_OK ||
-               g_fetch_what == DWYCO_MSG_DOWNLOAD_SAVE_FAILED);
+        if (dwyco_get_rescan_messages())
+            printf("  DBG rescan flag SET\n");
 
-        // Save the message
-        res = dwyco_save_message(std::string(msg_id, msg_id_len).c_str());
-        ASSERT(res != 0);
-        printf("  Message saved\n");
-
-        // Now retrieve the saved message body
-        DWYCO_SAVED_MSG_LIST body = 0;
-        res = dwyco_get_saved_message(&body, peer_uid, peer_uid_len,
-            std::string(msg_id, msg_id_len).c_str());
-        if (res && body) {
-            // Get body text
-            DWYCO_LIST text_list = dwyco_get_body_text(body);
-            if (text_list) {
-                int text_rows, text_cols;
-                dwyco_list_numelems(text_list, &text_rows, &text_cols);
-                printf("  Body text rows: %d\n", text_rows);
-
-                // Get the text string
-                const char *body_text;
-                int body_text_len, body_type;
-                res = dwyco_list_get(text_list, 0, DWYCO_NO_COLUMN,
-                    &body_text, &body_text_len, &body_type);
-                if (res && body_text) {
-                    printf("  Body text: '%.*s'\n", body_text_len, body_text);
-                    // Verify against expected
-                    if (!expected_text.empty()) {
-                        ASSERT(body_text_len == (int)expected_text.length());
-                        ASSERT(memcmp(body_text, expected_text.c_str(),
-                               body_text_len) == 0);
-                        printf("  Text MATCH\n");
-                    }
-                }
-                dwyco_list_release(text_list);
+        if (dwyco_get_rescan_messages()) {
+            dwyco_set_rescan_messages(0);
+            DWYCO_UNFETCHED_MSG_LIST ufml;
+            if (dwyco_get_unfetched_messages(&ufml, 0, 0)) {
+                dwyco_list dl(ufml);
+                printf("  DBG process_remote_msgs nrows=%d\n", dl.rows());
+            } else {
+                printf("  DBG process_remote_msgs: no unfetched\n");
             }
-            dwyco_list_release(body);
+            process_remote_msgs();
         }
 
-        // Delete saved message
-        dwyco_delete_saved_message(peer_uid, peer_uid_len,
-            std::string(msg_id, msg_id_len).c_str());
+        int zviewer, has_att, is_file;
+        DwString ruid, txt, mid, creator_uid;
+        if (dwyco_new_msg2(ruid, txt, zviewer, mid, has_att, is_file,
+            creator_uid)) {
+            printf("  New msg from=%s text='%.*s'\n",
+                DwString::to_hex(ruid).c_str(), txt.length(), txt.c_str());
 
-        // Delete unfetched
-        dwyco_delete_unfetched_message(std::string(msg_id, msg_id_len).c_str());
+            DwString expected_bin(peer_uid, peer_uid_len);
+            if (ruid != expected_bin) {
+                printf("  Skipped msg (expected from this peer only)\n");
+                processed_msg(mid);
+                dwyco_delete_saved_message(ruid.c_str(), ruid.length(), mid.c_str());
+                dwyco_delete_unfetched_message(mid.c_str());
+                continue;
+            }
+
+            // Mark processed and clean up, as the bots do
+            processed_msg(mid);
+            dwyco_delete_saved_message(ruid.c_str(), ruid.length(), mid.c_str());
+            dwyco_delete_unfetched_message(mid.c_str());
+
+            free(peer_uid);
+            shutdown();
+            printf("  Receive OK\n");
+            return 0;
+        }
     }
-
-    dwyco_list_release(unfetched);
+    fprintf(stderr, "Timed out waiting for message\n");
     free(peer_uid);
     shutdown();
-    printf("  Receive OK\n");
-    return 0;
+    return 1;
 }
 
 int
@@ -421,17 +423,28 @@ main(int argc, char **argv)
 {
     if (argc < 2) {
         fprintf(stderr, "Usage:\n");
-        fprintf(stderr, "  %s send <user_dir> <coord_file> <peer_uid_hex> <text> [no_forward]\n", argv[0]);
-        fprintf(stderr, "  %s recv <user_dir> <coord_file> <peer_uid_hex>\n", argv[0]);
+        fprintf(stderr, "  %s [--server] send <user_dir> <peer_uid_hex> <text> [no_forward] [attachment_path]\n", argv[0]);
+        fprintf(stderr, "  %s [--server] recv <user_dir> <peer_uid_hex>\n", argv[0]);
         return 1;
     }
 
-    if (strcmp(argv[1], "send") == 0)
-        return mode_send(argc, argv);
-    else if (strcmp(argv[1], "recv") == 0)
-        return mode_recv(argc, argv);
+    int arg_start = 1;
+    if (argc > 1 && strcmp(argv[1], "--server") == 0) {
+        g_server_mode = 1;
+        arg_start = 2;
+    }
+
+    if (arg_start >= argc) {
+        fprintf(stderr, "Missing mode after --server\n");
+        return 1;
+    }
+
+    if (strcmp(argv[arg_start], "send") == 0)
+        return mode_send(argc - arg_start + 1, argv + arg_start - 1);
+    else if (strcmp(argv[arg_start], "recv") == 0)
+        return mode_recv(argc - arg_start + 1, argv + arg_start - 1);
     else {
-        fprintf(stderr, "Unknown mode: %s\n", argv[1]);
+        fprintf(stderr, "Unknown mode: %s\n", argv[arg_start]);
         return 1;
     }
 }

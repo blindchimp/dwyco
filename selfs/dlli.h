@@ -494,8 +494,16 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
+// the group key was successfully acquired, YOU MUST EXIT
+// and restart the program as soon as possible.
+// NOTE: you also receive this message when you LEAVE
+// all groups (ie, enter the "no group" state.
 #define DWYCO_SE_GRP_JOIN_OK 33
+
+// the group join failed, but not because of
+// an incorrect password.
 #define DWYCO_SE_GRP_JOIN_FAIL 34
+
 #define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
 
 
@@ -589,6 +597,35 @@ int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfil
 int DWYCOEXPORT dwyco_create_bootstrap_profile(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email);
 // note: output is to static area, must be copied out immediately
 int DWYCOEXPORT dwyco_make_profile_pack(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email, const char **str_out, int *len_str_out);
+
+// these are similar to the profile functions above, but they store/retrieve
+// a profile keyed to the current device GROUP (the group id / gid) rather
+// than to an individual (ephemeral) member uid. this lets a group have one
+// profile that isn't confused by which device's uid you happen to be viewing.
+//
+// set the profile for the current device group. inside a group this stores
+// a single group profile; it also updates the server profile for My_UID for
+// backward compat. returns 1 on success.
+int DWYCOEXPORT dwyco_set_group_profile_from_composer(int compid, const char *text, int len_text,
+        DwycoProfileCallback cb, void *arg);
+
+// get the profile for the device group that the given member uid belongs to.
+// resolves the uid to its group id, then returns the group profile. if the
+// uid is not in a group, this falls back to the uid's own profile (same as
+// dwyco_get_profile_to_viewer). the callback semantics are the same as
+// dwyco_get_profile_to_viewer. returns 1 on success.
+int DWYCOEXPORT dwyco_get_group_profile(const char *uid, int len_uid, DwycoProfileCallback cb, void *arg);
+
+// synchronous version of dwyco_get_group_profile. this returns whatever is
+// currently in the local group profile cache without querying the server.
+// same return value semantics as dwyco_get_profile_to_viewer_sync.
+int DWYCOEXPORT dwyco_get_group_profile_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+
+// get the device-group profile for the group named by the given group name
+// (alt_name, e.g. "jane@mumble"). resolves the name to a member uid, then
+// to the group id. same callback semantics as dwyco_get_profile_to_viewer.
+// returns 1 on success.
+int DWYCOEXPORT dwyco_get_group_profile_by_name(const char *gname, int len_gname, DwycoProfileCallback cb, void *arg);
 
 //
 // WARNING: this char-by-char chat interface isn't used any more, as most
@@ -922,6 +959,33 @@ int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
+// with a non-empty gname, this starts the process of putting
+// this device into the device group named "gname".
+//
+// if gname is empty, it removes this device from any group.
+// 
+// the results of the operation are signaled by group status messages.
+//
+// if this returns 0, the operation cannot be started. if it returns 1
+// the operation is started, but may ultimately fail.
+//
+// NOTE: you cannot "switch groups", you must first exit all groups, then
+// re-enter the group you want.
+//
+// also note: IF YOU RECEIVE A successful group-enter message, the server
+// DOES NOT KNOW you are in the requested group until AFTER the first time
+// you successfully log in while in the group.
+//
+// SPECIAL NOTE: the password is used ONLY directly with other group
+// members when trying to acquire the group private key. it is NEVER
+// sent to the server. for security reasons, when negotiating with
+// other clients for the key, incorrect passwords result in no
+// response from the remote client. this means that if you give the
+// wrong password, the group enter protocol will never complete.
+// it is up to the client to provide either a timeout, or some
+// other means of verifying the password before using it, if that
+// is wanted.
+//
 int DWYCOEXPORT dwyco_start_gj2(const char *gname, const char *password);
 
 int DWYCOEXPORT dwyco_is_ignored(const char *uid, int len_uid);
