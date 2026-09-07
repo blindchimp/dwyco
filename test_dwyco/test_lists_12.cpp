@@ -1,10 +1,16 @@
 /* === Dwyco List Helpers - Cases 1 & 2: Creation, Destruction, Append Operations === */
 #include <dlli.h>
 #include <cstdio>
+#include <cstring>
+#include "list_readback.h"
 
 static int g_pass = 0;
+static int g_fail = 0;
 
 #define test_pass(name) do { printf("[PASS] %s\n", name); g_pass++; } while(0)
+#define test_fail(fmt, ...) do { printf("[FAIL] " fmt "\n", ##__VA_ARGS__); g_fail++; } while(0)
+
+#define CHECK(cond) do { if (!(cond)) g_fail++; } while(0)
 
 /* === Test Case #1a: Basic Creation === */
 static void tc1a(void) {
@@ -43,6 +49,7 @@ static void tc1c(void) {
 
 /* === Test Case #2a: Append_INT Type Coverage === */
 static void tc2a(void) {
+    int before = g_fail;
     DWYCO_LIST intlist = dwyco_list_new();
     if (!intlist) {
         printf("[SKIP] Could not create list for append_int tests\n");
@@ -51,21 +58,29 @@ static void tc2a(void) {
     
     int value_42 = 42;
     dwyco_list_append_int(intlist, value_42);
-    test_pass("Successfully called append_int(42)");
+    CHECK(lr_rows(intlist, 1));
+    CHECK(lr_int(intlist, 0, 42));
+    if (g_fail == before) test_pass("append_int(42) verified");
 }
 
 /* === Test Case #2b: Append_String Type Coverage === */
 static void tc2b(void) {
+    int before = g_fail;
     DWYCO_LIST strlist = dwyco_list_new();
     if (!strlist) return;
     
-    dwyco_list_append(strlist, "hello world", 10u, DWYCO_TYPE_STRING);
-    dwyco_list_append(strlist, "", 0u, DWYCO_TYPE_NIL);
-    test_pass("String appends completed");
+    dwyco_list_append(strlist, "hello world", 11, DWYCO_TYPE_STRING);
+    dwyco_list_append(strlist, "", 0, DWYCO_TYPE_NIL);
+    CHECK(lr_rows(strlist, 2));
+    CHECK(lr_str(strlist, 0, "hello world", 11));
+    CHECK(lr_nil(strlist, 1));
+    if (g_fail == before) test_pass("String appends verified");
+    dwyco_list_release(strlist);
 }
 
 /* === Test Case #2c: Append with Various Integer Values === */
 static void tc2c(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
@@ -73,36 +88,51 @@ static void tc2c(void) {
     for (int i = 0; i < 5; i++) {
         dwyco_list_append_int(list, values[i]);
     }
-    test_pass("Appended various integer values");
+    CHECK(lr_rows(list, 5));
+    for (int i = 0; i < 5; i++) {
+        CHECK(lr_int(list, i, values[i]));
+    }
+    if (g_fail == before) test_pass("Appended various integer values verified");
     dwyco_list_release(list);
 }
 
 /* === Test Case #2d: Bulk Append via Loop === */
 static void tc2d(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
     for (int i = 1; i <= 500; i++) {
         dwyco_list_append_int(list, i);
     }
-    test_pass("Completed bulk append of 500 items");
+    CHECK(lr_rows(list, 500));
+    for (int i = 1; i <= 500; i++) {
+        CHECK(lr_int(list, i - 1, i));
+    }
+    if (g_fail == before) test_pass("Completed bulk append of 500 items verified");
     dwyco_list_release(list);
 }
 
 /* === Test Case #2e: Append with Zero and Boundary Values === */
 static void tc2e(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
     dwyco_list_append_int(list, 0);
     dwyco_list_append_int(list, -1);
     dwyco_list_append_int(list, 65535);
-    test_pass("Boundary value appends");
+    CHECK(lr_rows(list, 3));
+    CHECK(lr_int(list, 0, 0));
+    CHECK(lr_int(list, 1, -1));
+    CHECK(lr_int(list, 2, 65535));
+    if (g_fail == before) test_pass("Boundary value appends verified");
     dwyco_list_release(list);
 }
 
 /* === Test Case #2f: Append with Mixed Signs and Magnitudes === */
 static void tc2f(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
@@ -110,80 +140,111 @@ static void tc2f(void) {
     for (int i = 0; i < 5; i++) {
         dwyco_list_append_int(list, vals[i]);
     }
-    test_pass("Mixed signed magnitude appends");
+    CHECK(lr_rows(list, 5));
+    for (int i = 0; i < 5; i++) {
+        CHECK(lr_int(list, i, vals[i]));
+    }
+    if (g_fail == before) test_pass("Mixed signed magnitude appends verified");
     dwyco_list_release(list);
 }
 
 /* === Test Case #2g: Append with Sequential Values === */
 static void tc2g(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
     for (int i = 0; i < 1000; i++) {
         dwyco_list_append_int(list, i);
     }
-    test_pass("Appended sequential values 0-999");
+    CHECK(lr_rows(list, 1000));
+    for (int i = 0; i < 1000; i++) {
+        CHECK(lr_int(list, i, i));
+    }
+    if (g_fail == before) test_pass("Appended sequential values 0-999 verified");
     dwyco_list_release(list);
 }
 
 /* === Test Case #2h: Append with Large Sequential Values === */
 static void tc2h(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
     for (int i = 10000; i < 15000; i++) {
         dwyco_list_append_int(list, i);
     }
-    test_pass("Appended values 10000-14999");
+    CHECK(lr_rows(list, 5000));
+    for (int i = 10000; i < 15000; i++) {
+        CHECK(lr_int(list, i - 10000, i));
+    }
+    if (g_fail == before) test_pass("Appended values 10000-14999 verified");
     dwyco_list_release(list);
 }
 
 /* === Test Case #2i: Multi-Row List Creation === */
 static void tc2i(void) {
+    int before = g_fail;
     DWYCO_LIST multilist = dwyco_list_new();
     if (!multilist) return;
     
     for (int i = 0; i < 10; i++) {
-        dwyco_list_append(multilist, "item", 4u, DWYCO_TYPE_STRING);
+        dwyco_list_append(multilist, "item", 4, DWYCO_TYPE_STRING);
     }
-    test_pass("Created multi-row list via repeated appends");
+    CHECK(lr_rows(multilist, 10));
+    for (int i = 0; i < 10; i++) {
+        CHECK(lr_str(multilist, i, "item", 4));
+    }
+    if (g_fail == before) test_pass("Created multi-row list via repeated appends verified");
+    dwyco_list_release(multilist);
 }
 
 /* === Test Case #2j: Mixed Type Append Patterns === */
 static void tc2j(void) {
+    int before = g_fail;
     DWYCO_LIST mix_list = dwyco_list_new();
     if (!mix_list) return;
     
     /* Mix types to test whether list maintains type correctness */
-    int len_u = (int)(sizeof("string")-1);
-    if (mix_list) {
-        dwyco_list_append_int(mix_list, 100);
-        const char *p = "string";
-        dwyco_list_append(mix_list, p, (const unsigned int)(sizeof(p)-1), DWYCO_TYPE_STRING);
-        dwyco_list_append_int(mix_list, 200);
-    }
+    const char *p = "string";
+    int len = (int)strlen(p);
+    dwyco_list_append_int(mix_list, 100);
+    dwyco_list_append(mix_list, p, len, DWYCO_TYPE_STRING);
+    dwyco_list_append_int(mix_list, 200);
     
-    test_pass("Mixed type appends completed");
+    CHECK(lr_rows(mix_list, 3));
+    CHECK(lr_int(mix_list, 0, 100));
+    CHECK(lr_str(mix_list, 1, p, len));
+    CHECK(lr_int(mix_list, 2, 200));
+    if (g_fail == before) test_pass("Mixed type appends verified");
+    dwyco_list_release(mix_list);
 }
 
 /* === Test Case #2k: Empty String Handling === */
 static void tc2k(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
     /* Only append valid empty string */
-    dwyco_list_append(list, "", 0u, DWYCO_TYPE_NIL);
-    test_pass("Empty string append completed");
+    dwyco_list_append(list, "", 0, DWYCO_TYPE_NIL);
+    CHECK(lr_rows(list, 1));
+    CHECK(lr_nil(list, 0));
+    if (g_fail == before) test_pass("Empty string append verified");
+    dwyco_list_release(list);
 }
 
 /* === Test Case #2l: Append then Release === */
 static void tc2l(void) {
+    int before = g_fail;
     DWYCO_LIST list = dwyco_list_new();
     if (!list) return;
     
     /* Test release after appending */
     dwyco_list_append_int(list, 999);
-    test_pass("Appended and prepared for release");
+    CHECK(lr_rows(list, 1));
+    CHECK(lr_int(list, 0, 999));
+    if (g_fail == before) test_pass("Appended and prepared for release verified");
     dwyco_list_release(list);
 }
 
@@ -205,5 +266,9 @@ int main(void) {
     tc2k();
     tc2l();
     
-    return 0;
+    printf("\n=== Summary ===\n");
+    printf("Passed: %d\n", g_pass);
+    printf("Failed: %d\n", g_fail);
+    
+    return g_fail > 0 ? 1 : 0;
 }

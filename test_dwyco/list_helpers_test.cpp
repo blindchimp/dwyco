@@ -1,12 +1,15 @@
 /* === Dwyco List Helpers - Cases 1 & 2: Creation, Destruction, Append Operations === */
 #include <dlli.h>
 #include <stdio.h>
+#include "list_readback.h"
 
 static int g_pass = 0;
 static int g_fail = 0;
 
-#define test_pass(name) printf("[PASS] %s\n", name); g_pass++
-#define test_fail(fmt, ...) printf("[FAIL] " fmt "\n", ##__VA_ARGS__); g_fail++
+#define test_pass(name) do { printf("[PASS] %s\n", name); g_pass++; } while(0)
+#define test_fail(fmt, ...) do { printf("[FAIL] " fmt "\n", ##__VA_ARGS__); g_fail++; } while(0)
+
+#define CHECK(cond) do { if (!(cond)) g_fail++; } while(0)
 
 /* === Test Case #1a: Basic Creation === */
 static void tc1a(void) {
@@ -31,9 +34,13 @@ static void tc1b(void) {
         }
     }
     for (int i = 0; i < 3; i++) {
-        if (lists[i]) dwyco_list_release(lists[i]);
+        if (lists[i]) {
+            CHECK(lr_rows(lists[i], 1));
+            CHECK(lr_int(lists[i], 0, i));
+            dwyco_list_release(lists[i]);
+        }
     }
-    test_pass("Created, used, and released multiple lists");
+    if (g_fail == 0) test_pass("Created, used, and released multiple lists");
 }
 
 /* === Test Case #1c: Stress Creation/Release Loop === */
@@ -65,6 +72,8 @@ static void tc2a(void) {
         return;
     }
     dwyco_list_append_int(list, 42);
+    CHECK(lr_rows(list, 1));
+    CHECK(lr_int(list, 0, 42));
     test_pass("append_int() on valid list");
     dwyco_list_release(list);
 }
@@ -81,6 +90,10 @@ static void tc2b(void) {
     for (int i = 0; i < 5; i++) {
         dwyco_list_append_int(list, values[i]);
     }
+    CHECK(lr_rows(list, 5));
+    for (int i = 0; i < 5; i++) {
+        CHECK(lr_int(list, i, values[i]));
+    }
     test_pass("Appended various integer values to list");
     dwyco_list_release(list);
 }
@@ -95,7 +108,11 @@ static void tc2c(void) {
         dwyco_list_append_int(list, i);
         count++;
     }
-    printf("[PASS] Completed bulk append of %d items\n", count); g_pass++;
+    CHECK(lr_rows(list, count));
+    for (int i = 1; i <= count; i++) {
+        CHECK(lr_int(list, i - 1, i));
+    }
+    printf("[PASS] Completed bulk append of %d items verified\n", count); g_pass++;
     dwyco_list_release(list);
 }
 
@@ -107,6 +124,10 @@ static void tc2d(void) {
     dwyco_list_append_int(list, 0);
     dwyco_list_append_int(list, -1);
     dwyco_list_append_int(list, 65535);
+    CHECK(lr_rows(list, 3));
+    CHECK(lr_int(list, 0, 0));
+    CHECK(lr_int(list, 1, -1));
+    CHECK(lr_int(list, 2, 65535));
     test_pass("Boundary value appends");
     dwyco_list_release(list);
 }
@@ -118,6 +139,10 @@ static void tc2e(void) {
     
     for (int i = 0; i < 10; i++) {
         dwyco_list_append_int(list, 0);
+    }
+    CHECK(lr_rows(list, 10));
+    for (int i = 0; i < 10; i++) {
+        CHECK(lr_int(list, i, 0));
     }
     test_pass("Appended 10 zero values");
     dwyco_list_release(list);
@@ -132,6 +157,10 @@ static void tc2f(void) {
     for (int i = 0; i < 5; i++) {
         dwyco_list_append_int(list, vals[i]);
     }
+    CHECK(lr_rows(list, 5));
+    for (int i = 0; i < 5; i++) {
+        CHECK(lr_int(list, i, vals[i]));
+    }
     test_pass("Mixed signed magnitude appends");
     dwyco_list_release(list);
 }
@@ -144,6 +173,10 @@ static void tc2g(void) {
     for (int i = 0; i < 1000; i++) {
         dwyco_list_append_int(list, i);
     }
+    CHECK(lr_rows(list, 1000));
+    for (int i = 0; i < 1000; i++) {
+        CHECK(lr_int(list, i, i));
+    }
     test_pass("Appended sequential values 0-999");
     dwyco_list_release(list);
 }
@@ -155,6 +188,10 @@ static void tc2h(void) {
     
     for (int i = 10000; i < 15000; i++) {
         dwyco_list_append_int(list, i);
+    }
+    CHECK(lr_rows(list, 5000));
+    for (int i = 10000; i < 15000; i++) {
+        CHECK(lr_int(list, i - 10000, i));
     }
     test_pass("Appended values 10000-14999");
     dwyco_list_release(list);

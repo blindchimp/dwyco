@@ -2,14 +2,11 @@
 #include <dlli.h>
 #include <cstdio>
 #include <cstring>
+#include "list_readback.h"
 
-static int verify_list_dimensions(DWYCO_LIST list, int expected_rows, int expected_cols) {
-    (void)list;
-    (void)expected_rows;
-    (void)expected_cols;
-    printf("[INFO] Verify list dimensions\n");
-    return 1;
-}
+static int g_fail = 0;
+
+#define CHECK(cond) do { if (!(cond)) g_fail++; } while(0)
 
 /* === Test Case #2a: Append_INT Type Coverage === */
 static void test_append_int_only(void) {
@@ -21,7 +18,10 @@ static void test_append_int_only(void) {
     
     int value_42 = 42;
     dwyco_list_append_int(intlist, value_42);
-    printf("[OK] Successfully called append_int(42)\n");
+    CHECK(lr_rows(intlist, 1));
+    CHECK(lr_int(intlist, 0, 42));
+    printf("[OK] append_int(42) verified\n");
+    dwyco_list_release(intlist);
 }
 
 /* === Test Case #2b: Append_String Type Coverage === */
@@ -32,12 +32,16 @@ static void test_append_string_types(void) {
     printf("\n--- Test Case #2b: append() with Different Types ---\n");
     
     /* Try string type (len > 0, type == DWYCO_TYPE_STRING) */
-    dwyco_list_append(strlist, "hello world", 11u, DWYCO_TYPE_STRING);
+    dwyco_list_append(strlist, "hello world", 11, DWYCO_TYPE_STRING);
     
     /* Empty string case */
-    dwyco_list_append(strlist, "", 0u, DWYCO_TYPE_NIL);
+    dwyco_list_append(strlist, "", 0, DWYCO_TYPE_NIL);
     
-    printf("[OK] String appends completed\n");
+    CHECK(lr_rows(strlist, 2));
+    CHECK(lr_str(strlist, 0, "hello world", 11));
+    CHECK(lr_nil(strlist, 1));
+    printf("[OK] String appends verified\n");
+    dwyco_list_release(strlist);
 }
 
 /* === Test Case #2c: Append_NIL Type Coverage === */
@@ -48,14 +52,16 @@ static void test_append_nil_type(void) {
     printf("\n--- Test Case #2c: append() with DWYCO_TYPE_NIL ---\n");
     
     /* Try NIL type */
-    dwyco_list_append(nil_list, "", 0u, DWYCO_TYPE_NIL);
+    dwyco_list_append(nil_list, "", 0, DWYCO_TYPE_NIL);
     
-    printf("[OK] NIL type append attempted\n");
+    CHECK(lr_rows(nil_list, 1));
+    CHECK(lr_nil(nil_list, 0));
+    printf("[OK] NIL type append verified\n");
+    dwyco_list_release(nil_list);
 }
 
 /* === Test Case #2d: Append_Unknown Type Coverage === */
 static void test_append_vector_type(void) {
-    (void)verify_list_dimensions; /* silence warning */
     return;
 }
 
@@ -67,10 +73,15 @@ static void test_multirow_creation(void) {
     printf("\n--- Test Case #2e: Creating Multi-Row Lists ---\n");
     
     for (unsigned int i = 0; i < 10u; i++) {
-        dwyco_list_append(multilist, "item", 4u, DWYCO_TYPE_STRING);
+        dwyco_list_append(multilist, "item", 4, DWYCO_TYPE_STRING);
     }
     
+    CHECK(lr_rows(multilist, 10));
+    for (unsigned int i = 0; i < 10u; i++) {
+        CHECK(lr_str(multilist, (int)i, "item", 4));
+    }
     printf("[OK] Created list with 10 rows via repeated appends\n");
+    dwyco_list_release(multilist);
 }
 
 /* === Test Case #2f: Bulk Append Pattern === */
@@ -86,17 +97,21 @@ static void test_bulk_append_pattern(void) {
     const char *value = "test_value";
     unsigned int str_len = 10u;
     for (unsigned int i = 1u; i <= 50u; i++) {
-        dwyco_list_append(bulk_list, value, str_len, DWYCO_TYPE_STRING);
+        dwyco_list_append(bulk_list, value, (int)str_len, DWYCO_TYPE_STRING);
     }
     
+    CHECK(lr_rows(bulk_list, 50));
+    for (unsigned int i = 0; i < 50u; i++) {
+        CHECK(lr_str(bulk_list, (int)i, value, (int)str_len));
+    }
     printf("[OK] Completed bulk append of 50 items\n");
+    dwyco_list_release(bulk_list);
 }
 
 /* === Test Case #2g: Mixed Type Append Patterns === */
 static void test_mixed_types(void) {
-    unsigned int len;
     const char *p = "string";
-    len = (unsigned int)(sizeof(p)-1);
+    unsigned int len = (unsigned int)strlen(p);
     
     DWYCO_LIST mix_list = dwyco_list_new();
     if (mix_list == NULL) return;
@@ -105,10 +120,15 @@ static void test_mixed_types(void) {
     
     /* Mix types to test whether list maintains type correctness */
     dwyco_list_append_int(mix_list, 100);
-    dwyco_list_append(mix_list, "string", len, DWYCO_TYPE_STRING);
+    dwyco_list_append(mix_list, p, (int)len, DWYCO_TYPE_STRING);
     dwyco_list_append_int(mix_list, 200);
     
-    printf("[OK] Mixed type appends completed\n");
+    CHECK(lr_rows(mix_list, 3));
+    CHECK(lr_int(mix_list, 0, 100));
+    CHECK(lr_str(mix_list, 1, p, (int)len));
+    CHECK(lr_int(mix_list, 2, 200));
+    printf("[OK] Mixed type appends verified\n");
+    dwyco_list_release(mix_list);
 }
 
 /* === Test Case #2h: Boundary Tests for Append === */
@@ -119,24 +139,22 @@ static void test_append_boundary_conditions(void) {
     printf("\n--- Test Case #2h: Append Boundary Conditions ---\n");
     
     /* Length-0 string case */
-    dwyco_list_append(boundary_list, "", 0u, DWYCO_TYPE_STRING);
+    dwyco_list_append(boundary_list, "", 0, DWYCO_TYPE_STRING);
     
-    /* Attempt large string append */
+    /* Large string append */
     const char *large = "a very long string ";
-    unsigned int len_u = (unsigned int)(sizeof(large)-1);
-#ifdef MAX_U32_VALUE
-    if (len_u <= MAX_U32_VALUE) {
-        dwyco_list_append(boundary_list, large, len_u, DWYCO_TYPE_STRING);
-    }
-#endif
+    int len_large = (int)strlen(large);
+    dwyco_list_append(boundary_list, large, len_large, DWYCO_TYPE_STRING);
     
-    printf("[OK] Boundary condition appends completed\n");
+    CHECK(lr_rows(boundary_list, 2));
+    CHECK(lr_str(boundary_list, 0, "", 0));
+    CHECK(lr_str(boundary_list, 1, large, len_large));
+    printf("[OK] Boundary condition appends verified\n");
+    dwyco_list_release(boundary_list);
 }
 
 /* === Test Case #2i: Repeat Append After Single-Value List === */
 static void test_extend_single_val_to_multirow(void) {
-    const char **single_ptr = NULL;
-    
     printf("\n--- Test Case #2i: Extending Single-Value List ---\n");
     
     /* Start with one value, grow to many rows */
@@ -146,10 +164,16 @@ static void test_extend_single_val_to_multirow(void) {
     dwyco_list_append_int(single, 1);
     
     for (unsigned int i = 1u; i < 50u; i++) {
-        dwyco_list_append(single, "value", 4u, DWYCO_TYPE_STRING);
+        dwyco_list_append(single, "value", 4, DWYCO_TYPE_STRING);
     }
     
+    CHECK(lr_rows(single, 50));
+    CHECK(lr_int(single, 0, 1));
+    for (unsigned int i = 1u; i < 50u; i++) {
+        CHECK(lr_str(single, (int)i, "value", 4));
+    }
     printf("[OK] Extended from single to multi-row successfully\n");
+    dwyco_list_release(single);
 }
 
 void (*test_funcs[])(void) = {
@@ -171,5 +195,8 @@ int main(void) {
         test_funcs[i]();
     }
     
-    return 0;
+    printf("\n=== Summary ===\n");
+    printf("Failed: %d\n", g_fail);
+    
+    return g_fail > 0 ? 1 : 0;
 }
