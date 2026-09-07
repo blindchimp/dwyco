@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(dwytest LANGUAGES CXX)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -70,4 +73,17 @@ target_link_libraries(dwycobg PRIVATE ${BASELIBS})
 add_executable(join_group join_group.cpp)
 target_link_libraries(join_group PRIVATE ${BASELIBS})
 
-add_subdirectory(tests)
+add_executable(list_test_suite_part1 list_test_suite_part1.cpp)
+target_link_libraries(list_test_suite_part1 PRIVATE ${BASELIBS})
+
+add_executable(test_append_operations test_append_operations.cpp)
+target_link_libraries(test_append_operations PRIVATE ${BASELIBS})
+
+add_executable(test_creation_destruction test_creation_destruction.cpp)
+target_link_libraries(test_creation_destruction PRIVATE ${BASELIBS})
+
+add_executable(test_lists_12 test_lists_12.cpp)
+target_link_libraries(test_lists_12 PRIVATE ${BASELIBS})
+
+add_executable(list_helpers_test list_helpers_test.cpp)
+target_link_libraries(list_helpers_test PRIVATE ${BASELIBS})

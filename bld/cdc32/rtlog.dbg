@@ -1,0 +1,55 @@
+# rtlog.dbg - source files allowed to emit GRTLOG messages.
+# this file focuses on device group related functionality,
+# including getting in and out of the device group and the
+# multi-device sync that happens within a group.
+#
+# format: one lowercased source basename per line. lines
+# beginning with '#' are ignored.
+
+# core device-group api and enter/leave flow
+# (dwyco_start_gj2, group_enter_setup, leave_ack, set_group_uids,
+#  dwyco_get_group_status, dwyco_map_uid_to_*)
+dlli.cpp
+
+# background sync app that starts a group join or leave
+# ("JOIN GROUP ... OK/FAIL")
+bgapp.cpp
+
+# DH_alternate group account/key management and group state
+# (account create/load/leave, Group_uids, Current_alternate)
+dhgsetup.cpp
+
+# group join private-key negotiation protocol
+# (start_gj, recv_gj*, chal_res, and the post_req sends)
+grpmsg.cpp
+
+# group join/status event emission
+# (se_emit_join, se_emit_group_status_change, se delivery)
+se.cpp
+
+# sync call setup/teardown when entering/leaving a group
+# (drop_all_sync_calls, sync_call_setup, "trying sync to")
+synccalls.cpp
+
+# sync channel data transfer and state changes with
+# other devices in the group
+mmchan_sync.cpp
+
+# group membership map (group_map), sync delta indexing,
+# and removal of sync state on group leave
+qmsgsql.cpp
+
+# fetching public keys and uid lists for device groups
+# (fetch_group_uids, fetch_pk_done*, update_group_map)
+qmsg.cc
+
+# device-group profiles keyed by group id (gid)
+profiledb.cpp
+
+# server-side group membership handlers
+# (set_group_uids, invalidate_group, "get-group")
+dirth.cc
+
+# dirth group request senders
+# (set-get-group-pk, get-group-pk, group-chal, prov-leave)
+qdirth.cc

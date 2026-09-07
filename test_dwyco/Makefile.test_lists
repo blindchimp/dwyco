@@ -2,8 +2,9 @@
 CC = gcc
 CFLAGS = -Wall -g
 INC_DIRS = \
-    -I$(CURDIR)/..\bld/cdc32/include \
-    -I$(CURDIR)/dlli.h
+    -I$(CURDIR)/../bld/cdc32/include \
+    -I$(CURDIR)/../bld/vc \
+    -I$(CURDIR)/../bld/dwcls
 
 CFLAGS += $(INC_DIRS)
 
@@ -26,7 +27,7 @@ LIBDIRS = \
 
 all: test_lists
 
-test_lists: tests/list_helpers_test.c
+test_lists: list_helpers_test.cpp
 	$(CC) -o $@ $(CFLAGS) $< -L$(LIBDIRS) -Wl,-rpath,'$$ORIGIN/../build'
 
 clean:

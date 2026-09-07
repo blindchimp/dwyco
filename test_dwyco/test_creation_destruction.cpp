@@ -27,7 +27,9 @@ int main(void) {
     
     DWYCO_LIST intlist = dwyco_list_new();  /* Likely NULL */
     if (intlist) {
-        printf("[OK append_int() basic usage on non-NULL list\n");
+        printf("[OK] append_int() basic usage on non-NULL list\n");
+        dwyco_list_release(intlist);
+        tests_passed++;
     } else {
         printf("[SKIP] Skipping append_int tests with NULL list handle\n");
     }
