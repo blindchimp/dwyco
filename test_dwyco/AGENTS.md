@@ -11,3 +11,4 @@
 * as a convention, convert uid's to hex only near the site where they are about to be stored in the database. when reading them out of the database, convert them back to binary for consumption by callers.
 * use the dumpxfer.lh script to dump out files in the client directory that are not sqlite databases. most files are encoded using dwyco xfer format. the script is invoked as "./vc dumpxfer.lh filename"
 * if you need to create clients for testing, make them in /tmp/dwyXYZ where XYZ is an arbitrary identifier.
+* CRITICAL: if the API specifies that a pointer is required, IT IS ASSUMED THE POINTER IS NON-NULL! IT DOES NOT CHECK FOR NULL POINTERS. if you send a null pointer to an api function, it is likely to crash the system. ALL tests should avoid passing null pointers to the API.

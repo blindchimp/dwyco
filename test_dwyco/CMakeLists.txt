@@ -69,3 +69,8 @@ target_link_libraries(dwycobg PRIVATE ${BASELIBS})
 
 add_executable(join_group join_group.cpp)
 target_link_libraries(join_group PRIVATE ${BASELIBS})
+
+# TODO: List helpers test suite (group #44: dwyco_list_* functions - Cases 1 & 2)
+# Commented out until vc library can be linked properly
+add_executable(test_list_helpers tests/list_helpers_test.cpp)
+target_link_libraries(test_list_helpers PRIVATE ${BASELIBS})
