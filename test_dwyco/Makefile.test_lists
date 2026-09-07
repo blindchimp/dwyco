@@ -1,0 +1,35 @@
+# Simple makefile for list helpers test (until vc build can be integrated)
+CC = gcc
+CFLAGS = -Wall -g
+INC_DIRS = \
+    -I$(CURDIR)/..\bld/cdc32/include \
+    -I$(CURDIR)/dlli.h
+
+CFLAGS += $(INC_DIRS)
+
+LIBDIRS = \
+    ../bld/cdc32/lib \
+    ../bld/vc/lib \
+    ../bld/crypto8/lib \
+    ../bld/dwcls/lib \
+    ../bld/gsm/lib \
+    ../bld/kazlib/lib \
+    ../bld/ppm/lib \
+    ../bld/pgm/lib \
+    ../bld/theora.1.2.x/lib/.libs \
+    ../bld/speexdsp-1.2.1/lib.linux-x86_64-*/ \
+    ../bld/libogg-1.3.6/lib \
+    ../bld/libvorbis-1.3.7/lib \
+    ../bld/jenkins/lib \
+    ../bld/zlib/lib \
+    ../bld/uv/build/lib
+
+all: test_lists
+
+test_lists: tests/list_helpers_test.c
+	$(CC) -o $@ $(CFLAGS) $< -L$(LIBDIRS) -Wl,-rpath,'$$ORIGIN/../build'
+
+clean:
+	rm -f test_lists test_lists.*.o
+
+.PHONY: all clean
