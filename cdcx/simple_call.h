@@ -15,6 +15,7 @@
 #include <QMenu>
 #include <QImage>
 #include <QTimer>
+#include <QLabel>
 #include <QStateMachine>
 #include <QStaticText>
 #include "dvp.h"
@@ -97,6 +98,8 @@ private:
     QImage record_preview_image;
     int kb_active;
     QTimer keyboard_active_timer;
+    QTimer no_text_hint_timer;
+    QLabel *no_text_hint;
     QTimer reconnect_timer;
     QStateMachine *connect_state_machine;
     QStateMachine *call_setup_state_machine;
@@ -119,6 +122,9 @@ private:
 
     void do_refresh();
 
+    void send_msg(int force_pic_only);
+    void show_no_text_hint();
+
 public slots:
     void camera_event(int);
     void mouse_stopped_event(QPoint);
@@ -130,6 +136,7 @@ public slots:
     void start_media_calls();
     void clear_chatwin();
     void insert_line_break();
+    void send_pic_override();
     void check_resize();
     void update_content_filters();
 
@@ -188,6 +195,8 @@ public:
 
 private slots:
     void on_send_button_clicked();
+    void hide_no_text_hint();
+    void position_no_text_hint();
     void on_actionPause_toggled(bool arg1);
     void on_textBrowser_anchorClicked(const QUrl &url);
     void on_actionView_profile_ctx_triggered();

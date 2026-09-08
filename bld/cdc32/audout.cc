@@ -45,8 +45,6 @@ AudioOutput::AudioOutput(int decom, int nbufs)
         do_free2[i] = 0;
         decoded[i] = 0;
     }
-    //output_timer.set_autoreload(0);
-    output_timer.set_oneshot(1);
     next = 0;
     next_out = 0;
     time_last_buf_played = output_timer.time_now();
@@ -122,7 +120,7 @@ int
 AudioOutput::reset()
 {
     int res;
-    output_timer.reset();
+    output_timer.stop();
     res = device_reset();
     bufs_playing = 0;
     flush_bufs();
@@ -292,7 +290,7 @@ AudioOutput::tick()
 #ifdef AUDDBG
         AUDRTLOG(L, "timer exp", 0, 0);
 #endif
-        output_timer.reset();
+        output_timer.stop();
         play_now();
     }
     DWBYTE *free_buf;
@@ -350,8 +348,7 @@ AudioOutput::play_timed(DWBYTE *buf, int len, int in_at_time, int dfree)
         next = (next + 1) % bufs.num_elems();
         if(!output_timer.is_running())
         {
-            output_timer.load(time_until_play);
-            output_timer.start();
+            output_timer.start(DwTimer::ONESHOT, time_until_play);
         }
     }
     return 1;
@@ -391,9 +388,7 @@ AudioOutput::play_now()
     bufs_buffered = 0;
     reset_timer = 1;
     bufs_to_buffer = bufs.num_elems() / 2;
-    output_timer.reset();
-    output_timer.load(device_one_buffer_time() * (bufs_to_buffer));
-    output_timer.start();
+    output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 
     // on a timer flush, we reset the packet
     // ordering in case a packet it going
@@ -434,9 +429,7 @@ AudioOutput::play_seq(DWBYTE *buf, int len, int seq, int dfree)
             bufs_buffered = 0;
             off = 0;
             seq0 = seq;
-            output_timer.reset();
-            output_timer.load(device_one_buffer_time() * (bufs_to_buffer));
-            output_timer.start();
+            output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 #ifdef AUDDBG
             AUDRTLOG(L, "timer start %d", output_timer.get_time_left(), 0);
 #endif
@@ -489,7 +482,7 @@ AudioOutput::play_seq(DWBYTE *buf, int len, int seq, int dfree)
             off = 0;
             buffering = 0;
             bufs_buffered = 0;
-            output_timer.reset();
+            output_timer.stop();
 #ifdef AUDDBG
             AUDRTLOG(L, "timer stopped", 0, 0);
 #endif
@@ -583,19 +576,15 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         bufs_to_buffer = bufs.num_elems();
         if(output_timer.is_running())
         {
-            output_timer.reset();
-            output_timer.load(output_timer.get_time_left() +
+            output_timer.start(DwTimer::ONESHOT, output_timer.get_time_left() +
                               device_one_buffer_time() * morebufs);
-            output_timer.start();
 #ifdef AUDDBG
             AUDRTLOG(L, "timer extend %d", output_timer.get_time_left(), 0);
 #endif
         }
         else
         {
-            output_timer.reset();
-            output_timer.load(device_one_buffer_time() * (bufs_to_buffer));
-            output_timer.start();
+            output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 #ifdef AUDDBG
             AUDRTLOG(L, "timer start %d", output_timer.get_time_left(), 0);
 #endif
@@ -732,9 +721,7 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         manage_decode(0);
         bufs_to_buffer = bufs.num_elems() / 2;
         // XXX reset timer to right value
-        output_timer.reset();
-        output_timer.load(device_one_buffer_time() * (bufs_to_buffer));
-        output_timer.start();
+        output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 #ifdef AUDDBG
         AUDRTLOG(L, "timer start2 %d", output_timer.get_time_left(), 0);
 #endif
