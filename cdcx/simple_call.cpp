@@ -2230,7 +2230,7 @@ simple_call::send_msg(int force_pic_only)
     {
         if(!(send_pic && force_pic_only))
         {
-            if(send_pic)
+            if(send_pic && ui->actionSend_snapchat->isVisible())
             {
                 do_refresh();
                 play_sound("camera1.wav");
