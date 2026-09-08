@@ -29,6 +29,12 @@ ReturnFilter::eventFilter(QObject *obj, QEvent *e)
             emit ctrl_return_hit();
             return 1;
         }
+        if(keyEvent->key() == Qt::Key_P &&
+                (keyEvent->modifiers() & Qt::ControlModifier))
+        {
+            emit ctrl_p_hit();
+            return 1;
+        }
         if(keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter)
         {
             emit return_hit();

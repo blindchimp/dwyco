@@ -129,10 +129,24 @@ simple_call::simple_call(const DwOString& auid, QWidget *parent) :
     connect(return_filter, SIGNAL(chat_typing()), this, SLOT(keyboard_input()));
     connect(return_filter, SIGNAL(return_hit()), this, SLOT(on_send_button_clicked()));
     connect(return_filter, SIGNAL(ctrl_return_hit()), this, SLOT(insert_line_break()));
+    connect(return_filter, SIGNAL(ctrl_p_hit()), this, SLOT(send_pic_override()));
     connect(return_filter, SIGNAL(esc_hit()), this, SLOT(clear_chatwin()));
     keyboard_active_timer.setSingleShot(1);
     connect(&keyboard_active_timer, SIGNAL(timeout()), this, SLOT(keyboard_inactive()));
     kb_active = 0;
+
+    no_text_hint = new QLabel(ui->textEdit);
+    no_text_hint->setText("use ctrl-P to send picture with no text");
+    no_text_hint->setStyleSheet("background-color: rgba(0, 0, 0, 180); border-radius: 4px; padding: 3px 6px; color: rgb(255, 255, 255); font-size: 11px;");
+    no_text_hint->setAttribute(Qt::WA_TransparentForMouseEvents);
+    no_text_hint->hide();
+    no_text_hint_timer.setSingleShot(1);
+    no_text_hint_timer.setInterval(3500);
+    connect(&no_text_hint_timer, SIGNAL(timeout()), this, SLOT(hide_no_text_hint()));
+    connect(ui->textEdit, SIGNAL(textChanged()), this, SLOT(hide_no_text_hint()));
+    ResizeFilter *hint_rf = new ResizeFilter;
+    ui->textEdit->installEventFilter(hint_rf);
+    connect(hint_rf, SIGNAL(resized()), this, SLOT(position_no_text_hint()));
 
     ui->textEdit->installEventFilter(return_filter);
     // this is a workaround for the situation where the
@@ -2196,19 +2210,36 @@ simple_call::msg_progress(DwOString pid, DwOString ruid, DwOString msg, int perc
 
 void simple_call::on_send_button_clicked()
 {
+    send_msg(0);
+}
+
+void
+simple_call::send_pic_override()
+{
+    send_msg(1);
+}
+
+void
+simple_call::send_msg(int force_pic_only)
+{
     QString a;
     QString b;
     int send_pic = ui->actionSend_snapchat->isChecked() && !Public_chat_video_pause;
     b = ui->textEdit->toPlainText();
     if(b.length() == 0)
     {
-        if(send_pic)
+        if(!(send_pic && force_pic_only))
         {
-            do_refresh();
-            play_sound("camera1.wav");
+            if(send_pic)
+            {
+                do_refresh();
+                play_sound("camera1.wav");
+                show_no_text_hint();
+            }
+            return;
         }
-        return;
     }
+    hide_no_text_hint();
     a = b;
     QByteArray txt = b.toAscii();
     int no_forward = 0;
@@ -2538,6 +2569,28 @@ void simple_call::do_refresh()
         }
         ui->send_preview->ui_id = record_preview_id;
     }
+}
+
+void
+simple_call::show_no_text_hint()
+{
+    position_no_text_hint();
+    no_text_hint->show();
+    no_text_hint_timer.start();
+}
+
+void
+simple_call::hide_no_text_hint()
+{
+    no_text_hint_timer.stop();
+    no_text_hint->hide();
+}
+
+void
+simple_call::position_no_text_hint()
+{
+    no_text_hint->adjustSize();
+    no_text_hint->move(ui->textEdit->width() - no_text_hint->width() - 8, 4);
 }
 
 void simple_call::on_cancel_req_clicked()
