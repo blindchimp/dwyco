@@ -7,20 +7,9 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-/*
- * $Header: g:/dwight/repo/cdc32/rcs/dwtimer.h 1.19 1999/01/10 16:10:47 dwight Checkpoint $
- */
 #ifndef DWTIMER_H
 #define DWTIMER_H
-// objects that act like hardware timers of various sorts
 
-// defs:
-// one-shot: timer is initially loaded and counts down to 0, sets "expired"
-//		and stops.
-// auto-reload: when the timer hits 0 or less, the timer is automatically reloaded
-//	with the interval value and continues running.
-// these two modes are mutually exclusive.
-//
 #ifndef __LP64__
 #ifdef _Windows
 typedef unsigned long dwtime_t;
@@ -39,44 +28,45 @@ typedef long sdwtime_t;
 class DwTimer
 {
 public:
+    enum Type { ONESHOT = 0, REPEATING = 1 };
+
     DwTimer(const char *timer_id = 0);
     virtual ~DwTimer();
 
-    static dwtime_t next_expire_time(DwString&);
-
-    int is_expired();
-    void ack_expire();
-    void set_oneshot(int);
-    void set_interval(dwtime_t);
-    dwtime_t get_interval();
-    dwtime_t get_actual_interval();
-    dwtime_t get_time_left();
-    void set_autoreload(int);
-    void load(dwtime_t);
-    void reset();
-    void start();
+    void start(Type type, dwtime_t first_expire_interval,
+               dwtime_t following_expire_interval = 0);
     void stop();
 
+    int  is_expired();
+    void ack_expire();
+
     int is_running();
+    int is_repeating();
+    dwtime_t get_interval();
+    dwtime_t get_time_left();
+    dwtime_t get_actual_interval();
+
+    void set_interval(dwtime_t t);
+
+    static dwtime_t time_now();
+    static dwtime_t next_expire_time(DwString&);
 
 private:
     DwTimer(const DwTimer&) = delete;
     DwTimer& operator=(const DwTimer&) = delete;
     struct dwyco::timer timer;
-    int auto_reload;
+    int repeating;
     int enabled;
+    int expired;
 
     dwtime_t interval;
+    dwtime_t first_interval;
     dwtime_t actual_interval;
 
 #ifdef DW_RTLOG
     static int Id;
     char lid[100];
 #endif
-
-public:
-    static dwtime_t time_now(); // os dep absolute time
-
 };
 
 #endif

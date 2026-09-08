@@ -7,9 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-/*
- * $Header: g:/dwight/repo/cdc32/rcs/dwtimer.cc 1.17 1999/01/10 16:09:32 dwight Checkpoint $
- */
 #ifdef _Windows
 #include <windows.h>
 #endif
@@ -45,8 +42,10 @@ DwTimer::DwTimer(const char *timer_id) :
 #endif
 
     interval = 0;
+    first_interval = 0;
     enabled = 0;
-    auto_reload = 0;
+    expired = 0;
+    repeating = 0;
     timer.interval = 0;
     timer.start = 0;
 }
@@ -62,25 +61,37 @@ DwTimer::next_expire_time(DwString& dbgstr)
 }
 
 void
-DwTimer::ack_expire()
+DwTimer::start(Type type, dwtime_t first, dwtime_t following)
+{
+    stop();
+    repeating = type;
+    first_interval = first;
+    interval = following;
+    enabled = 1;
+    expired = 0;
+    timer_set(&timer, first);
+}
+
+void
+DwTimer::stop()
 {
     enabled = 0;
+    expired = 0;
     timer.stop();
-    if(auto_reload)
-    {
-        timer_reset(&timer);
-        enabled = 1;
-    }
 }
 
 int
 DwTimer::is_expired()
 {
     if(!enabled)
+    {
+        expired = 0;
         return 0;
+    }
     int tmp = timer_expired(&timer);
     if(tmp)
     {
+        expired = 1;
         sdwtime_t timenow = time_now();
         actual_interval = timenow - timer.start;
 #ifdef LONGLONG
@@ -89,7 +100,22 @@ DwTimer::is_expired()
         TIMERLOG("exp %ld aint %ld", timenow, timenow - timer.start);
 #endif
     }
-    return tmp;
+    return expired;
+}
+
+void
+DwTimer::ack_expire()
+{
+    expired = 0;
+    if(repeating)
+    {
+        timer_reset(&timer);
+        enabled = 1;
+    }
+    else
+    {
+        stop();
+    }
 }
 
 void
@@ -110,59 +136,31 @@ DwTimer::get_actual_interval()
     return actual_interval;
 }
 
-void
-DwTimer::reset()
-{
-    enabled = 0;
-    timer.stop();
-}
-
-
-void
-DwTimer::set_oneshot(int o)
-{
-    int oneshot = !!o;
-    if(oneshot)
-        auto_reload = 0;
-}
-
-void
-DwTimer::load(dwtime_t t)
-{
-    interval = t;
-}
-
 dwtime_t
 DwTimer::get_time_left()
 {
+    if(!enabled)
+    {
+#ifdef NDEBUG
+        return 0;
+#else
+        return 0;
+#endif
+    }
     sdwtime_t t = timer_remaining(&timer);
     return (t < 0) ? 0 : t;
-}
-
-void
-DwTimer::start()
-{
-    enabled = 1;
-    timer_set(&timer, interval);
-}
-
-void
-DwTimer::stop()
-{
-    enabled = 0;
-    timer.stop();
-}
-
-void
-DwTimer::set_autoreload(int a)
-{
-    auto_reload = !!a;
 }
 
 int
 DwTimer::is_running()
 {
     return enabled;
+}
+
+int
+DwTimer::is_repeating()
+{
+    return repeating;
 }
 
 #ifdef LINUX
