@@ -107,12 +107,7 @@ callq_tick()
 CallQ::CallQ() : call_q_timer("callq")
 {
     max_established = 4;
-    call_q_timer.load(CALLQ_POLL_TIME);
-    //call_q_timer.set_oneshot(0);
-    call_q_timer.set_autoreload(1);
-    call_q_timer.set_interval(CALLQ_POLL_TIME);
-    call_q_timer.reset();
-    call_q_timer.start();
+    call_q_timer.start(true, CALLQ_POLL_TIME, CALLQ_POLL_TIME);
 }
 
 CallQ::~CallQ()
@@ -135,9 +130,7 @@ CallQ::reset_poll_time(dwtime_t interval)
 {
     if(call_q_timer.get_interval() != interval)
     {
-        call_q_timer.stop();
-        call_q_timer.set_interval(interval);
-        call_q_timer.start();
+        call_q_timer.start(true, interval, interval);
     }
 }
 
@@ -224,8 +217,7 @@ CallQ::add_call(MMCall *mmc, int defer_time)
     cq->user_cb = mmc->scb;
     cq->arg1 = mmc->scb_arg1;
     cq->arg2 = mmc->scb_arg2;
-    cq->timeout.set_interval(5 * 60 * 1000);
-    cq->timeout.start();
+    cq->timeout.start(false, 5 * 60 * 1000);
     cq->time_entered = time(0);
     cq->delay = defer_time;
     mmc->scb = cq_call_status;
@@ -274,12 +266,7 @@ CallQ::tick()
 
     if(!been_here)
     {
-        call_q_timer.load(CALLQ_POLL_TIME);
-        //call_q_timer.set_oneshot(0);
-        call_q_timer.set_autoreload(1);
-        call_q_timer.set_interval(CALLQ_POLL_TIME);
-        call_q_timer.reset();
-        call_q_timer.start();
+        call_q_timer.start(true, CALLQ_POLL_TIME, CALLQ_POLL_TIME);
         been_here = 1;
     }
     if(!call_q_timer.is_expired())

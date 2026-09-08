@@ -45,7 +45,6 @@ FileTube::FileTube(FILE *f, enum dir w, int wc)
     we_close = wc;
     filelen = filelength(fileno(f));
     t0 = -1;
-    qtimer.set_oneshot(1);
     last_time_pos = 0;
     which = w;
     acq_time = -1;
@@ -70,7 +69,6 @@ FileTube::FileTube(const DwString& filename, const DwString& filemode, enum dir 
     we_close = 1;
     filelen = filelength(fileno(file));
     t0 = -1;
-    qtimer.set_oneshot(1);
     last_time_pos = 0;
     which = w;
     acq_time = -1;
@@ -167,11 +165,7 @@ FileTube::has_ctrl()
     // can't test file anymore because it is usually 0 now.
     if(/*(feof(file) || ferror(file) ||*/ timeline.done() && pickupq.num_elems() == 0)
     {
-        kludge_timer.load(auto_stop_delay + 400);
-        kludge_timer.set_oneshot(1);
-        //kludge_timer.set_autoreload(0);
-        kludge_timer.reset();
-        kludge_timer.start();
+        kludge_timer.start(false, auto_stop_delay + 400);
     }
     return 0;
 }
@@ -509,10 +503,8 @@ FileTube::load_q()
     struct mmblock m;
     if(read_mm_data(m.buf, m.len, m.chan, m.subchan, m.user, -1, m.seq, m.time, m.filepos, 0) <= 0)
         return;
-    qtimer.reset();
-    qtimer.load(m.time - t0);
+    qtimer.start(false, m.time - t0);
     t0 = m.time;
-    qtimer.start();
     if(m.time == -1)
     {
         delete [] m.buf;

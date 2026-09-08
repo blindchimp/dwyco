@@ -210,10 +210,7 @@ secondary_db_online(MMChannel *mc, vc m, void *v, ValidPtr)
     mc->timer1.stop();
     mc->destroy_callback = secondary_db_offline;
     mc->ctrl_timer_callback = drop_connection_timeout;
-    mc->ctrl_timer.reset();
-    mc->ctrl_timer.load(SECONDARY_CHANNEL_DROP_TIMEOUT);
-    mc->ctrl_timer.set_oneshot(1);
-    mc->ctrl_timer.start();
+    mc->ctrl_timer.start(false, SECONDARY_CHANNEL_DROP_TIMEOUT);
 
     // setup encryption, old servers will error on the dhsf
     // command so we can at least fall back on the old servers to
@@ -299,10 +296,7 @@ secondary_db_call_failed(MMChannel *md, vc m, void *v, ValidPtr)
     //mc->attempt_name = m[3]; //md->attempt_name;
     mc->timer1_callback = connect_timeout;
     mc->t1cb_arg2 = new QckDone(d); // LEAK
-    mc->timer1.set_oneshot(1);
-    mc->timer1.load(6 * 1000);
-    mc->timer1.reset();
-    mc->timer1.start();
+    mc->timer1.start(false, 6 * 1000);
     GRTLOG("sec sec db resolve failed", 0, 0);
     Netlog_signal.emit(mc->tube->mklog("event", "secondary"));
     return;

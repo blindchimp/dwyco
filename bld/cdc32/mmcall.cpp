@@ -131,8 +131,7 @@ timer1_boost(MMChannel *mc, vc succ, void *, ValidPtr vp)
     if(vp.is_valid())
     {
         GRTLOG("boosting timer1 on direct connect for %d", mc->myid, 0);
-        mc->timer1.load(CALLLIVE_DIRECT_TIMEOUT);
-        mc->timer1.start();
+        mc->timer1.start(false, CALLLIVE_DIRECT_TIMEOUT);
     }
     mc->low_level_connect_callback = 0;
 }
@@ -160,12 +159,10 @@ MMCall::start_call(int media_sel)
     // up since *probably* you can't call them directly.
     if(No_direct_msgs.contains(mc->attempt_uid))
     {
-        mc->timer1.load(CALLLIVE_DIRECT_TIMEOUT / 2);
+        mc->timer1.start(false, CALLLIVE_DIRECT_TIMEOUT / 2);
     }
     else
-        mc->timer1.load(CALLLIVE_DIRECT_TIMEOUT);
-    mc->timer1.set_oneshot(1);
-    mc->timer1.start();
+        mc->timer1.start(false, CALLLIVE_DIRECT_TIMEOUT);
     mc->timer1_callback = dwyco::timer1_expired;
     mc->t1cb_arg3 = vp;
     // XXX NOTE: setup low level connect callback to cause

@@ -85,11 +85,7 @@ DwRTLog::DwRTLog(const char *filename, int size, int time) :
     bsize = size;
 
     flush_time = time;
-    flush_timer.set_interval(time * 1000);
-    flush_timer.set_autoreload(1);
-    //flush_timer.set_oneshot(0);
-    flush_timer.reset();
-    flush_timer.start();
+    flush_timer.start(true, time * 1000, time * 1000);
 
     os = new VcIOHackStr(size);
     // see comment above regarding initialization of logging.

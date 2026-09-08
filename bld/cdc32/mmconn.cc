@@ -110,9 +110,7 @@ MMChannel::start_resolve(enum resolve_how how, unsigned long addr, const char *h
     call_setup = 1;
     resolve_failed = 0;
     resolve_done = 0;
-    resolve_timer.set_oneshot(1);
-    resolve_timer.load(5000L);
-    resolve_timer.start();
+    resolve_timer.start(false, 5000L);
     GRTLOG("resolve start", 0, 0);
     int hr;
 
@@ -152,7 +150,6 @@ MMChannel::poll_resolve()
     if(resolve_timer.is_expired())
     {
         resolve_timer.ack_expire();
-        resolve_timer.reset();
         pstate = FAILED;
         fail_reason = "timeout";
         msg_out("hostname lookup timeout");
@@ -160,7 +157,7 @@ MMChannel::poll_resolve()
         resolve_failed = 1;
         return 0;
     }
-    resolve_timer.reset();
+    resolve_timer.stop();
     if(resolve_done)
     {
         if(resolve_failed)
@@ -185,10 +182,7 @@ MMChannel::start_resolve(enum resolve_how how, unsigned long addr, const char *h
     call_setup = 1;
     resolve_failed = 0;
     resolve_done = 0;
-    resolve_timer.set_oneshot(1);
-    resolve_timer.load(15000L);
-    resolve_timer.set_autoreload(0);
-    resolve_timer.start();
+    resolve_timer.start(false, 15000L);
     GRTLOG("resolve start", 0, 0);
     HWND h = (*get_main_window_callback)(this);
     char *wbuf = new char[MAXGETHOSTSTRUCT];
@@ -248,7 +242,6 @@ MMChannel::poll_resolve()
     if(resolve_timer.is_expired())
     {
         resolve_timer.ack_expire();
-        resolve_timer.reset();
         pstate = FAILED;
         fail_reason = "timeout";
         msg_out("hostname lookup timeout");
@@ -267,7 +260,7 @@ MMChannel::poll_resolve()
         {
             show_winsock_error(wsaerror);
             pstate = FAILED;
-            resolve_timer.reset();
+            resolve_timer.stop();
             hr = 0;
             delete [] resolve_buf;
             resolve_buf = 0;
@@ -279,7 +272,7 @@ MMChannel::poll_resolve()
             struct hostent *h = (struct hostent *)resolve_buf;
             addr_out.s_addr = *(unsigned long *)h->h_addr;
 
-            resolve_timer.reset();
+            resolve_timer.stop();
             delete [] resolve_buf;
             resolve_buf = 0;
             hr = 0;
@@ -347,7 +340,7 @@ int
 MMChannel::start_negotiation()
 {
     start_crypto();
-    nego_timer.start();
+    nego_timer.start(false, nego_timer.get_interval());
     negotiating = 1;
     cancel = 0;
     if(proxy_info.is_nil())
@@ -368,7 +361,7 @@ MMChannel::poll_negotiation()
     if(pstate == ESTABLISHED)
     {
         negotiating = 0;
-        nego_timer.reset();
+        nego_timer.stop();
         msg_out("Connection successful.");
         call_setup = 0;
         if(established_callback)

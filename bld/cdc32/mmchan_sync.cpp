@@ -521,9 +521,7 @@ MMChannel::eager_pull_processing()
 
     if(eager_pull_timer_active && !eager_pull_timer.is_running())
     {
-        eager_pull_timer.set_interval(10000);
-        eager_pull_timer.set_autoreload(1);
-        eager_pull_timer.start();
+        eager_pull_timer.start(true, 10000, 10000);
     }
     if(eager_pull_timer.is_expired())
     {
@@ -545,13 +543,7 @@ MMChannel::eager_pull_processing()
 void
 MMChannel::throttle_downstream_timer(vc)
 {
-    if(downstream_timer.get_interval() != 1000)
-    {
-        downstream_timer.stop();
-        downstream_timer.set_interval(1000);
-    }
-    downstream_timer.start();
-
+    downstream_timer.start(true, 1000, 1000);
 }
 
 int
@@ -675,8 +667,7 @@ MMChannel::process_outgoing_sync()
     mms_sync_state = NORMAL_SEND;
 
     sproto *s = simple_protos[msync_chan];
-    s->timeout.load(VIDEO_IDLE_TIMEOUT);
-    s->timeout.start();
+    s->timeout.start(false, VIDEO_IDLE_TIMEOUT);
 
     return 1;
 }
@@ -695,8 +686,7 @@ MMChannel::process_incoming_sync()
             return 0;
         if(rvc.type() != VC_VECTOR)
             throw -1;
-        sync_pinger.load(2 * VIDEO_IDLE_TIMEOUT);
-        sync_pinger.start();
+        sync_pinger.start(false, 2 * VIDEO_IDLE_TIMEOUT);
 
         // drop pings
         if(rvc[0] == vc("!"))

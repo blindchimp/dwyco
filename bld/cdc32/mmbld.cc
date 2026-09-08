@@ -40,6 +40,7 @@ extern double Audio_delay;
 using namespace dwyco;
 
 #define FAILRET(x) do {fail_reason = (x); Log_make_entry(x); return 0;} while(0)
+#define PACKET_DROP_INTERVAL 10000
 
 int
 MMChannel::audio_decoder_from_config()
@@ -475,11 +476,8 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display, int ma
         int r = get_settings_value("rate/max_fps");
         double intval = 1. / r;
         intval *= 1000;
-        mcx->frame_timer.set_interval(intval);
-        mcx->frame_timer.reset();
-        mcx->frame_timer.start();
-        mcx->ref_timer.reset();
-        mcx->ref_timer.start();
+        mcx->frame_timer.start(true, intval, intval);
+        mcx->ref_timer.start(true, 10000, 10000);
         mcx->ready_for_ref = 1;
     }
 
@@ -516,7 +514,7 @@ void
 MMChannel::enable_packet_drop_reporting(int e)
 {
     if(e)
-        drop_timer.start();
+        drop_timer.start(true, PACKET_DROP_INTERVAL, PACKET_DROP_INTERVAL);
     else
     {
         drop_timer.stop();

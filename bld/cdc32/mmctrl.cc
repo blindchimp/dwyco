@@ -45,16 +45,12 @@ MMChannel::react_to_droppage(int ndropped)
     remote_percent_dropped = ndropped;
     if(remote_percent_dropped > 2)
     {
-        ref_timer.set_interval(0);
-        ref_timer.reset();
-        ref_timer.start();
+        ref_timer.start(true, 0, 10000);
         auto_quality_boost = 1;
     }
     else
     {
-        ref_timer.set_interval(10000);
-        ref_timer.reset();
-        ref_timer.start();
+        ref_timer.start(true, 10000, 10000);
         auto_quality_boost = 0;
     }
 }

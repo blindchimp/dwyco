@@ -254,12 +254,10 @@ start_broadcaster()
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     Local_broadcast.socket_connect(a);
 
-    Broadcast_timer.reset();
+    Broadcast_timer.stop();
 
     // we want the first broadcast to happen fairly quickly.
-    Broadcast_timer.set_interval(1);
-    Broadcast_timer.set_autoreload(0);
-    Broadcast_timer.start();
+    Broadcast_timer.start(false, 1);
     return 1;
 }
 
@@ -409,10 +407,7 @@ broadcast_announcement()
         stop_broadcaster();
         start_broadcaster();
         // override the short timer
-        Broadcast_timer.reset();
-        Broadcast_timer.set_interval(60);
-        Broadcast_timer.set_autoreload(0);
-        Broadcast_timer.start();
+        Broadcast_timer.start(false, 60);
     }
 }
 
@@ -440,7 +435,7 @@ broadcast_tick()
     }
 
     Broadcast_timer.set_interval(iv * 1000);
-    Broadcast_timer.start();
+    Broadcast_timer.start(false, Broadcast_timer.get_interval());
 }
 
 static

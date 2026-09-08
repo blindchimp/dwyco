@@ -111,8 +111,7 @@ sproto::start()
 void
 sproto::rearm_watchdog()
 {
-    watchdog.load(60 * 1000);
-    watchdog.start();
+    watchdog.start(false, 60 * 1000);
 }
 
 void sproto::end()
