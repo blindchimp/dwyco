@@ -498,7 +498,6 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display, int ma
 
     tube->set_est_baud((long)bw * 1000);
     tube->clear_buf_ctrl();
-    tube->set_keepalive(0);
     // do this to avoid outputing the frame currently
     // queued for sending (we want the next one...)
     last_time_index = mcx->last_time_index;
