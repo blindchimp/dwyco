@@ -562,7 +562,7 @@ MMChannel::MMChannel() :
     //sync_timer.set_interval(1000);
     //sync_timer.start();
 
-    pinger_timer.start(true, 60 * 1000, 60 * 1000);
+    pinger_timer.start(DwTimer::REPEATING, 60 * 1000, 60 * 1000);
     pinger = 0;
 
     sync_manager.snapshot();
@@ -613,7 +613,7 @@ MMChannel::MMChannel() :
     secondary_server_channel = 0;
 
     // 5 minute keepalives for servers
-    keepalive_timer.start(true, 300 * 1000, 300 * 1000);
+    keepalive_timer.start(DwTimer::REPEATING, 300 * 1000, 300 * 1000);
 
     codec_tweak = 0;
 
@@ -1342,7 +1342,7 @@ MMChannel::wait_for_config()
     pstate = WAIT_FOR_CONFIG;
     negotiating = 1;
     //ctrl_flush();
-    nego_timer.start(false, NEGO_TIMEOUT);
+    nego_timer.start(DwTimer::ONESHOT, NEGO_TIMEOUT);
 }
 
 void
@@ -2427,7 +2427,7 @@ MMChannel::wait_for_crypto()
     pstate = WAIT_FOR_CRYPTO;
     negotiating = 1;
     ctrl_flush();
-    nego_timer.start(false, NEGO_TIMEOUT);
+    nego_timer.start(DwTimer::ONESHOT, NEGO_TIMEOUT);
 }
 
 vc
@@ -3852,7 +3852,7 @@ MMChannel::tick()
     {
         if(sync_manager.update_available() && !sync_timer.is_running())
         {
-            sync_timer.start(false, 5 * 1000);
+            sync_timer.start(DwTimer::ONESHOT, 5 * 1000);
         }
         if(sync_timer.is_expired())
         {
@@ -4137,12 +4137,12 @@ MMChannel::service_channels(int *spin_out)
         // here just as a stopgap in case i screw up getting the
         // adjustment calls done at the right time... at least we'll
         // get an adjustment once a minute.
-        Bw_adj_timer.start(true, 60 * 1000, 60 * 1000);
+        Bw_adj_timer.start(DwTimer::REPEATING, 60 * 1000, 60 * 1000);
 
         if(Current_alternate)
         {
             // clean out old protocol runs once a day
-            SKID_cleaner_timer.start(true, 24 * 3600 * 1000, 24 * 3600 * 1000);
+            SKID_cleaner_timer.start(DwTimer::REPEATING, 24 * 3600 * 1000, 24 * 3600 * 1000);
         }
         been_here = 1;
     }
@@ -4175,7 +4175,7 @@ MMChannel::service_channels(int *spin_out)
     if(some_serviced_channels_net())
     {
         if(!Bw_adj_timer.is_running())
-            Bw_adj_timer.start(true, 60 * 1000, 60 * 1000);
+            Bw_adj_timer.start(DwTimer::REPEATING, 60 * 1000, 60 * 1000);
     }
     else
     {
@@ -4724,7 +4724,7 @@ ctrl_processing:
                     GRTLOGVC(msg);
                     mc->ctrl_q.remove(0, 1);
                     // note: resets the timer to the interval
-                    mc->ctrl_send_watchdog.start(false, 10 * 60 * 1000);
+                    mc->ctrl_send_watchdog.start(DwTimer::ONESHOT, 10 * 60 * 1000);
                     static vc dec("decrypt");
                     if(msg == dec)
                     {

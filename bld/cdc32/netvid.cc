@@ -79,7 +79,7 @@ MMTube::MMTube() :
 {
     tick_time = 100;
     time = 0;
-    keepalive_timer.start(true, 5000, 5000);
+    keepalive_timer.start(DwTimer::REPEATING, 5000, 5000);
     connected = 0;
     ctrl_sock = 0;
     mm_sock = 0;
@@ -784,7 +784,7 @@ MMTube::set_keepalive(int t)
 {
     if(t)
     {
-        keepalive_timer.start(true, keepalive_timer.get_interval(), keepalive_timer.get_interval());
+        keepalive_timer.start(DwTimer::REPEATING, keepalive_timer.get_interval(), keepalive_timer.get_interval());
     }
     else
         keepalive_timer.stop();

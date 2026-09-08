@@ -28,10 +28,12 @@ typedef long sdwtime_t;
 class DwTimer
 {
 public:
+    enum Type { ONESHOT = 0, REPEATING = 1 };
+
     DwTimer(const char *timer_id = 0);
     virtual ~DwTimer();
 
-    void start(int repeating, dwtime_t first_expire_interval,
+    void start(Type type, dwtime_t first_expire_interval,
                dwtime_t following_expire_interval = 0);
     void stop();
 

@@ -165,7 +165,7 @@ FileTube::has_ctrl()
     // can't test file anymore because it is usually 0 now.
     if(/*(feof(file) || ferror(file) ||*/ timeline.done() && pickupq.num_elems() == 0)
     {
-        kludge_timer.start(false, auto_stop_delay + 400);
+        kludge_timer.start(DwTimer::ONESHOT, auto_stop_delay + 400);
     }
     return 0;
 }
@@ -503,7 +503,7 @@ FileTube::load_q()
     struct mmblock m;
     if(read_mm_data(m.buf, m.len, m.chan, m.subchan, m.user, -1, m.seq, m.time, m.filepos, 0) <= 0)
         return;
-    qtimer.start(false, m.time - t0);
+    qtimer.start(DwTimer::ONESHOT, m.time - t0);
     t0 = m.time;
     if(m.time == -1)
     {

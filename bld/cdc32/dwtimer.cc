@@ -61,10 +61,10 @@ DwTimer::next_expire_time(DwString& dbgstr)
 }
 
 void
-DwTimer::start(int rep, dwtime_t first, dwtime_t following)
+DwTimer::start(Type type, dwtime_t first, dwtime_t following)
 {
     stop();
-    repeating = rep;
+    repeating = type;
     first_interval = first;
     interval = following;
     enabled = 1;

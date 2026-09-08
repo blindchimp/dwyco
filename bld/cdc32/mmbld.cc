@@ -476,8 +476,8 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display, int ma
         int r = get_settings_value("rate/max_fps");
         double intval = 1. / r;
         intval *= 1000;
-        mcx->frame_timer.start(true, intval, intval);
-        mcx->ref_timer.start(true, 10000, 10000);
+        mcx->frame_timer.start(DwTimer::REPEATING, intval, intval);
+        mcx->ref_timer.start(DwTimer::REPEATING, 10000, 10000);
         mcx->ready_for_ref = 1;
     }
 
@@ -514,7 +514,7 @@ void
 MMChannel::enable_packet_drop_reporting(int e)
 {
     if(e)
-        drop_timer.start(true, PACKET_DROP_INTERVAL, PACKET_DROP_INTERVAL);
+        drop_timer.start(DwTimer::REPEATING, PACKET_DROP_INTERVAL, PACKET_DROP_INTERVAL);
     else
     {
         drop_timer.stop();

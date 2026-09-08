@@ -257,7 +257,7 @@ start_broadcaster()
     Broadcast_timer.stop();
 
     // we want the first broadcast to happen fairly quickly.
-    Broadcast_timer.start(false, 1);
+    Broadcast_timer.start(DwTimer::ONESHOT, 1);
     return 1;
 }
 
@@ -407,7 +407,7 @@ broadcast_announcement()
         stop_broadcaster();
         start_broadcaster();
         // override the short timer
-        Broadcast_timer.start(false, 60);
+        Broadcast_timer.start(DwTimer::ONESHOT, 60);
     }
 }
 
@@ -435,7 +435,7 @@ broadcast_tick()
     }
 
     Broadcast_timer.set_interval(iv * 1000);
-    Broadcast_timer.start(false, Broadcast_timer.get_interval());
+    Broadcast_timer.start(DwTimer::ONESHOT, Broadcast_timer.get_interval());
 }
 
 static

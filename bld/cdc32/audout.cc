@@ -348,7 +348,7 @@ AudioOutput::play_timed(DWBYTE *buf, int len, int in_at_time, int dfree)
         next = (next + 1) % bufs.num_elems();
         if(!output_timer.is_running())
         {
-            output_timer.start(false, time_until_play);
+            output_timer.start(DwTimer::ONESHOT, time_until_play);
         }
     }
     return 1;
@@ -388,7 +388,7 @@ AudioOutput::play_now()
     bufs_buffered = 0;
     reset_timer = 1;
     bufs_to_buffer = bufs.num_elems() / 2;
-    output_timer.start(false, device_one_buffer_time() * (bufs_to_buffer));
+    output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 
     // on a timer flush, we reset the packet
     // ordering in case a packet it going
@@ -429,7 +429,7 @@ AudioOutput::play_seq(DWBYTE *buf, int len, int seq, int dfree)
             bufs_buffered = 0;
             off = 0;
             seq0 = seq;
-            output_timer.start(false, device_one_buffer_time() * (bufs_to_buffer));
+            output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 #ifdef AUDDBG
             AUDRTLOG(L, "timer start %d", output_timer.get_time_left(), 0);
 #endif
@@ -576,7 +576,7 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         bufs_to_buffer = bufs.num_elems();
         if(output_timer.is_running())
         {
-            output_timer.start(false, output_timer.get_time_left() +
+            output_timer.start(DwTimer::ONESHOT, output_timer.get_time_left() +
                               device_one_buffer_time() * morebufs);
 #ifdef AUDDBG
             AUDRTLOG(L, "timer extend %d", output_timer.get_time_left(), 0);
@@ -584,7 +584,7 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         }
         else
         {
-            output_timer.start(false, device_one_buffer_time() * (bufs_to_buffer));
+            output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 #ifdef AUDDBG
             AUDRTLOG(L, "timer start %d", output_timer.get_time_left(), 0);
 #endif
@@ -721,7 +721,7 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         manage_decode(0);
         bufs_to_buffer = bufs.num_elems() / 2;
         // XXX reset timer to right value
-        output_timer.start(false, device_one_buffer_time() * (bufs_to_buffer));
+        output_timer.start(DwTimer::ONESHOT, device_one_buffer_time() * (bufs_to_buffer));
 #ifdef AUDDBG
         AUDRTLOG(L, "timer start2 %d", output_timer.get_time_left(), 0);
 #endif

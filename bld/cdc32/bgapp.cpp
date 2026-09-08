@@ -519,7 +519,7 @@ check_background_backup(vc asock, bool just_check_once)
         return;
     if(!been_here)
     {
-        bu_poll.start(true, 60 * 60 * 1000, 60 * 60 * 1000);
+        bu_poll.start(DwTimer::REPEATING, 60 * 60 * 1000, 60 * 60 * 1000);
         been_here = 1;
     }
     if(!just_check_once)
@@ -745,7 +745,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 // something, the conversation is probably over.
 #define WORKTIMER (8 * 60 * 1000)
                 DwTimer worktimer;
-                worktimer.start(false, WORKTIMER);
+                worktimer.start(DwTimer::ONESHOT, WORKTIMER);
                 bool inactivity_exit = false;
 #endif
     while(1)
@@ -811,7 +811,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         if(dwyco_get_rescan_messages())
         {
 #ifdef ANDROID
-            worktimer.start(false, WORKTIMER);
+            worktimer.start(DwTimer::ONESHOT, WORKTIMER);
 #endif
             GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
@@ -962,7 +962,7 @@ out:
         // thundering herd thing, but since this is a mobile device
         // and a once in awhile thing in the background, that probably
         // isn't a problem. so just restart as quickly as possible.
-        dwyco::Db_timer.start(false, 1);
+        dwyco::Db_timer.start(DwTimer::ONESHOT, 1);
 #else
         dwyco_suspend();
 #endif

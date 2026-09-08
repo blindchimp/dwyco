@@ -110,7 +110,7 @@ MMChannel::start_resolve(enum resolve_how how, unsigned long addr, const char *h
     call_setup = 1;
     resolve_failed = 0;
     resolve_done = 0;
-    resolve_timer.start(false, 5000L);
+    resolve_timer.start(DwTimer::ONESHOT, 5000L);
     GRTLOG("resolve start", 0, 0);
     int hr;
 
@@ -182,7 +182,7 @@ MMChannel::start_resolve(enum resolve_how how, unsigned long addr, const char *h
     call_setup = 1;
     resolve_failed = 0;
     resolve_done = 0;
-    resolve_timer.start(false, 15000L);
+    resolve_timer.start(DwTimer::ONESHOT, 15000L);
     GRTLOG("resolve start", 0, 0);
     HWND h = (*get_main_window_callback)(this);
     char *wbuf = new char[MAXGETHOSTSTRUCT];
@@ -340,7 +340,7 @@ int
 MMChannel::start_negotiation()
 {
     start_crypto();
-    nego_timer.start(false, nego_timer.get_interval());
+    nego_timer.start(DwTimer::ONESHOT, nego_timer.get_interval());
     negotiating = 1;
     cancel = 0;
     if(proxy_info.is_nil())

@@ -14,7 +14,7 @@
 
 DwRateMonitor::DwRateMonitor(long interval, long rd) : timer("rate")
 {
-    timer.start(true, interval, interval);
+    timer.start(DwTimer::REPEATING, interval, interval);
     rate_mult = rd;
     units = 0;
     last_units = 0;
@@ -82,7 +82,7 @@ DwRateMonitor::is_expired()
 void
 DwRateMonitor::start()
 {
-    timer.start(true, timer.get_interval(), timer.get_interval());
+    timer.start(DwTimer::REPEATING, timer.get_interval(), timer.get_interval());
 }
 
 void

@@ -392,7 +392,7 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     {
         p->watchdog.stop();
         video_state = MEDIA_SESSION_UP;
-        p->timeout.start(false, VIDEO_IDLE_TIMEOUT);
+        p->timeout.start(DwTimer::ONESHOT, VIDEO_IDLE_TIMEOUT);
         if(!agreed_key.is_nil())
         {
             tube->set_key_iv(agreed_key, 0);
@@ -406,7 +406,7 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     {
         p->watchdog.stop();
         audio_state = MEDIA_SESSION_UP;
-        p->timeout.start(false, AUDIO_IDLE_TIMEOUT);
+        p->timeout.start(DwTimer::ONESHOT, AUDIO_IDLE_TIMEOUT);
         if(!agreed_key.is_nil())
         {
             tube->set_key_iv(agreed_key, 0);
@@ -419,7 +419,7 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     else if(rvc == vc("msync ok"))
     {
         // NOTE: make sure timeout is right for syncing
-        p->timeout.start(false, AUDIO_IDLE_TIMEOUT);
+        p->timeout.start(DwTimer::ONESHOT, AUDIO_IDLE_TIMEOUT);
         if(!agreed_key.is_nil())
         {
             tube->set_key_iv(agreed_key, 0);
@@ -976,18 +976,18 @@ MMChannel::send_media_ok(int subchan, sproto *p, const char *ev)
     if(media == vc("audio"))
     {
         p->watchdog.stop();
-        p->timeout.start(false, AUDIO_IDLE_TIMEOUT);
+        p->timeout.start(DwTimer::ONESHOT, AUDIO_IDLE_TIMEOUT);
         audio_state = MEDIA_SESSION_UP;
     }
     else if(media == vc("video"))
     {
         p->watchdog.stop();
-        p->timeout.start(false, VIDEO_IDLE_TIMEOUT);
+        p->timeout.start(DwTimer::ONESHOT, VIDEO_IDLE_TIMEOUT);
         video_state = MEDIA_SESSION_UP;
     }
     else if(media == vc("msync"))
     {
-        p->timeout.start(false, AUDIO_IDLE_TIMEOUT);
+        p->timeout.start(DwTimer::ONESHOT, AUDIO_IDLE_TIMEOUT);
         tube->set_key_iv(agreed_key, 0);
         tube->start_encrypt_chan(subchan);
         tube->start_decrypt_chan(subchan);
@@ -1048,7 +1048,7 @@ MMChannel::send_media_ping(int subchan, sproto *p, const char *ev)
         return sproto::stay;
     // note: this happens on both audio and video channels, but
     // the timeout is the same
-    p->timeout.start(false, VIDEO_IDLE_TIMEOUT);
+    p->timeout.start(DwTimer::ONESHOT, VIDEO_IDLE_TIMEOUT);
     p->watchdog.stop();
     return sproto::next;
 }
