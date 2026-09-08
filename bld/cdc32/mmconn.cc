@@ -340,7 +340,7 @@ int
 MMChannel::start_negotiation()
 {
     start_crypto();
-    nego_timer.start(DwTimer::ONESHOT, nego_timer.get_interval());
+    nego_timer.start(DwTimer::ONESHOT, 120 * 1000);
     negotiating = 1;
     cancel = 0;
     if(proxy_info.is_nil())
