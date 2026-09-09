@@ -30,6 +30,7 @@ Page {
     property bool pwTick: false
 
     function profileHasPassword() {
+        var _ = pwTick
         return core.tox_has_profile_password()
     }
 
@@ -516,7 +517,6 @@ Page {
             }
 
             RowLayout {
-                enabled: core.tox_enabled
                 spacing: mm(1)
 
                 Button {
@@ -626,6 +626,10 @@ Page {
         id: importFileDialog
         title: "Choose a qTox profile (.tox) to import"
         nameFilters: ["Tox profiles (*.tox)", "All files (*)"]
+        onRejected: {
+            importFile = ""
+            importPw = ""
+        }
         onAccepted: {
             var p = core.url_to_filename(selectedFile)
             if(p === "") {
@@ -686,6 +690,17 @@ Page {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        onOpened: {
+            importPwInput.text = ""
+            importPwError.text = ""
+            importPwInput.forceActiveFocus()
+        }
+        onRejected: {
+            importPwInput.text = ""
+            importPwError.text = ""
+            importFile = ""
+            importPw = ""
+        }
 
         ColumnLayout {
             spacing: mm(1)
@@ -720,15 +735,14 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: importPwDialog.close()
+                    onClicked: importPwDialog.reject()
                 }
 
                 Button {
                     text: "Next"
                     onClicked: {
-                        importPwError.text = ""
-                        startImportConfirm(importFile, importPwInput.text)
                         importPwDialog.close()
+                        startImportConfirm(importFile, importPwInput.text)
                     }
                 }
             }
@@ -741,6 +755,14 @@ Page {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        onOpened: {
+            importConfirmError.text = ""
+            noBackupCb.checked = false
+        }
+        onRejected: {
+            importConfirmError.text = ""
+            noBackupCb.checked = false
+        }
 
         ColumnLayout {
             spacing: mm(1)
@@ -774,7 +796,7 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: importConfirmDialog.close()
+                    onClicked: importConfirmDialog.reject()
                 }
 
                 Button {
@@ -801,6 +823,7 @@ Page {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Ok
+        onOpened: importResultText.text = ""
 
         Label {
             id: importResultText
@@ -865,6 +888,11 @@ Page {
             RowLayout {
                 Layout.fillWidth: true
 
+                Button {
+                    text: "Create New Identity"
+                    onClicked: resetConfirmDialog.open()
+                }
+
                 Item { Layout.fillWidth: true }
 
                 Button {
@@ -886,6 +914,47 @@ Page {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    Dialog {
+        id: resetConfirmDialog
+        title: "Create New Identity"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: {
+            if(core.tox_reset_identity()) {
+                unlockError.text = ""
+                unlockDialog.close()
+                refreshToxIdentity()
+            } else {
+                unlockError.text = core.tox_reset_error.length > 0 ? core.tox_reset_error : "Could not create a new Tox identity."
+            }
+        }
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Your current Tox profile will be replaced with a brand new identity."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "Your existing profile (including your Tox ID and friend list) will be backed up to a file named replaced_tox_save.tox, but it can only be recovered if you remember its password."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "This cannot be undone."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                font.bold: true
             }
         }
     }

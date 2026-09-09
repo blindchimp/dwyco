@@ -45,6 +45,10 @@ int tox_bridge_check_password(const uint8_t *pw, int pw_len);
 // unencrypted).
 int tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_pw_len,
                               int make_backup, char *err_buf, int err_buf_len);
+// discard the current profile (backing it up to replaced_tox_save[.N].tox) and
+// start fresh with a brand new identity. on failure err_buf is filled with a
+// message and the old profile is restored.
+int tox_bridge_reset_identity(char *err_buf, int err_buf_len);
 // probe a tox save file: returns 1 if it is toxencryptsave-encrypted, 0 otherwise
 int tox_bridge_file_is_encrypted(const char *path);
 

@@ -1212,6 +1212,56 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
     return 1;
 }
 
+int
+tox_bridge_reset_identity(char *err_buf, int err_buf_len)
+{
+    if(err_buf && err_buf_len > 0)
+        err_buf[0] = 0;
+    if(Save_file.length() == 0)
+    {
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+
+    // shutting down first saves any in-memory state to the save file so the
+    // backup below captures the most recent profile.
+    tox_bridge_shutdown();
+
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(!copy_file(save_path, backup_path))
+        {
+            if(err_buf && err_buf_len > 0)
+                snprintf(err_buf, (size_t)err_buf_len,
+                         "could not back up the current profile to %s", backup_path.c_str());
+            GRTLOG("tox: reset backup failed to %s", backup_path.c_str(), 0);
+            return 0;
+        }
+        have_backup = 1;
+        GRTLOG("tox: reset backed up profile to %s", backup_path.c_str(), 0);
+        remove(save_path.c_str());
+        GRTLOG("tox: reset removed old save file", 0, 0);
+    }
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+
+    if(!tox_bridge_init(Save_file.c_str()))
+    {
+        GRTLOG("tox: reset re-init failed, restoring backup", 0, 0);
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "could not create a new Tox identity");
+        return 0;
+    }
+    return 1;
+}
+
 void
 tox_bridge_cleanup_incomplete()
 {

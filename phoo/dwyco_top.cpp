@@ -3250,6 +3250,23 @@ DwycoCore::tox_export_profile(const QString& path)
     return QString::fromUtf8(err_buf);
 }
 
+bool
+DwycoCore::tox_reset_identity()
+{
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_reset_identity(err_buf, sizeof(err_buf));
+    update_tox_reset_error(QString::fromUtf8(err_buf));
+    if(ret)
+    {
+        set_tox_enabled(true);
+        update_tox_self_address(tox_get_self_address());
+        update_tox_self_name(tox_get_name());
+        reload_conv_list();
+        return true;
+    }
+    return false;
+}
+
 void
 DwycoCore::copy_to_clipboard(const QString& text)
 {

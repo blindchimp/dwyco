@@ -10174,6 +10174,13 @@ dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
 
 DWYCOEXPORT
 int
+dwyco_tox_reset_identity(char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_reset_identity(err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_get_self_public_key(char **out, int *len_out)
 {
     return dwyco::tox_bridge_get_self_public_key(out, len_out);
