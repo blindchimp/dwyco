@@ -232,17 +232,11 @@ add_entropy_timer(const char *astr, int alen)
     static int been_here;
     if(!been_here)
     {
-        timer.set_autoreload(1);
-        timer.set_interval(60 * 1000);
-        timer.reset();
-        timer.start();
+        timer.start(DwTimer::REPEATING, 60 * 1000, 60 * 1000);
 
-        save_timer.set_autoreload(1);
         // used to be 15 seconds, but this caused too much
         // thrashing on laptops and things like dropbox
-        save_timer.set_interval(2 * 3600 * 1000);
-        save_timer.reset();
-        save_timer.start();
+        save_timer.start(DwTimer::REPEATING, 2 * 3600 * 1000, 2 * 3600 * 1000);
 
         been_here = 1;
     }

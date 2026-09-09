@@ -271,11 +271,7 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
 struct local_connect_timer : public ssns::trackable
 {
     local_connect_timer() : connect_timer("sync-conn-setup"){
-        connect_timer.set_autoreload(1);
-        connect_timer.set_interval(1000);
-        connect_timer.set_oneshot(0);
-        connect_timer.reset();
-        connect_timer.start();
+        connect_timer.start(DwTimer::REPEATING, 1000, 1000);
     }
 
     DwTimer connect_timer;
@@ -284,9 +280,7 @@ struct local_connect_timer : public ssns::trackable
     {
         if(connect_timer.get_interval() == 1000)
             return;
-        connect_timer.stop();
-        connect_timer.set_interval(1000);
-        connect_timer.start();
+        connect_timer.start(DwTimer::REPEATING, 1000, 1000);
     }
 
 
@@ -294,9 +288,7 @@ struct local_connect_timer : public ssns::trackable
     {
         if(connect_timer.get_interval() == 60 * 1000)
             return;
-        connect_timer.stop();
-        connect_timer.set_interval(60 * 1000);
-        connect_timer.start();
+        connect_timer.start(DwTimer::REPEATING, 60 * 1000, 60 * 1000);
     }
 
     void db_state_change(int i) {

@@ -1115,9 +1115,7 @@ dwyco_resume()
     //resume_qmsg();
     //init_prfdb();
     start_database_thread();
-    Db_timer.stop();
-    Db_timer.load(200);
-    Db_timer.start();
+    Db_timer.start(DwTimer::ONESHOT, 200);
     Dwyco_suspended = 0;
 }
 
@@ -1370,13 +1368,8 @@ DWYCOEXPORT
 void
 dwyco_enable_activity_checking(int on, int timeout, DwycoActivityCallback cb)
 {
-    Activity_timer.set_interval(timeout * 1000);
-    //Activity_timer.set_autoreload(0);
-    Activity_timer.set_oneshot(1);
-    Activity_timer.reset();
-    Activity_timer.load(timeout * 1000);
     if(on)
-        Activity_timer.start();
+        Activity_timer.start(DwTimer::ONESHOT, timeout * 1000);
     else
         Activity_timer.stop();
     dwyco_activity_callback = cb;
@@ -1917,15 +1910,12 @@ db_reconnect()
     {
         if(!been_here)
         {
-            Db_timer.set_oneshot(1);
-            Db_timer.load(1);
-            Db_timer.start();
+            Db_timer.start(DwTimer::ONESHOT, 1);
             been_here = 1;
         }
         if(!Db_timer.is_running())
         {
-            Db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
-            Db_timer.start();
+            Db_timer.start(DwTimer::ONESHOT, (10 + (dwyco_rand() % 45)) * 1000);
         }
         if(Db_timer.is_expired())
         {
@@ -2069,16 +2059,14 @@ handle_deferred_msg_send()
     if(!been_here)
     {
         been_here = 1;
-        send_qd_msg_timer.set_autoreload(1);
-        send_qd_msg_timer.set_interval(10 * 1000);
-        send_qd_msg_timer.start();
+        send_qd_msg_timer.start(DwTimer::REPEATING, 10 * 1000, 10 * 1000);
         qd_send_one();
     }
     if(!send_qd_msg_timer.is_running())
     {
         if(!msg_outq_empty())
         {
-            send_qd_msg_timer.start();
+            send_qd_msg_timer.start(DwTimer::REPEATING, 10 * 1000, 10 * 1000);
         }
     }
     if(send_qd_msg_timer.is_expired())
@@ -2203,10 +2191,7 @@ dwyco_service_channels(int *spin_out)
         static int been_here;
         if(!been_here)
         {
-            dump_timer.set_autoreload(1);
-            dump_timer.set_interval(5000);
-            dump_timer.reset();
-            dump_timer.start();
+            dump_timer.start(DwTimer::REPEATING, 5000, 5000);
             been_here = 1;
         }
         if(dump_timer.is_expired())
