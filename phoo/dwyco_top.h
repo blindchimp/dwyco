@@ -382,6 +382,10 @@ public:
     Q_INVOKABLE QString tox_import_profile(const QString& path, const QString& pw, bool makeBackup);
     Q_INVOKABLE QString tox_export_profile(const QString& path);
     Q_INVOKABLE bool tox_reset_identity();
+    Q_INVOKABLE bool tox_factory_reset();
+    Q_INVOKABLE bool tox_save_exists();
+    Q_INVOKABLE bool tox_save_is_encrypted();
+    Q_INVOKABLE QString tox_set_save_password(const QString& oldPw, const QString& newPw);
     Q_INVOKABLE void copy_to_clipboard(const QString& text);
     Q_INVOKABLE void start_auto_away();
     Q_INVOKABLE void stop_auto_away();

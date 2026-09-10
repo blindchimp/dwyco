@@ -49,6 +49,21 @@ int tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int s
 // start fresh with a brand new identity. on failure err_buf is filled with a
 // message and the old profile is restored.
 int tox_bridge_reset_identity(char *err_buf, int err_buf_len);
+// delete the tox save entirely and clear all password state, leaving the tox
+// system fully stopped (the "factory reset" state). does NOT create a new
+// identity and does NOT re-initialize tox.
+int tox_bridge_factory_reset(char *err_buf, int err_buf_len);
+// returns 1 if a tox save file exists on disk (drives the "empty" state).
+int tox_bridge_save_exists();
+// returns 1 if the on-disk tox save is toxencryptsave-encrypted (file probe,
+// valid whether or not tox is running).
+int tox_bridge_save_is_encrypted();
+// encrypt/decrypt the on-disk tox save without a running instance. old_pw must
+// match if the save is currently encrypted; empty new_pw clears encryption.
+// on failure err_buf is filled with a message.
+int tox_bridge_set_file_password(const uint8_t *old_pw, int old_pw_len,
+                                 const uint8_t *new_pw, int new_pw_len,
+                                 char *err_buf, int err_buf_len);
 // probe a tox save file: returns 1 if it is toxencryptsave-encrypted, 0 otherwise
 int tox_bridge_file_is_encrypted(const char *path);
 

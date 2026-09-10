@@ -241,6 +241,7 @@ qt_add_qml_module(phoo
         MessageYN.qml
         SimpleTrashBrowse.qml
         ToxPage.qml
+        ToxAcct.qml
         PulseLoader.qml
         MsgViewMenu.qml
         MsgViewMenuTrash.qml

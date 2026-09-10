@@ -58,6 +58,14 @@ int toxp_has_password(ToxPlugin *p);
 int toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len);
 // returns 1 if the file at path is a toxencryptsave-encrypted tox save
 int toxp_file_is_encrypted(const char *path);
+// encrypt/decrypt a tox save file on disk without a running instance.
+// old_pw must match if the file is currently encrypted (may be NULL/0 length
+// for a plain save). empty new_pw writes the save unencrypted, otherwise it
+// is encrypted with new_pw. on failure err_buf is filled with a message.
+int toxp_set_password_on_file(const char *save_file,
+                              const uint8_t *old_pw, int old_pw_len,
+                              const uint8_t *new_pw, int new_pw_len,
+                              char *err_buf, int err_buf_len);
 
 vc toxp_get_address(ToxPlugin *p);
 vc toxp_get_self_pubkey(ToxPlugin *p);

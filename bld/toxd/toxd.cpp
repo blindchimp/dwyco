@@ -923,6 +923,23 @@ toxp_has_password(ToxPlugin *p)
 }
 
 int
+toxp_set_password_on_file(const char *save_file,
+                          const uint8_t *old_pw, int old_pw_len,
+                          const uint8_t *new_pw, int new_pw_len,
+                          char *err_buf, int err_buf_len)
+{
+    uint8_t *data = NULL;
+    size_t len = 0;
+    if(!toxp_import_prepare(save_file, old_pw, old_pw_len, &data, &len,
+                            err_buf, err_buf_len))
+        return 0;
+    int ret = toxp_import_commit(save_file, data, len, new_pw, new_pw_len,
+                                 err_buf, err_buf_len);
+    free(data);
+    return ret ? 1 : 0;
+}
+
+int
 toxp_file_is_encrypted(const char *path)
 {
     if(!path)
@@ -1471,6 +1488,22 @@ int
 toxp_file_is_encrypted(const char *path)
 {
     (void)path;
+    return 0;
+}
+
+int
+toxp_set_password_on_file(const char *save_file,
+                          const uint8_t *old_pw, int old_pw_len,
+                          const uint8_t *new_pw, int new_pw_len,
+                          char *err_buf, int err_buf_len)
+{
+    (void)save_file;
+    (void)old_pw;
+    (void)old_pw_len;
+    (void)new_pw;
+    (void)new_pw_len;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not supported");
     return 0;
 }
 

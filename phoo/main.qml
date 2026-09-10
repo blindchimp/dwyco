@@ -569,6 +569,11 @@ ApplicationWindow {
         visible: false
     }
 
+    ToxAcct {
+        id: tox_acct
+        visible: false
+    }
+
     ConvList {
         id: convlist
         visible: false

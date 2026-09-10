@@ -3267,6 +3267,50 @@ DwycoCore::tox_reset_identity()
     return false;
 }
 
+bool
+DwycoCore::tox_factory_reset()
+{
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_factory_reset(err_buf, sizeof(err_buf));
+    if(ret)
+    {
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        reload_conv_list();
+        return true;
+    }
+    update_tox_reset_error(QString::fromUtf8(err_buf));
+    return false;
+}
+
+bool
+DwycoCore::tox_save_exists()
+{
+    return dwyco_tox_save_exists() != 0;
+}
+
+bool
+DwycoCore::tox_save_is_encrypted()
+{
+    return dwyco_tox_save_is_encrypted() != 0;
+}
+
+QString
+DwycoCore::tox_set_save_password(const QString& oldPw, const QString& newPw)
+{
+    QByteArray bopw = oldPw.toUtf8();
+    QByteArray bnpw = newPw.toUtf8();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_set_save_password(bopw.constData(), bopw.length(),
+                                          bnpw.constData(), bnpw.length(),
+                                          err_buf, sizeof(err_buf));
+    if(ret)
+        return QString();
+    return QString::fromUtf8(err_buf);
+}
+
 void
 DwycoCore::copy_to_clipboard(const QString& text)
 {
