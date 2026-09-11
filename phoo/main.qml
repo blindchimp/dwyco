@@ -102,12 +102,15 @@ ApplicationWindow {
     function maybeAutoLoginTox() {
         if(core.get_local_setting("tox_auto_login") !== "1")
             return
-        if(core.tox_enabled && core.tox_needs_password()) {
-            toxAutoLoginInput.text = ""
-            toxAutoLoginError.text = ""
-            toxAutoLoginDialog.open()
-            toxAutoLoginInput.forceActiveFocus()
-        }
+        if(core.tox_enabled && core.tox_needs_password())
+            openToxSignIn()
+    }
+
+    function openToxSignIn() {
+        toxAutoLoginInput.text = ""
+        toxAutoLoginError.text = ""
+        toxAutoLoginDialog.open()
+        toxAutoLoginInput.forceActiveFocus()
     }
 
     Material.theme: Material.Light
@@ -934,12 +937,20 @@ ApplicationWindow {
                     enabled: toxAutoLoginInput.text.length > 0
                     onClicked: {
                         toxAutoLoginError.text = ""
-                        if(core.tox_unlock(toxAutoLoginInput.text)) {
-                            toxAutoLoginDialog.close()
+                        if (!core.tox_enabled)
+                            core.enable_tox()
+                        if (core.tox_needs_password()) {
+                            if (core.tox_unlock(toxAutoLoginInput.text)) {
+                                core.set_local_setting("tox_enabled", "1")
+                                toxAutoLoginDialog.close()
+                            } else {
+                                toxAutoLoginError.text = "Wrong password or corrupt profile. Try again."
+                                toxAutoLoginInput.text = ""
+                                toxAutoLoginInput.forceActiveFocus()
+                            }
                         } else {
-                            toxAutoLoginError.text = "Wrong password or corrupt profile. Try again."
-                            toxAutoLoginInput.text = ""
-                            toxAutoLoginInput.forceActiveFocus()
+                            core.set_local_setting("tox_enabled", "1")
+                            toxAutoLoginDialog.close()
                         }
                     }
                 }

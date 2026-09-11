@@ -243,10 +243,19 @@ Page {
                     font.pixelSize: dp(14)
                 }
 
-                Button {
-                    text: "Go to Account..."
+                RowLayout {
                     Layout.alignment: Qt.AlignHCenter
-                    onClicked: stack.push(tox_acct)
+                    spacing: mm(2)
+
+                    Button {
+                        text: "Sign In"
+                        onClicked: openToxSignIn()
+                    }
+
+                    Button {
+                        text: "Go to Account..."
+                        onClicked: stack.push(tox_acct)
+                    }
                 }
             }
         }
