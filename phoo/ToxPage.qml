@@ -163,6 +163,8 @@ Page {
             if(tidx >= 0)
                 autoAwayTimeout.currentIndex = tidx
         }
+        var toxAutoLogin = core.get_local_setting("tox_auto_login")
+        toxAutoLoginCb.checked = (toxAutoLogin === "1")
         refreshToxAvatar()
         refreshStatus()
     }
@@ -246,6 +248,22 @@ Page {
                     Layout.alignment: Qt.AlignHCenter
                     onClicked: stack.push(tox_acct)
                 }
+            }
+        }
+
+        RowLayout {
+            spacing: mm(1)
+
+            CheckBox {
+                id: toxAutoLoginCb
+                text: "Login to tox automatically"
+                onCheckedChanged: {
+                    core.set_local_setting("tox_auto_login", checked ? "1" : "0")
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
             }
         }
 

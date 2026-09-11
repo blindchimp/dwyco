@@ -99,6 +99,17 @@ ApplicationWindow {
         return vh(pct) - mm(.5)
     }
 
+    function maybeAutoLoginTox() {
+        if(core.get_local_setting("tox_auto_login") !== "1")
+            return
+        if(core.tox_enabled && core.tox_needs_password()) {
+            toxAutoLoginInput.text = ""
+            toxAutoLoginError.text = ""
+            toxAutoLoginDialog.open()
+            toxAutoLoginInput.forceActiveFocus()
+        }
+    }
+
     Material.theme: Material.Light
     Material.accent: accent
     Material.primary: primary
@@ -799,6 +810,7 @@ ApplicationWindow {
                 if(state === "start") {
                     core.init()
                     init_called = true
+                    maybeAutoLoginTox()
                 }
             }
         }
@@ -869,6 +881,70 @@ ApplicationWindow {
             }
         }
 
+    }
+
+    Dialog {
+        id: toxAutoLoginDialog
+        title: "Sign In to Tox"
+        modal: true
+        closePolicy: Dialog.NoAutoClose
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "Your Tox profile is password protected.\nEnter your password to sign in."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: toxAutoLoginInput
+                echoMode: TextInput.Password
+                placeholderText: "Password"
+                Layout.fillWidth: true
+                onAccepted: toxAutoLoginOkButton.clicked()
+            }
+
+            Label {
+                id: toxAutoLoginError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: toxAutoLoginDialog.close()
+                }
+
+                Button {
+                    id: toxAutoLoginOkButton
+                    text: "Sign In"
+                    enabled: toxAutoLoginInput.text.length > 0
+                    onClicked: {
+                        toxAutoLoginError.text = ""
+                        if(core.tox_unlock(toxAutoLoginInput.text)) {
+                            toxAutoLoginDialog.close()
+                        } else {
+                            toxAutoLoginError.text = "Wrong password or corrupt profile. Try again."
+                            toxAutoLoginInput.text = ""
+                            toxAutoLoginInput.forceActiveFocus()
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
@@ -1067,6 +1143,7 @@ ApplicationWindow {
             if(pwdialog.allow_access === 1) {
                 init()
                 init_called = true
+                maybeAutoLoginTox()
             }
         }
 

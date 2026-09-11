@@ -2121,7 +2121,9 @@ DwycoCore::init()
     setup_emergency_servers();
     {
         QString tox_enabled_s = get_local_setting("tox_enabled");
-        if(tox_enabled_s == "" || tox_enabled_s == "0") {
+        QString tox_auto_login_s = get_local_setting("tox_auto_login");
+        if(tox_enabled_s == "" || tox_enabled_s == "0" ||
+           tox_auto_login_s == "" || tox_auto_login_s == "0") {
             set_tox_enabled(false);
         } else {
             set_tox_enabled(true);
