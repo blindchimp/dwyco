@@ -3325,9 +3325,9 @@ sql_uid_has_tag(vc uid, vc tag)
 
 }
 
-// this is used mainly for if a uid's messages have been
-// trashed. if so, it is better to avoid showing the uid
-// in a lot of contexts.
+// check if all of a uid's messages carry a given tag.
+// the "keep empty/cleared conversations visible" behavior is now
+// handled at the conv list level, not here.
 int
 sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
 {
