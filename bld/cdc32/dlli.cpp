@@ -10201,6 +10201,45 @@ dwyco_tox_select_save(const char *mid_hex, int mid_hex_len, char *err_buf, int e
 
 DWYCOEXPORT
 int
+dwyco_tox_reset_identity(char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_reset_identity(err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_factory_reset(char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_factory_reset(err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_save_exists()
+{
+    return dwyco::tox_bridge_save_exists();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_save_is_encrypted()
+{
+    return dwyco::tox_bridge_save_is_encrypted();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_save_password(const char *old_pw, int old_pw_len,
+                            const char *new_pw, int new_pw_len,
+                            char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_set_file_password((const uint8_t *)old_pw, old_pw_len,
+                                               (const uint8_t *)new_pw, new_pw_len,
+                                               err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_get_self_public_key(char **out, int *len_out)
 {
     return dwyco::tox_bridge_get_self_public_key(out, len_out);

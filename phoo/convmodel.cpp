@@ -653,14 +653,13 @@ ConvSortFilterModel::invalidate_model_filter()
 bool
 ConvSortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
-    auto alm = dynamic_cast<ConvListModel *>(sourceModel());
-
-    QVariant uid = alm->data(alm->index(source_row, 0), alm->roleForName("uid"));
-    auto buid = QByteArray::fromHex(uid.toByteArray());
-    if(uid_has_unviewed_msgs(buid))
-        return true;
-    int ret = dwyco_all_messages_tagged(buid.constData(), buid.length(), "_trash");
-    return ret == 0;
+    Q_UNUSED(source_row)
+    Q_UNUSED(source_parent)
+    // A conversation is shown when it is in the model at all: users in the
+    // message index, users with unviewed/unfetched messages, and tox friends.
+    // Trashing or clearing a conversation's messages must NOT hide the person;
+    // use block/delete (obliterate) to remove someone from the list.
+    return true;
 }
 
 bool

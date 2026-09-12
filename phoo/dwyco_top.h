@@ -73,6 +73,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, tox_connected)
     QML_READONLY_VAR_PROPERTY(QString, tox_self_address)
     QML_READONLY_VAR_PROPERTY(QString, tox_self_name)
+    QML_READONLY_VAR_PROPERTY(QString, tox_reset_error)
 
     QML_WRITABLE_VAR_PROPERTY(bool, auto_away_enabled)
     QML_WRITABLE_VAR_PROPERTY(int, auto_away_timeout)
@@ -383,6 +384,11 @@ public:
     Q_INVOKABLE bool tox_publish_save();
     Q_INVOKABLE QVariantList tox_list_saves();
     Q_INVOKABLE QString tox_select_save(const QString& midText);
+    Q_INVOKABLE bool tox_reset_identity();
+    Q_INVOKABLE bool tox_factory_reset();
+    Q_INVOKABLE bool tox_save_exists();
+    Q_INVOKABLE bool tox_save_is_encrypted();
+    Q_INVOKABLE QString tox_set_save_password(const QString& oldPw, const QString& newPw);
     Q_INVOKABLE void copy_to_clipboard(const QString& text);
     Q_INVOKABLE void start_auto_away();
     Q_INVOKABLE void stop_auto_away();

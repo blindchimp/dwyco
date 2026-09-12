@@ -2308,6 +2308,13 @@ int DWYCOEXPORT dwyco_tox_export_profile(const char *dst_path, char *err_buf, in
 int DWYCOEXPORT dwyco_tox_publish_save();
 int DWYCOEXPORT dwyco_tox_list_saves(DWYCO_LIST *list_out);
 int DWYCOEXPORT dwyco_tox_select_save(const char *mid_hex, int mid_hex_len, char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_reset_identity(char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_factory_reset(char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_save_exists();
+int DWYCOEXPORT dwyco_tox_save_is_encrypted();
+int DWYCOEXPORT dwyco_tox_set_save_password(const char *old_pw, int old_pw_len,
+                                            const char *new_pw, int new_pw_len,
+                                            char *err_buf, int err_buf_len);
 
 typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_FRIEND_NUMBER "000"

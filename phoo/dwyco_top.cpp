@@ -2131,7 +2131,9 @@ DwycoCore::init()
     setup_emergency_servers();
     {
         QString tox_enabled_s = get_local_setting("tox_enabled");
-        if(tox_enabled_s == "" || tox_enabled_s == "0") {
+        QString tox_auto_login_s = get_local_setting("tox_auto_login");
+        if(tox_enabled_s == "" || tox_enabled_s == "0" ||
+           tox_auto_login_s == "" || tox_auto_login_s == "0") {
             set_tox_enabled(false);
         } else {
             set_tox_enabled(true);
@@ -3313,6 +3315,67 @@ DwycoCore::tox_select_save(const QString& midText)
         emit tox_import_finished();
         return QString();
     }
+    return QString::fromUtf8(err_buf);
+}
+
+bool
+DwycoCore::tox_reset_identity()
+{
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_reset_identity(err_buf, sizeof(err_buf));
+    update_tox_reset_error(QString::fromUtf8(err_buf));
+    if(ret)
+    {
+        set_tox_enabled(true);
+        update_tox_self_address(tox_get_self_address());
+        update_tox_self_name(tox_get_name());
+        reload_conv_list();
+        return true;
+    }
+    return false;
+}
+
+bool
+DwycoCore::tox_factory_reset()
+{
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_factory_reset(err_buf, sizeof(err_buf));
+    if(ret)
+    {
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        reload_conv_list();
+        return true;
+    }
+    update_tox_reset_error(QString::fromUtf8(err_buf));
+    return false;
+}
+
+bool
+DwycoCore::tox_save_exists()
+{
+    return dwyco_tox_save_exists() != 0;
+}
+
+bool
+DwycoCore::tox_save_is_encrypted()
+{
+    return dwyco_tox_save_is_encrypted() != 0;
+}
+
+QString
+DwycoCore::tox_set_save_password(const QString& oldPw, const QString& newPw)
+{
+    QByteArray bopw = oldPw.toUtf8();
+    QByteArray bnpw = newPw.toUtf8();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_set_save_password(bopw.constData(), bopw.length(),
+                                          bnpw.constData(), bnpw.length(),
+                                          err_buf, sizeof(err_buf));
+    if(ret)
+        return QString();
     return QString::fromUtf8(err_buf);
 }
 

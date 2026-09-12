@@ -1143,12 +1143,28 @@ tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
     if(!err_buf || err_buf_len <= 0)
         return 0;
     err_buf[0] = 0;
-    if(!Tox_plugin)
+    if(!dst_path || !dst_path[0])
     {
-        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+        snprintf(err_buf, (size_t)err_buf_len, "no destination file");
         return 0;
     }
-    return toxp_export_to_file(Tox_plugin, dst_path, err_buf, err_buf_len);
+    if(Tox_plugin)
+        return toxp_export_to_file(Tox_plugin, dst_path, err_buf, err_buf_len);
+    // tox is not running: export the on-disk save as-is (preserving its
+    // encryption state). this lets an encrypted profile be exported without
+    // first entering its password.
+    DwString src = newfn(Save_file.c_str());
+    if(!file_exists(src))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no tox save to export");
+        return 0;
+    }
+    if(!copy_file(src, DwString(dst_path)))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "could not copy the tox save to %s", dst_path);
+        return 0;
+    }
+    return 1;
 }
 
 int
@@ -1434,6 +1450,133 @@ publish_active_claim(const vc &pubkey)
 // identity. if so, shut down and emit the disable-by-remote event.
 // resolution is last-writer-wins on (time, uid_hex): the newest claim wins
 // for a given identity.
+int
+tox_bridge_reset_identity(char *err_buf, int err_buf_len)
+{
+    if(err_buf && err_buf_len > 0)
+        err_buf[0] = 0;
+    if(Save_file.length() == 0)
+        Save_file = "tox_save.tox";
+
+    // shutting down first saves any in-memory state to the save file so the
+    // backup below captures the most recent profile.
+    tox_bridge_shutdown();
+
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(!copy_file(save_path, backup_path))
+        {
+            if(err_buf && err_buf_len > 0)
+                snprintf(err_buf, (size_t)err_buf_len,
+                         "could not back up the current profile to %s", backup_path.c_str());
+            GRTLOG("tox: reset backup failed to %s", backup_path.c_str(), 0);
+            return 0;
+        }
+        have_backup = 1;
+        GRTLOG("tox: reset backed up profile to %s", backup_path.c_str(), 0);
+        remove(save_path.c_str());
+        GRTLOG("tox: reset removed old save file", 0, 0);
+    }
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+
+    if(!tox_bridge_init(Save_file.c_str()))
+    {
+        GRTLOG("tox: reset re-init failed, restoring backup", 0, 0);
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "could not create a new Tox identity");
+        return 0;
+    }
+    return 1;
+}
+
+int
+tox_bridge_factory_reset(char *err_buf, int err_buf_len)
+{
+    if(err_buf && err_buf_len > 0)
+        err_buf[0] = 0;
+    if(Save_file.length() == 0)
+    {
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+
+    // shut down first so any running instance is stopped cleanly (it saves
+    // its in-memory state to the save file before removal, but that is fine:
+    // we are deleting the save anyway).
+    tox_bridge_shutdown();
+
+    DwString save_path = newfn(Save_file.c_str());
+    if(file_exists(save_path))
+    {
+        remove(save_path.c_str());
+        GRTLOG("tox: factory reset removed save file", 0, 0);
+    }
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+
+    // intentionally do NOT re-initialize: this restores the first-run state
+    // where no tox save exists yet.
+    return 1;
+}
+
+int
+tox_bridge_save_exists()
+{
+    const char *sf = Save_file.length() ? Save_file.c_str() : "tox_save.tox";
+    return file_exists(newfn(sf)) ? 1 : 0;
+}
+
+int
+tox_bridge_save_is_encrypted()
+{
+    const char *sf = Save_file.length() ? Save_file.c_str() : "tox_save.tox";
+    return tox_bridge_file_is_encrypted(newfn(sf).c_str());
+}
+
+int
+tox_bridge_set_file_password(const uint8_t *old_pw, int old_pw_len,
+                             const uint8_t *new_pw, int new_pw_len,
+                             char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(Save_file.length() == 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+    if(Started)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "sign out of tox before changing encryption");
+        return 0;
+    }
+    DwString save_path = newfn(Save_file.c_str());
+    if(!file_exists(save_path))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no tox save to change");
+        return 0;
+    }
+    int ret = toxp_set_password_on_file(save_path.c_str(), old_pw, old_pw_len,
+                                        new_pw, new_pw_len, err_buf, err_buf_len);
+    if(ret)
+    {
+        // the on-disk encryption changed underneath the running system, so
+        // drop any remembered password to avoid stale state later.
+        set_active_password(NULL, 0);
+        Needs_password = 0;
+    }
+    return ret ? 1 : 0;
+}
+
 void
 tox_bridge_check_active_conflict()
 {
