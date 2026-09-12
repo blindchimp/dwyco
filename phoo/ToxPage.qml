@@ -74,6 +74,8 @@ Page {
     }
 
     function refreshToxIdentity() {
+        if (!core.tox_enabled || core.tox_needs_password())
+            return
         toxNameInput.text_input = core.tox_get_name()
         toxStatusInput.text_input = core.tox_get_status_message()
         origName = toxNameInput.text_input
@@ -124,10 +126,15 @@ Page {
         }
         function onTox_self_addressChanged() {
             refreshToxAvatar()
+            refreshToxIdentity()
+        }
+        function onTox_self_nameChanged() {
+            refreshToxIdentity()
         }
         function onTox_enabledChanged() {
             refreshToxAvatar()
             refreshStatus()
+            refreshToxIdentity()
         }
         function onTox_connection_status_changed(connected) {
             refreshStatus()
@@ -138,6 +145,7 @@ Page {
         if(visible) {
             refreshToxAvatar()
             refreshStatus()
+            refreshToxIdentity()
         }
     }
 
