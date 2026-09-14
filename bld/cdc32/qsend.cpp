@@ -328,8 +328,7 @@ void
 DwQSend::qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 {
     mc->timer1.stop();
-    mc->timer1.load(XFER_WATCHDOG_TIMEOUT);
-    mc->timer1.start();
+    mc->timer1.start(DwTimer::ONESHOT, XFER_WATCHDOG_TIMEOUT);
     if(!vp.is_valid())
         return;
     DwQSend *q = (DwQSend *)(void *)vp;
@@ -355,11 +354,7 @@ xfer_chan_call_succeeded(MMChannel *mc, int , vc, void *, ValidPtr)
     mc->timer1.stop();
     // this is a bit of a kluge... we know we have status reporting
     // set up, and use that as a watchdog on the transfer
-    mc->timer1.reset();
-    mc->timer1.set_oneshot(1);
-    mc->timer1.load(XFER_WATCHDOG_TIMEOUT);
-
-    mc->timer1.start();
+    mc->timer1.start(DwTimer::ONESHOT, XFER_WATCHDOG_TIMEOUT);
     // timer1 callback still set to xfer_chan_setup_timeout
 }
 
@@ -443,11 +438,7 @@ DwQSend::send_with_attachment()
     // start a short timer, since the builtin
     // connection timer in the tcp stack is
     // really too long
-    //mc->timer1.set_autoreload(0);
-    mc->timer1.set_oneshot(1);
-    mc->timer1.load(CHANNEL_SETUP_TIMEOUT);
-    mc->timer1.reset();
-    mc->timer1.start();
+    mc->timer1.start(DwTimer::ONESHOT, CHANNEL_SETUP_TIMEOUT);
     mc->timer1_callback = xfer_chan_setup_timeout;
     mc->t1cb_arg3 = vp;
     mc->chan_established_callback = xfer_chan_call_succeeded;
