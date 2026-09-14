@@ -157,7 +157,15 @@ dwyco_request_singleton_lock(const char *name, int port)
     memcpy(sap.sun_path, aname.c_str(), dwmin(aname.length(), sizeof(sap.sun_path)));
     int tlen = offsetof(sockaddr_un, sun_path) + aname.length();
 
-    while(1)
+    // note: if the background worker is stuck and never releases the
+    // lock (e.g. it was wedged by the battery saver), this loop would
+    // spin forever and hang the foreground startup. bound the wait and
+    // give up so the caller can exit the process and try again cleanly.
+    // a connect is issued each time to try to get the background guy to
+    // relinquish the lock. ~30 seconds total.
+    int tries = 3000;
+    int i;
+    for(i = 0; i < tries; ++i)
     {
         if(bind(s, (const struct sockaddr *)&sap, tlen) == -1)
         {
@@ -188,6 +196,13 @@ dwyco_request_singleton_lock(const char *name, int port)
         }
         else
             break;
+    }
+    if(i == tries)
+    {
+        // couldn't get the lock in time; the caller will exit the
+        // process so the next start is clean.
+        close(s);
+        return -1;
     }
     if(listen(s, 5) == -1)
     {
