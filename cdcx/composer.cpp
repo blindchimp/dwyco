@@ -9,9 +9,13 @@
 #include <QtGui>
 #include <QLabel>
 #include <QMessageBox>
+#include <QRadioButton>
+#include <QPushButton>
+#include <QHBoxLayout>
 #include "ui_composer.h"
 #include "composer.h"
 #include "dlli.h"
+#include "dwycolistscoped.h"
 #include "player.h"
 #include "dwstr.h"
 #include "vidsel.h"
@@ -1148,6 +1152,23 @@ composer_profile::dwyco_profile_composer_fetch_done(int succ, const char *reason
     if(!vp.is_valid())
         return;
     composer_profile *c = (composer_profile *)(void *)vp;
+    QString handle;
+    QString desc;
+    QString loc;
+    QString email;
+    dwyco_info_to_display(c->uid, handle, desc, loc, email);
+    c->personal_fields.handle = handle;
+    c->personal_fields.loc = loc;
+    c->personal_fields.email = email;
+    c->personal_fields.desc = desc;
+    c->personal_fields.fetched = 1;
+    if(c->group_mode)
+    {
+        // group tab active: stash personal text, don't clobber group preview
+        if(succ > 0)
+            dwyco_delete_zap_view(succ);
+        return;
+    }
     if(succ == 0)
     {
         c->ui.statusbar->showMessage(QString("No profile available. (%1)").arg(reason));
@@ -1157,11 +1178,6 @@ composer_profile::dwyco_profile_composer_fetch_done(int succ, const char *reason
         c->resize(320, 240);
         return;
     }
-    QString handle;
-    QString desc;
-    QString loc;
-    QString email;
-    dwyco_info_to_display(c->uid, handle, desc, loc, email);
     c->ui.textEdit->setHtml(desc);
     c->ui.p_handle->setText(handle);
     c->ui.p_loc->setText(loc);
@@ -1193,6 +1209,8 @@ composer_profile::dwyco_profile_composer_fetch_done(int succ, const char *reason
         c->ui.label->setVisible(1);
         QImage img(filename);
         c->ui.label->setPixmap(QPixmap::fromImage(img));
+        c->personal_fields.pic = QPixmap::fromImage(img);
+        c->personal_fields.has_pic = !img.isNull();
         c->ui.actionPlay->setEnabled(0);
         c->ui.actionStop->setEnabled(0);
         c->ui.actionStart_over->setEnabled(1);
@@ -1372,10 +1390,18 @@ composer_profile::composer_profile(QWidget *parent, Qt::WindowFlags f) :
     ui.p_handle->setText(handle);
     ui.p_loc->setText(loc);
     ui.p_email->setText(email);
+    personal_fields.handle = handle;
+    personal_fields.loc = loc;
+    personal_fields.email = email;
+    personal_fields.desc = ui.textEdit->toPlainText();
 
     setWindowTitle("Profile Composer");
     modified = 0;
     viewid = -1;
+    group_mode = 0;
+    setup_group_ui();
+    refresh_group_status();
+    update_group_ui_state();
 
 }
 
@@ -1405,7 +1431,350 @@ composer_profile::start()
     ui.actionStop->setEnabled(0);
     dwyco_get_profile_to_viewer(uid.c_str(), uid.length(),
                                 dwyco_profile_composer_fetch_done, (void *)vp.cookie);
+    fetch_group();
 
+}
+
+// ---- group profile (gid-keyed) extension ----
+// The gid is static; never use dwyco_map_uid_to_representative (ephemeral)
+// as a group key. All group resolves go through dwyco_get_group_profile,
+// which falls back to the per-uid profile when the uid is not in a group.
+
+void
+composer_profile::setup_group_ui()
+{
+    group_banner = new QWidget(this);
+    QHBoxLayout *hb = new QHBoxLayout(group_banner);
+    hb->setContentsMargins(4, 4, 4, 4);
+    hb->setSpacing(8);
+    QLabel *lbl = new QLabel("Editing:", group_banner);
+    hb->addWidget(lbl);
+    radio_personal = new QRadioButton("Personal", group_banner);
+    radio_group = new QRadioButton("Group", group_banner);
+    radio_personal->setChecked(1);
+    hb->addWidget(radio_personal);
+    hb->addWidget(radio_group);
+    group_info_label = new QLabel(group_banner);
+    group_info_label->setWordWrap(1);
+    hb->addWidget(group_info_label, 1);
+    copy_to_personal_btn = new QPushButton("<< Group to Personal", group_banner);
+    copy_to_personal_btn->setToolTip("Copy group fields into personal fields (local only, then save)");
+    hb->addWidget(copy_to_personal_btn);
+    copy_to_group_btn = new QPushButton("Personal to Group >>", group_banner);
+    copy_to_group_btn->setToolTip("Copy personal fields into group fields (local only, then save)");
+    hb->addWidget(copy_to_group_btn);
+    save_group_btn = new QPushButton("Update group", group_banner);
+    save_group_btn->setToolTip("Save current fields as the gid-keyed group profile (any member may do this)");
+    hb->addWidget(save_group_btn);
+    // banner goes above the profile groupBox
+    ui.verticalLayout_3->insertWidget(0, group_banner);
+    connect(radio_group, SIGNAL(toggled(bool)), this, SLOT(on_group_mode_toggled(bool)));
+    connect(copy_to_personal_btn, SIGNAL(clicked()), this, SLOT(on_copy_group_to_personal()));
+    connect(copy_to_group_btn, SIGNAL(clicked()), this, SLOT(on_copy_personal_to_group()));
+    connect(save_group_btn, SIGNAL(clicked()), this, SLOT(on_save_group_triggered()));
+}
+
+void
+composer_profile::refresh_group_status()
+{
+    in_group = 0;
+    group_name = "";
+    DWYCO_LIST gs = 0;
+    if(dwyco_get_group_status(&gs) && gs)
+    {
+        simple_scoped qgs(gs);
+        if(qgs.get_long(DWYCO_GS_VALID) == 1)
+        {
+            in_group = 1;
+            group_name = QString::fromUtf8(qgs.get<QByteArray>(DWYCO_GS_GNAME).constData());
+        }
+    }
+}
+
+void
+composer_profile::stash_current_fields()
+{
+    ModeFields *f = group_mode ? &group_fields : &personal_fields;
+    f->handle = ui.p_handle->text();
+    f->loc = ui.p_loc->text();
+    f->email = ui.p_email->text();
+    f->desc = ui.textEdit->toPlainText();
+    // note: media composition (compid) is shared between modes in v1;
+    // pic previews for -2 profiles are stashed on fetch. video/audio must
+    // be re-recorded after switching modes.
+}
+
+void
+composer_profile::load_current_fields()
+{
+    ModeFields *f = group_mode ? &group_fields : &personal_fields;
+    ui.p_handle->setText(f->handle);
+    ui.p_loc->setText(f->loc);
+    ui.p_email->setText(f->email);
+    ui.textEdit->setPlainText(f->desc);
+    if(f->has_pic && !f->pic.isNull())
+    {
+        ui.label->setVisible(1);
+        ui.label->setPixmap(f->pic);
+    }
+    modified = 0;
+}
+
+void
+composer_profile::update_group_ui_state()
+{
+    radio_group->setEnabled(in_group);
+    copy_to_personal_btn->setEnabled(in_group && group_fields.fetched);
+    copy_to_group_btn->setEnabled(in_group);
+    save_group_btn->setEnabled(in_group && !send_in_progress);
+    if(!in_group)
+    {
+        group_info_label->setText("Not in a device group: group editing disabled.");
+        radio_personal->setChecked(1);
+    }
+    else
+    {
+        group_info_label->setText(QString("Group: %1 (shared, any member may edit)").arg(group_name));
+    }
+    if(group_mode)
+    {
+        setWindowTitle(QString("Group Profile Composer [%1]").arg(group_name));
+        ui.groupBox->setTitle(QString("Group Profile [%1]").arg(group_name));
+        ui.actionSend_Message->setText("Update personal profile");
+    }
+    else
+    {
+        setWindowTitle("Profile Composer");
+        ui.actionSend_Message->setText("Update profile");
+    }
+}
+
+void
+composer_profile::set_group_mode(bool group)
+{
+    group = group && in_group;
+    if(group == (bool)group_mode)
+        return;
+    stash_current_fields();
+    group_mode = group ? 1 : 0;
+    radio_personal->blockSignals(1);
+    radio_group->blockSignals(1);
+    radio_personal->setChecked(!group_mode);
+    radio_group->setChecked(group_mode);
+    radio_personal->blockSignals(0);
+    radio_group->blockSignals(0);
+    load_current_fields();
+    update_group_ui_state();
+    if(group_mode && !group_fields.fetched)
+        fetch_group();
+}
+
+void
+composer_profile::on_group_mode_toggled(bool checked)
+{
+    set_group_mode(checked);
+}
+
+void
+composer_profile::on_copy_group_to_personal()
+{
+    if(!in_group || !group_fields.fetched)
+        return;
+    stash_current_fields();
+    personal_fields.handle = group_fields.handle;
+    personal_fields.loc = group_fields.loc;
+    personal_fields.email = group_fields.email;
+    personal_fields.desc = group_fields.desc;
+    personal_fields.pic = group_fields.pic;
+    personal_fields.has_pic = group_fields.has_pic;
+    if(!group_mode)
+        load_current_fields();
+    ui.statusbar->showMessage("Group fields copied to personal (local only, save to publish).");
+    modified = 1;
+}
+
+void
+composer_profile::on_copy_personal_to_group()
+{
+    if(!in_group)
+        return;
+    stash_current_fields();
+    group_fields.handle = personal_fields.handle;
+    group_fields.loc = personal_fields.loc;
+    group_fields.email = personal_fields.email;
+    group_fields.desc = personal_fields.desc;
+    group_fields.pic = personal_fields.pic;
+    group_fields.has_pic = personal_fields.has_pic;
+    group_fields.fetched = 1;
+    if(group_mode)
+        load_current_fields();
+    ui.statusbar->showMessage("Personal fields copied to group (local only, save to publish).");
+    modified = 1;
+}
+
+void
+composer_profile::fetch_group()
+{
+    if(!in_group)
+        return;
+    dwyco_get_group_profile(uid.c_str(), uid.length(),
+                            dwyco_group_composer_fetch_done, (void *)vp.cookie);
+}
+
+void
+composer_profile::save_group()
+{
+    if(!in_group || send_in_progress)
+        return;
+    stash_current_fields();
+    QString desc = group_mode ? ui.textEdit->toPlainText() : group_fields.desc;
+    QString handle = group_mode ? ui.p_handle->text().simplified() : group_fields.handle;
+    QString loc = group_mode ? ui.p_loc->text().simplified() : group_fields.loc;
+    QString email = group_mode ? ui.p_email->text().simplified() : group_fields.email;
+    const char *pack;
+    int len_pack;
+    QByteArray hb = handle.toUtf8(), db = desc.toUtf8(), lb = loc.toUtf8(), eb = email.toUtf8();
+    dwyco_make_profile_pack(hb.constData(), hb.size(), db.constData(), db.size(),
+                            lb.constData(), lb.size(), eb.constData(), eb.size(),
+                            &pack, &len_pack);
+    if(!dwyco_set_group_profile_from_composer(compid, pack, len_pack,
+                                              dwyco_set_group_profile_callback, (void *)vp.cookie))
+    {
+        ui.statusbar->showMessage("Can't update group profile, maybe it is too big.");
+        return;
+    }
+    ui.statusbar->showMessage("Sending group profile...");
+    ui.actionRecord->setEnabled(0);
+    ui.actionStop->setEnabled(0);
+    ui.actionPlay->setEnabled(0);
+    ui.actionStart_over->setEnabled(0);
+    ui.actionSend_Message->setEnabled(0);
+    save_group_btn->setEnabled(0);
+    send_in_progress = 1;
+    blink = 1;
+}
+
+void
+composer_profile::on_save_group_triggered()
+{
+    save_group();
+}
+
+void
+DWYCOCALLCONV
+composer_profile::dwyco_set_group_profile_callback(int succ, const char *reason,
+                            const char *s1, int len_s1,
+                            const char *s2, int len_s2,
+                            const char *s3, int len_s3,
+                            const char *filename,
+                            const char *uid, int len_uid,
+                            int reviewed, int regular,
+                            void *arg)
+{
+    DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
+    if(!vp.is_valid())
+        return;
+    composer_profile *c = (composer_profile *)(void *)vp;
+    if(succ)
+    {
+        c->ui.statusbar->showMessage("Group update successful");
+        c->modified = 0;
+        c->has_attachment = 0;
+        c->send_in_progress = 0;
+        c->blink = 0;
+        c->update_group_ui_state();
+        c->close();
+        return;
+    }
+    c->ui.statusbar->showMessage("Group update failed. Try again later.");
+    c->blink = 0;
+    c->send_in_progress = 0;
+    c->update_group_ui_state();
+}
+
+// Group fetch: always stash text. Only drive the shared media preview when
+// the group tab is active; otherwise discard the zap view so the personal
+// preview is not clobbered.
+void
+DWYCOCALLCONV
+composer_profile::dwyco_group_composer_fetch_done(int succ, const char *reason,
+                                  const char *s1, int len_s1,
+                                  const char *s2, int len_s2,
+                                  const char *s3, int len_s3,
+                                  const char *filename,
+                                  const char *uid, int len_uid,
+                                  int reviewed, int regular,
+                                  void *arg)
+{
+    DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
+    if(!vp.is_valid())
+        return;
+    composer_profile *c = (composer_profile *)(void *)vp;
+    QString handle;
+    QString desc;
+    QString loc;
+    QString email;
+    DwOString duid(uid, 0, len_uid);
+    dwyco_info_to_display(duid, handle, desc, loc, email);
+    c->group_fields.handle = handle;
+    c->group_fields.loc = loc;
+    c->group_fields.email = email;
+    c->group_fields.desc = desc;
+    c->group_fields.fetched = 1;
+    c->update_group_ui_state();
+    if(!c->group_mode)
+    {
+        if(succ > 0)
+            dwyco_delete_zap_view(succ);
+        return;
+    }
+    if(succ == 0)
+    {
+        c->ui.statusbar->showMessage(QString("No group profile available. (%1)").arg(reason));
+        return;
+    }
+    if(succ == -2 && filename)
+    {
+        QImage img(QString::fromUtf8(filename));
+        if(!img.isNull())
+        {
+            c->group_fields.pic = QPixmap::fromImage(img);
+            c->group_fields.has_pic = 1;
+        }
+    }
+    c->load_current_fields();
+    // reuse the personal fetch path for media preview by reissuing the
+    // group fetch through the personal handler is overkill; instead mirror
+    // the minimal media handling here for the active group tab.
+    if(succ == -1)
+    {
+        c->ui.label->clear();
+        c->ui.label->setVisible(0);
+        c->ui.statusbar->showMessage("Group: text only");
+    }
+    else if(succ == -2)
+    {
+        c->ui.label->setVisible(1);
+        if(!c->group_fields.pic.isNull())
+            c->ui.label->setPixmap(c->group_fields.pic);
+        c->ui.statusbar->showMessage("Group: image");
+        int fcomp = dwyco_make_file_zap_composition(filename, strlen(filename));
+        dwyco_delete_zap_composition(c->compid);
+        c->compid = fcomp;
+    }
+    else if(succ > 0)
+    {
+        if(c->viewid != -1)
+            dwyco_delete_zap_view(c->viewid);
+        c->viewid = succ;
+        dwyco_zap_play_preview(c->viewid, 0, 0, &c->ui_id);
+        c->ui.label->ui_id = c->ui_id;
+        c->ui.label->setVisible(1);
+        dwyco_delete_zap_composition(c->compid);
+        c->compid = c->viewid;
+        c->ui.statusbar->showMessage("Group: audio/video, preview loaded");
+    }
+    c->modified = 0;
 }
 
 void
@@ -1675,8 +2044,20 @@ viewer_profile::start_fetch()
     ui.textEdit->clear();
     QString a("Profile: ");
     a += dwyco_info_to_display(uid);
+    // always resolve through the gid-keyed group profile so observers see
+    // one shared profile per device group (falls back to per-uid).
+    DWYCO_LIST um = 0;
+    if(dwyco_map_uid_to_uids(uid.c_str(), uid.length(), &um) && um)
+    {
+        simple_scoped qum(um);
+        if(qum.rows() > 1)
+        {
+            a += " [Group]";
+            ui.groupBox->setTitle("Group Profile");
+        }
+    }
     setWindowTitle(a);
-    return dwyco_get_profile_to_viewer(uid.c_str(), uid.length(), dwyco_profile_fetch_done, (void *)vp.cookie);
+    return dwyco_get_group_profile(uid.c_str(), uid.length(), dwyco_profile_fetch_done, (void *)vp.cookie);
 }
 
 void

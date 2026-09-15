@@ -9,6 +9,7 @@
 #include "prfview.h"
 #include "ui_prfview.h"
 #include "dlli.h"
+#include "dwycolistscoped.h"
 #include "mainwin.h"
 
 
@@ -201,8 +202,18 @@ PrfView::start_fetch()
     ui->actionStop->setEnabled(0);
     QString a("Profile: ");
     a += dwyco_info_to_display(uid);
+    // group profiles are keyed by static gid, not by the ephemeral
+    // representative uid: resolve through the group API so all members
+    // of a device group show the same shared profile.
+    DWYCO_LIST um = 0;
+    if(dwyco_map_uid_to_uids(uid.c_str(), uid.length(), &um) && um)
+    {
+        simple_scoped qum(um);
+        if(qum.rows() > 1)
+            a += " [Group]";
+    }
     setWindowTitle(a);
-    return dwyco_get_profile_to_viewer(uid.c_str(), uid.length(), dwyco_profile_fetch_done, (void *)vp.cookie);
+    return dwyco_get_group_profile(uid.c_str(), uid.length(), dwyco_profile_fetch_done, (void *)vp.cookie);
 }
 
 #if 0

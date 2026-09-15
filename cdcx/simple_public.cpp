@@ -1082,8 +1082,10 @@ simple_public::refresh_profile(QByteArray uid)
     if(UList[i].lab_idx == -1)
         return;
     clear_label_no_release(labels[UList[i].lab_idx]);
-    dwyco_get_profile_to_viewer(uid.constData(), uid.length(),
-                                display_profile, (void *)vp.cookie);
+    // gid-keyed group profile: observers always see the shared group
+    // profile for uids in a device group (falls back to per-uid).
+    dwyco_get_group_profile(uid.constData(), uid.length(),
+                            display_profile, (void *)vp.cookie);
 
 }
 
@@ -1094,8 +1096,8 @@ simple_public::add_user_profile(QString name, QByteArray uid)
     {
         int i;
 
-        dwyco_get_profile_to_viewer(uid.constData(), uid.length(),
-                                    display_profile, (void *)vp.cookie);
+        dwyco_get_group_profile(uid.constData(), uid.length(),
+                                display_profile, (void *)vp.cookie);
 
         if((i = UList.indexOf(QByteArray())) == -1)
         {

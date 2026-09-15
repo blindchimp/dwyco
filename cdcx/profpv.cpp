@@ -173,7 +173,9 @@ profpv::refresh_profile(const DwOString& uid)
         return;
     }
     In_progress.insert(uid);
-    dwyco_get_profile_to_viewer(uid.constData(), uid.length(),
-                                display_profile, 0);
+    // gid-keyed group profile: observers always see the shared group
+    // profile for uids in a device group (falls back to per-uid).
+    dwyco_get_group_profile(uid.constData(), uid.length(),
+                            display_profile, 0);
 
 }

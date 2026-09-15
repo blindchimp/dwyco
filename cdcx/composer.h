@@ -12,6 +12,7 @@
 #include <QMainWindow>
 #include <QCloseEvent>
 #include <QTimer>
+#include <QPixmap>
 #include "ui_composer.h"
 #include "dwstr.h"
 #include "dvp.h"
@@ -147,7 +148,24 @@ class composer_profile : public composer
                                       const char *uid, int len_uid,
                                       int reviewed, int regular,
                                       void *arg);
+    static void DWYCOCALLCONV
+    dwyco_group_composer_fetch_done(int succ, const char *reason,
+                                    const char *s1, int len_s1,
+                                    const char *s2, int len_s2,
+                                    const char *s3, int len_s3,
+                                    const char *filename,
+                                    const char *uid, int len_uid,
+                                    int reviewed, int regular,
+                                    void *arg);
     static void DWYCOCALLCONV dwyco_record_profile_done(int /*id*/, void *arg);
+    static void DWYCOCALLCONV dwyco_set_group_profile_callback(int succ, const char *reason,
+                                    const char *s1, int len_s1,
+                                    const char *s2, int len_s2,
+                                    const char *s3, int len_s3,
+                                    const char *filename,
+                                    const char *uid, int len_uid,
+                                    int reviewed, int regular,
+                                    void *arg);
 
 public:
     composer_profile(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags()) ;
@@ -155,14 +173,54 @@ public:
 
     int viewid;
 
+    // group profile (gid-keyed) editing state. media composition (compid)
+    // is shared between modes; text fields are stashed per-mode so the
+    // Personal <-> Group copy buttons are local-only until an explicit save.
+    struct ModeFields {
+        QString handle;
+        QString loc;
+        QString email;
+        QString desc;
+        QPixmap pic;
+        int has_pic = 0;
+        int fetched = 0;
+    };
+    ModeFields personal_fields;
+    ModeFields group_fields;
+    int group_mode = 0;
+    int in_group = 0;
+    QString group_name;
+
+    void setup_group_ui();
+    void refresh_group_status();
+    void set_group_mode(bool group);
+    void stash_current_fields();
+    void load_current_fields();
+    void update_group_ui_state();
+    void fetch_group();
+    void save_group();
+
     void start();
     void closeEvent(QCloseEvent *);
+
+    // widgets created in code (kept out of composer.ui to avoid churn)
+    QWidget *group_banner = 0;
+    class QRadioButton *radio_personal = 0;
+    class QRadioButton *radio_group = 0;
+    class QLabel *group_info_label = 0;
+    class QPushButton *copy_to_personal_btn = 0;
+    class QPushButton *copy_to_group_btn = 0;
+    class QPushButton *save_group_btn = 0;
 
 protected slots:
     virtual void on_actionRecord_triggered(bool);
     virtual void on_actionSend_Message_triggered(bool);
     virtual void on_actionStart_over_triggered(bool);
     virtual void camera_event(int);
+    void on_group_mode_toggled(bool);
+    void on_copy_group_to_personal();
+    void on_copy_personal_to_group();
+    void on_save_group_triggered();
 };
 
 class viewer_profile : public composer
