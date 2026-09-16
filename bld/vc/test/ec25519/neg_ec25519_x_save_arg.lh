@@ -1,0 +1,5 @@
+; negative: X25519-save with a non-string filename must fail gracefully
+lbind(pub from-hex(8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a))
+X25519-init()
+X25519-keygen()
+try(X25519-save(7) * prog(printl(NEG-OK)))

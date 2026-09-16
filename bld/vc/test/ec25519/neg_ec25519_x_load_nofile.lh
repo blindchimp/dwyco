@@ -1,0 +1,2 @@
+; negative: X25519-load with a missing file must fail gracefully (was a crash)
+try(X25519-load(no-such-file) * prog(printl(NEG-OK)))

@@ -1,0 +1,3 @@
+; negative: ED25519-init with a garbage key file must fail gracefully
+; (badhex.hex is created in the work dir by run_tests.sh)
+try(ED25519-init(badhex.hex) * prog(printl(NEG-OK)))

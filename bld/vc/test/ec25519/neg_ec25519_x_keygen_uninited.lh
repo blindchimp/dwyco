@@ -1,0 +1,2 @@
+; negative: X25519-keygen before X25519-init must fail gracefully
+try(X25519-keygen() * prog(printl(NEG-OK)))

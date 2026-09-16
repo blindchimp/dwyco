@@ -1,0 +1,2 @@
+; negative: ED25519-init with a non-string arg must fail gracefully
+try(ED25519-init(7) * prog(printl(NEG-OK)))

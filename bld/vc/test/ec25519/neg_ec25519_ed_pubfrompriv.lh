@@ -1,0 +1,2 @@
+; negative: ED25519-pub-from-priv with a non-string arg must fail gracefully
+try(ED25519-pub-from-priv(7) * prog(printl(NEG-OK)))

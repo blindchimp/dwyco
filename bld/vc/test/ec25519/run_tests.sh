@@ -76,11 +76,33 @@ run_lh() {
     fi
 }
 
+# negative-path scripts: each script contains exactly one expected failure
+# wrapped in try(* catch); it must be handled gracefully (interpreter prints
+# NEG-OK and exits 0) -- a crash gives a non-zero exit and no NEG-OK
+run_neg() {
+    name=$1
+    shift
+    ( cd "$WORK" && "$VCCMD" -c "$WORK" "$@" ) > "$WORK/$name.out" 2>&1
+    ec=$?
+    if [ "$ec" -ne 0 ] || ! grep -q "NEG-OK" "$WORK/$name.out"; then
+        fail_check "$name (exit $ec, no NEG-OK)"
+    else
+        pass "$name"
+    fi
+}
+
 echo "== running LH functional tests =="
 run_lh ec25519_lh_test "$HERE/ec25519_lh_test.lh"
 
 echo "== running LH known-answer tests =="
 run_lh ec25519_kat "$HERE/ec25519_kat.lh"
+
+echo "== running LH negative-path tests =="
+# bogus key file used by the garbage-file negative scripts
+printf '%s\n' "this is not hex data @#!" > "$WORK/badhex.hex"
+for f in "$HERE"/neg_ec25519_*.lh; do
+    run_neg "$(basename "$f" .lh)" "$f"
+done
 
 if [ "$fail" -eq 0 ]; then
     echo "ALL EC25519 TESTS PASSED"

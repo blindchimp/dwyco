@@ -1,0 +1,2 @@
+; negative: X25519-load with a non-string filename must fail gracefully
+try(X25519-load(7) * prog(printl(NEG-OK)))

@@ -1,0 +1,2 @@
+; negative: ED25519-verify-key with a wrong-length public key must fail gracefully
+try(ED25519-verify-key(message sig 7) * prog(printl(NEG-OK)))

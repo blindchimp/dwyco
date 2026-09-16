@@ -1,0 +1,2 @@
+; negative: ED25519-sign-key with a wrong-length private key must fail gracefully
+try(ED25519-sign-key(message 7) * prog(printl(NEG-OK)))

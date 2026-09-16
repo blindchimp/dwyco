@@ -1,0 +1,3 @@
+; negative: X25519-load with a garbage file must fail gracefully
+; (badhex.hex is created in the work dir by run_tests.sh)
+try(X25519-load(badhex.hex) * prog(printl(NEG-OK)))

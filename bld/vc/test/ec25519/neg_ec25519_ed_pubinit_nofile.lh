@@ -1,0 +1,2 @@
+; negative: ED25519-init-pub with a missing file must fail gracefully
+try(ED25519-init-pub(no-such-file) * prog(printl(NEG-OK)))

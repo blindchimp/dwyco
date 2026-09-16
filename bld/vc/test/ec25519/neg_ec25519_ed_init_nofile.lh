@@ -1,0 +1,2 @@
+; negative: ED25519-init with a missing file must fail gracefully (was a crash)
+try(ED25519-init(no-such-file) * prog(printl(NEG-OK)))

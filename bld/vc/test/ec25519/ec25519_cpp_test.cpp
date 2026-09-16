@@ -12,7 +12,12 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <functional>
 #include <iostream>
+
+// declared in vcmap.h; when set, USER_BOMB raises (int) instead of
+// printing a runtime error and returning
+extern int Throw_user_panic;
 
 [[noreturn]]
 void
@@ -21,6 +26,23 @@ oopanic(const char *s)
 	printf("panic: %s\n", s);
 	fflush(stdout);
 	exit(1);
+}
+
+// run a callable that is expected to fail; returns true if it raised
+// a USER_BOMB (int) or any C++ exception, i.e. a graceful, non-crashing
+// failure of the underlying builtin
+static bool fails_gracefully(const std::function<void()>& fn)
+{
+	try {
+		fn();
+	} catch(int) {
+		return true;
+	} catch(const std::exception&) {
+		return true;
+	} catch(...) {
+		return true;
+	}
+	return false;
 }
 
 static int fails = 0;
@@ -125,6 +147,83 @@ static const char *X_SHARED =
 
 int main()
 {
+	// ---- negative-path tests first: the process-global singletons are
+	// not yet initialized here, so "before init" cases are real. Bogus
+	// args and bogus files must fail gracefully through USER_BOMB /
+	// exceptions (never crash) ----
+	Throw_user_panic = 1;
+	{
+	vc ed_sec = to_vc_bytes(from_hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"));
+	std::string ed1_pub = from_hex("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
+	std::string ed1_sig = from_hex("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b");
+	vc x_bpriv = to_vc_bytes(from_hex(X_BPRIV));
+	vc x_bpub = to_vc_bytes(from_hex(X_BPUB));
+
+	FILE *fg = fopen("/tmp/ec25519_neg_garbage.hex", "wb");
+	fputs("garbage!! this is @# not hex", fg);
+	fclose(fg);
+	FILE *fh = fopen("/tmp/ec25519_neg_hexish.hex", "wb");
+	fputs("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", fh);
+	fclose(fh);
+
+	// ed25519 singleton: not inited / bad init inputs
+	check(fails_gracefully([&]{ vclh_ed25519_sign(vc("m")); }), "neg: ed25519 sign before init");
+	check(fails_gracefully([&]{ vclh_ed25519_verify(vc("m"), vc("s")); }), "neg: ed25519 verify before init");
+	check(fails_gracefully([&]{ vclh_ed25519_save(vc("/tmp/x"), vc("/tmp/y")); }), "neg: ed25519 save before init");
+	check(fails_gracefully([&]{ vclh_ed25519_init(vc(5)); }), "neg: ed25519 init non-string arg");
+	check(fails_gracefully([&]{ vclh_ed25519_init(vc("/tmp/ec25519_nonexistent_zz.hex")); }), "neg: ed25519 init missing key file");
+	check(fails_gracefully([&]{ vclh_ed25519_init(vc("/tmp/ec25519_neg_garbage.hex")); }), "neg: ed25519 init garbage key file");
+	check(fails_gracefully([&]{ vclh_ed25519_init(vc("/tmp/ec25519_neg_hexish.hex")); }), "neg: ed25519 init non-key hex file");
+
+	// ed25519 singleton: bad args after a fresh init
+	check(vclh_ed25519_init(vcnil).is_nil(), "neg reset: ed25519 init nil");
+	check(fails_gracefully([&]{ vclh_ed25519_sign(vc(5)); }), "neg: ed25519 sign non-string arg");
+	check(vcnil == vclh_ed25519_verify(vc("m"), vc("short")), "neg: ed25519 verify short sig rejected");
+	check(fails_gracefully([&]{ vclh_ed25519_verify(vc(5), vc("s")); }), "neg: ed25519 verify non-string args");
+	check(fails_gracefully([&]{ vclh_ed25519_save(vc(5), vc(5)); }), "neg: ed25519 save non-string filenames");
+	check(fails_gracefully([&]{ vclh_ed25519_save(vc("/nonexistent_dir_zz/ed.hex"), vc("/nonexistent_dir_zz/edpub.hex")); }), "neg: ed25519 save unwritable path");
+
+	// ed25519 init-pub: bad args and bad files
+	check(fails_gracefully([&]{ vclh_ed25519_pub_init(vc(5)); }), "neg: ed25519 init-pub non-string arg");
+	check(fails_gracefully([&]{ vclh_ed25519_pub_init(vc("/tmp/ec25519_nonexistent_zz.hex")); }), "neg: ed25519 init-pub missing file");
+	check(fails_gracefully([&]{ vclh_ed25519_pub_init(vc("/tmp/ec25519_neg_garbage.hex")); }), "neg: ed25519 init-pub garbage file");
+
+	// ed25519 stateless: bad args
+	check(fails_gracefully([&]{ vclh_ed25519_pub_from_priv(vc("x")); }), "neg: ed25519 pub-from-priv short key");
+	check(fails_gracefully([&]{ vclh_ed25519_pub_from_priv(vc(5)); }), "neg: ed25519 pub-from-priv non-string");
+	check(fails_gracefully([&]{ vclh_ed25519_sign_key(vc(5), ed_sec); }), "neg: ed25519 sign-key non-string msg");
+	check(fails_gracefully([&]{ vclh_ed25519_sign_key(vc("x"), vc("short")); }), "neg: ed25519 sign-key short priv");
+	check(fails_gracefully([&]{ vclh_ed25519_verify_key(vc(5), to_vc_bytes(ed1_sig), to_vc_bytes(ed1_pub)); }), "neg: ed25519 verify-key non-string msg");
+	check(fails_gracefully([&]{ vclh_ed25519_verify_key(vc("x"), to_vc_bytes(ed1_sig), vc("short")); }), "neg: ed25519 verify-key short pub");
+	check(vcnil == vclh_ed25519_verify_key(vc("m"), vc("short"), to_vc_bytes(ed1_pub)), "neg: ed25519 verify-key short sig rejected");
+
+	// x25519 singleton: bad args and bad files
+	check(fails_gracefully([&]{ vclh_x25519_keygen(); }), "neg: x25519 keygen before init");
+	check(fails_gracefully([&]{ vclh_x25519_agree(x_bpub); }), "neg: x25519 agree before init");
+	check(fails_gracefully([&]{ vclh_x25519_save(vc("/tmp/ec25519_neg_before.hex")); }), "neg: x25519 save before any init");
+	check(vctrue == vclh_x25519_init(vcnil), "neg setup: x25519 init");
+	check(fails_gracefully([&]{ vclh_x25519_agree(vc("short")); }), "neg: x25519 agree short pub");
+	check(fails_gracefully([&]{ vclh_x25519_agree(vc(5)); }), "neg: x25519 agree non-string pub");
+	(void)vclh_x25519_keygen();
+	check(fails_gracefully([&]{ vclh_x25519_save(vc(5)); }), "neg: x25519 save non-string filename");
+	check(fails_gracefully([&]{ vclh_x25519_save(vc("/nonexistent_dir_zz/x.hex")); }), "neg: x25519 save unwritable path");
+	check(vclh_x25519_save(vc("/tmp/ec25519_neg_xkey.hex")).is_nil(), "neg setup: x25519 save valid");
+	check(fails_gracefully([&]{ vclh_x25519_load(vc(5)); }), "neg: x25519 load non-string filename");
+	check(fails_gracefully([&]{ vclh_x25519_load(vc("/tmp/ec25519_nonexistent_zz.hex")); }), "neg: x25519 load missing file");
+	check(fails_gracefully([&]{ vclh_x25519_load(vc("/tmp/ec25519_neg_garbage.hex")); }), "neg: x25519 load garbage file");
+	check(fails_gracefully([&]{ vclh_x25519_load(vc("/tmp/ec25519_neg_hexish.hex")); }), "neg: x25519 load non-key hex file");
+
+	// x25519 stateless: bad args
+	check(fails_gracefully([&]{ vclh_x25519_pub_from_priv(vc("short")); }), "neg: x25519 pub-from-priv short key");
+	check(fails_gracefully([&]{ vclh_x25519_agree_key(vc("short"), x_bpub); }), "neg: x25519 agree-key short priv");
+	check(fails_gracefully([&]{ vclh_x25519_agree_key(x_bpriv, vc("short")); }), "neg: x25519 agree-key short pub");
+
+	(void)remove("/tmp/ec25519_neg_garbage.hex");
+	(void)remove("/tmp/ec25519_neg_hexish.hex");
+	(void)remove("/tmp/ec25519_neg_xkey.hex");
+	(void)remove("/tmp/ec25519_neg_before.hex");
+	}
+
 	// ---- RFC 8032 ed25519 KATs ----
 	vc ed_sec = to_vc_bytes(from_hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"));
 	std::string ed1_pub = from_hex("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
@@ -170,8 +269,16 @@ int main()
 	check(vclh_ed25519_init(vcnil).is_nil(), "ed25519 init");
 	vc s1 = vclh_ed25519_sign(vc("singleton msg"));
 	check(vclh_ed25519_save(vc("/tmp/ec25519_cpp_edpriv.hex"), vc("/tmp/ec25519_cpp_edpub.hex")).is_nil(), "ed25519 save");
+	check(vclh_ed25519_init(vc("/tmp/ec25519_cpp_edpriv.hex")).is_nil(), "ed25519 init from saved priv key file");
+	check(vctrue == vclh_ed25519_verify(vc("singleton msg"), s1), "ed25519 verify after init from key file");
+	vc s2 = vclh_ed25519_sign(vc("after reload from file"));
+	check(vctrue == vclh_ed25519_verify(vc("after reload from file"), s2), "ed25519 sign/verify after init from key file");
 	check(vclh_ed25519_pub_init(vc("/tmp/ec25519_cpp_edpub.hex")).is_nil(), "ed25519 init-pub");
 	check(vctrue == vclh_ed25519_verify(vc("singleton msg"), s1), "ed25519 singleton sign then verify via saved pub");
+	check(vclh_ed25519_pub_init(vc("/tmp/ec25519_cpp_edpub.hex")).is_nil(), "ed25519 re-init-pub replaces prior pub");
+	check(vclh_ed25519_init(vcnil).is_nil(), "ed25519 re-init after init-pub discards pub");
+	vc s3 = vclh_ed25519_sign(vc("fresh key after re-init"));
+	check(vctrue == vclh_ed25519_verify(vc("fresh key after re-init"), s3), "ed25519 sign/verify after re-init");
 
 	// ---- RFC 7748 x25519 DH KAT ----
 	vc x_apriv = to_vc_bytes(from_hex(X_APRIV));
