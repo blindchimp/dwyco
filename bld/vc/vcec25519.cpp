@@ -111,10 +111,27 @@ vclh_ed25519_init(vc file)
 	{
 		if(file.type() != VC_STRING)
 			USER_BOMB("arg must be a filename or nil", vcnil);
-		FileSource fs((const char *)file, true, new HexDecoder);
-		My_ed_key = new ed25519PrivateKey;
-		My_ed_key->Load(fs);
-		My_ed_sign = new ed25519::Signer(*My_ed_key);
+		try
+		{
+			FileSource fs((const char *)file, true, new HexDecoder);
+			My_ed_key = new ed25519PrivateKey;
+			My_ed_key->Load(fs);
+			My_ed_sign = new ed25519::Signer(*My_ed_key);
+		}
+		catch(CryptoPP::Exception &)
+		{
+			if(My_ed_sign)
+			{
+				delete My_ed_sign;
+				My_ed_sign = 0;
+			}
+			if(My_ed_key)
+			{
+				delete My_ed_key;
+				My_ed_key = 0;
+			}
+			USER_BOMB("cannot read ed25519 key file", vcnil);
+		}
 	}
 
 	My_ed_ver = new ed25519::Verifier(*My_ed_sign);
@@ -132,13 +149,20 @@ vclh_ed25519_save(vc priv_filename, vc pub_filename)
 	{
 		USER_BOMB("args must be filenames", vcnil);
 	}
-	CryptoPP::HexEncoder he(new FileSink((const char *)priv_filename));
-	My_ed_key->Save(he);
+	try
+	{
+		CryptoPP::HexEncoder he(new FileSink((const char *)priv_filename));
+		My_ed_key->Save(he);
 
-	ed25519PublicKey pub;
-	My_ed_key->MakePublicKey(pub);
-	CryptoPP::HexEncoder he2(new FileSink((const char *)pub_filename));
-	pub.Save(he2);
+		ed25519PublicKey pub;
+		My_ed_key->MakePublicKey(pub);
+		CryptoPP::HexEncoder he2(new FileSink((const char *)pub_filename));
+		pub.Save(he2);
+	}
+	catch(CryptoPP::Exception &)
+	{
+		USER_BOMB("cannot write ed25519 key file", vcnil);
+	}
 	return vcnil;
 }
 
@@ -170,10 +194,22 @@ vclh_ed25519_pub_init(vc pub_filename)
 		delete My_ed_pub;
 		My_ed_pub = 0;
 	}
-	FileSource fs((const char *)pub_filename, true, new HexDecoder);
-	My_ed_pub = new ed25519PublicKey;
-	My_ed_pub->Load(fs);
-	My_ed_ver = new ed25519::Verifier(*My_ed_pub);
+	try
+	{
+		FileSource fs((const char *)pub_filename, true, new HexDecoder);
+		My_ed_pub = new ed25519PublicKey;
+		My_ed_pub->Load(fs);
+		My_ed_ver = new ed25519::Verifier(*My_ed_pub);
+	}
+	catch(CryptoPP::Exception &)
+	{
+		if(My_ed_pub)
+		{
+			delete My_ed_pub;
+			My_ed_pub = 0;
+		}
+		USER_BOMB("cannot read ed25519 public key file", vcnil);
+	}
 	return vcnil;
 }
 
@@ -347,9 +383,16 @@ vclh_x25519_save(vc filename)
 	{
 		USER_BOMB("first arg must be a filename", vcnil);
 	}
-	x25519 x(MyX_priv.BytePtr());
-	CryptoPP::HexEncoder he(new FileSink((const char *)filename));
-	x.Save(he);
+	try
+	{
+		x25519 x(MyX_priv.BytePtr());
+		CryptoPP::HexEncoder he(new FileSink((const char *)filename));
+		x.Save(he);
+	}
+	catch(CryptoPP::Exception &)
+	{
+		USER_BOMB("cannot write x25519 key file", vcnil);
+	}
 	return vcnil;
 }
 
@@ -367,9 +410,21 @@ vclh_x25519_load(vc filename)
 	}
 	if(!Rng)
 		init_rng();
-	FileSource fs((const char *)filename, true, new HexDecoder);
-	MyX = new x25519;
-	MyX->Load(fs);
+	try
+	{
+		FileSource fs((const char *)filename, true, new HexDecoder);
+		MyX = new x25519;
+		MyX->Load(fs);
+	}
+	catch(CryptoPP::Exception &)
+	{
+		if(MyX)
+		{
+			delete MyX;
+			MyX = 0;
+		}
+		USER_BOMB("cannot read x25519 key file", vcnil);
+	}
 	ConstByteArrayParameter pk;
 	if(!MyX->GetVoidValue(Name::PrivateExponent(), typeid(ConstByteArrayParameter), &pk))
 	{
