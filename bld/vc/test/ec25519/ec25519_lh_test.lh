@@ -1,0 +1,60 @@
+;
+; EC25519 LH functional tests.
+;
+; Run with the interpreter binary built by vccmd/build.sh:
+;   vccmd -c <this dir> ec25519_lh_test.lh
+;
+; Each failure prints "<label>" followed by "FAILED".
+; A clean run prints EC25519-LH-TEST-COMPLETE with no FAILED lines.
+;
+
+; records/prints a failure when <b> is nil
+gcompile(expect name b `if(<b> nil prog(printl(name) printl(FAILED)))')
+
+; --- ed25519 singleton (global-key) API ---
+ED25519-init(nil)
+lbind(sig ED25519-sign(mymsg1))
+expect(ed-singleton-sign-len eq(strlen(<sig>) 64))
+expect(ed-singleton-verify ED25519-verify(mymsg1 <sig>))
+expect(ed-singleton-tamper not(ED25519-verify(othermsg <sig>)))
+
+; save the generated key, then verify using only the saved public key
+ED25519-save(ed25519-test-priv.hex ed25519-test-pub.hex)
+lbind(sig2 ED25519-sign(secondmsg))
+ED25519-init-pub(ed25519-test-pub.hex)
+expect(ed-init-pub-verify ED25519-verify(secondmsg <sig2>))
+expect(ed-init-pub-tamper not(ED25519-verify(thirdmsg <sig2>)))
+
+; --- ed25519 stateless API (explicit keys) ---
+lbind(k ED25519-gen-key(nil))
+lbind(priv <k>[0])
+lbind(pub <k>[1])
+expect(ed-gen-key-sizes and(eq(strlen(<priv>) 32) eq(strlen(<pub>) 32)))
+expect(ed-pub-derived eq(<pub> ED25519-pub-from-priv(<priv>)))
+lbind(sig3 ED25519-sign-key(payload <priv>))
+expect(ed-sign-key-verify ED25519-verify-key(payload <sig3> <pub>))
+expect(ed-sign-key-tamper not(ED25519-verify-key(evilmsg <sig3> <pub>)))
+expect(ed-sign-deterministic eq(<sig3> ED25519-sign-key(payload <priv>)))
+
+; --- x25519 stateless two-party agreement ---
+lbind(ka X25519-gen-key(nil))
+lbind(privA <ka>[0])
+lbind(pubA <ka>[1])
+lbind(kb X25519-gen-key(nil))
+lbind(privB <kb>[0])
+lbind(pubB <kb>[1])
+expect(x-gen-key-sizes and(eq(strlen(<privA>) 32) eq(strlen(<pubB>) 32)))
+expect(x-agree-match eq(X25519-agree-key(<privA> <pubB>) X25519-agree-key(<privB> <pubA>)))
+expect(x-pub-derived eq(<pubA> X25519-pub-from-priv(<privA>)))
+expect(x-shared-len eq(strlen(X25519-agree-key(<privA> <pubB>)) 32))
+
+; --- x25519 singleton (global-key) save/load/agree ---
+X25519-init(nil)
+lbind(pubS X25519-keygen())
+X25519-save(x25519-test-key.hex)
+X25519-init(nil)
+expect(x-load-true X25519-load(x25519-test-key.hex))
+expect(x-pub-len eq(strlen(<pubS>) 32))
+expect(x-singleton-agree eq(X25519-agree(<pubB>) X25519-agree-key(<privB> <pubS>)))
+
+printl(EC25519-LH-TEST-COMPLETE)
