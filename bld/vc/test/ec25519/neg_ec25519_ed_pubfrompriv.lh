@@ -1,2 +1,4 @@
 ; negative: ED25519-pub-from-priv with a non-string arg must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 try(ED25519-pub-from-priv(7) * prog(printl(NEG-OK)))

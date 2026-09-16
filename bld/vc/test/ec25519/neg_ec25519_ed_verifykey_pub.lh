@@ -1,2 +1,4 @@
 ; negative: ED25519-verify-key with a wrong-length public key must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 try(ED25519-verify-key(message sig 7) * prog(printl(NEG-OK)))

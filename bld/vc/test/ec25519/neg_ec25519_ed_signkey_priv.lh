@@ -1,2 +1,4 @@
 ; negative: ED25519-sign-key with a wrong-length private key must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 try(ED25519-sign-key(message 7) * prog(printl(NEG-OK)))

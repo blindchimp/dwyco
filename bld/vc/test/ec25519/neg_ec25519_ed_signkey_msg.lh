@@ -1,3 +1,5 @@
 ; negative: ED25519-sign-key with a non-string message must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 lbind(sec from-hex(9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60))
 try(ED25519-sign-key(7 <sec>) * prog(printl(NEG-OK)))

@@ -1,2 +1,4 @@
 ; negative: ED25519-init with a missing file must fail gracefully (was a crash)
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 try(ED25519-init(no-such-file) * prog(printl(NEG-OK)))

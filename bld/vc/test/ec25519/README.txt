@@ -87,6 +87,11 @@ executes ec25519_lh_test.lh (functional), ec25519_kat.lh (RFC 8032 known
 answers) and one neg_ec25519_*.lh file per expected failure. A negative-path
 script must print NEG-OK and exit 0; a crash makes the run fail.
 
+The LH scripts define the printl/nl helper functions locally (via gcompile),
+so they run even on a box where no ~/lhlib/load.lh startup library exists (the
+interpreter otherwise loads printl from $HOME/lhlib/common.lh and aborts with
+"can't find function named printl"). No home-directory setup is required.
+
 RUNNING THE COVERAGE TESTS
 --------------------------
 

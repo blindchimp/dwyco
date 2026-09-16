@@ -11,6 +11,11 @@
 ; A clean run prints EC25519-KAT-COMPLETE with no FAILED lines.
 ;
 
+; printl/nl normally come from lhlib/common.lh loaded via $HOME/lhlib/load.lh
+; by the interpreter; define them locally so the tests are self-contained
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+
 ; records/prints a failure when <b> is nil
 gcompile(expect name b `if(<b> nil prog(printl(name) printl(FAILED)))')
 

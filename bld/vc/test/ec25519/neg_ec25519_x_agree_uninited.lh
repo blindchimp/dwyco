@@ -1,3 +1,5 @@
 ; negative: X25519-agree before X25519-init must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 lbind(sec from-hex(77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a))
 try(X25519-agree(<sec>) * prog(printl(NEG-OK)))

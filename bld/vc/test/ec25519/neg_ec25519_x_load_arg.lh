@@ -1,2 +1,4 @@
 ; negative: X25519-load with a non-string filename must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 try(X25519-load(7) * prog(printl(NEG-OK)))

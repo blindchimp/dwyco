@@ -1,3 +1,5 @@
 ; negative: ED25519-init with a garbage key file must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
 ; (badhex.hex is created in the work dir by run_tests.sh)
 try(ED25519-init(badhex.hex) * prog(printl(NEG-OK)))
