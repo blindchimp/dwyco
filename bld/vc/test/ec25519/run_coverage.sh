@@ -82,8 +82,7 @@ echo "== building coverage interpreter =="
       "$SHADOW/bld/zlib/libzlib.a" \
       "$SHADOW/bld/uv/libuv.a" \
       "$SHADOW/lib/libspread.a" \
-      -lpthread -ldl \
-      -framework CoreFoundation -framework CoreServices ) || { echo "build failed" >&2; exit 2; }
+      -lpthread -ldl $(if [ "$(uname)" = "Darwin" ]; then echo "-framework CoreFoundation -framework CoreServices"; fi) ) || { echo "build failed" >&2; exit 2; }
 
 echo "== building coverage C++ direct-call test =="
 ( cd "$COV" && \
@@ -104,8 +103,7 @@ echo "== building coverage C++ direct-call test =="
       "$SHADOW/bld/zlib/libzlib.a" \
       "$SHADOW/bld/uv/libuv.a" \
       "$SHADOW/lib/libspread.a" \
-      -lpthread -ldl \
-      -framework CoreFoundation -framework CoreServices \
+      -lpthread -ldl $(if [ "$(uname)" = "Darwin" ]; then echo "-framework CoreFoundation -framework CoreServices"; fi) \
       -o ec25519_cpp_test_cov ) || { echo "build failed" >&2; exit 2; }
 
 echo "== running instrumented C++ direct-call test =="
