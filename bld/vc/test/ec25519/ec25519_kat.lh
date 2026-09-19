@@ -58,4 +58,7 @@ expect(x-kat-1-bpub eq(X25519-pub-from-priv(<bpriv>) <bpub>))
 expect(x-kat-1-shared-a eq(X25519-agree-key(<apriv> <bpub>) <shared>))
 expect(x-kat-1-shared-b eq(X25519-agree-key(<bpriv> <apub>) <shared>))
 
+; low-order point tests (agree with zero/loworder inputs) are covered by
+; ec25519_cpp_test.cpp which can handle both success and failure outcomes.
+
 printl(EC25519-KAT-COMPLETE)

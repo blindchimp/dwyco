@@ -14,6 +14,7 @@
 #include <vector>
 #include <functional>
 #include <iostream>
+#include <unistd.h>
 
 // declared in vcmap.h; when set, USER_BOMB raises (int) instead of
 // printing a runtime error and returning
@@ -265,6 +266,36 @@ int main()
 	check(vcnil == vclh_ed25519_verify_key(vc("tampered"), sig, pub), "ed25519 tampered msg rejected");
 	check(vctrue == vclh_ed25519_verify_key(msg, vclh_ed25519_sign_key(msg, priv), pub), "ed25519 deterministic signature");
 
+	// ---- ed25519 wrong-key rejection ----
+	vc k2 = vclh_ed25519_gen_key(vcnil);
+	vc priv2 = k2[(long)0];
+	vc pub2 = k2[(long)1];
+	vc sig_from_key1 = vclh_ed25519_sign_key(msg, priv);
+	check(vcnil == vclh_ed25519_verify_key(msg, sig_from_key1, pub2),
+		"ed25519 wrong-key pub rejects valid sig");
+
+	// ---- ed25519 triple-determinism ----
+	vc sig_a = vclh_ed25519_sign_key(msg, priv);
+	vc sig_b = vclh_ed25519_sign_key(msg, priv);
+	vc sig_c = vclh_ed25519_sign_key(msg, priv);
+	check(to_str(sig_a) == to_str(sig_b) && to_str(sig_b) == to_str(sig_c),
+		"ed25519 triple-deterministic signatures");
+	vc sig_diff = vclh_ed25519_sign_key(vc("different"), priv);
+	check(to_str(sig_a) != to_str(sig_diff),
+		"ed25519 different msg != same sig");
+
+	// ---- ed25519 empty-string and nil argument handling ----
+	vc empty_sig = vclh_ed25519_sign_key(vc(""), priv);
+	check(empty_sig.len() == 64, "ed25519 sign empty string produces 64-byte sig");
+	check(vctrue == vclh_ed25519_verify_key(vc(""), empty_sig, pub),
+		"ed25519 verify empty string roundtrip");
+	check(fails_gracefully([&]{ vclh_ed25519_sign(vcnil); }),
+		"neg: ed25519 sign nil bombs");
+	check(fails_gracefully([&]{ vclh_ed25519_sign_key(vcnil, priv); }),
+		"neg: ed25519 sign-key nil msg bombs");
+	check(fails_gracefully([&]{ vclh_x25519_agree(vcnil); }),
+		"neg: x25519 agree nil bombs");
+
 	// ---- ed25519 singleton save/init-pub ----
 	check(vclh_ed25519_init(vcnil).is_nil(), "ed25519 init");
 	vc s1 = vclh_ed25519_sign(vc("singleton msg"));
@@ -289,6 +320,37 @@ int main()
 	check(to_str(vclh_x25519_agree_key(x_apriv, x_bpub)) == from_hex(X_SHARED), "x25519 RFC7748 shared secret");
 	check(to_str(vclh_x25519_agree_key(x_bpriv, to_vc_bytes(from_hex(X_APUB)))) == from_hex(X_SHARED), "x25519 RFC7748 shared secret (other direction)");
 
+	// ---- x25519 low-order / blacklisted-point edge cases ----
+	// Crypto++ x25519::Agree checks IsSmallOrder(otherPublicKey) when
+	// validateOtherPublicKey=true (the default).  If the public key is in
+	// the 12-point blacklist (xed25519.cpp:23-48), Agree returns false,
+	// which vclh_x25519_agree_key turns into a USER_BOMB exception.
+	// The private-key side is NEVER validated, so a zero or low-order
+	// private key proceeds to curve25519_mult unchecked.
+	vc zero_priv = to_vc_bytes(std::string(32, '\0'));
+	vc zero_pub = to_vc_bytes(std::string(32, '\0'));
+	// Blacklist index 2: e0eb7a7c...
+	vc blk_pub2 = to_vc_bytes(from_hex(
+		"e0eb7a7c3b41b8ae1656e3faf19fc46a"
+		"da098deb9c32b1fd866205165f49b800"));
+	// Blacklist index 5: ed ff...ff 7f
+	vc blk_pub5 = to_vc_bytes(from_hex(
+		"edffffffffffffffffffffffffffffffff"
+		"ffffffffffffffffffffffffffffffff7f"));
+	// Test A: blacklisted public key must cause Agree to fail (USER_BOMB)
+	check(fails_gracefully([&]{ vclh_x25519_agree_key(x_bpriv, zero_pub); }),
+		"x25519 agree rejects blacklisted zero pub");
+	check(fails_gracefully([&]{ vclh_x25519_agree_key(x_bpriv, blk_pub2); }),
+		"x25519 agree rejects blacklisted pub [2]");
+	check(fails_gracefully([&]{ vclh_x25519_agree_key(x_bpriv, blk_pub5); }),
+		"x25519 agree rejects blacklisted pub [5]");
+	// Test B: zero/low-order PRIVATE key is not checked; Agree proceeds
+	// and the result is deterministic (same priv+pub -> same shared).
+	vc zs1 = vclh_x25519_agree_key(zero_priv, x_bpub);
+	vc zs2 = vclh_x25519_agree_key(zero_priv, x_bpub);
+	check(to_str(zs1) == to_str(zs2), "x25519 agree(zero_priv, good_pub) is deterministic");
+	check(zs1.len() == 32, "x25519 agree(zero_priv, good_pub) produces 32 bytes");
+
 	// ---- x25519 stateless functional ----
 	vc ka = vclh_x25519_gen_key(vcnil);
 	vc privA = ka[(long)0];
@@ -304,6 +366,20 @@ int main()
 	vc sBA = vclh_x25519_agree_key(privB, pubA);
 	check(sAB.len() == 32 && to_str(sAB) == to_str(sBA), "x25519 two-party agreement identical");
 
+	// ---- x25519 self-agreement ----
+	vc self_shared = vclh_x25519_agree_key(privA, pubA);
+	check(self_shared.len() == 32, "x25519 self-agree len 32");
+	vc self_shared2 = vclh_x25519_agree_key(privB, pubB);
+	check(to_str(self_shared) != to_str(self_shared2),
+		"x25519 different keys yield different self-agree");
+
+	// ---- x25519 pub-from-priv idempotent across gen_key calls ----
+	vc ka2 = vclh_x25519_gen_key(vcnil);
+	vc privA2 = ka2[(long)0];
+	vc pubA2 = ka2[(long)1];
+	check(to_str(pubA2) == to_str(vclh_x25519_pub_from_priv(privA2)),
+		"x25519 pub-from-priv consistent after 2nd gen_key");
+
 	// ---- x25519 singleton save/load/agree ----
 	check(vctrue == vclh_x25519_init(vcnil), "x25519 init");
 	vc pubS = vclh_x25519_keygen();
@@ -313,9 +389,36 @@ int main()
 	check(vctrue == vclh_x25519_load(vc("/tmp/ec25519_cpp_xkey.hex")), "x25519 load returns true");
 	check(to_str(vclh_x25519_agree(pubB)) == to_str(vclh_x25519_agree_key(privB, pubS)), "x25519 singleton agrees with stateless party");
 
+	// ---- x25519 load replaces prior key ----
+	// Save current key (key_A). Re-init + keygen to get key_B.
+	// Agree with key_B. Then load key_A and agree again -- results must differ.
+	check(vclh_x25519_save(vc("/tmp/ec25519_cpp_xkey2.hex")).is_nil(), "x25519 save key_A");
+	check(vctrue == vclh_x25519_init(vcnil), "x25519 re-init for replace test");
+	(void)vclh_x25519_keygen();  // generate key_B in singleton
+	vc agreement_before = vclh_x25519_agree(pubB);  // key_B agrees with pubB
+	check(vctrue == vclh_x25519_load(vc("/tmp/ec25519_cpp_xkey2.hex")), "x25519 reload key_A");
+	vc agreement_after = vclh_x25519_agree(pubB);   // key_A agrees with pubB
+	check(to_str(agreement_before) != to_str(agreement_after),
+		"x25519 load replaces prior key (different agreement)");
+
+	// ---- x25519 load truncated file ----
+	check(vclh_x25519_save(vc("/tmp/ec25519_cpp_xkey_trunc.hex")).is_nil(),
+		"x25519 save for truncation test");
+	{
+		FILE *f = fopen("/tmp/ec25519_cpp_xkey_trunc.hex", "r+");
+		if(f) {
+			ftruncate(fileno(f), 8);
+			fclose(f);
+		}
+	}
+	check(fails_gracefully([&]{ vclh_x25519_load(vc("/tmp/ec25519_cpp_xkey_trunc.hex")); }),
+		"neg: x25519 load truncated file bombs");
+
 	(void)remove("/tmp/ec25519_cpp_edpriv.hex");
 	(void)remove("/tmp/ec25519_cpp_edpub.hex");
 	(void)remove("/tmp/ec25519_cpp_xkey.hex");
+	(void)remove("/tmp/ec25519_cpp_xkey2.hex");
+	(void)remove("/tmp/ec25519_cpp_xkey_trunc.hex");
 
 	if(fails == 0)
 		std::cout << "ALL EC25519 C++ TESTS PASSED\n";

@@ -54,6 +54,7 @@ echo "== building C++ direct-call test =="
       "$SHADOW/bld/uv/libuv.a" \
       "$SHADOW/lib/libspread.a" \
       -lpthread -ldl \
+      -framework CoreFoundation -framework CoreServices \
       -o ec25519_cpp_test ) || { echo "build failed" >&2; exit 2; }
 
 echo "== running C++ direct-call test =="

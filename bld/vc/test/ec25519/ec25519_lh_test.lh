@@ -41,6 +41,25 @@ expect(ed-sign-key-verify ED25519-verify-key(payload <sig3> <pub>))
 expect(ed-sign-key-tamper not(ED25519-verify-key(evilmsg <sig3> <pub>)))
 expect(ed-sign-deterministic eq(<sig3> ED25519-sign-key(payload <priv>)))
 
+; --- ed25519 wrong-key rejection ---
+lbind(k2 ED25519-gen-key(nil))
+lbind(priv2 <k2>[0])
+lbind(pub2 <k2>[1])
+lbind(sig_k1 ED25519-sign-key(payload <priv>))
+expect(ed-wrong-key-reject not(ED25519-verify-key(payload <sig_k1> <pub2>)))
+
+; --- ed25519 triple-determinism ---
+lbind(sig_a ED25519-sign-key(payload <priv>))
+lbind(sig_b ED25519-sign-key(payload <priv>))
+lbind(sig_c ED25519-sign-key(payload <priv>))
+expect(ed-triple-deterministic and(eq(<sig_a> <sig_b>) eq(<sig_b> <sig_c>)))
+
+; --- ed25519 empty-string roundtrip ---
+lbind(emptystr substr(abc 0 0))
+lbind(empty_sig ED25519-sign-key(<emptystr> <priv>))
+expect(ed-empty-sig-len eq(strlen(<empty_sig>) 64))
+expect(ed-empty-verify ED25519-verify-key(<emptystr> <empty_sig> <pub>))
+
 ; --- x25519 stateless two-party agreement ---
 lbind(ka X25519-gen-key(nil))
 lbind(privA <ka>[0])
@@ -52,6 +71,18 @@ expect(x-gen-key-sizes and(eq(strlen(<privA>) 32) eq(strlen(<pubB>) 32)))
 expect(x-agree-match eq(X25519-agree-key(<privA> <pubB>) X25519-agree-key(<privB> <pubA>)))
 expect(x-pub-derived eq(<pubA> X25519-pub-from-priv(<privA>)))
 expect(x-shared-len eq(strlen(X25519-agree-key(<privA> <pubB>)) 32))
+
+; --- x25519 self-agreement ---
+lbind(self_a X25519-agree-key(<privA> <pubA>))
+lbind(self_b X25519-agree-key(<privB> <pubB>))
+expect(x-self-agree-len eq(strlen(<self_a>) 32))
+expect(x-self-agree-differ not(eq(<self_a> <self_b>)))
+
+; --- x25519 pub-from-priv idempotent across gen_key calls ---
+lbind(ka2 X25519-gen-key(nil))
+lbind(privA2 <ka2>[0])
+lbind(pubA2 <ka2>[1])
+expect(x-pub-from-priv-idempotent eq(<pubA2> X25519-pub-from-priv(<privA2>)))
 
 ; --- x25519 singleton (global-key) save/load/agree ---
 X25519-init(nil)
