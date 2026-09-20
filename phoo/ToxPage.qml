@@ -27,6 +27,8 @@ Page {
     property string connStatusText: "Not signed in"
     property string connBannerText: "You are not signed in to Tox."
     property bool showSignInBanner: true
+    property string cachedName: core.get_local_setting("cached_tox_name")
+    property string cachedAddress: core.get_local_setting("cached_tox_address")
 
     function isValidToxId(s) {
         if (s.length !== 76)
@@ -78,6 +80,10 @@ Page {
             return
         toxNameInput.text_input = core.tox_get_name()
         toxStatusInput.text_input = core.tox_get_status_message()
+        core.set_local_setting("cached_tox_name", core.tox_get_name())
+        core.set_local_setting("cached_tox_address", core.tox_self_address)
+        cachedName = core.tox_get_name()
+        cachedAddress = core.tox_self_address
         origName = toxNameInput.text_input
         origStatus = toxStatusInput.text_input
         autoInitToxIdentity()
@@ -249,6 +255,57 @@ Page {
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                     font.pixelSize: dp(14)
+                }
+
+                ColumnLayout {
+                    visible: core.tox_save_exists()
+                    spacing: mm(0.5)
+                    Layout.fillWidth: true
+
+                    RowLayout {
+                        spacing: mm(1)
+                        Layout.fillWidth: true
+
+                        Label {
+                            text: "Identity:"
+                            font.bold: true
+                        }
+
+                        Label {
+                            visible: core.tox_save_is_encrypted()
+                            text: "Encrypted profile"
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+                            visible: !core.tox_save_is_encrypted()
+                            text: {
+                                if (cachedName !== "")
+                                    return cachedName
+                                var name = core.tox_get_name()
+                                if (name !== "")
+                                    return name
+                                return "Unnamed"
+                            }
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                        }
+
+                        Label {
+                            visible: !core.tox_save_is_encrypted() && cachedAddress.length > 0
+                            font.family: "monospace"
+                            font.pixelSize: 10
+                            text: cachedAddress.substring(0, 8)
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Button {
+                            visible: !core.tox_save_is_encrypted() && cachedAddress.length > 0
+                            text: "Copy"
+                            onClicked: core.copy_to_clipboard(cachedAddress)
+                        }
+                    }
                 }
 
                 RowLayout {
