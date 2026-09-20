@@ -1,0 +1,5 @@
+; negative: X25519-agree with nil must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+X25519-init(nil)
+try(X25519-agree(nil) * prog(printl(NEG-OK)))

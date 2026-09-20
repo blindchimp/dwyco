@@ -84,5 +84,6 @@ vcuvsock.cpp \
 lhuvsock.cpp \
 vctrans.cpp \
 vcudh.cpp \
+vcec25519.cpp \
 reobj.cpp \
 vctsock.cpp
