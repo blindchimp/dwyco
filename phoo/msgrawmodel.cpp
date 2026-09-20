@@ -22,11 +22,26 @@
 #include "dwycolist2.h"
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
+#include "getinfo.h"
 
 [[noreturn]] void cdcxpanic(const char *);
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
+
+static QString resolve_tox_mid_name(const QByteArray& mid)
+{
+    DWYCO_LIST l;
+    if(!dwyco_get_mid_tag_payload(mid.constData(), "_tox_mid", &l))
+        return QString();
+    simple_scoped pl(l);
+    if(pl.is_nil(0, DWYCO_NO_COLUMN))
+        return QString();
+    QByteArray pseudo = pl.get<QByteArray>(0);
+    if(pseudo.isEmpty())
+        return QString();
+    return dwyco_info_to_display(pseudo);
+}
 
 // note: this model integrates 3 lists when a particular uid is
 // selected: the saved message list, the inbox (just msgs from that uid) and
@@ -709,6 +724,7 @@ msglist_raw::roleNames() const
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
     rn(IS_FAILED);
+    rn(TOX_MID_NAME);
 #undef rn
     return roles;
 }
@@ -847,6 +863,8 @@ msglist_raw::qd_data ( int r, int role ) const
 
         return v;
     }
+    case TOX_MID_NAME:
+        return QString();
     default:
         return QVariant();
     }
@@ -990,6 +1008,9 @@ msglist_raw::inbox_data (int r, int role ) const
         auto buid = m.get<QByteArray>(r, DWYCO_QMS_FROM);
         return buid.toHex();
     }
+
+    case TOX_MID_NAME:
+        return QString();
 
     default:
         return QVariant();
@@ -1206,6 +1227,11 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if(role == IS_FAILED)
         return 0;
+    else if(role == TOX_MID_NAME)
+    {
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+        return resolve_tox_mid_name(mid);
+    }
     }
     catch(...)
     {
