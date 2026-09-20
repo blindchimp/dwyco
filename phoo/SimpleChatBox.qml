@@ -934,6 +934,18 @@ Page {
                 z: 2
                 Layout.margins: 1
                 anchors.centerIn: ditem
+                Text {
+                    id: toxMidLabel
+                    visible: TOX_MID_NAME !== ""
+                    text: TOX_MID_NAME
+                    font.pointSize: applicationWindow1.font.pointSize * 0.75
+                    font.italic: true
+                    color: primary_text
+                    opacity: 0.7
+                    Layout.maximumWidth: (listView1.width * 3) / 4
+                    Layout.fillWidth: true
+                    horizontalAlignment: (SENT === 1) ? Text.AlignRight : Text.AlignLeft
+                }
                 Image {
                     id: preview
 

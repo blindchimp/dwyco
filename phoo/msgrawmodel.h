@@ -52,6 +52,7 @@ public:
         ATTACHMENT_PERCENT,
         ASSOC_UID, // who the message is from (or to, if sent msg)
         IS_FAILED,
+        TOX_MID_NAME, // display name of the tox account that handled this message
     };
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;

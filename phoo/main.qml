@@ -107,10 +107,14 @@ ApplicationWindow {
     }
 
     function openToxSignIn() {
-        toxAutoLoginInput.text = ""
-        toxAutoLoginError.text = ""
-        toxAutoLoginDialog.open()
-        toxAutoLoginInput.forceActiveFocus()
+        if (!core.tox_enabled)
+            core.enable_tox()
+        if (core.tox_needs_password()) {
+            toxAutoLoginInput.text = ""
+            toxAutoLoginError.text = ""
+            toxAutoLoginDialog.open()
+            toxAutoLoginInput.forceActiveFocus()
+        }
     }
 
     Material.theme: Material.Light
@@ -928,7 +932,13 @@ ApplicationWindow {
 
                 Button {
                     text: "Cancel"
-                    onClicked: toxAutoLoginDialog.close()
+                    onClicked: {
+                        // if tox is "pending" a password (enabled but not
+                        // running), cancel should back out of the sign-in.
+                        if (core.tox_enabled && core.tox_needs_password())
+                            core.disable_tox()
+                        toxAutoLoginDialog.close()
+                    }
                 }
 
                 Button {

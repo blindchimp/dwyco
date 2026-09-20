@@ -1,0 +1,4 @@
+; negative: ED25519-init-pub with a missing file must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+try(ED25519-init-pub(no-such-file) * prog(printl(NEG-OK)))

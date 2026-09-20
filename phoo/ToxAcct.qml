@@ -136,6 +136,8 @@ Page {
             core.disable_tox()
         var ok = core.tox_factory_reset()
         core.set_local_setting("tox_enabled", "0")
+        core.set_local_setting("cached_tox_name", "")
+        core.set_local_setting("cached_tox_address", "")
         if (ok) {
             resultText.text = "Tox was reset. This is a fresh start."
             resultDialog.open()
