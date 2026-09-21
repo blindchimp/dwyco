@@ -125,6 +125,17 @@ msglist_raw::invalidate_mid(const QByteArray& mid, const QString& huid)
 }
 
 void
+msglist_raw::invalidate_mid_or_reload(const QByteArray& mid, const QString& huid)
+{
+    if(m_tag.length() > 0)
+    {
+        reload_model(1);
+        return;
+    }
+    invalidate_mid(mid, huid);
+}
+
+void
 msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
 {
     QByteArray mid = smid.toLatin1();
@@ -178,14 +189,13 @@ msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
     case DWYCO_SE_MSG_DOWNLOAD_OK:
 
     {
+        dwyco_unset_msg_tag(mid.constData(), "_inbox");
+        if(m_uid == shuid)
+            mid_tag_changed(smid);
         reload_inbox_model();
         add_unviewed(buid, mid);
         emit TheDwycoCore->new_msg(shuid, "", smid);
         emit TheDwycoCore->decorate_user(shuid);
-
-        dwyco_unset_msg_tag(mid.constData(), "_inbox");
-        if(m_uid == shuid)
-            mid_tag_changed(smid);
 
     }
     // FALLTHRU

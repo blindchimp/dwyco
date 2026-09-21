@@ -27,7 +27,15 @@ uid_has_unfetched(const QByteArray& uid)
     if(!dwyco_get_unfetched_messages(&uml, uid.constData(), uid.length()))
         return 0;
     simple_scoped quml(uml);
-    return quml.rows();
+    int n = quml.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            continue;
+        return 1;
+    }
+    return 0;
 }
 
 void
@@ -129,6 +137,9 @@ uids_with_unviewed()
     simple_scoped quml(uml);
     for(int i = 0; i < quml.rows(); ++i)
     {
+        QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            continue;
         QByteArray huid = quml.get<QByteArray>(i, DWYCO_QMS_FROM).toHex();
         if(!ret.contains(huid))
             ret.append(huid);

@@ -89,7 +89,7 @@ public:
         audio_poll_timer->setTimerType(Qt::PreciseTimer);
         audio_poll_timer->setSingleShot(false);
         connect(audio_poll_timer, SIGNAL(timeout()), this, SLOT(qt_pushmore()));
-        audio_poll_timer->start(10);
+        audio_poll_timer->start(5);
     }
 
     ~mumble() {
@@ -143,11 +143,14 @@ public slots:
         QMutexLocker ml(&audio_mutex);
         if(audio_output)
         {
-            if(audio_output->state() != QAudio::ActiveState)
+            QAudio::State s = audio_output->state();
+            if(s == QAudio::SuspendedState)
             {
-                qio_dev = audio_output->start();
+                audio_output->resume();
                 audio_output->setVolume(1.0);
             }
+            // IdleState: timer->qt_pushmore will write data, sink auto-transitions to Active
+            // ActiveState: already playing
             return;
         }
 
@@ -170,10 +173,12 @@ public slots:
 
 
         audio_output = new QAudioSink(af);
-        audio_output->setBufferSize(3 * AUDBUF_LEN);
+        audio_output->setBufferSize(AUDBUF_LEN);
+        qDebug() << "QAudioSink requested buffer:" << AUDBUF_LEN << "bytes";
         connect(audio_output, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handle_stateChange(QAudio::State)));
         audio_output->setVolume(1.0);
         qio_dev = audio_output->start();
+        qDebug() << "QAudioSink actual bufferSize:" << audio_output->bufferSize() << "bytesFree:" << audio_output->bytesFree();
 
     }
 
@@ -326,9 +331,13 @@ audout_qt_device_output(void *, void *buf, int len, int user_data)
     a.pos = 0;
     devq_p->append(a);
     GRTLOG("qt dev out state %d", m->audio_output->state(), 0);
-    if(m->audio_output->state() != QAudio::ActiveState)
     {
-        m->emit init();
+        QAudio::State s = m->audio_output->state();
+        if(s == QAudio::SuspendedState || s == QAudio::StoppedState)
+        {
+            m->emit init();
+        }
+        // IdleState: timer->qt_pushmore writes data, sink auto-transitions to Active
     }
     return ret;
 }

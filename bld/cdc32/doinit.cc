@@ -420,6 +420,7 @@ exit_bg_msg_send()
 void
 exit_codec()
 {
+    aconn_exit();
     // do this here mainly so we can get some network
     // debugging output when the program exits
     MMChannel::exit_mmchan();

@@ -10,7 +10,6 @@ add_compile_definitions(
 	CDCCORE_STATIC
 	DWYCO_FORCE_DESKTOP_VGQT
         DWYCO_VC_CONV
-        DWYCO_PBM_FILE_OPS
 )
 
 #add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
@@ -41,7 +40,7 @@ endif()
 
 
 if(ANDROID)
-    add_compile_definitions(ANDROID LINUX)
+	add_compile_definitions(ANDROID LINUX DWYCO_NO_ACQ_VIDEO_MEDIA)
     add_compile_options( -frtti -fexceptions)
 endif()
 

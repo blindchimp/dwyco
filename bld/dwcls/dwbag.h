@@ -152,6 +152,9 @@ DwBag<T>::add(const T& key, T **wp)
     unsigned long hval = ::hash(key) % table_size;
     init(hval);
     table[hval]->prepend(key);
+    table[hval]->rewind();
+    if(wp)
+        *wp = table[hval]->nasty();
     ++count;
 }
 
@@ -237,6 +240,8 @@ DwBag<T>::find(const T& key, T& out, T **wp)
         return 0;
     if(!table[hval]->exists(key, out))
         return 0;
+    if(wp)
+        *wp = table[hval]->nasty();
     return 1;
 }
 

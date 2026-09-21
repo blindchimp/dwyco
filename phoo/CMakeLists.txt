@@ -7,11 +7,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR phoo_cmake)
-set(PHOO_VERSION "4.421")
+set(PHOO_VERSION "4.424")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
-set(PHOO_VERSION_CODE 2000145)
+set(PHOO_VERSION_CODE 2000151)
+set(QT_ANDROID_TARGET_SDK_VERSION 36)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/android_openssl.cmake)
+    include(ExternalProject)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -50,7 +52,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concur
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
 # strings. so we just hard code it for now.
 if(ANDROID)
-   set(QT_VERSION "6.10.2")
+   set(QT_VERSION "6.11.2")
 else()
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
@@ -62,10 +64,27 @@ add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 # populate it with the java stuff would work. then change the package_source_dir to
 # be the created folder. this could help us avoid the .gitignore mickey-mouse in the androidinst3
 # dir. might look into a special cmake file
-# that just does an install as well. for now, we just let it happen at cmake
-# time instead of build time.
+# that just does an install as well.
+# java sources in ../bld/android/com/dwyco are copied to androidinst3 at
+# build time (via the androidjava target) so editing a java file only
+# triggers a re-copy + repackage, not a full reconfigure.
 if(ANDROID)
-file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
+set(DWYCO_JAVA_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../bld/android/com/dwyco)
+set(DWYCO_JAVA_DST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/dwyco)
+file(GLOB_RECURSE DWYCO_JAVA_SOURCES ${DWYCO_JAVA_SRC_DIR}/*.java)
+set(DWYCO_JAVA_OUTPUTS)
+foreach(_src IN LISTS DWYCO_JAVA_SOURCES)
+    file(RELATIVE_PATH _rel ${DWYCO_JAVA_SRC_DIR} ${_src})
+    set(_dst ${DWYCO_JAVA_DST_DIR}/${_rel})
+    add_custom_command(
+        OUTPUT ${_dst}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_src} ${_dst}
+        DEPENDS ${_src}
+        COMMENT "Copying ${_rel} to androidinst3"
+    )
+    list(APPEND DWYCO_JAVA_OUTPUTS ${_dst})
+endforeach()
+add_custom_target(androidjava DEPENDS ${DWYCO_JAVA_OUTPUTS})
 file(COPY ../../deploy-phoo-android/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
 
@@ -129,6 +148,10 @@ qt_add_executable(phoo
 if (ANDROID)
     #include(/Users/dwight/Library/Android/Sdk/android_openssl/android_openssl.cmake)
     #add_android_openssl_libraries(phoo)
+endif()
+
+if(ANDROID)
+    add_dependencies(phoo androidjava)
 endif()
 
 #qt_add_ios_ffmpeg_libraries(phoo)
@@ -215,10 +238,7 @@ qt_add_qml_module(phoo
 )
 
 set(androidlibs
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/arm64-v8a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/armeabi-v7a/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/x86/libdwyco_jni.so
-    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/x86_64/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}/libdwyco_jni.so
 )
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -237,7 +257,8 @@ set_target_properties(phoo PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
-    QT_ANDROID_TARGET_SDK_VERSION 35
+    QT_ANDROID_TARGET_SDK_VERSION 36
+    QT_ANDROID_COMPILE_SDK_VERSION "android-36"
 
 )
 set_property(TARGET phoo APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "${androidlibs}")
@@ -257,7 +278,6 @@ set(BASELIBS
     kazlib
     ppm
     pgm
-    pbm
  #   zlib
     theora.1.2.x
     speex
@@ -291,6 +311,23 @@ if(ANDROID)
         Qt6::StateMachine
     )
 endif()
+
+# if(ANDROID)
+#     ExternalProject_Add(phoo_dynbld_ext
+#         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld
+#         CMAKE_ARGS
+#             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
+#             -DANDROID_ABI=${ANDROID_ABI}
+#             -DANDROID_PLATFORM=${ANDROID_PLATFORM}
+#             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+#             -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+#             -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}
+#         BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
+#         INSTALL_COMMAND ""
+#         BUILD_BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/../phoo_dynbld/build/${ANDROID_ABI}/libdwyco_jni.so
+#     )
+#     add_dependencies(phoo phoo_dynbld_ext)
+# endif()
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo

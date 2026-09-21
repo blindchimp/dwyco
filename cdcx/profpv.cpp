@@ -104,7 +104,7 @@ display_profile(int succ, const char *reason,
 
         // this is for the popup profile
         DwOString fn = random_fn();
-        fn += ".ppm";
+        fn += ".png";
         fn = add_pfx(Tmp_pfx, fn);
         if(dwyco_zap_create_preview(succ, fn.c_str(), fn.length()))
         {

@@ -57,6 +57,8 @@ extern DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
 static pthread_cond_t Msg_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int New_msg;
+#else
+#include <io.h>
 #endif
 
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
@@ -155,7 +157,15 @@ dwyco_request_singleton_lock(const char *name, int port)
     memcpy(sap.sun_path, aname.c_str(), dwmin(aname.length(), sizeof(sap.sun_path)));
     int tlen = offsetof(sockaddr_un, sun_path) + aname.length();
 
-    while(1)
+    // note: if the background worker is stuck and never releases the
+    // lock (e.g. it was wedged by the battery saver), this loop would
+    // spin forever and hang the foreground startup. bound the wait and
+    // give up so the caller can exit the process and try again cleanly.
+    // a connect is issued each time to try to get the background guy to
+    // relinquish the lock. ~30 seconds total.
+    int tries = 3000;
+    int i;
+    for(i = 0; i < tries; ++i)
     {
         if(bind(s, (const struct sockaddr *)&sap, tlen) == -1)
         {
@@ -186,6 +196,13 @@ dwyco_request_singleton_lock(const char *name, int port)
         }
         else
             break;
+    }
+    if(i == tries)
+    {
+        // couldn't get the lock in time; the caller will exit the
+        // process so the next start is clean.
+        close(s);
+        return -1;
     }
     if(listen(s, 5) == -1)
     {
@@ -517,9 +534,7 @@ check_background_backup(vc asock, bool just_check_once)
         return;
     if(!been_here)
     {
-        bu_poll.set_autoreload(1);
-        bu_poll.set_interval(60 * 60 * 1000);
-        bu_poll.start();
+        bu_poll.start(DwTimer::REPEATING, 60 * 60 * 1000, 60 * 60 * 1000);
         been_here = 1;
     }
     if(!just_check_once)
@@ -745,9 +760,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 // something, the conversation is probably over.
 #define WORKTIMER (8 * 60 * 1000)
                 DwTimer worktimer;
-                worktimer.set_interval(WORKTIMER);
-                worktimer.set_oneshot(1);
-                worktimer.start();
+                worktimer.start(DwTimer::ONESHOT, WORKTIMER);
                 bool inactivity_exit = false;
 #endif
     while(1)
@@ -813,8 +826,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         if(dwyco_get_rescan_messages())
         {
 #ifdef ANDROID
-            worktimer.load(WORKTIMER);
-            worktimer.start();
+            worktimer.start(DwTimer::ONESHOT, WORKTIMER);
 #endif
             GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
@@ -965,9 +977,7 @@ out:
         // thundering herd thing, but since this is a mobile device
         // and a once in awhile thing in the background, that probably
         // isn't a problem. so just restart as quickly as possible.
-        dwyco::Db_timer.stop();
-        dwyco::Db_timer.load(1);
-        dwyco::Db_timer.start();
+        dwyco::Db_timer.start(DwTimer::ONESHOT, 1);
 #else
         dwyco_suspend();
 #endif
