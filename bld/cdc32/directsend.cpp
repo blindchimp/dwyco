@@ -171,6 +171,11 @@ void
 DirectSend::eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
 {
     mc->timer1.stop();
+    // this is both the watchdog entry (via xfer_chan_setup_timeout)
+    // and the channel destroy callback. either way it is final for
+    // this channel, so make sure the teardown can't re-enter us.
+    // this avoids a second fail/refile behind an in-flight retry.
+    mc->destroy_callback = 0;
     if(!vp.is_valid())
         return;
     DirectSend *q = (DirectSend *)(void *)vp;
@@ -246,7 +251,14 @@ xfer_chan_call_succeeded(MMChannel *mc, int chan, vc, void *, ValidPtr)
 void
 DirectSend::xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
 {
+    // this is the only entry into eo_direct_xfer that does not
+    // originate from the channel being destroyed (it is the
+    // channel-setup / transfer watchdog). tear down the stuck
+    // channel here; eo_direct_xfer has already disabled its own
+    // destroy callback, so the teardown won't re-enter it.
     eo_direct_xfer(mc, arg1, arg2, vp);
+    mc->schedule_destroy(MMChannel::HARD);
+    TRACK_ADD(DS_xfer_setup_timeout, 1);
 }
 
 int
@@ -706,15 +718,18 @@ DirectSend::fail()
     // note: the path through here can originate from a failed attachment send
     // too. this probably needs to be rethought.
 
-    // more aggressive cleanup: find the top level control channel
-    // (which was what the stuff above was trying to do, but didn't
-    // work if the fail is via attachment xfer.
+    // teardown of the xfer channel is owned elsewhere, exactly like
+    // DwQSend::fail does not tear down qd_channel:
+    //   - the watchdog entry (xfer_chan_setup_timeout) schedules the
+    //     destroy itself after eo_direct_xfer has disabled its own
+    //     destroy callback.
+    //   - the other entry (eo_direct_xfer as the channel destroy
+    //     callback) runs while that channel is already being destroyed.
+    // so scheduling it again here would be redundant, and scheduling it
+    // on the watchdog path would re-enter eo_direct_xfer a second time,
+    // refiling the message behind an in-flight server retry.
 
-    if(xfer_channel)
-    {
-        xfer_channel->schedule_destroy(MMChannel::HARD);
-        xfer_channel = 0;
-    }
+    xfer_channel = 0;
 
     // MMChannel *mp = get_send_channel(uid);
     // if(mp)
