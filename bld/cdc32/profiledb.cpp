@@ -44,13 +44,24 @@ struct Sql : public SimpleSql
                    "time integer"
                    ")");
 
+        sql_simple("create table if not exists gprf ("
+                   "gid text collate nocase primary key not null, "
+                   "pack blob not null, "
+                   "media blob, "
+                   "chksum text collate nocase not null, "
+                   "reviewed not null, "
+                   "regular not null, "
+                   "image blob, "
+                   "time integer"
+                   ")");
+
         sql_simple("create table if not exists pubkeys ("
                    "uid text collate nocase primary key not null, "
                    "static_public blob, "
                    "dwyco_sig blob, "
                    "alt_static_public blob, "
                    "alt_server_sig blob, "
-                   "alt_gname, "
+                   "alt_gname text, "
                    "time integer"
                    ")");
         sql_simple("create index if not exists altidx on pubkeys(alt_static_public)");
@@ -60,7 +71,62 @@ struct Sql : public SimpleSql
                    "time integer "
                    ")"
                    );
+        start_transaction();
+        // Migration: ensure pubkeys.alt_gname is TEXT type
+        vc col_info = sql_simple("PRAGMA table_info(pubkeys)");
+        if(!col_info.is_nil())
+        {
+            int n = col_info.num_elems();
+            int has_alt_gname = 0;
+            int alt_gname_is_text = 0;
+            for(int i = 0; i < n; ++i)
+            {
+                vc col_name = col_info[i][1];
+                vc col_type = col_info[i][2];
+                if(col_name.type() == VC_STRING)
+                {
+                    DwString s((const char *)col_name, col_name.len());
+                    if(s == "alt_gname")
+                    {
+                        has_alt_gname = 1;
+                        if(col_type.type() == VC_STRING)
+                        {
+                            DwString t((const char *)col_type, col_type.len());
+                            t.to_lower();
+                            if(t.eq("text"))
+                                alt_gname_is_text = 1;
+                        }
+                        break;
+                    }
+                }
+            }
+            if(!has_alt_gname)
+            {
+                (void)sql_simple("ALTER TABLE pubkeys ADD COLUMN alt_gname text");
+            }
+            else if(!alt_gname_is_text)
+            {
 
+                sql_simple("CREATE TABLE pubkeys_new ("
+                           "uid text collate nocase primary key not null, "
+                           "static_public blob, "
+                           "dwyco_sig blob, "
+                           "alt_static_public blob, "
+                           "alt_server_sig blob, "
+                           "alt_gname text, "
+                           "time integer"
+                           ")");
+                sql_simple("INSERT INTO pubkeys_new "
+                           "SELECT uid, static_public, dwyco_sig, "
+                           "alt_static_public, alt_server_sig, "
+                           "CAST(alt_gname AS TEXT), time FROM pubkeys");
+                sql_simple("DROP TABLE pubkeys");
+                sql_simple("ALTER TABLE pubkeys_new RENAME TO pubkeys");
+                sql_simple("CREATE INDEX IF NOT EXISTS altidx ON pubkeys(alt_static_public)");
+
+            }
+        }
+        commit_transaction();
     }
 
 
@@ -80,6 +146,12 @@ static vc Prf_memory_cache;
 // unless there is some user action to force it, or the server
 // invalidates things explicitly.
 static vc Prf_session_cache;
+
+// like the per-uid profile caches above, but for device-group
+// profiles keyed by the group id (gid) rather than an ephemeral
+// member uid.
+static vc Prf_group_memory_cache;
+static vc Prf_group_session_cache;
 
 
 static vc Pk_memory_cache;
@@ -153,6 +225,8 @@ init_prfdb()
     Prf_memory_cache = vc(VC_TREE);
     Pk_session_cache = vc(VC_SET);
     Pk_memory_cache = vc(VC_TREE);
+    Prf_group_session_cache = vc(VC_SET);
+    Prf_group_memory_cache = vc(VC_TREE);
     vc prf;
     if(load_profile(My_UID, prf))
     {
@@ -190,6 +264,8 @@ exit_prfdb()
     Prf_memory_cache = vcnil;
     Pk_session_cache = vcnil;
     Pk_memory_cache = vcnil;
+    Prf_group_session_cache = vcnil;
+    Prf_group_memory_cache = vcnil;
 }
 
 static int
@@ -393,6 +469,111 @@ prf_invalidate(vc uid)
     prf_force_check(uid);
     sql_simple("delete from prf where uid = ?1", to_hex(uid));
     Profile_updated.emit(uid, 0);
+}
+
+// device group profiles are keyed by the group id (gid), which is a
+// 10 byte binary id derived from the group's public key. a profile set
+// for a group is shared by all member uids, so we don't have to
+// propagate it to (and keep it in sync across) every ephemeral member
+// uid.
+int
+load_group_profile(const vc& gid, vc& prf_out)
+{
+    if(gid.type() != VC_STRING)
+        return 0;
+
+    if(Prf_group_memory_cache.find(gid, prf_out))
+        return 1;
+
+    vc hgid = to_hex(gid);
+    vc res = sql_simple("select pack from gprf where gid = ?1", hgid);
+    if(res.num_elems() == 0)
+        return 0;
+
+    vc prf;
+    if(!deserialize(res[0][0], prf) || !check_profile(prf))
+    {
+        prf_group_force_check(gid);
+        sql_simple("delete from gprf where gid = ?1", hgid);
+        return 0;
+    }
+    prf_out = prf;
+    Prf_group_memory_cache.add_kv(gid, prf);
+    return 1;
+}
+
+int
+save_group_profile(vc gid, vc prf)
+{
+    Prf_group_memory_cache.del(gid);
+    if(!check_profile(prf))
+        return 0;
+    VCArglist a;
+    vc hgid = to_hex(gid);
+    a.append("insert or replace into gprf ("
+             "gid,"
+             "pack,"
+             "media,"
+             "reviewed,"
+             "regular,"
+             "chksum,"
+             "image, "
+             "time"
+             ")"
+             "values(?1, ?2, ?3, ?4, ?5, ?6, ?7, strftime('%s', 'now'))"
+             );
+    a.append(hgid);
+    a.append(blob(serialize(prf)));
+    a.append(blob(prf[PRF_MEDIA]));
+    a.append(prf[PRF_REVIEWED]);
+    a.append(prf[PRF_REGULAR]);
+    a.append(prf[PRF_CHKSUM]);
+    a.append(blob(prf[PRF_IMAGE]));
+    sql_bulk_query(&a);
+
+    Prf_group_memory_cache.add_kv(gid, prf);
+    Profile_updated.emit(gid, 1);
+    return 1;
+}
+
+int
+prf_group_already_cached(const vc& gid)
+{
+    if(Prf_group_session_cache.contains(gid))
+        return 1;
+
+    if(Prf_check_hashes)
+        return 0;
+
+    if(Prf_group_memory_cache.contains(gid))
+        return 1;
+
+    const vc hgid = to_hex(gid);
+    vc res = sql_simple("select 1 from gprf where gid = ?1", hgid);
+    if(res.num_elems() == 0)
+        return 0;
+    return 1;
+}
+
+void
+prf_group_set_cached(vc gid)
+{
+    Prf_group_session_cache.add(gid);
+}
+
+void
+prf_group_force_check(vc gid)
+{
+    Prf_group_session_cache.del(gid);
+    Prf_group_memory_cache.del(gid);
+}
+
+void
+prf_group_invalidate(vc gid)
+{
+    prf_group_force_check(gid);
+    sql_simple("delete from gprf where gid = ?1", to_hex(gid));
+    Profile_updated.emit(gid, 0);
 }
 
 // pk related stuff
@@ -610,7 +791,7 @@ save_pk(vc uid, vc pk)
             a.append(blobnil(pk[PKC_DWYCO_SIGNATURE]));
             a.append(blobnil(pk[PKC_ALT_STATIC_PUBLIC]));
             a.append(blobnil(pk[PKC_ALT_SERVER_SIG]));
-            a.append(blobnil(pk[PKC_ALT_GNAME]));
+            a.append(pk[PKC_ALT_GNAME]);
             sql_bulk_query(&a);
             if(Can_verify)
             {
@@ -725,7 +906,7 @@ pk_invalidate(vc uid)
 vc
 find_alt_pubkey(vc alt_name, vc& uid_out)
 {
-    vc res = sql_simple("select uid, alt_static_public, alt_server_sig from pubkeys where alt_gname = ?1 order by time desc");
+    vc res = sql_simple("select uid, alt_static_public, alt_server_sig from pubkeys where alt_gname = ?1 order by time desc", alt_name);
     vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
     for(int i = 0; i < res.num_elems(); ++i)
     {

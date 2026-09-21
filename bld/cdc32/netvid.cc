@@ -26,7 +26,6 @@
 #include "vccrypt2.h"
 using namespace dwyco;
 
-vc MMTube::Ping("vomit");
 int MMTube::dummy;
 int MMTube::always_zero;
 
@@ -79,8 +78,6 @@ MMTube::MMTube() :
 {
     tick_time = 100;
     time = 0;
-    keepalive_timer.set_interval(5000);
-    keepalive_timer.set_autoreload(1);
     connected = 0;
     ctrl_sock = 0;
     mm_sock = 0;
@@ -107,7 +104,6 @@ MMTube::~MMTube()
 void
 MMTube::toss()
 {
-    keepalive_timer.stop();
     connected = 0;
     if(ctrl_sock)
     {
@@ -544,32 +540,27 @@ MMTube::recv_ctrl_data(vc& v)
 {
     if(!connected || !ctrl_sock)
         return SSERR;
-    // eat keepalive messages
-    do
+    int len = 0;
+    if((len = ctrl_sock->recvvc(v)) == 0)
     {
-        int len = 0;
-        if((len = ctrl_sock->recvvc(v)) == 0)
+        if(ctrl_sock->wouldblock())
+            return SSTRYAGAIN;
+        disconnect_ctrl();
+        return SSERR;
+    }
+    total_recv += len;
+    if(dec_ctrl)
+    {
+        GRTLOG("DEC ctrl ", 0, 0);
+        vc  tmp;
+        if(encdec_xfer_dec_ctx(dec_ctx, v, tmp).is_nil())
         {
-            if(ctrl_sock->wouldblock())
-                return SSTRYAGAIN;
-            disconnect_ctrl();
+            GRTLOG("DEC fail", 0, 0);
             return SSERR;
         }
-        total_recv += len;
-        if(dec_ctrl)
-        {
-            GRTLOG("DEC ctrl ", 0, 0);
-            vc  tmp;
-            if(encdec_xfer_dec_ctx(dec_ctx, v, tmp).is_nil())
-            {
-                GRTLOG("DEC fail", 0, 0);
-                return SSERR;
-            }
-            GRTLOGVC(tmp);
-            v = tmp;
-        }
+        GRTLOGVC(tmp);
+        v = tmp;
     }
-    while(v == Ping);
     return 1;
 }
 
@@ -702,17 +693,6 @@ MMTube::tick()
     //if(mm_sock)
     //mm_sock->tick();
     time += tick_time;
-    //keepalive_timer.tick();
-    if(keepalive_timer.is_expired())
-    {
-        keepalive_timer.ack_expire();
-        if(!keepalive())
-        {
-            Netlog_signal.emit(mklog("event", "keepalive failed"));
-            toss();
-            return 0;
-        }
-    }
     int n = baud.num_elems();
     for(int i = 0; i < n; ++i)
     {
@@ -758,38 +738,6 @@ MMTube::get_est_baud(int chan)
     if(socks[chan] == 0)
         return 0;
     return baud[chan];
-}
-
-int
-MMTube::keepalive()
-{
-    if(!connected || !ctrl_sock)
-        return 0;
-    if(!ctrl_sock->sendvc(Ping))
-    {
-        if(ctrl_sock->wouldblock())
-            return 1; // hmmmm.... something probably wrong... but...
-        return 0;
-    }
-    return 1;
-}
-
-void
-MMTube::set_keepalive_time(unsigned long t)
-{
-    keepalive_timer.set_interval(t);
-}
-
-void
-MMTube::set_keepalive(int t)
-{
-    if(t)
-    {
-        keepalive_timer.reset();
-        keepalive_timer.start();
-    }
-    else
-        keepalive_timer.stop();
 }
 
 int

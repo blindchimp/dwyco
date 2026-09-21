@@ -254,12 +254,10 @@ start_broadcaster()
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     Local_broadcast.socket_connect(a);
 
-    Broadcast_timer.reset();
+    Broadcast_timer.stop();
 
     // we want the first broadcast to happen fairly quickly.
-    Broadcast_timer.set_interval(1);
-    Broadcast_timer.set_autoreload(0);
-    Broadcast_timer.start();
+    Broadcast_timer.start(DwTimer::ONESHOT, 1);
     return 1;
 }
 
@@ -350,6 +348,15 @@ init_aconn()
 
 }
 
+void
+aconn_exit()
+{
+    stop_broadcaster();
+    stop_discover();
+    set_listen_state(0);
+    Inhibit_accept = 0;
+}
+
 static
 vc
 strip_port(vc ip)
@@ -400,10 +407,7 @@ broadcast_announcement()
         stop_broadcaster();
         start_broadcaster();
         // override the short timer
-        Broadcast_timer.reset();
-        Broadcast_timer.set_interval(60);
-        Broadcast_timer.set_autoreload(0);
-        Broadcast_timer.start();
+        Broadcast_timer.start(DwTimer::ONESHOT, 60);
     }
 }
 
@@ -431,7 +435,7 @@ broadcast_tick()
     }
 
     Broadcast_timer.set_interval(iv * 1000);
-    Broadcast_timer.start();
+    Broadcast_timer.start(DwTimer::ONESHOT, Broadcast_timer.get_interval());
 }
 
 static

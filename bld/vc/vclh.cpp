@@ -53,6 +53,7 @@
 #ifndef NO_LHCRYPTO
 #include "vccrypt2.h"
 #include "vcudh.h"
+#include "vcec25519.h"
 #endif
 
 #include "vclex.h"
@@ -3398,6 +3399,25 @@ vc::init_rest()
     // servers. also used for some group-entry protocol stuff.
     makefun("UDH-sf-material", VC(vclh_sf_material, "UDH-sf-material", VC_FUNC_BUILTIN_LEAF));
     makefun("UDH-sf-get-key", VC(vclh_dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
+
+    makefun("ED25519-init", VC(vclh_ed25519_init, "ED25519-init", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-save", VC(vclh_ed25519_save, "ED25519-save", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-init-pub", VC(vclh_ed25519_pub_init, "ED25519-init-pub", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-sign", VC(vclh_ed25519_sign, "ED25519-sign", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-verify", VC(vclh_ed25519_verify, "ED25519-verify", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-gen-key", VC(vclh_ed25519_gen_key, "ED25519-gen-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-pub-from-priv", VC(vclh_ed25519_pub_from_priv, "ED25519-pub-from-priv", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-sign-key", VC(vclh_ed25519_sign_key, "ED25519-sign-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("ED25519-verify-key", VC(vclh_ed25519_verify_key, "ED25519-verify-key", VC_FUNC_BUILTIN_LEAF));
+
+    makefun("X25519-init", VC(vclh_x25519_init, "X25519-init", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-keygen", VC(vclh_x25519_keygen, "X25519-keygen", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-agree", VC(vclh_x25519_agree, "X25519-agree", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-save", VC(vclh_x25519_save, "X25519-save", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-load", VC(vclh_x25519_load, "X25519-load", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-gen-key", VC(vclh_x25519_gen_key, "X25519-gen-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-pub-from-priv", VC(vclh_x25519_pub_from_priv, "X25519-pub-from-priv", VC_FUNC_BUILTIN_LEAF));
+    makefun("X25519-agree-key", VC(vclh_x25519_agree_key, "X25519-agree-key", VC_FUNC_BUILTIN_LEAF));
 #endif
 	makefun("GZ-compress-open", VC(vclh_compression_open, "GZ-compress-open", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-compress-close", VCv(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));

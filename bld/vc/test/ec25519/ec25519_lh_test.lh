@@ -1,0 +1,96 @@
+;
+; EC25519 LH functional tests.
+;
+; Run with the interpreter binary built by vccmd/build.sh:
+;   vccmd -c <this dir> ec25519_lh_test.lh
+;
+; Each failure prints "<label>" followed by "FAILED".
+; A clean run prints EC25519-LH-TEST-COMPLETE with no FAILED lines.
+;
+
+; printl/nl normally come from lhlib/common.lh loaded via $HOME/lhlib/load.lh
+; by the interpreter; define them locally so the tests are self-contained
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+
+; records/prints a failure when <b> is nil
+gcompile(expect name b `if(<b> nil prog(printl(name) printl(FAILED)))')
+
+; --- ed25519 singleton (global-key) API ---
+ED25519-init(nil)
+lbind(sig ED25519-sign(mymsg1))
+expect(ed-singleton-sign-len eq(strlen(<sig>) 64))
+expect(ed-singleton-verify ED25519-verify(mymsg1 <sig>))
+expect(ed-singleton-tamper not(ED25519-verify(othermsg <sig>)))
+
+; save the generated key, then verify using only the saved public key
+ED25519-save(ed25519-test-priv.hex ed25519-test-pub.hex)
+lbind(sig2 ED25519-sign(secondmsg))
+ED25519-init-pub(ed25519-test-pub.hex)
+expect(ed-init-pub-verify ED25519-verify(secondmsg <sig2>))
+expect(ed-init-pub-tamper not(ED25519-verify(thirdmsg <sig2>)))
+
+; --- ed25519 stateless API (explicit keys) ---
+lbind(k ED25519-gen-key(nil))
+lbind(priv <k>[0])
+lbind(pub <k>[1])
+expect(ed-gen-key-sizes and(eq(strlen(<priv>) 32) eq(strlen(<pub>) 32)))
+expect(ed-pub-derived eq(<pub> ED25519-pub-from-priv(<priv>)))
+lbind(sig3 ED25519-sign-key(payload <priv>))
+expect(ed-sign-key-verify ED25519-verify-key(payload <sig3> <pub>))
+expect(ed-sign-key-tamper not(ED25519-verify-key(evilmsg <sig3> <pub>)))
+expect(ed-sign-deterministic eq(<sig3> ED25519-sign-key(payload <priv>)))
+
+; --- ed25519 wrong-key rejection ---
+lbind(k2 ED25519-gen-key(nil))
+lbind(priv2 <k2>[0])
+lbind(pub2 <k2>[1])
+lbind(sig_k1 ED25519-sign-key(payload <priv>))
+expect(ed-wrong-key-reject not(ED25519-verify-key(payload <sig_k1> <pub2>)))
+
+; --- ed25519 triple-determinism ---
+lbind(sig_a ED25519-sign-key(payload <priv>))
+lbind(sig_b ED25519-sign-key(payload <priv>))
+lbind(sig_c ED25519-sign-key(payload <priv>))
+expect(ed-triple-deterministic and(eq(<sig_a> <sig_b>) eq(<sig_b> <sig_c>)))
+
+; --- ed25519 empty-string roundtrip ---
+lbind(emptystr substr(abc 0 0))
+lbind(empty_sig ED25519-sign-key(<emptystr> <priv>))
+expect(ed-empty-sig-len eq(strlen(<empty_sig>) 64))
+expect(ed-empty-verify ED25519-verify-key(<emptystr> <empty_sig> <pub>))
+
+; --- x25519 stateless two-party agreement ---
+lbind(ka X25519-gen-key(nil))
+lbind(privA <ka>[0])
+lbind(pubA <ka>[1])
+lbind(kb X25519-gen-key(nil))
+lbind(privB <kb>[0])
+lbind(pubB <kb>[1])
+expect(x-gen-key-sizes and(eq(strlen(<privA>) 32) eq(strlen(<pubB>) 32)))
+expect(x-agree-match eq(X25519-agree-key(<privA> <pubB>) X25519-agree-key(<privB> <pubA>)))
+expect(x-pub-derived eq(<pubA> X25519-pub-from-priv(<privA>)))
+expect(x-shared-len eq(strlen(X25519-agree-key(<privA> <pubB>)) 32))
+
+; --- x25519 self-agreement ---
+lbind(self_a X25519-agree-key(<privA> <pubA>))
+lbind(self_b X25519-agree-key(<privB> <pubB>))
+expect(x-self-agree-len eq(strlen(<self_a>) 32))
+expect(x-self-agree-differ not(eq(<self_a> <self_b>)))
+
+; --- x25519 pub-from-priv idempotent across gen_key calls ---
+lbind(ka2 X25519-gen-key(nil))
+lbind(privA2 <ka2>[0])
+lbind(pubA2 <ka2>[1])
+expect(x-pub-from-priv-idempotent eq(<pubA2> X25519-pub-from-priv(<privA2>)))
+
+; --- x25519 singleton (global-key) save/load/agree ---
+X25519-init(nil)
+lbind(pubS X25519-keygen())
+X25519-save(x25519-test-key.hex)
+X25519-init(nil)
+expect(x-load-true X25519-load(x25519-test-key.hex))
+expect(x-pub-len eq(strlen(<pubS>) 32))
+expect(x-singleton-agree eq(X25519-agree(<pubB>) X25519-agree-key(<privB> <pubS>)))
+
+printl(EC25519-LH-TEST-COMPLETE)

@@ -1,0 +1,10 @@
+[package]
+name = "rustvc"
+version = "0.1.0"
+edition = "2021"
+description = "Bit-identical wire format for the Dwyco vc serialization system"
+
+[dependencies]
+dtoa = "1"
+
+[dev-dependencies]

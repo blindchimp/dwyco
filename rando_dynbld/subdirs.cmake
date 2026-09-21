@@ -7,7 +7,6 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/dwcls ${CMAKE_CURRENT_BINARY_DIR}/bl
 #add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/theora.1.2.x ${CMAKE_CURRENT_BINARY_DIR}/bld/theora.1.2.x)
 #add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/speexdsp-1.2.1 ${CMAKE_CURRENT_BINARY_DIR}/bld/speexdsp-1.2.1)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pbm ${CMAKE_CURRENT_BINARY_DIR}/bld/pbm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pgm ${CMAKE_CURRENT_BINARY_DIR}/bld/pgm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/ppm ${CMAKE_CURRENT_BINARY_DIR}/bld/ppm)
 #add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/gsm ${CMAKE_CURRENT_BINARY_DIR}/bld/gsm)

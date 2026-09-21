@@ -703,6 +703,7 @@ Page {
             clip: true
             spacing: 5
             ScrollBar.vertical: ScrollBar {
+                id: vscroll
                 onPressedChanged: {
                     lock_to_bottom = false
                 }
@@ -1034,10 +1035,15 @@ Page {
     }
     onVisibleChanged: {
         multiselect_mode = false
-        if(inh_block_warning === 0 && core.get_ignore(to_uid) !== 0) {
-            warn.visible = true
-        } else {
-            warn.visible = false
+        if(visible) {
+            themsglist.set_filter(1, 1, -1, 0)
+            themsglist.set_show_video_only(0)
+            themsglist.tag = ""
+            if(inh_block_warning === 0 && core.get_ignore(to_uid) !== 0) {
+                warn.visible = true
+            } else {
+                warn.visible = false
+            }
         }
     }
 
@@ -1188,7 +1194,7 @@ Page {
         anchors.bottom: listview_layout.bottom
         anchors.bottomMargin: mm(2)
         anchors.right: listview_layout.right
-        anchors.rightMargin: conv_sidebar.width
+        anchors.rightMargin: conv_sidebar.width + vscroll.width + dp(2)
 
         background: Rectangle {
             id: gtb_bg

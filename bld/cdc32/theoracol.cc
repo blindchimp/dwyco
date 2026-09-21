@@ -1315,7 +1315,7 @@ CDCTheoraDecoderColor::decode_postprocess(DWBYTE *buf, int len)
     }
     display_decoded(vimg, cols, rows);
     GRTLOG("display decoded", 0, 0);
-    ppm_freearray(vimg, rows);
+    ppm_freearray((pixel **)vimg, rows);
 
     set_busy(0);
 }

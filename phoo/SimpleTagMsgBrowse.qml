@@ -20,6 +20,7 @@ Page {
     property url cur_source
     property int ind_online: 0
     property int filter_show_sent: 1
+    property int filter_show_only_video: 0
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -28,6 +29,10 @@ Page {
 
     onFilter_show_sentChanged: {
         themsglist.set_filter(filter_show_sent, 1, -1, to_tag == "_fav" ? 1 : 0)
+    }
+
+    onFilter_show_only_videoChanged: {
+        themsglist.set_show_video_only(filter_show_only_video)
     }
 
     onTo_tagChanged: {
@@ -49,6 +54,7 @@ Page {
             console.log("depth tmg", simple_tag_msg_browse.StackView.index, stack.depth)
             if(simple_tag_msg_browse.StackView.index === -1) {
                 //filter_show_only_fav = 0
+                filter_show_only_video = 0
                 filter_show_sent = 1
             }
 
@@ -203,6 +209,16 @@ Page {
                             checkable: true
                             onCheckedChanged: {
                                 filter_show_sent = checked
+                            }
+
+                        }
+
+                        MenuItem {
+                            text: "Show Only Video"
+                            checked: filter_show_only_video
+                            checkable: true
+                            onCheckedChanged: {
+                                filter_show_only_video = checked
                             }
 
                         }

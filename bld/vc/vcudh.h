@@ -20,6 +20,7 @@ vc dh_store_and_forward_material(vc other_pub, vc& session_key_out);
 vc dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out);
 vc dh_store_and_forward_get_key(vc sfpack, vc our_material);
 vc dh_store_and_forward_get_key2(vc sfpack, vc our_material);
+vc udh_public_from_private(vc priv_key);
 vc vclh_sf_material(VCArglist *a);
 vc vclh_dh_store_and_forward_get_key(VCArglist *a);
 

@@ -106,9 +106,6 @@ public:
 	vc_winsock();
 	~vc_winsock();
 	static int have_net;
-#ifdef DWYCO_VC_MT_SOCKET
-	static std::recursive_mutex global_mutex;
-#endif
 
 	static int poll_all(int what_for, Socketvec&, int sec = 0, int usec = 0);
 	static int poll_sets(int what_for, Socketvec&, int sec = 0, int usec = 0);

@@ -127,7 +127,6 @@ $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -150,7 +149,6 @@ $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
-$${D}/pbm/libpbm.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/libvorbis-1.3.7/libvorbis.a \
 $${D}/ogg/libogg.a \

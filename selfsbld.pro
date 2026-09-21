@@ -6,8 +6,8 @@ SUBDIRS=bld/qt-qml-models bld/qt-supermacros bld/qt6drv
 }
 
 !android {
-SUBDIRS=bld/jhead bld/ogg bld/libvorbis-1.3.7 bld/theora.1.2.x bld/speex bld/kazlib \
-    bld/dwcls bld/crypto8 bld/jenkins bld/vc bld/pbm bld/pgm bld/ppm bld/gsm bld/cdc32 \
+SUBDIRS=bld/jhead bld/libogg-1.3.6 bld/libvorbis-1.3.7 bld/theora.1.2.x bld/speex bld/kazlib \
+    bld/dwcls bld/crypto8 bld/jenkins bld/vc bld/pgm bld/ppm bld/gsm bld/cdc32 \
     bld/qt-qml-models bld/qt-supermacros bld/uv
 SUBDIRS += bld/miniupnp/miniupnp-master/miniupnpc
 }

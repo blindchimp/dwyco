@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
 
 #define FPATH "./"
 
-    dwyco_set_fn_prefixes(syspath.toLatin1().constData(), userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
+    dwyco_set_fn_prefixes(syspath.toLatin1().constData(), userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("tmp/")).constData());
     {
         char sys[1024];
         char user[1024];

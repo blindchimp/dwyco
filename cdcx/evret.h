@@ -20,6 +20,7 @@ public:
 signals:
     void return_hit();
     void ctrl_return_hit();
+    void ctrl_p_hit();
     void chat_typing();
     void esc_hit();
 
