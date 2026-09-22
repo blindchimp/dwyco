@@ -239,8 +239,7 @@ stun_connect_ok(MMChannel *mc, vc, void *, ValidPtr vp)
     mc->force_unreliable_video = 1;
 
     mc->timer1.stop();
-    mc->timer1.load(CALLLIVE_STUN_TIMEOUT);
-    mc->timer1.start();
+    mc->timer1.start(DwTimer::ONESHOT, CALLLIVE_STUN_TIMEOUT);
     mc->timer1_callback = stun_setup_timeout;
     mc->t1cb_arg3 = vp;
     mc->destroy_callback = 0;
@@ -419,9 +418,7 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
         mc->use_stun = 0;
         mc->media_setup = "via handshake";
     }
-    mc->timer1.load(CALLLIVE_SERVER_TIMEOUT);
-    mc->timer1.set_oneshot(1);
-    mc->timer1.start();
+    mc->timer1.start(DwTimer::ONESHOT, CALLLIVE_SERVER_TIMEOUT);
     mc->timer1_callback = timer1_stun_expired;
     mc->t1cb_arg3 = vp;
     mc->low_level_connect_callback = track_stun_connect;

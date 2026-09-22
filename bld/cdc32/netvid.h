@@ -51,7 +51,6 @@ protected:
 
     unsigned long tick_time;	// in ms
     unsigned long time;
-    DwTimer keepalive_timer;
     unsigned long last_tick;
     int connected;
     static int dummy;
@@ -180,9 +179,6 @@ public:
     unsigned long set_est_baud(unsigned long baud, int chan = 0);
     unsigned long get_est_baud(int chan = 0);
 
-    void set_keepalive_time(unsigned long);
-    void set_keepalive(int);
-
     void mm_packet_stats(int& dropped, int& s, int& r);
     void set_mm_packet_stats(int dropped, int s, int r);
     // used because we are still using the old version
@@ -219,8 +215,6 @@ public:
     int get_decrypt_chan(int chan);
 
 private:
-    static vc Ping;
-    int keepalive();
     void toss();
 
     vc tubeid;

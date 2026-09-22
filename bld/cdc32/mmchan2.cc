@@ -282,8 +282,7 @@ MMChannel::send_reliable_video_proxy()
         }
 
         sproto *s = simple_protos[video_chan];
-        s->timeout.load(VIDEO_IDLE_TIMEOUT);
-        s->timeout.start();
+        s->timeout.start(DwTimer::ONESHOT, VIDEO_IDLE_TIMEOUT);
         video_output_device_blocked = 0;
         bps_send.add_units((long)bcast->len_last_coded_buf * 8);
         GRTLOG("reliable proxy output ok", 0, 0);
