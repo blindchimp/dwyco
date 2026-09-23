@@ -96,6 +96,10 @@ Page {
         }
     }
 
+    MsgActionsMenu {
+        id: msg_context_menu
+    }
+
     header: Column {
         width:parent.width
         MultiSelectToolbar {
@@ -385,22 +389,36 @@ Page {
             MouseArea {
                 anchors.fill: parent
                 enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
                 onPressAndHold: {
+                    if(!is_mobile)
+                        return
                     console.log("click msg")
                     console.log(index)
                     grid.currentIndex = index
                     multiselect_mode = true
                     grid.model.toggle_selected(model.mid)
-                    if(Qt.platform.os == "android") {
-                        notificationClient.vibrate(50)
-                    }
+                    notificationClient.vibrate(50)
                 }
-                onClicked: {
+                onClicked: (mouse)=> {
                     grid.currentIndex = index
                     if(multiselect_mode) {
                         grid.model.toggle_selected(model.mid)
                         if(!grid.model.at_least_one_selected())
                             multiselect_mode = false
+                    } else if(mouse.button === Qt.RightButton) {
+                        msg_context_menu.mid = model.mid
+                        msg_context_menu.uid = model.ASSOC_UID
+                        msg_context_menu.fav = (model.IS_FAVORITE === 1)
+                        msg_context_menu.hid = (model.IS_HIDDEN === 1)
+                        msg_context_menu.is_trash = true
+                        msg_context_menu.msgTextObj = null
+                        msg_context_menu.popAfterAction = false
+                        msg_context_menu.popup()
+                    } else if(!is_mobile && (mouse.modifiers & Qt.ControlModifier)) {
+                        if(!multiselect_mode)
+                            multiselect_mode = true
+                        grid.model.toggle_selected(model.mid)
                     } else {
 
                         if(model.FETCH_STATE === "manual") {

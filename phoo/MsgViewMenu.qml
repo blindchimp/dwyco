@@ -52,6 +52,8 @@ Menu {
     MenuItem {
         text: "Report"
         onTriggered: {
+            msg_report.mid = mid
+            msg_report.uid = uid
             stack.push(msg_report)
 
         }
@@ -61,6 +63,9 @@ Menu {
         text: "Review"
         visible: core.this_uid === applicationWindow1.the_man
         onTriggered: {
+            msg_review.mid = mid
+            msg_review.uid = uid
+            msg_review.msgText = msg_text.text
             stack.push(msg_review)
         }
     }

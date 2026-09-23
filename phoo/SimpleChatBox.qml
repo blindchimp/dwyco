@@ -106,6 +106,11 @@ Page {
         }
     }
 
+    MsgActionsMenu {
+        id: msg_context_menu
+        uid: chatbox_page.to_uid
+    }
+
     // note: this column thing is needed because otherwise
     // it doesn't appear to get the height of the toolbar
     // correct
@@ -392,127 +397,28 @@ Page {
                     visible: chatbox.visible
                     ToolTip.text: "More actions"
 
-                    Menu {
-
+                    ChatMoreMenu {
                         id: optionsMenu
-                        x: parent.width - width
-                        transformOrigin: Menu.TopRight
-
-                        MenuItem {
-                            text: "View profile"
-                            onTriggered: {
-                                stack.push(theprofileview)
-                            }
-                        }
-                        MenuItem {
-                            text: "Send picture"
-                            onTriggered: {
-                                if(Qt.platform.os === "android") {
-                                    // ugh, what a hack
-                                    applicationWindow1.android_img_pick_hack = 0
-                                    applicationWindow1.android_img_pick_hack = 2
-                                    if(notificationClient.open_image() === 0) {
-                                        failed_msg.text = "Android blocked access to images."
-                                        animateOpacity.start()
-                                    }
-                                } else {
-                                    picture_picker.visible = true
+                        to_uid: chatbox_page.to_uid
+                        isGroup: false
+                        onSendPicture: {
+                            if(Qt.platform.os === "android") {
+                                // ugh, what a hack
+                                applicationWindow1.android_img_pick_hack = 0
+                                applicationWindow1.android_img_pick_hack = 2
+                                if(notificationClient.open_image() === 0) {
+                                    failed_msg.text = "Android blocked access to images."
+                                    animateOpacity.start()
                                 }
+                            } else {
+                                picture_picker.visible = true
                             }
                         }
-                        MenuItem {
-                            text: "Send video message"
-                            onTriggered: {
-                                core.start_control(to_uid)
-                                dwyco_vid_rec.uid = to_uid
-                                stack.push(dwyco_vid_rec)
-                            }
+                        onSendVideo: {
+                            core.start_control(to_uid)
+                            dwyco_vid_rec.uid = to_uid
+                            stack.push(dwyco_vid_rec)
                         }
-
-                        MenuItem {
-                            text: "Browse Msgs"
-                            onTriggered: {
-                                stack.push(simp_msg_browse)
-                            }
-                        }
-
-//                        MenuItem {
-//                            text: "Clear msgs"
-//                            onTriggered: {
-//                                confirm_clear.visible = true
-//                            }
-//                            MessageDialog {
-//                                id: confirm_clear
-//                                title: "Remove all msgs?"
-//                                icon: StandardIcon.Question
-//                                text: "Delete ALL (including HIDDEN) msgs from this user?"
-//                                informativeText: "This KEEPS FAVORITE messages."
-//                                standardButtons: StandardButton.Yes | StandardButton.No
-//                                onYes: {
-//                                    core.clear_messages_unfav(chatbox.to_uid)
-//                                    themsglist.reload_model()
-//                                    close()
-//                                }
-//                                onNo: {
-//                                    close()
-//                                }
-//                            }
-//                        }
-                        MenuItem {
-                            text: "Trash msgs..."
-                            onTriggered: {
-                                confirm_trash.visible = true
-                            }
-                            MessageYN {
-                                id: confirm_trash
-                                title: "Trash all msgs?"
-                                text: "Trash ALL (including HIDDEN) msgs from this user?"
-                                informativeText: "This KEEPS FAVORITE messages."
-                                
-                                onYesClicked: {
-                                    themsglist.set_all_selected()
-                                    themsglist.trash_all_selected()
-                                    themsglist.invalidate_model_filter()
-                                    themsglist.reload_model()
-                                    close()
-                                }
-                                onNoClicked: {
-                                    close()
-                                }
-                            }
-                        }
-
-//                        MenuItem {
-//                            text: "Delete user"
-//                            onTriggered: {
-//                                confirm_delete.visible = true
-//                            }
-//                            MessageDialog {
-//                                id: confirm_delete
-//                                title: "Bulk delete?"
-//                                icon: StandardIcon.Question
-//                                text: "Delete ALL messages from user?"
-//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-//                                standardButtons: StandardButton.Yes | StandardButton.No
-//                                onYes: {
-//                                    core.delete_user(chatbox.to_uid)
-//                                    themsglist.reload_model()
-//                                    close()
-//                                    stack.pop()
-//                                }
-//                                onNo: {
-//                                    close()
-//                                }
-//                            }
-//                        }
-                        MenuItem {
-                            text: "More..."
-                            onTriggered: {
-                                moremenu.open()
-
-                            }
-                        }
-
                     }
                 }
             }
@@ -966,7 +872,10 @@ Page {
                 // controls... which is different from the regular
                 // menus, which don't have this behavior.
                 enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
                 onPressAndHold: {
+                    if(!is_mobile)
+                        return
                     console.log("click msg")
                     console.log(index)
                     //msg_action_popup.popup()
@@ -975,16 +884,27 @@ Page {
                     listView1.currentIndex = index
                     multiselect_mode = true
                     listView1.model.toggle_selected(model.mid)
-                    if(Qt.platform.os == "android") {
                     notificationClient.vibrate(50)
-                    }
                 }
-                onClicked: {
+                onClicked: (mouse)=> {
                     listView1.currentIndex = index
                     if(multiselect_mode) {
                         listView1.model.toggle_selected(model.mid)
                         if(!listView1.model.at_least_one_selected())
                             multiselect_mode = false
+                    } else if(mouse.button === Qt.RightButton) {
+                        msg_context_menu.mid = model.mid
+                        msg_context_menu.uid = to_uid
+                        msg_context_menu.fav = (model.IS_FAVORITE === 1)
+                        msg_context_menu.hid = (model.IS_HIDDEN === 1)
+                        msg_context_menu.is_trash = false
+                        msg_context_menu.msgTextObj = null
+                        msg_context_menu.popAfterAction = false
+                        msg_context_menu.popup()
+                    } else if(!is_mobile && (mouse.modifiers & Qt.ControlModifier)) {
+                        if(!multiselect_mode)
+                            multiselect_mode = true
+                        listView1.model.toggle_selected(model.mid)
                     } else {
 
                         if(model.FETCH_STATE === "manual") {

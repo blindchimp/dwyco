@@ -231,6 +231,9 @@ qt_add_qml_module(phoo
         PulseLoader.qml
         MsgViewMenu.qml
         MsgViewMenuTrash.qml
+        MsgActionsMenu.qml
+        UndoBanner.qml
+        ChatMoreMenu.qml
            RESOURCES
            images/toolbutton.png
            images/toolbutton.sci

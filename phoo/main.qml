@@ -354,6 +354,141 @@ ApplicationWindow {
         }
     }
 
+    menuBar: MenuBar {
+        visible: !is_mobile
+        Menu {
+            title: "Chat"
+            MenuItem {
+                text: "Browse conversations"
+                onTriggered: {
+                    stack.pop(null)
+                }
+            }
+            MenuItem {
+                text: "Hidden messages"
+                onTriggered: {
+                    simp_tag_browse.to_tag = "_hid"
+                    stack.push(simp_tag_browse)
+                }
+            }
+            MenuItem {
+                text: "Favorite messages"
+                onTriggered: {
+                    simp_tag_browse.to_tag = "_fav"
+                    stack.push(simp_tag_browse)
+                }
+            }
+        }
+        Menu {
+            title: "Account"
+            MenuItem {
+                text: "Edit profile"
+                onTriggered: {
+                    profile_update_dialog.preview_existing = true
+                    stack.push(profile_update_dialog)
+                }
+            }
+            MenuItem {
+                text: "Change PIN"
+                onTriggered: {
+                    stack.push(pwchange_dialog)
+                }
+            }
+            MenuItem {
+                text: "Settings"
+                onTriggered: {
+                    stack.push(settings_dialog)
+                }
+            }
+            MenuItem {
+                text: "Link device"
+                onTriggered: {
+                    stack.push(device_group)
+                }
+            }
+        }
+        Menu {
+            title: "Tools"
+            MenuItem {
+                text: "Block list"
+                onTriggered: {
+                    stack.push(iglist_dialog)
+                }
+            }
+            MenuItem {
+                text: "Camera preview"
+                onTriggered: {
+                    stack.push(vid_cam_preview)
+                }
+            }
+            MenuItem {
+                text: "Restore auto backup"
+                onTriggered: {
+                    stack.push(restore_auto_backup)
+                }
+            }
+            MenuItem {
+                text: "About"
+                onTriggered: {
+                    stack.push(about_dialog)
+                }
+            }
+        }
+        Menu {
+            title: "Preferences"
+            MenuItem {
+                checkable: true
+                checked: dwy_quiet
+                text: "Quiet"
+                onTriggered: {
+                    dwy_quiet = checked
+                    core.set_local_setting("quiet", checked ? "true" : "false")
+                }
+            }
+            MenuItem {
+                checkable: true
+                checked: core.invisible
+                text: "Invisible"
+                onTriggered: {
+                    dwy_invis = checked
+                    core.set_local_setting("invis", checked ? "true" : "false")
+                    core.set_invisible_state(checked ? 1 : 0)
+                }
+            }
+            MenuSeparator {
+            }
+            MenuItem {
+                text: "Lock and exit"
+                onTriggered: {
+                    expire_immediate = true
+                    core.power_clean()
+                    if(Qt.platform.os === "android") {
+                        notificationClient.start_background()
+                        notificationClient.set_lastrun()
+                    }
+                    Qt.quit()
+                }
+            }
+        }
+    }
+
+    Shortcut {
+        sequence: "Esc"
+        enabled: !is_mobile
+        onActivated: {
+            if(stack.depth > 1) {
+                stack.pop()
+            }
+        }
+    }
+
+    Shortcut {
+        sequence: "Ctrl+K"
+        enabled: !is_mobile
+        onActivated: {
+            stack.pop(null)
+        }
+    }
 
     footer: RowLayout {
         visible: dwyco_debug
@@ -395,41 +530,9 @@ ApplicationWindow {
     }
 
     
-    Menu {
+    UserActionMenu {
         id: moremenu
-        x: parent.width - width
-        transformOrigin: Menu.TopRight
-        MenuItem {
-            text: "Block user"
-            onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
-                stack.pop()
-            }
-        }
-        MenuItem {
-            text: "Block and Delete user"
-            onTriggered: {
-                confirm_block_delete.visible = true
-            }
-            MessageYN {
-                id: confirm_block_delete
-                title: "Block and delete?"
-                //icon: StandardIcon.Question
-                text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
-                onYesClicked: {
-                    core.set_ignore(chatbox.to_uid, 1)
-                    core.delete_user(chatbox.to_uid)
-                    themsglist.reload_model()
-                    stack.pop()
-
-                }
-                onNoClicked: {
-                    stack.pop()
-                }
-            }
-        }
-
+        uid: chatbox.to_uid
     }
 
 
@@ -865,6 +968,20 @@ ApplicationWindow {
     UserActionMenu {
         id: user_action_popup
         uid: top_dispatch.last_uid_selected
+    }
+
+    UndoBanner {
+        id: undo_banner
+    }
+
+    MsgReport {
+        id: msg_report
+        visible: false
+    }
+
+    MsgReview {
+        id: msg_review
+        visible: false
     }
 
 //    VidCamPreview {

@@ -64,6 +64,9 @@
         <file>PulseLoader.qml</file>
         <file>MsgViewMenu.qml</file>
         <file>MsgViewMenuTrash.qml</file>
+        <file>MsgActionsMenu.qml</file>
+        <file>UndoBanner.qml</file>
+        <file>ChatMoreMenu.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

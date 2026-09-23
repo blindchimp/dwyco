@@ -13,6 +13,8 @@ import QtQuick.Layouts
 
 Page {
     //anchors.fill: parent
+    property string uid: ""
+    property string mid: ""
     header: SimpleToolbar {
 
     }

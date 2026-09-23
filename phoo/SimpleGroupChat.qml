@@ -20,6 +20,8 @@ Page {
     property alias model: listView1.model
     property alias listview: listView1
     property string group;
+    property string to_uid
+    property var call_buttons_model
     property string file_to_send
     property url url_to_send
     //property alias pick_pic: picture_picker.visible
@@ -337,91 +339,28 @@ Page {
                         source: mi("ic_action_overflow.png")
                     }
                     onClicked: optionsMenu.open()
-                    visible: chatbox.visible
+                    visible: groupchat_page.visible
                     ToolTip.text: "More actions"
 
-                    Menu {
-
+                    ChatMoreMenu {
                         id: optionsMenu
-                        x: parent.width - width
-                        transformOrigin: Menu.TopRight
-
-                        MenuItem {
-                            text: "View profile"
-                            onTriggered: {
-                                stack.push(theprofileview)
+                        to_uid: groupchat_page.to_uid
+                        isGroup: true
+                        onSendPicture: {
+                            if(Qt.platform.os === "android") {
+                                // ugh, what a hack
+                                applicationWindow1.android_img_pick_hack = 0
+                                applicationWindow1.android_img_pick_hack = 2
+                                notificationClient.open_image()
+                            } else {
+                                picture_picker.visible = true
                             }
                         }
-                        MenuItem {
-                            text: "Send picture"
-                            onTriggered: {
-                                if(Qt.platform.os == "android") {
-                                    // ugh, what a hack
-                                    android_img_pick_hack = 0
-                                    android_img_pick_hack = 2
-                                    notificationClient.open_image()
-                                } else {
-                                    picture_picker.visible = true
-                                }
-
-                            }
+                        onSendVideo: {
+                            core.try_connect(to_uid)
+                            dwyco_vid_rec.uid = to_uid
+                            stack.push(dwyco_vid_rec)
                         }
-                        MenuItem {
-                            text: "Send video message"
-                            onTriggered: {
-                                core.try_connect(to_uid)
-                                dwyco_vid_rec.uid = to_uid
-                                stack.push(dwyco_vid_rec)
-                            }
-                        }
-
-                        MenuItem {
-                            text: "Browse Msgs"
-                            onTriggered: {
-                                stack.push(simp_msg_browse)
-                            }
-                        }
-
-                        MenuItem {
-                            text: "Clear msgs"
-                            onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
-
-                                themsglist.reload_model()
-                            }
-                        }
-
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
-                        MenuItem {
-                            text: "More..."
-                            onTriggered: {
-                                moremenu.open()
-
-                            }
-                        }
-
                     }
                 }
             }
@@ -746,7 +685,10 @@ Page {
                 // controls... which is different from the regular
                 // menus, which don't have this behavior.
                 enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
                 onPressAndHold: {
+                    if(!is_mobile)
+                        return
                     console.log("click msg")
                     console.log(index)
                     //msg_action_popup.popup()
@@ -755,16 +697,27 @@ Page {
                     listView1.currentIndex = index
                     multiselect_mode = true
                     listView1.model.toggle_selected(model.mid)
-                    if(Qt.platform.os == "android") {
                     notificationClient.vibrate(50)
-                    }
                 }
-                onClicked: {
+                onClicked: (mouse)=> {
                     listView1.currentIndex = index
                     if(multiselect_mode) {
                         listView1.model.toggle_selected(model.mid)
                         if(!listView1.model.at_least_one_selected())
                             multiselect_mode = false
+                    } else if(mouse.button === Qt.RightButton) {
+                        msg_context_menu.mid = model.mid
+                        msg_context_menu.uid = to_uid
+                        msg_context_menu.fav = (model.IS_FAVORITE === 1)
+                        msg_context_menu.hid = (model.IS_HIDDEN === 1)
+                        msg_context_menu.is_trash = false
+                        msg_context_menu.msgTextObj = null
+                        msg_context_menu.popAfterAction = false
+                        msg_context_menu.popup()
+                    } else if(!is_mobile && (mouse.modifiers & Qt.ControlModifier)) {
+                        if(!multiselect_mode)
+                            multiselect_mode = true
+                        listView1.model.toggle_selected(model.mid)
                     } else {
 
                         if(model.FETCH_STATE === "manual") {
@@ -805,6 +758,11 @@ Page {
             }
 
         }
+    }
+
+    MsgActionsMenu {
+        id: msg_context_menu
+        uid: groupchat_page.to_uid
     }
 
     onMultiselect_modeChanged: {

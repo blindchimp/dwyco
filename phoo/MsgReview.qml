@@ -13,11 +13,13 @@ import QtQuick.Layouts
 
 Page {
     //anchors.fill: parent
+    property string rando_bot: "13404a7fc7664a943a20"
+    property string uid: ""
+    property string mid: ""
+    property string msgText: ""
     header: SimpleToolbar {
 
     }
-
-    property string rando_bot: "13404a7fc7664a943a20"
 
     ColumnLayout {
         anchors.fill: parent
@@ -41,7 +43,7 @@ Page {
         Button {
             text: "Nope"
             onClicked: {
-                core.simple_send(uid, msg_text.text)
+                core.simple_send(uid, msgText)
                 stack.pop()
                 core.set_tag_message(mid, "_hid")
             }

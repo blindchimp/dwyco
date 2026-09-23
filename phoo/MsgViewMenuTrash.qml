@@ -59,6 +59,8 @@ Menu {
     MenuItem {
         text: "Report"
         onTriggered: {
+            msg_report.mid = mid
+            msg_report.uid = uid
             stack.push(msg_report)
 
         }
