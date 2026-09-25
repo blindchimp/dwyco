@@ -1,0 +1,7 @@
+;
+; negative: UDH-agree with a non-vector first arg must fail gracefully
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+UDH-init(nil)
+try(UDH-agree(7 7) * prog(printl(NEG-OK)))

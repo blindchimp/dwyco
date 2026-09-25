@@ -1,0 +1,8 @@
+;
+; negative: UDH-sf-material with a non-string key name must fail gracefully
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+UDH-init(nil)
+lbind(s UDH-new-static(nil))
+try(UDH-sf-material(<s> 7) * prog(printl(NEG-OK)))

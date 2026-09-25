@@ -1,0 +1,8 @@
+;
+; negative: UDH-just-publics with a non-vector arg must fail gracefully
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; UDH-just-publics touches none of the process-global state, so this works
+; the same before and after UDH-init
+try(UDH-just-publics(7) * prog(printl(NEG-OK)))

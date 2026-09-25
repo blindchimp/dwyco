@@ -1,0 +1,10 @@
+;
+; negative: UDH-sf-get-key with a non-vector pack must fail gracefully
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+UDH-init(nil)
+lbind(s UDH-new-static(nil))
+; a string pack is an atomic, and num_elems() on an atomic raises a
+; USER_BOMB rather than returning 0
+try(UDH-sf-get-key(notapack <s>) * prog(printl(NEG-OK)))

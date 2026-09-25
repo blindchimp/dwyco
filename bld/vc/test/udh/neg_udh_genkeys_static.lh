@@ -1,0 +1,7 @@
+;
+; negative: UDH-gen-keys with a non-vector static must fail gracefully
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+UDH-init(nil)
+try(UDH-gen-keys(7 nil) * prog(printl(NEG-OK)))

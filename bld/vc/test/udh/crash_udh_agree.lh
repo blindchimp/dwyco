@@ -1,0 +1,11 @@
+;
+; crash: UDH-agree before UDH-init must crash, not return a bogus value
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; dereferences the null UDH at vcudh.cpp:209. The args are well formed so
+; the only thing that can stop the call is the missing initialization.
+lbind(ours vector(0123456789abcdef fedcba9876543210 0011223344556677 8899aabbccddeeff))
+lbind(theirs UDH-just-publics(<ours>))
+UDH-agree(<ours> <theirs>)
+printl(THIS-SHOULD-NEVER-PRINT)

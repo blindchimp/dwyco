@@ -1,0 +1,15 @@
+;
+; negative: UDH-sf-get-key with an encrypted key longer than the kdk must
+; return nil
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; the bound is sk_enc.len() <= kdk.len(), and kdk is a 20-byte SHA1, so a
+; 21-byte encrypted key is the first length that gets rejected
+UDH-init(nil)
+lbind(s UDH-new-static(nil))
+lbind(pack UDH-sf-material(<s> sk))
+lbind(long from-hex(ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff))
+lbind(p vector(<long> <pack>[1]))
+lbind(r UDH-sf-get-key(<p> <s>))
+if(<r> prog(printl(neg-udh-sf-get-key-longkey-returned-a-value) printl(FAILED))) prog(printl(NEG-OK))
