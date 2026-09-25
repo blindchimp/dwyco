@@ -117,16 +117,10 @@ Page {
             id: unreviewed
             text: "Show all profiles\n(WARNING: shows explicit content)"
             visible: !corporate_censorship
-            onCheckedChanged: {
-                show_unreviewed = checked
-                core.set_local_setting("show_unreviewed", checked ? "1" : "0")
-                if(Qt.platform.os == "android") {
-                    if(show_unreviewed)
-                        notificationClient.set_user_property("content", "unrev")
-                    else
-                        notificationClient.set_user_property("content", "rev")
-                }
-                SimpleDirectoryList.clear()
+            // the same operation the View menu calls, so the two can never
+            // disagree about what is on or persisted
+            onToggled: {
+                ops.set_show_unreviewed(checked)
             }
             onClicked: {
                 if(checked) {
@@ -140,10 +134,8 @@ Page {
         CheckBox {
             id: show_hidden_msgs
             text: "Show hidden messages"
-            onCheckedChanged: {
-                core.set_local_setting("show_hidden", checked ? "1" : "0")
-                themsglist.set_show_hidden(checked ? 1 : 0)
-                show_hidden = checked
+            onToggled: {
+                ops.set_show_hidden_msgs(checked)
             }
             Layout.fillWidth: true
         }
@@ -151,9 +143,8 @@ Page {
         CheckBox {
             id: show_archived
             text: { "Show archived users (" + core.total_users.toString() + ")" }
-            onCheckedChanged: {
-                core.use_archived = checked
-                show_archived_users = checked
+            onToggled: {
+                ops.set_show_archived(checked)
             }
             Layout.fillWidth: true
         }
@@ -205,7 +196,7 @@ Page {
             id: about_button
             text: qsTr("About")
             onClicked: {
-                    stack.push(about_dialog)
+                    applicationWindow1.show_about()
             }
             Layout.fillWidth: true
         }

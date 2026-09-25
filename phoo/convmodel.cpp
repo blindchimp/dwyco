@@ -129,17 +129,21 @@ ConvListModel::obliterate_all_selected()
 }
 
 static
-void
+QStringList
 trash_messages(const QByteArray& buid)
 {
+    // note: returns the mids that actually got the "_trash" tag, so the client
+    // can offer an undo. favorites and messages that were already trashed are
+    // left out of the list.
+    QStringList trashed;
     DWYCO_LIST msgs;
     if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
-        return;
+        return trashed;
     simple_scoped q(msgs);
 
     DWYCO_LIST favs;
     if(!dwyco_get_tagged_mids(&favs, "_fav"))
-        return;
+        return trashed;
 
     QSet<QByteArray> fset;
 
@@ -161,12 +165,15 @@ trash_messages(const QByteArray& buid)
         auto mid = q.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
         if(fset.contains(mid))
             continue;
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            continue;
         dwyco_set_msg_tag(mid.constData(), "_trash");
+        trashed.append(QString(mid));
     }
 
     DWYCO_LIST um;
     if(!dwyco_get_unfetched_messages(&um, buid.constData(), buid.length()))
-        return;
+        return trashed;
     simple_scoped q2(um);
     n = q2.rows();
     for(int i = 0; i < n; ++i)
@@ -174,14 +181,19 @@ trash_messages(const QByteArray& buid)
         auto mid = q2.get<QByteArray>(i, DWYCO_QMS_ID);
         if(fset.contains(mid))
             continue;
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            continue;
         dwyco_set_msg_tag(mid.constData(), "_trash");
+        trashed.append(QString(mid));
     }
 
+    return trashed;
 }
 
-void
+QStringList
 ConvListModel::trash_all_selected()
 {
+    QStringList trashed;
     int n = count();
     //QList<Conversation *> to_remove;
     dwyco_start_bulk_update();
@@ -195,7 +207,7 @@ ConvListModel::trash_all_selected()
             buid = QByteArray::fromHex(buid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
                 continue;
-            trash_messages(buid);
+            trashed.append(trash_messages(buid));
             del_unviewed_uid(buid);
         }
     }
@@ -204,6 +216,21 @@ ConvListModel::trash_all_selected()
     hack_unread_count();
     ::reload_conv_list();
 
+    return trashed;
+}
+
+QStringList
+ConvListModel::selected_uids()
+{
+    QStringList ret;
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+            ret.append(c->get_uid());
+    }
+    return ret;
 }
 
 void
@@ -469,15 +496,39 @@ ConvSortFilterModel::obliterate_all_selected()
 
 }
 
-void
+QStringList
 ConvSortFilterModel::trash_all_selected()
 {
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->trash_all_selected();
+    QStringList ret = m->trash_all_selected();
     invalidateFilter();
+    return ret;
+}
 
+QStringList
+ConvSortFilterModel::trash_user_msgs(QString uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.isEmpty())
+        return QStringList();
+    dwyco_start_bulk_update();
+    QStringList ret = trash_messages(buid);
+    dwyco_end_bulk_update();
+
+    hack_unread_count();
+    ::reload_conv_list();
+    return ret;
+}
+
+QStringList
+ConvSortFilterModel::selected_uids()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_uids();
 }
 
 void

@@ -137,14 +137,18 @@ Page {
                     if(mouse.button === Qt.LeftButton) {
                         uid_selected(uid, "clicked")
                     } else if(mouse.button === Qt.RightButton) {
-                        uid_selected(uid, "hold")
+                        // map into the menu's own space so it opens under
+                        // the cursor, not in the middle of the window
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        top_dispatch.context_at(uid, p.x, p.y, "stranger")
                     }
                 }
                 onPressAndHold: {
                     console.log("simpdir hold ")
                     console.log(index)
                     listView1.currentIndex = index
-                    uid_selected(uid, "hold")
+                    // long press has no cursor, the dispatcher centers the menu
+                    top_dispatch.context_at(uid, 0, 0, "stranger")
                 }
 
             }
@@ -240,14 +244,18 @@ Page {
                     if(mouse.button === Qt.LeftButton) {
                         uid_selected(uid, "clicked")
                     } else if(mouse.button === Qt.RightButton) {
-                        uid_selected(uid, "hold")
+                        // map into the menu's own space so it opens under
+                        // the cursor, not in the middle of the window
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        top_dispatch.context_at(uid, p.x, p.y, "stranger")
                     }
                 }
                 onPressAndHold: {
                     console.log("simpdir hold ")
                     console.log(index)
                     gridView1.currentIndex = index
-                    uid_selected(uid, "hold")
+                    // long press has no cursor, the dispatcher centers the menu
+                    top_dispatch.context_at(uid, 0, 0, "stranger")
                 }
 
             }

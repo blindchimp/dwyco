@@ -6,18 +6,29 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+
+// The bar that replaces the normal toolbar while things are multi-selected.
+//
+// The two operations are injected rather than picked out of the air: the
+// hosting page passes ops.* functions in. They used to be found implicitly by
+// reaching for whatever "model" and "star_fun" happened to be visible from the
+// context chain, which silently did nothing on the conversation list, where
+// there is no message model at all.
+
 import QtQuick
 import dwyco
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-//import Qt.labs.platform
 
 ToolBar {
     property Component extras
+    property var bulk_trash_op
+    property var bulk_star_op
     property alias delete_warning_text : confirm_delete.text
     property alias delete_warning_inf_text: confirm_delete.informativeText
     property url star_icon: mi("ic_star_black_24dp.png")
+    property string star_tooltip: qsTr("Favorite selected")
     property bool is_trash: false
 
     background: Rectangle {
@@ -44,7 +55,6 @@ ToolBar {
             }
             checkable: false
             onClicked: {
-                //stack.pop()
                 // exit multiselect
                 multiselect_mode = false
             }
@@ -65,10 +75,11 @@ ToolBar {
             }
 
             Layout.fillHeight: true
+            ToolTip.text: star_tooltip
 
             onClicked: {
-                // add all to favorites somehow
-                star_fun(true)
+                if(typeof bulk_star_op === "function")
+                    bulk_star_op()
                 multiselect_mode = false
             }
         }
@@ -84,28 +95,19 @@ ToolBar {
                 source: mi("ic_delete_black_24dp.png")
             }
 
+            Layout.fillHeight: true
+            ToolTip.text: is_trash ? qsTr("Delete forever") : qsTr("Trash")
+
             onClicked: {
-                // remove whatever is selected
                 confirm_delete.visible = true
             }
             MessageYN {
                 id: confirm_delete
-                title: "Bulk Trash?"
-                
-                text: "Trash ALL messages from selected users?"
-                informativeText: "This KEEPS FAVORITE, but TRASHES HIDDEN message."
+                title: is_trash ? qsTr("Delete forever?") : qsTr("Bulk Trash?")
 
                 onYesClicked: {
-                    if(is_trash) {
-                        model.obliterate_all_selected()
-                    } else {
-                        model.trash_all_selected()
-                    }
-                    model.invalidate_model_filter()
-                    // ACK, this is a kluge. this just gets the model that
-                    // might be loaded with a uid we happen to have modified
-                    // during the trash operation.
-                    themsglist.invalidate_model_filter()
+                    if(typeof bulk_trash_op === "function")
+                        bulk_trash_op()
                     multiselect_mode = false
                     close()
                 }
@@ -113,8 +115,6 @@ ToolBar {
                     close()
                 }
             }
-
-            Layout.fillHeight: true
         }
 
 

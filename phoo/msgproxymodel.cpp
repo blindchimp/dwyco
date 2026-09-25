@@ -162,13 +162,25 @@ msgproxy_model::at_least_one_selected()
 	return selected.count() > 0;
 }
 
+QStringList
+msgproxy_model::selected_mids()
+{
+    QStringList ret;
+    foreach (const QByteArray &b, selected)
+    {
+        ret.append(QString(b));
+    }
+    return ret;
+}
+
 // forwarded data operations
 
-void
+QStringList
 msgproxy_model::trash_all_selected()
 {
-    SM->trash_all_selected(selected);
+    QStringList ret = SM->trash_all_selected(selected);
     selected.clear();
+    return ret;
 }
 
 void
@@ -178,22 +190,22 @@ msgproxy_model::obliterate_all_selected()
     selected.clear();
 }
 
-void
+QStringList
 msgproxy_model::fav_all_selected(int f)
 {
-    SM->fav_all_selected(selected, f);
+    return SM->fav_all_selected(selected, f);
 }
 
-void
+QStringList
 msgproxy_model::tag_all_selected(QByteArray tag)
 {
-    SM->tag_all_selected(selected, tag);
+    return SM->tag_all_selected(selected, tag);
 }
 
-void
+QStringList
 msgproxy_model::untag_all_selected(QByteArray tag)
 {
-    SM->untag_all_selected(selected, tag);
+    return SM->untag_all_selected(selected, tag);
 }
 
 QVariant

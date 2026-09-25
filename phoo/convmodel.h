@@ -10,6 +10,7 @@
 #define CONVMODEL_H
 
 #include <QObject>
+#include <QStringList>
 #include "QSortFilterProxyModel"
 #include "QQmlObjectListModel.h"
 #include "QQmlVarPropertyHelpers.h"
@@ -69,7 +70,10 @@ public:
 
     void set_all_selected(bool);
     void obliterate_all_selected();
-    void trash_all_selected();
+    // note: the bulk trash returns the mids it actually tagged, and
+    // selected_uids() snapshots the selection, so the client can undo these.
+    QStringList trash_all_selected();
+    QStringList selected_uids();
     void pal_all_selected(bool);
     void block_all_selected();
     bool at_least_one_selected();
@@ -110,7 +114,9 @@ public:
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
     Q_INVOKABLE void obliterate_all_selected();
-    Q_INVOKABLE void trash_all_selected();
+    Q_INVOKABLE QStringList trash_all_selected();
+    Q_INVOKABLE QStringList trash_user_msgs(QString uid);
+    Q_INVOKABLE QStringList selected_uids();
     Q_INVOKABLE void pal_all_selected(bool);
     Q_INVOKABLE void block_all_selected();
     Q_INVOKABLE bool at_least_one_selected();

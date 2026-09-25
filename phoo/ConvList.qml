@@ -19,13 +19,10 @@ Page {
     //anchors.fill: parent
     property bool multiselect_mode : false
     property var model
+    // so the View menu can check/uncheck the same box the toolbar shows
+    property alias grid_checked: show_grid.grid_checked
 
    signal uid_selected(string uid, string action)
-
-    function star_fun(b) {
-        console.log("convlist star")
-        ConvListModel.pal_all_selected(b)
-    }
 
     Component {
         id: extras_button
@@ -44,7 +41,7 @@ Page {
                 MenuItem {
                     text: "Unfavorite"
                     onTriggered: {
-                        star_fun(false)
+                        ops.bulk_fav_users(false)
                         multiselect_mode = false
                     }
                 }
@@ -56,13 +53,34 @@ Page {
                     }
                 }
 
+                MenuSeparator {
+                }
+
                 MenuItem {
                     text: "Block"
                     onTriggered: {
-                        ConvListModel.block_all_selected()
+                        ops.bulk_block_users(true)
                         multiselect_mode = false
-
                     }
+                }
+
+                MenuItem {
+                    text: "Unblock"
+                    onTriggered: {
+                        ops.bulk_block_users(false)
+                        multiselect_mode = false
+                    }
+                }
+
+                MenuItem {
+                    text: "Trash msgs"
+                    onTriggered: {
+                        ops.bulk_trash_user_msgs()
+                        multiselect_mode = false
+                    }
+                }
+
+                MenuSeparator {
                 }
 
                 MenuItem {
@@ -74,9 +92,9 @@ Page {
                         id: confirm_delete
                         title: "Block user and delete messages?"
                         text: "Delete ALL messages from selected users?"
-                        informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
+                        informativeText: "This removes FAVORITE and HIDDEN messages too, and cannot be undone."
                         onYesClicked: {
-                            ConvListModel.block_all_selected()
+                            ops.bulk_block_users(true)
                             ConvListModel.obliterate_all_selected()
                             multiselect_mode = false
                             close()
@@ -98,6 +116,10 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
+            delete_warning_inf_text: qsTr("This removes FAVORITE and HIDDEN messages too, and cannot be undone.")
+            delete_warning_text: qsTr("Delete ALL messages from selected users?")
+            bulk_star_op: function() { ops.bulk_fav_users(true) }
+            bulk_trash_op: function() { ops.bulk_obliterate_users() }
         }
         ToolBar {
             id: regular_toolbar
@@ -333,16 +355,18 @@ Page {
                    console.log("click")
                    console.log(index)
                    listView2.currentIndex = index
-                   if(multiselect_mode) {
+                   if(mouse.button === Qt.RightButton) {
+                       // map into the menu's own space so it opens under the
+                       // cursor, not in the middle of the window
+                       var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                       top_dispatch.context_at(uid, p.x, p.y, "conversation")
+                   } else if(multiselect_mode) {
                        listView2.model.toggle_selected(uid)
                        if(!listView2.model.at_least_one_selected())
                            multiselect_mode = false
-                   }   else {                     
-                       if(mouse.button === Qt.LeftButton) {
+                   } else {
+                       if(mouse.button === Qt.LeftButton)
                            uid_selected(uid, "clicked")
-                       } else if(mouse.button === Qt.RightButton) {
-                           uid_selected(uid, "hold")
-                       }
                    }
 
                }
@@ -512,16 +536,18 @@ Page {
                    console.log("click")
                    console.log(index)
                    gridView1.currentIndex = index
-                   if(multiselect_mode) {
+                   if(mouse.button === Qt.RightButton) {
+                       // map into the menu's own space so it opens under the
+                       // cursor, not in the middle of the window
+                       var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                       top_dispatch.context_at(uid, p.x, p.y, "conversation")
+                   } else if(multiselect_mode) {
                        gridView1.model.toggle_selected(uid)
                        if(!gridView1.model.at_least_one_selected())
                            multiselect_mode = false
-                   }   else {
-                       if(mouse.button === Qt.LeftButton) {
+                   } else {
+                       if(mouse.button === Qt.LeftButton)
                            uid_selected(uid, "clicked")
-                       } else if(mouse.button === Qt.RightButton) {
-                           uid_selected(uid, "hold")
-                       }
                    }
 
                }

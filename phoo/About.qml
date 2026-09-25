@@ -11,7 +11,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Page {
-    anchors.fill: parent
+    // no anchors.fill here: this page is pushed onto the StackView, which owns
+    // its geometry. Setting anchors on a stack page fights the StackView.
     header: SimpleToolbar {
 
     }

@@ -24,11 +24,6 @@ Page {
     property int filter_show_only_fav: 0
     property int filter_show_only_video: 0
 
-    function star_fun(b) {
-        console.log("chatbox star")
-        model.fav_all_selected(b ? 1 : 0)
-    }
-
     onFilter_show_only_favChanged: {
         themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
     }
@@ -96,23 +91,25 @@ Page {
                 MenuItem {
                     text: "Unfavorite"
                     onTriggered: {
-                        star_fun(false)
+                        ops.bulk_fav_msgs(false)
                         multiselect_mode = false
                     }
                 }
                 MenuItem {
                     text: "Hide"
                     onTriggered: {
-                        model.tag_all_selected("_hid")
+                        ops.bulk_hide_msgs(true)
                         multiselect_mode = false
                     }
                 }
                 MenuItem {
                     text: "UnHide"
                     onTriggered: {
-                        model.untag_all_selected("_hid")
+                        ops.bulk_hide_msgs(false)
                         multiselect_mode = false
                     }
+                }
+                MenuSeparator {
                 }
                 MenuItem {
                     text: "Select All"
@@ -130,8 +127,10 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "KEEPS FAVORITE messages"
-            delete_warning_text: "Trash all selected messages?"
+            delete_warning_inf_text: qsTr("This KEEPS FAVORITE messages, and you can undo it.")
+            delete_warning_text: qsTr("Trash all selected messages?")
+            bulk_star_op: function() { ops.bulk_fav_msgs(true) }
+            bulk_trash_op: function() { ops.bulk_trash_msgs() }
         }
 
         ToolBar {
@@ -310,13 +309,10 @@ Page {
                                 title: "Trash all messages?"
                                 
                                 text: "Trash ALL messages from user?"
-                                informativeText: "This KEEPS FAVORITE messages."
+                                informativeText: "This KEEPS FAVORITE messages. You can undo this."
                                 
                                 onYesClicked: {
-                                    themsglist.set_all_selected()
-                                    themsglist.trash_all_selected()
-                                    themsglist.invalidate_model_filter()
-                                    themsglist.reload_model()
+                                    ops.trash_user_msgs(simple_msg_browse.to_uid)
                                     close()
                                 }
                                 onNoClicked: {
@@ -373,14 +369,6 @@ Page {
 //                                }
 //                            }
 //                        }
-                        MenuItem {
-                            text: "More..."
-                            onTriggered: {
-                                moremenu.open()
-
-                            }
-                        }
-
                     }
                 }
             }
@@ -556,7 +544,7 @@ Page {
 
             MouseArea {
                 anchors.fill: parent
-                enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onPressAndHold: {
                     console.log("click msg")
                     console.log(index)
@@ -567,8 +555,18 @@ Page {
                         notificationClient.vibrate(50)
                     }
                 }
-                onClicked: {
+                onClicked: (mouse) => {
                     grid.currentIndex = index
+                    ops.set_mid(model.mid, to_uid)
+                    if(mouse.button === Qt.RightButton) {
+                        msg_action_menu.mid = model.mid
+                        msg_action_menu.uid = to_uid
+                        msg_action_menu.msg_text = model.MSG_TEXT
+                        msg_action_menu.has_attachment = model.HAS_ATTACHMENT === 1
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        msg_action_menu.showAt(p.x, p.y)
+                        return
+                    }
                     if(multiselect_mode) {
                         grid.model.toggle_selected(model.mid)
                         if(!grid.model.at_least_one_selected())
@@ -623,6 +621,19 @@ Page {
         delegate: msgdelegate
         clip: true
         ScrollBar.vertical: ScrollBar { }
+    }
+
+    // the one per-message context menu, shared with every other message list
+    MsgActionMenu {
+        id: msg_action_menu
+    }
+
+    Connections {
+        target: top_dispatch
+        function onSelect_all_requested() {
+            multiselect_mode = true
+            model.set_all_selected()
+        }
     }
 
 }

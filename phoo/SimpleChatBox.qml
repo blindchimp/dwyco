@@ -46,10 +46,6 @@ Page {
     /* --------- END AI CODE --------- */
 
     prov_img_height: .33 * height
-    function star_fun(b) {
-        console.log("chatbox star")
-        model.fav_all_selected(b ? 1 : 0)
-    }
 
     Component.onCompleted: {
         if(core.get_local_setting("inh_block_warning") === "")
@@ -75,25 +71,32 @@ Page {
                 MenuItem {
                     text: "Unfavorite"
                     onTriggered: {
-                        star_fun(false)
+                        ops.bulk_fav_msgs(false)
                         multiselect_mode = false
                     }
                 }
                 MenuItem {
                     text: "Hide"
                     onTriggered: {
-                        model.tag_all_selected("_hid")
-                        model.invalidate_model_filter()
+                        ops.bulk_hide_msgs(true)
                         multiselect_mode = false
                     }
                 }
                 MenuItem {
                     text: "UnHide"
                     onTriggered: {
-                        model.untag_all_selected("_hid")
-                        model.invalidate_model_filter()
+                        ops.bulk_hide_msgs(false)
                         multiselect_mode = false
                     }
+                }
+                MenuItem {
+                    text: "Trash"
+                    onTriggered: {
+                        ops.bulk_trash_msgs()
+                        multiselect_mode = false
+                    }
+                }
+                MenuSeparator {
                 }
                 MenuItem {
                     text: "Select All"
@@ -115,8 +118,10 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
-            delete_warning_text: "Trash all selected messages?"
+            delete_warning_inf_text: qsTr("This KEEPS FAVORITE messages, and you can undo it.")
+            delete_warning_text: qsTr("Trash all selected messages?")
+            bulk_star_op: function() { ops.bulk_fav_msgs(true) }
+            bulk_trash_op: function() { ops.bulk_trash_msgs() }
         }
 
         ToolBar {
@@ -467,13 +472,10 @@ Page {
                                 id: confirm_trash
                                 title: "Trash all msgs?"
                                 text: "Trash ALL (including HIDDEN) msgs from this user?"
-                                informativeText: "This KEEPS FAVORITE messages."
-                                
+                                informativeText: "This KEEPS FAVORITE messages. You can undo this."
+
                                 onYesClicked: {
-                                    themsglist.set_all_selected()
-                                    themsglist.trash_all_selected()
-                                    themsglist.invalidate_model_filter()
-                                    themsglist.reload_model()
+                                    ops.trash_user_msgs(chatbox.to_uid)
                                     close()
                                 }
                                 onNoClicked: {
@@ -482,37 +484,36 @@ Page {
                             }
                         }
 
-//                        MenuItem {
-//                            text: "Delete user"
-//                            onTriggered: {
-//                                confirm_delete.visible = true
-//                            }
-//                            MessageDialog {
-//                                id: confirm_delete
-//                                title: "Bulk delete?"
-//                                icon: StandardIcon.Question
-//                                text: "Delete ALL messages from user?"
-//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-//                                standardButtons: StandardButton.Yes | StandardButton.No
-//                                onYes: {
-//                                    core.delete_user(chatbox.to_uid)
-//                                    themsglist.reload_model()
-//                                    close()
-//                                    stack.pop()
-//                                }
-//                                onNo: {
-//                                    close()
-//                                }
-//                            }
-//                        }
+                        MenuSeparator {
+                        }
                         MenuItem {
-                            text: "More..."
+                            text: "Block user"
                             onTriggered: {
-                                moremenu.open()
-
+                                ops.block_user(chatbox.to_uid, true)
+                                stack.pop()
                             }
                         }
-
+                        MenuItem {
+                            text: "Block and Delete user"
+                            onTriggered: {
+                                confirm_block_delete.visible = true
+                            }
+                            MessageYN {
+                                id: confirm_block_delete
+                                title: "Block and delete?"
+                                text: "Delete ALL messages from user and BLOCK them?"
+                                informativeText: "This removes FAVORITE and HIDDEN messages too, and cannot be undone."
+                                onYesClicked: {
+                                    ops.set_blocked(chatbox.to_uid, true)
+                                    ops.delete_user(chatbox.to_uid)
+                                    close()
+                                    stack.pop()
+                                }
+                                onNoClicked: {
+                                    close()
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -534,6 +535,16 @@ Page {
         themsglist.reload_model()
         listview.positionViewAtBeginning()
         
+    }
+
+    // Edit > Select All from the menu bar puts the visible list into
+    // multi-select with everything ticked, same as long-pressing a message.
+    Connections {
+        target: top_dispatch
+        function onSelect_all_requested() {
+            multiselect_mode = true
+            model.set_all_selected()
+        }
     }
 
     Connections {
@@ -958,20 +969,10 @@ Page {
 
         MouseArea {
                 anchors.fill: parent
-                // this is only needed as a workaround
-                // for the qt labs controls menu popup...
-                // apparently, if you click outside the menu
-                // to dismiss it, the mouse click isn't
-                // absorbed, instead it is sent on down, to other
-                // controls... which is different from the regular
-                // menus, which don't have this behavior.
-                enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onPressAndHold: {
                     console.log("click msg")
                     console.log(index)
-                    //msg_action_popup.popup()
-                    //msg_action_popup.mid = model.mid
-
                     listView1.currentIndex = index
                     multiselect_mode = true
                     listView1.model.toggle_selected(model.mid)
@@ -979,8 +980,22 @@ Page {
                     notificationClient.vibrate(50)
                     }
                 }
-                onClicked: {
+                onClicked: (mouse) => {
                     listView1.currentIndex = index
+                    // remember it, so the menu bar's Message menu has
+                    // something concrete to act on
+                    ops.set_mid(model.mid, to_uid)
+                    if(mouse.button === Qt.RightButton) {
+                        msg_action_menu.mid = model.mid
+                        msg_action_menu.uid = to_uid
+                        msg_action_menu.msg_text = model.MSG_TEXT
+                        msg_action_menu.has_attachment = model.HAS_ATTACHMENT === 1
+                        // map into the window overlay, then let the menu
+                        // place itself there
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        msg_action_menu.showAt(p.x, p.y)
+                        return
+                    }
                     if(multiselect_mode) {
                         listView1.model.toggle_selected(model.mid)
                         if(!listView1.model.at_least_one_selected())
@@ -1028,6 +1043,13 @@ Page {
             }
 
         }
+    }
+
+    // The one per-message context menu, shared with the browse grids and the
+    // message viewer, so right-clicking a message does the same thing in every
+    // list instead of each page inventing its own subset of actions.
+    MsgActionMenu {
+        id: msg_action_menu
     }
 
     onMultiselect_modeChanged: {

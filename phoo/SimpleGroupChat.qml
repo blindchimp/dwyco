@@ -29,11 +29,6 @@ Page {
     property bool multiselect_mode: false
     property url cur_source
 
-    function star_fun(b) {
-        console.log("chatbox star")
-        model.fav_all_selected(b ? 1 : 0)
-    }
-
     Component.onCompleted: {
         if(core.get_local_setting("inh_block_warning") === "")
             inh_block_warning = 0
@@ -58,7 +53,7 @@ Page {
                 MenuItem {
                     text: "Unfavorite"
                     onTriggered: {
-                        star_fun(false)
+                        ops.bulk_fav_msgs(false)
                         multiselect_mode = false
                     }
                 }
@@ -75,8 +70,10 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: qsTr("This KEEPS FAVORITE messages, and you can undo it.")
+            delete_warning_text: qsTr("Trash all selected messages?")
+            bulk_star_op: function() { ops.bulk_fav_msgs(true) }
+            bulk_trash_op: function() { ops.bulk_trash_msgs() }
         }
 
         ToolBar {
@@ -383,11 +380,20 @@ Page {
                         }
 
                         MenuItem {
-                            text: "Clear msgs"
+                            text: "Trash msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
+                                ops.trash_user_msgs(chatbox.to_uid)
+                            }
+                        }
 
-                                themsglist.reload_model()
+                        MenuSeparator {
+                        }
+
+                        MenuItem {
+                            text: "Block user"
+                            onTriggered: {
+                                ops.block_user(chatbox.to_uid, true)
+                                stack.pop()
                             }
                         }
 
@@ -396,29 +402,19 @@ Page {
                             onTriggered: {
                                 confirm_delete.visible = true
                             }
-                            MessageDialog {
+                            MessageYN {
                                 id: confirm_delete
                                 title: "Bulk delete?"
-                                icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
+                                informativeText: "This removes FAVORITE messages too, and cannot be undone."
+                                onYesClicked: {
+                                    ops.delete_user(chatbox.to_uid)
                                     close()
                                     stack.pop()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
-                            }
-                        }
-                        MenuItem {
-                            text: "More..."
-                            onTriggered: {
-                                moremenu.open()
-
                             }
                         }
 
@@ -738,20 +734,10 @@ Page {
 
         MouseArea {
                 anchors.fill: parent
-                // this is only needed as a workaround
-                // for the qt labs controls menu popup...
-                // apparently, if you click outside the menu
-                // to dismiss it, the mouse click isn't
-                // absorbed, instead it is sent on down, to other
-                // controls... which is different from the regular
-                // menus, which don't have this behavior.
-                enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onPressAndHold: {
                     console.log("click msg")
                     console.log(index)
-                    //msg_action_popup.popup()
-                    //msg_action_popup.mid = model.mid
-
                     listView1.currentIndex = index
                     multiselect_mode = true
                     listView1.model.toggle_selected(model.mid)
@@ -759,8 +745,18 @@ Page {
                     notificationClient.vibrate(50)
                     }
                 }
-                onClicked: {
+                onClicked: (mouse) => {
                     listView1.currentIndex = index
+                    ops.set_mid(model.mid, to_uid)
+                    if(mouse.button === Qt.RightButton) {
+                        msg_action_menu.mid = model.mid
+                        msg_action_menu.uid = to_uid
+                        msg_action_menu.msg_text = model.MSG_TEXT
+                        msg_action_menu.has_attachment = model.HAS_ATTACHMENT === 1
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        msg_action_menu.showAt(p.x, p.y)
+                        return
+                    }
                     if(multiselect_mode) {
                         listView1.model.toggle_selected(model.mid)
                         if(!listView1.model.at_least_one_selected())
@@ -804,6 +800,19 @@ Page {
 
             }
 
+        }
+    }
+
+    // the one per-message context menu, shared with every other message list
+    MsgActionMenu {
+        id: msg_action_menu
+    }
+
+    Connections {
+        target: top_dispatch
+        function onSelect_all_requested() {
+            multiselect_mode = true
+            model.set_all_selected()
         }
     }
 

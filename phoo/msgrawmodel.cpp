@@ -248,10 +248,11 @@ msglist_raw::mid_tag_changed(QString mid)
     emit invalidate_item(mid.toLatin1());
 }
 
-void
+QStringList
 msglist_raw::trash_all_selected(const QSet<QByteArray>& selected)
 {
     //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    QStringList trashed;
     dwyco_start_bulk_update();
     foreach (const QString &value, selected)
     {
@@ -285,12 +286,14 @@ msglist_raw::trash_all_selected(const QSet<QByteArray>& selected)
             if(!dwyco_get_fav_msg(mid.constData()))
             {
                 dwyco_set_msg_tag(mid.constData(), "_trash");
+                trashed.append(QString(mid));
             }
         }
 
     }
     dwyco_end_bulk_update();
     reload_model(1);
+    return trashed;
 }
 
 void
@@ -325,9 +328,10 @@ msglist_raw::obliterate_all_selected(const QSet<QByteArray>& selected)
     reload_model(1);
 }
 
-void
+QStringList
 msglist_raw::fav_all_selected(const QSet<QByteArray>& selected, int f)
 {
+    QStringList changed;
     dwyco_start_bulk_update();
     foreach (const QString &value, selected)
     {
@@ -338,15 +342,20 @@ msglist_raw::fav_all_selected(const QSet<QByteArray>& selected, int f)
             dwyco_list_release(l);
             continue;
         }
+        if(dwyco_get_fav_msg(b.constData()) == !!f)
+            continue;
         dwyco_set_fav_msg(b.constData(), f);
+        changed.append(QString(b));
     }
     dwyco_end_bulk_update();
     reload_model(1);
+    return changed;
 }
 
-void
+QStringList
 msglist_raw::tag_all_selected(const QSet<QByteArray>& selected, const QByteArray& tag)
 {
+    QStringList changed;
     dwyco_start_bulk_update();
     foreach (const QString &value, selected)
     {
@@ -363,15 +372,20 @@ msglist_raw::tag_all_selected(const QSet<QByteArray>& selected, const QByteArray
         // don't allow it. maybe at some point we'll change the core to not allow
         // it.
         if(!dwyco_mid_has_tag(b.constData(), tag.constData()))
+        {
             dwyco_set_msg_tag(b.constData(), tag.constData());
+            changed.append(QString(b));
+        }
     }
     dwyco_end_bulk_update();
     reload_model(1);
+    return changed;
 }
 
-void
+QStringList
 msglist_raw::untag_all_selected(const QSet<QByteArray> &selected, const QByteArray& tag)
 {
+    QStringList changed;
     dwyco_start_bulk_update();
     foreach (const QString &value, selected)
     {
@@ -382,10 +396,14 @@ msglist_raw::untag_all_selected(const QSet<QByteArray> &selected, const QByteArr
             dwyco_list_release(l);
             continue;
         }
+        if(!dwyco_mid_has_tag(b.constData(), tag.constData()))
+            continue;
         dwyco_unset_msg_tag(b.constData(), tag.constData());
+        changed.append(QString(b));
     }
     dwyco_end_bulk_update();
     reload_model(1);
+    return changed;
 }
 
 msglist_raw::msglist_raw(QObject *p)

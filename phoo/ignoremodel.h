@@ -10,6 +10,7 @@
 #define IGNOREMODEL_H
 
 #include <QObject>
+#include <QStringList>
 #include "QSortFilterProxyModel"
 #include "QQmlObjectListModel.h"
 #include "QQmlVarPropertyHelpers.h"
@@ -64,6 +65,18 @@ public:
             return dynamic_cast<IgnoreListModel *>(sourceModel())->count();
         }
         return 0;
+    }
+    // so the client can snapshot the list before unblocking it, which is what
+    // makes "unblock all" undoable
+    Q_INVOKABLE QStringList all_uids() const {
+        QStringList ret;
+        IgnoreListModel *m = dynamic_cast<IgnoreListModel *>(sourceModel());
+        if(!m)
+            return ret;
+        int n = m->count();
+        for(int i = 0; i < n; ++i)
+            ret.append(m->at(i)->get_uid());
+        return ret;
     }
     Q_INVOKABLE void load_users_to_model() {
         if(sourceModel()) {

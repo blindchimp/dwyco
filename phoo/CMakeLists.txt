@@ -184,7 +184,6 @@ qt_add_qml_module(phoo
         IgnoreListDialog.qml
         ChatList.qml
         AdminBrowse.qml
-        UserActionMenu.qml
         ConvList.qml
         ForwardToList.qml
         PINDialog.qml
@@ -229,8 +228,13 @@ qt_add_qml_module(phoo
         MessageYN.qml
         SimpleTrashBrowse.qml
         PulseLoader.qml
-        MsgViewMenu.qml
-        MsgViewMenuTrash.qml
+        MsgActionMenu.qml
+        UserActionMenu.qml
+        UndoHub.qml
+        UndoBar.qml
+        Ops.qml
+        Toast.qml
+        AppMenuBar.qml
            RESOURCES
            images/toolbutton.png
            images/toolbutton.sci

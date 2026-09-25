@@ -9,6 +9,7 @@
 #ifndef MSGRAWMODEL_H
 #define MSGRAWMODEL_H
 #include <QAbstractListModel>
+#include <QStringList>
 #include "QQmlVarPropertyHelpers.h"
 #include "dlli.h"
 
@@ -57,11 +58,14 @@ public:
     QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     virtual QHash<int, QByteArray> roleNames() const;
 
-    Q_INVOKABLE void trash_all_selected(const QSet<QByteArray>&);
+    // note: the bulk tag/fav ops return the mids they actually changed, so
+    // the client can offer an undo for them. mids that were skipped (queued
+    // for download, or favorite) are deliberately left out.
+    Q_INVOKABLE QStringList trash_all_selected(const QSet<QByteArray>&);
     Q_INVOKABLE void obliterate_all_selected(const QSet<QByteArray>&);
-    Q_INVOKABLE void fav_all_selected(const QSet<QByteArray> &selected, int);
-    Q_INVOKABLE void tag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
-    Q_INVOKABLE void untag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
+    Q_INVOKABLE QStringList fav_all_selected(const QSet<QByteArray> &selected, int);
+    Q_INVOKABLE QStringList tag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
+    Q_INVOKABLE QStringList untag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
 
     int mid_to_index(QByteArray mid);
 

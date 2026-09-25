@@ -94,12 +94,16 @@ Item {
                     if(mouse.button === Qt.LeftButton) {
                         uid_selected(uid, "clicked")
                     } else if(mouse.button === Qt.RightButton) {
-                        uid_selected(uid, "hold")
+                        // map into the menu's own space so it opens under
+                        // the cursor, not in the middle of the window
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        top_dispatch.context_at(uid, p.x, p.y, "roster")
                     }
                 }
                 onPressAndHold:  {
                     listView2.currentIndex = index
-                    uid_selected(uid, "hold")
+                    // long press has no cursor, the dispatcher centers the menu
+                    top_dispatch.context_at(uid, 0, 0, "roster")
                 }
             }
 

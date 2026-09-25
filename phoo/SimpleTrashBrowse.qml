@@ -17,12 +17,6 @@ Page {
 
     property bool multiselect_mode: false
 
-    function star_fun(b) {
-        console.log("untrash star")
-        model.untag_all_selected("_trash")
-
-    }
-
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
@@ -60,7 +54,7 @@ Page {
                 MenuItem {
                     text: "Untrash"
                     onTriggered: {
-                        model.untag_all_selected("_trash")
+                        ops.bulk_untrash_msgs()
                         multiselect_mode = false
                     }
                 }
@@ -79,11 +73,10 @@ Page {
                         id: confirm_delete
                         title: "Delete selected msgs?"
                         text: "Delete selected msgs on ALL devices?"
-                        informativeText: "No UNDO"
+                        informativeText: "This cannot be undone."
 
                         onYesClicked: {
-                            model.obliterate_all_selected()
-                            //model.tag_all_selected("_hid")
+                            ops.bulk_obliterate_msgs()
                             multiselect_mode = false
                             close()
                         }
@@ -102,10 +95,14 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Deletes on ALL your devices"
-            delete_warning_text: "Delete selected messages FOREVER?"
+            delete_warning_inf_text: qsTr("This deletes on ALL your devices and cannot be undone.")
+            delete_warning_text: qsTr("Delete selected messages FOREVER?")
             star_icon: mi("delete-restore-black.png")
+            star_tooltip: qsTr("Restore selected")
             is_trash: true
+            // the star is a restore here, not a favorite
+            bulk_star_op: function() { ops.bulk_untrash_msgs() }
+            bulk_trash_op: function() { ops.bulk_obliterate_msgs() }
         }
 
         ToolBar {
@@ -190,6 +187,18 @@ Page {
 
 
                         MenuItem {
+                            text: "Restore All"
+                            onTriggered: {
+                                model.set_all_selected()
+                                ops.bulk_untrash_msgs()
+                                model.set_all_unselected()
+                            }
+                        }
+
+                        MenuSeparator {
+                        }
+
+                        MenuItem {
                             text: "Empty Trash"
                             onTriggered: {
                                 confirm_empty.visible = true
@@ -198,11 +207,11 @@ Page {
                                 id: confirm_empty
                                 title: "Empty trash?"
                                 text: "Delete ALL trash on ALL devices?"
-                                informativeText: "No UNDO"
+                                informativeText: "This cannot be undone."
 
                                 onYesClicked: {
                                     model.set_all_selected()
-                                    model.obliterate_all_selected()
+                                    ops.bulk_obliterate_msgs()
                                     close()
                                 }
                                 onNoClicked: {
@@ -384,7 +393,7 @@ Page {
             }
             MouseArea {
                 anchors.fill: parent
-                enabled: !(optionsMenu.visible || moremenu.visible)
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onPressAndHold: {
                     console.log("click msg")
                     console.log(index)
@@ -395,8 +404,18 @@ Page {
                         notificationClient.vibrate(50)
                     }
                 }
-                onClicked: {
+                onClicked: (mouse) => {
                     grid.currentIndex = index
+                    ops.set_mid(model.mid, model.ASSOC_UID)
+                    if(mouse.button === Qt.RightButton) {
+                        msg_action_menu.mid = model.mid
+                        msg_action_menu.uid = model.ASSOC_UID
+                        msg_action_menu.msg_text = model.MSG_TEXT
+                        msg_action_menu.has_attachment = model.HAS_ATTACHMENT === 1
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        msg_action_menu.showAt(p.x, p.y)
+                        return
+                    }
                     if(multiselect_mode) {
                         grid.model.toggle_selected(model.mid)
                         if(!grid.model.at_least_one_selected())
@@ -409,7 +428,6 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.is_trash = true
                             themsgview.msg_text = model.MSG_TEXT
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
@@ -452,6 +470,19 @@ Page {
         delegate: msgdelegate
         clip: true
         ScrollBar.vertical: ScrollBar { }
+    }
+
+    // the one per-message context menu, shared with every other message list
+    MsgActionMenu {
+        id: msg_action_menu
+    }
+
+    Connections {
+        target: top_dispatch
+        function onSelect_all_requested() {
+            multiselect_mode = true
+            model.set_all_selected()
+        }
     }
 
 }

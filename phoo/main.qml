@@ -192,6 +192,15 @@ ApplicationWindow {
 
     id: applicationWindow1
     visible: true
+
+    // Desktop only. Qt 6.8+ renders this as the real system menu bar on macOS
+    // and as a normal MenuBar bar elsewhere. On mobile the app is a stack of
+    // full screen pages and a permanent bar would just eat the screen, so the
+    // per-page overflow buttons remain the entry point there.
+    menuBar: AppMenuBar {
+        visible: !is_mobile
+    }
+
     // android will override this and go full screen, which is
     // what we want. for desktop versions, not sure what might be
     // best.
@@ -395,47 +404,48 @@ ApplicationWindow {
     }
 
     
-    Menu {
-        id: moremenu
-        x: parent.width - width
-        transformOrigin: Menu.TopRight
-        MenuItem {
-            text: "Block user"
-            onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
-                stack.pop()
-            }
-        }
-        MenuItem {
-            text: "Block and Delete user"
-            onTriggered: {
-                confirm_block_delete.visible = true
-            }
-            MessageYN {
-                id: confirm_block_delete
-                title: "Block and delete?"
-                //icon: StandardIcon.Question
-                text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
-                onYesClicked: {
-                    core.set_ignore(chatbox.to_uid, 1)
-                    core.delete_user(chatbox.to_uid)
-                    themsglist.reload_model()
-                    stack.pop()
-
-                }
-                onNoClicked: {
-                    stack.pop()
-                }
-            }
-        }
-
+    // Non-visual. Every reversible action in the app pushes a record here via
+    // ops.qml, so one undo path serves the context menus, the menu bar and the
+    // per-page overflow buttons alike.
+    UndoHub {
+        id: undo_hub
     }
 
+    // Non-visual. The single definition of every operation the user can trigger
+    // on messages and conversations.
+    Ops {
+        id: ops
+    }
+
+    // The undo banner, parked in the window overlay so it survives navigation.
+    UndoBar {
+        id: undo_bar
+    }
+
+    // Transient "Saved to foo.png" style messages.
+    Toast {
+        id: toast
+    }
+
+    // The menu bar's Undo action owns Ctrl+Z on the desktop, and prints the
+    // accelerator next to the label, so having a second shortcut on the same
+    // key here would just be an ambiguous-shortcut warning. Mobile has no menu
+    // bar, so the accelerator lives here instead.
+    Shortcut {
+        sequences: [StandardKey.Undo, "Ctrl+Z", "Meta+Z"]
+        enabled: is_mobile
+        onActivated: undo_hub.undo()
+    }
 
     Item {
         id: top_dispatch
         signal uid_selected(string uid, string action)
+        // right-click (or long-press) on a person. mx/my are in
+        // Overlay.overlay coordinates; pass 0,0 for a long press, which has no
+        // cursor. kind is one of "conversation", "stranger", "roster".
+        signal context_at(string uid, real mx, real my, string kind)
+        // Edit > Select All: whichever message list is on top answers this
+        signal select_all_requested()
         signal profile_updated(int success)
         signal video_display(int ui_id, int frame_number, string img_path)
         signal camera_snapshot(string filename)
@@ -446,6 +456,23 @@ ApplicationWindow {
         visible: false
         enabled: false
 
+        // the one place a user context menu gets opened
+        function show_user_menu(uid, mx, my, kind) {
+            last_uid_selected = uid
+            user_action_popup.uid = uid
+            user_action_popup.kind = kind === undefined ? "conversation" : kind
+            if(mx === 0 && my === 0) {
+                mx = applicationWindow1.width / 2
+                my = applicationWindow1.height / 2
+            }
+            user_action_popup.showAt(mx, my)
+        }
+
+        onContext_at: (uid, mx, my, kind) => {
+            console.log("USER CONTEXT", uid, kind)
+            show_user_menu(uid, mx, my, kind)
+        }
+
         onUid_selected: (uid, action) => {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
@@ -455,11 +482,8 @@ ApplicationWindow {
             }
             else if(action == "hold")
             {
-                //stack.push(theprofileview)
-               //stack.push(user_action_popup)
-                user_action_popup.popup()
-                //user_action_popup.visible = true
-
+                // long-press has no cursor to aim at, so drop it in the middle
+                show_user_menu(uid, 0, 0, "conversation")
             }
         }
     }
@@ -507,16 +531,35 @@ ApplicationWindow {
 
     }
 
-    Loader {
+    // About is a stack page like the rest, not a Loader shown by flipping
+    // visible: a Loader here gets no geometry from anyone and is declared
+    // before `stack`, so it also lands underneath it. stack.push() hands it
+    // both.
+    About {
         id: about_dialog
         visible: false
-        active: visible
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/About.qml"
-            }
-        }
     }
+
+    // Push a shared page, unless it is already the page you are looking at.
+    //
+    // stack.push() cannot be handed an item that is already in the stack: it
+    // logs "push: nothing to push" and evicts the item instead, leaving a 0x0
+    // invisible ghost as the current page -- a blank screen with a back button
+    // that leads nowhere. Every page here is a single shared instance reached
+    // from more than one place (menu bar, drawer, settings), so picking the
+    // same entry again while you are already on that page is easy to do.
+    function push_page(page) {
+        if(stack.currentItem === page)
+            return
+        stack.push(page)
+    }
+
+    // Single entry point for the About page, so the About entries in the menu
+    // bar and the drawer cannot each get the guard wrong.
+    function show_about() {
+        push_page(about_dialog)
+    }
+
     Loader {
         id: restore_auto_backup
         visible: false
@@ -862,9 +905,10 @@ ApplicationWindow {
     }
 
 
+    // opened by top_dispatch.show_user_menu(), which primes uid/kind and then
+    // calls showAt() so the menu lands under the cursor
     UserActionMenu {
         id: user_action_popup
-        uid: top_dispatch.last_uid_selected
     }
 
 //    VidCamPreview {

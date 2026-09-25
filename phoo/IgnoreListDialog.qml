@@ -44,8 +44,14 @@ Page {
                 MenuItem {
                     text: "Unblock all"
                     onTriggered: {
-                        console.log("clear")
-                        core.clear_ignore_list()
+                        var uids = IgnoreListModel.all_uids()
+                        if(uids.length === 0)
+                            return
+                        for(var i = 0; i < uids.length; ++i)
+                            core.set_ignore(uids[i], 0)
+                        undo_hub.push(ops.n_label(uids.length, qsTr("User unblocked"),
+                                                  qsTr("%1 users unblocked")),
+                                      function() { ops.block_users(uids, true) })
                     }
                 }
             }
@@ -73,7 +79,7 @@ Page {
                 text: "x"
                 onClicked: {
                     console.log("unignore " + uid)
-                    core.set_ignore(uid, 0)
+                    ops.block_user(uid, false)
                 }
                 anchors.right: drow.right
                 //anchors.verticalCenter: parent.verticalCenter

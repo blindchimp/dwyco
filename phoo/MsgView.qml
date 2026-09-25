@@ -25,7 +25,6 @@ Page {
     property bool hid
     property string text_bg_color: primary_dark
     property string export_result
-    property bool is_trash: false
 
     //anchors.fill:parent
 
@@ -44,7 +43,6 @@ Page {
             core.stop_zap_view(view_id)
             core.delete_zap_view(view_id)
             }
-            is_trash = false
         }
         else
         {
@@ -95,6 +93,21 @@ Page {
         }
     }
 
+    // The same context menu the message lists right-click into, so a message
+    // offers the same actions whether you are looking at a grid of them or at
+    // one full screen. Tagging it out from under this page means leaving the
+    // page, hence pop_on_change.
+    //
+    // There are two instances because they live in different places: this one
+    // follows the cursor, the one in the toolbar overflow button is anchored to
+    // the button. They hold no state of their own -- the tags are re-read from
+    // the core every time either one opens, so they can never disagree.
+    MsgActionMenu {
+        id: msg_action_menu
+        pop_on_change: true
+        show_save: false
+    }
+
     Component {
         id: extras_button
 
@@ -103,20 +116,17 @@ Page {
                 anchors.centerIn: parent
                 source: mi("ic_action_overflow.png")
             }
-            onClicked: {
-                if(is_trash)
-                    optionsMenuTrash.open()
-                else
-                    optionsMenu.open()
-            }
+            onClicked: optionsMenu.open()
 
-            MsgViewMenu {
+            MsgActionMenu {
                 id: optionsMenu
-                visible: false
-            }
-            MsgViewMenuTrash {
-                id: optionsMenuTrash
-                visible: false
+                x: parent.width - width
+                transformOrigin: Menu.TopRight
+                pop_on_change: true
+                show_save: false
+                mid: msgviewer.mid
+                uid: msgviewer.uid
+                msg_text: msgviewer.msg_text
             }
         }
     }
@@ -155,8 +165,10 @@ Page {
                     color: primary_light
                     radius: width / 2
                 }
-                onCheckedChanged: {
-                    core.set_fav_message(mid, checked)
+                onClicked: {
+                    ops.set_mid(mid, uid)
+                    ops.fav_msg(mid, checked)
+                    checked = Qt.binding(() => msgviewer.fav)
                 }
 
                 checkable: true
@@ -206,15 +218,12 @@ Page {
                         export_result = "Saved to " + export_name.substring(export_name.lastIndexOf('/') + 1)
                         if(Qt.platform.os == "android") {
                             notificationClient.share_to_mediastore(export_name)
-                        } else {
-
                         }
                     }
                     else {
-                        export_result = "FAILED save "
+                        export_result = qsTr("FAILED save")
                     }
-                    toast_opacity.stop()
-                    toast_opacity.start()
+                    toast.show(export_result)
                 }
 
                 ToolTip.text: "Save attachment"
@@ -233,11 +242,10 @@ Page {
                     color: "orange"
 
                 }
-                onCheckedChanged: {
-                if(checked)
-                    core.set_tag_message(mid, "_hid")
-                else
-                    core.unset_tag_message(mid, "_hid")
+                onClicked: {
+                    ops.set_mid(mid, uid)
+                    ops.hide_msg(mid, checked)
+                    checked = Qt.binding(() => msgviewer.hid)
                 }
                 checkable: true
                 checked: hid
@@ -313,14 +321,25 @@ Page {
                 id: dragArea
                 hoverEnabled: true
                 anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 drag.target: viewer
                 scrollGestureEnabled: false
 
                 onPressed: {
-                    dragging = true
-
+                    if(mouse.button === Qt.LeftButton)
+                        dragging = true
                 }
-                onClicked: {
+                onClicked: (mouse) => {
+                    ops.set_mid(mid, uid)
+                    if(mouse.button === Qt.RightButton) {
+                        msg_action_menu.mid = msgviewer.mid
+                        msg_action_menu.uid = msgviewer.uid
+                        msg_action_menu.msg_text = msgviewer.msg_text
+                        msg_action_menu.has_attachment = viewer.source !== ""
+                        var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                        msg_action_menu.showAt(p.x, p.y)
+                        return
+                    }
                     core.stop_zap_view(view_id)
                     core.delete_zap_view(view_id)
                     stack.pop()
@@ -360,34 +379,6 @@ Page {
     }
     //}
 
-    }
-
-    Label {
-        id: save_toast
-        text: export_result
-        color: "white"
-        anchors.centerIn: parent
-        z: 5
-        background: Rectangle {
-            radius: 3
-            color: "black"
-        }
-
-        opacity: 0.0
-        NumberAnimation {
-            id: toast_opacity
-            target: save_toast
-            easing.type: Easing.InQuart
-            properties: "opacity"
-            from: 1.0
-            to: 0.0
-            duration: 5000
-        }
-
-        onVisibleChanged: {
-            toast_opacity.stop()
-            opacity = 0.0
-        }
     }
 
     BusyIndicator {

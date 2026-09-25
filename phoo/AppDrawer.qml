@@ -15,41 +15,41 @@ AppDrawerForm {
 
     browse_hidden_button.onClicked: {
         simp_tag_browse.to_tag = "_hid"
-        stack.push(simp_tag_browse)
+        applicationWindow1.push_page(simp_tag_browse)
         close()
 }
     browse_hidden_button.visible: show_hidden
     browse_tags_button.onClicked: {
         simp_tag_browse.to_tag = "_fav"
-        stack.push(simp_tag_browse)
+        applicationWindow1.push_page(simp_tag_browse)
         close()
     }
     anchors.fill: parent
 
     vid_preview_button.onClicked: {
-        stack.push(vid_cam_preview)
+        applicationWindow1.push_page(vid_cam_preview)
         close()
     }
-//    about_button.onClicked: {
-//        stack.push(about_dialog)
-//        close()
-//    }
+    about_button.onClicked: {
+        applicationWindow1.show_about()
+        close()
+    }
     settings_button.onClicked: {
-        stack.push(settings_dialog)
+        applicationWindow1.push_page(settings_dialog)
         close()
     }
 //    pin_lock_button.onClicked: {
-//        stack.push(pwchange_dialog)
+//        applicationWindow1.push_page(pwchange_dialog)
 //        close()
 //    }
-//    block_list_button.onClicked: {
-//        stack.push(iglist_dialog)
-//        close()
-//    }
+    block_list_button.onClicked: {
+        applicationWindow1.push_page(iglist_dialog)
+        close()
+    }
 
     profile_button.onClicked: {
         profile_update_dialog.preview_existing = true
-        stack.push(profile_update_dialog)
+        applicationWindow1.push_page(profile_update_dialog)
         close()
     }
     lock_and_exit_button.onClicked: {
@@ -82,7 +82,7 @@ AppDrawerForm {
     }
 
     link_dev_button.onClicked: {
-        stack.push(device_group)
+        applicationWindow1.push_page(device_group)
         close()
 
     }

@@ -206,6 +206,21 @@ Page {
                 color: primary_text
                 
             }
+
+            // chat room lines are not stored messages, so there are no
+            // tags to trash or favorite. leaving mid empty means the
+            // shared menu shows only what actually applies here.
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: (mouse) => {
+                    if(mouse.button !== Qt.RightButton)
+                        return
+                    chat_line_menu.msg_text = text_msg
+                    var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                    chat_line_menu.showAt(p.x, p.y)
+                }
+            }
             
         }
         
@@ -315,5 +330,9 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }
-}
 
+    // same menu as everywhere else; with no mid the tag actions are hidden
+    MsgActionMenu {
+        id: chat_line_menu
+    }
+}

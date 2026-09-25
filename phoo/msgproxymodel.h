@@ -12,6 +12,7 @@
 #include <QSortFilterProxyModel>
 #include <QSet>
 #include <QByteArray>
+#include <QStringList>
 #include "QQmlVarPropertyHelpers.h"
 
 
@@ -42,11 +43,15 @@ public:
     Q_INVOKABLE void toggle_selected(QByteArray mid);
     Q_INVOKABLE void set_all_selected();
     Q_INVOKABLE void set_all_unselected();
-    Q_INVOKABLE void trash_all_selected();
+    // note: the bulk ops return the mids they actually changed, so the client
+    // can push an undo for them. the *_mids getters let the client snapshot
+    // the selection before an op that clears it.
+    Q_INVOKABLE QStringList selected_mids();
+    Q_INVOKABLE QStringList trash_all_selected();
     Q_INVOKABLE void obliterate_all_selected();
-    Q_INVOKABLE void fav_all_selected(int);
-    Q_INVOKABLE void tag_all_selected(QByteArray tag);
-    Q_INVOKABLE void untag_all_selected(QByteArray tag);
+    Q_INVOKABLE QStringList fav_all_selected(int);
+    Q_INVOKABLE QStringList tag_all_selected(QByteArray tag);
+    Q_INVOKABLE QStringList untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
 
     int mid_to_index(QByteArray mid);

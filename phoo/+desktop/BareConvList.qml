@@ -21,11 +21,6 @@ Item {
 
    signal uid_selected(string uid, string action)
 
-    function star_fun(b) {
-        console.log("convlist star")
-        ConvListModel.pal_all_selected(b)
-    }
-
    Component {
        id: convlist_delegate
 
@@ -151,16 +146,18 @@ Item {
                    console.log("click")
                    console.log(index)
                    listView2.currentIndex = index
-                   if(multiselect_mode) {
+                   if(mouse.button === Qt.RightButton) {
+                       // map into the menu's own space so it opens under the
+                       // cursor, not in the middle of the window
+                       var p = mapToItem(Overlay.overlay, mouse.x, mouse.y)
+                       top_dispatch.context_at(uid, p.x, p.y, "conversation")
+                   } else if(multiselect_mode) {
                        listView2.model.toggle_selected(uid)
                        if(!listView2.model.at_least_one_selected())
                            multiselect_mode = false
-                   }   else {                     
-                       if(mouse.button === Qt.LeftButton) {
+                   } else {
+                       if(mouse.button === Qt.LeftButton)
                            uid_selected(uid, "clicked-nopush")
-                       } else if(mouse.button === Qt.RightButton) {
-                           uid_selected(uid, "hold")
-                       }
                    }
 
                }
