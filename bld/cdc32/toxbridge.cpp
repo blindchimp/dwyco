@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
@@ -89,6 +90,24 @@ static uint8_t *Active_password;
 static int Active_password_len;
 static int Needs_password;
 static const uint64_t TOX_AVATAR_MAX_SIZE = 128 * 1024;
+// the synced tox save rides in a single tag payload, which the sync channel
+// sends as one vc. this bound is well above any realistic identity (the save
+// holds keys, the friend list and relay info, not message history), and just
+// exists so a corrupt/huge file can't wedge the tag db.
+static const long TOX_SAVE_MAX_PUBLISH = 2 * 1024 * 1024;
+// the save file name used when the caller doesn't give one. note that several
+// entry points below can be reached before tox has ever been started (eg.
+// loading a shared identity before the first sign in), so they can't assume
+// tox_bridge_init has already set Save_file -- and newfn("") panics.
+static const char *TOX_SAVE_FILE_DEFAULT = "tox_save.tox";
+
+static void
+ensure_save_file()
+{
+    if(Save_file.length() == 0)
+        Save_file = TOX_SAVE_FILE_DEFAULT;
+}
+
 struct IncomingFileTransfer {
     DwString tmp_basename;
     int fd;
@@ -202,6 +221,62 @@ backup_path_for_save(const DwString &save_path)
             return cand;
     }
     return base;
+}
+
+// read a file whole into a vc. returns nil if it can't be read, is empty,
+// or is implausibly large. note: the size cap here is a sanity bound on
+// anything we'd write into a tag payload, not a protocol limit.
+static vc
+read_whole_file(const DwString &path, long max_len)
+{
+    if(!file_exists(path))
+        return vcnil;
+    FILE *f = fopen(path.c_str(), "rb");
+    if(!f)
+        return vcnil;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz > max_len)
+    {
+        fclose(f);
+        return vcnil;
+    }
+    char *buf = new char[sz];
+    size_t got = fread(buf, 1, (size_t)sz, f);
+    fclose(f);
+    if(got != (size_t)sz)
+    {
+        delete [] buf;
+        return vcnil;
+    }
+    return vc(VC_BSTRING, buf, sz);
+}
+
+// write bytes to the active save file atomically (tmp + rename), the same way
+// save_tox_state in toxd.cpp does it, so a crash mid-write can't leave a
+// truncated identity on disk.
+static int
+write_save_bytes(const vc &bytes)
+{
+    if(bytes.is_nil() || bytes.len() <= 0)
+        return 0;
+    ensure_save_file();
+    DwString save_path = newfn(Save_file.c_str());
+    DwString tmp_path = save_path + ".new";
+    FILE *f = fopen(tmp_path.c_str(), "wb");
+    if(!f)
+        return 0;
+    int ret = 1;
+    if(fwrite((const char *)bytes, 1, (size_t)bytes.len(), f) != (size_t)bytes.len())
+        ret = 0;
+    if(fclose(f) != 0)
+        ret = 0;
+    if(ret && rename(tmp_path.c_str(), save_path.c_str()) != 0)
+        ret = 0;
+    if(!ret)
+        remove(tmp_path.c_str());
+    return ret;
 }
 
 static void
@@ -1002,13 +1077,252 @@ on_tox_event(const char *type, const vc &args, void *userdata)
     process_tox_event(type, args);
 }
 
+// the tag mid shared by '_tox_save' and '_tox_active': hex of the tox
+// pubkey. using the same mid for both is the whole design -- the save and
+// the claim about that save are about the same identity.
+static vc
+save_tag_mid()
+{
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return vcnil;
+    return to_hex(pk);
+}
+
+// publish the current identity's save bytes to the group, under tag
+// '_tox_save' (mid is hex(pubkey), payload is the raw bytes of the save
+// file, read verbatim so any encryption/password state is preserved).
+//
+// note: we deliberately never delete the previous row for this mid. tag
+// payloads are last-writer-wins on read, so re-publishing is just adding a
+// new row, and safe_add_crdt_tag no-ops when the bytes are unchanged (which
+// makes a periodic republish free). deleting rows instead would broadcast a
+// tombstone that wipes the copy other group members are relying on.
 int
-tox_bridge_init(const char *save_file)
+tox_bridge_publish_save()
+{
+    if(!Started || !Tox_plugin)
+    {
+        GRTLOG("tox: publish save ignored, tox not running", 0, 0);
+        return 0;
+    }
+    if(!sql_is_initialized())
+        return 0;
+    vc mid = save_tag_mid();
+    if(mid.is_nil())
+        return 0;
+    // flush the live state to disk first, then take the bytes from disk, so
+    // what we publish is exactly what a fresh sign-in on another device
+    // would load.
+    toxp_save(Tox_plugin);
+    vc bytes = read_whole_file(newfn(Save_file.c_str()), TOX_SAVE_MAX_PUBLISH);
+    if(bytes.is_nil())
+    {
+        GRTLOG("tox: publish save failed, could not read %s", Save_file.c_str(), 0);
+        return 0;
+    }
+    safe_add_crdt_tag(mid, "_tox_save", bytes);
+    GRTLOG("tox: published save, %d bytes", (int)bytes.len(), 0);
+    return 1;
+}
+
+// claim the running identity for this device, under tag '_tox_active' (mid is
+// hex(pubkey), payload is hex of this device's dwyco uid). the newest row
+// wins, so the last device to sign in with an identity owns it, and every
+// other client running that identity sees a foreign claim and stands down.
+static void
+publish_active_claim()
+{
+    vc mid = save_tag_mid();
+    if(mid.is_nil())
+        return;
+    safe_add_crdt_tag(mid, "_tox_active", to_hex(My_UID));
+}
+
+// stand down if some other device has signed in with the identity we're
+// currently running. called from the poll loop, debounced to once a second.
+void
+tox_bridge_check_active_conflict()
+{
+    if(!Started || !Tox_plugin)
+        return;
+    static long long last_check = 0;
+    long long now = (long long)time(0);
+    if(now - last_check < 1)
+        return;
+    last_check = now;
+    vc mid = save_tag_mid();
+    if(mid.is_nil())
+        return;
+    vc win = sql_get_tag_payload_ranked(mid, "_tox_active");
+    if(win.num_elems() < 3)
+        return; // nobody has claimed it
+    if(win[2] == to_hex(My_UID))
+        return; // still ours
+    GRTLOG("tox bridge: identity claimed by another device, standing down", 0, 0);
+    // note: we do not publish on the way out. we lost the race, so our copy
+    // is the stale one, and writing it would clobber the winner's.
+    tox_bridge_shutdown();
+    se_emit(SE_TOX_DISABLED_BY_REMOTE, vcnil);
+}
+
+// list the identities this group has published, as a vector of rows:
+// (mid_hex, time, size). the payload itself is not returned -- callers that
+// want it use the mid. mid is hex(pubkey), and "time" is the tag row time of
+// the winning copy, so it doubles as "last updated".
+vc
+tox_bridge_list_saves()
+{
+    vc out(VC_VECTOR);
+    if(!sql_is_initialized())
+        return out;
+    vc mids = sql_get_tagged_mids2("_tox_save");
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        vc mid = mids[i][0];
+        vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
+        if(win.num_elems() < 3)
+            continue;
+        vc row(VC_VECTOR);
+        row.append(mid);
+        row.append(win[0]);
+        row.append(vc((long)win[2].len()));
+        out.append(row);
+    }
+    return out;
+}
+
+// who currently owns the identity with the given hex pubkey, as a 1 element
+// vector holding hex(uid), or nil if nobody has claimed it.
+vc
+tox_bridge_claimant(const vc &pub_hex)
+{
+    if(pub_hex.is_nil() || pub_hex.len() <= 0)
+        return vcnil;
+    vc win = sql_get_tag_payload_ranked(pub_hex, "_tox_active");
+    if(win.num_elems() < 3)
+        return vcnil;
+    return win[2];
+}
+
+// adopt a published save as the identity this device will run, by writing the
+// bytes to the save file. leaves tox stopped: the caller is expected to leave
+// the ui in the "loaded, not signed in" state so the user signs in explicitly,
+// which is what actually publishes the '_tox_active' claim.
+int
+tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!sql_is_initialized())
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+    vc win = sql_get_tag_payload_ranked(mid_hex, "_tox_save");
+    if(win.num_elems() < 3)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no such synced identity");
+        return 0;
+    }
+    vc bytes = win[2];
+
+    // back up whatever identity is currently on disk. note this can be called
+    // before tox has ever been started (eg. adopting a shared identity as the
+    // very first thing the user does), so don't rely on tox_bridge_init having
+    // set Save_file -- newfn("") panics.
+    ensure_save_file();
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up current identity to %s", backup_path.c_str(), 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+    if(!write_save_bytes(bytes))
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        snprintf(err_buf, (size_t)err_buf_len, "could not write identity file");
+        return 0;
+    }
+    // the bytes now on disk came from the tag, so if this save happens to be
+    // password protected the user will be prompted the same way as any other
+    // protected identity, and their remembered password is deliberately left
+    // alone.
+    GRTLOG("tox bridge: selected synced identity (tox left stopped)", 0, 0);
+    return 1;
+}
+
+// remove a shared identity from every group member's list of shared
+// identities. any client may do this; there is no ownership check.
+//
+// the delete goes through the normal crdt machinery: sql_remove_mid_tag
+// drops the rows, the pgmt_clean trigger drops the payloads, and the dgmt
+// trigger tombstones the guids and queues a 'd' update for every connected
+// peer. peers that are offline pick the tombstone up from the index dump
+// (or the delta's guid-only deletes) when they reconnect. receivers only
+// tombstone, so the save is hidden from every read but the bytes stay in
+// their tags.sql until a full index import or the startup orphan sweep.
+//
+// this is a one shot removal. it does NOT change any client's tox state --
+// nobody is signed out, and a device still signed in with this identity can
+// publish it again, which creates a fresh (untombstoned) tag row.
+int
+tox_bridge_depublish_save(const vc &mid_hex)
+{
+    if(mid_hex.is_nil() || mid_hex.len() <= 0)
+        return 0;
+    if(!sql_is_initialized())
+        return 0;
+    if(!sql_mid_has_tag(mid_hex, "_tox_save"))
+        return 0;
+    try
+    {
+        qmsgsql::sql_start_transaction();
+        // the claim goes first, so the state peers observe while this is in
+        // flight is "listed but nobody using it" rather than "invisible but
+        // still claimed". both tags describe the same identity, so clearing
+        // both leaves nothing stale behind.
+        sql_remove_mid_tag(mid_hex, "_tox_active");
+        sql_remove_mid_tag(mid_hex, "_tox_save");
+        qmsgsql::sql_commit_transaction();
+    }
+    catch(...)
+    {
+        qmsgsql::sql_rollback_transaction();
+        return 0;
+    }
+    GRTLOG("tox bridge: unpublished shared identity", 0, 0);
+    return 1;
+}
+
+// the real sign-in path. allow_reconcile is 1 on a normal sign-in and 0 when
+// re-initializing after we already reconciled, so this can't recurse.
+//
+// reconciliation: if the group has a published copy of the identity we just
+// loaded, and it differs from what's on our disk, the published one wins.
+// this is what makes "the last device to sign in publishes the state that
+// counts" actually true -- otherwise a device that has been offline could
+// sign in with a stale copy and clobber newer friend list edits. note the
+// check is self limiting: if we were the last ones to run this identity, the
+// winning row is our own publish and the bytes are identical, so there's
+// nothing to do.
+static int
+tox_bridge_init1(const char *save_file, int allow_reconcile)
 {
     if(Started)
         return 1;
 
-    Save_file = save_file ? save_file : "tox_save.tox";
+    Save_file = save_file ? save_file : TOX_SAVE_FILE_DEFAULT;
     Needs_password = 0;
     int status = TOXP_STATUS_FAILED;
     Tox_plugin = toxp_init(Save_file.c_str(), Active_password, Active_password_len,
@@ -1019,8 +1333,45 @@ tox_bridge_init(const char *save_file)
             Needs_password = 1;
         return 0;
     }
-
+    // note: mark the bridge up as soon as the plugin is live, because the
+    // reconcile below has to be able to tear it down again through
+    // tox_bridge_shutdown. toxcore is not being iterated here, so no events
+    // can fire during that window.
     Started = 1;
+
+    if(allow_reconcile)
+    {
+        vc mid = save_tag_mid();
+        if(!mid.is_nil())
+        {
+            vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
+            if(win.num_elems() >= 3)
+            {
+                vc local = read_whole_file(newfn(Save_file.c_str()), TOX_SAVE_MAX_PUBLISH);
+                // note: vc == on two strings is hash + length + full memcmp,
+                // so this is an exact byte comparison of the whole file.
+                if(!local.is_nil() && local != win[2])
+                {
+                    GRTLOG("tox bridge: adopting newer synced save, %d bytes", (int)win[2].len(), 0);
+                    vc adopted = win[2];
+                    // note: nothing is published on the way out. this copy
+                    // is the stale one, and replacing it is the whole point.
+                    tox_bridge_shutdown();
+                    if(!write_save_bytes(adopted))
+                    {
+                        GRTLOG("tox bridge: failed to adopt synced save", 0, 0);
+                        return 0;
+                    }
+                    // note: if the adopted save is encrypted under a password
+                    // we don't have, the re-init below comes back
+                    // NEEDS_PASSWORD and waits for the user, which is the
+                    // right outcome.
+                    return tox_bridge_init1(save_file, 0);
+                }
+            }
+        }
+    }
+
     if(!Tox_q)
     {
         Tox_q = new ToxQueue;
@@ -1033,14 +1384,29 @@ tox_bridge_init(const char *save_file)
     if(Tox_q)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
+    // note: if we got here by adopting someone else's save, the file on disk
+    // and the live plugin agree, so there is nothing left to reconcile.
     tox_bridge_rebuild_friend_cache();
     vc self_pseudo = self_tox_pseudo();
     if(!self_pseudo.is_nil())
         tox_uid_tag_add(self_pseudo);
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     backfill_tox_mid_tags();
+    // note: claim after reconcile, so a device that just adopted someone
+    // else's identity claims it as the winner rather than publishing a copy
+    // that predates the reconcile.
+    publish_active_claim();
+    // note: the identity is *not* published here. sharing is something the
+    // user asks for explicitly (see tox_bridge_publish_save), so signing in
+    // only claims the identity.
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
+}
+
+int
+tox_bridge_init(const char *save_file)
+{
+    return tox_bridge_init1(save_file, 1);
 }
 
 void
@@ -1076,6 +1442,9 @@ tox_bridge_shutdown()
     }
 
     if(Tox_plugin) {
+        // note: the identity is deliberately not published here. sharing is
+        // something the user asks for explicitly, so signing out just leaves
+        // whatever the group already has.
         toxp_save(Tox_plugin);
         toxp_shutdown(Tox_plugin);
         Tox_plugin = 0;
@@ -1096,7 +1465,10 @@ tox_bridge_unlock(const uint8_t *pw, int pw_len)
     if(Started)
         return 1;
     set_active_password(pw, pw_len);
-    return tox_bridge_init(Save_file.c_str());
+    // note: no reconcile. the user just typed a password to unlock the file
+    // that's on disk, so swapping that file out from under them would be
+    // wrong even if the group has a different copy.
+    return tox_bridge_init1(Save_file.c_str(), 0);
 }
 
 int
@@ -1145,7 +1517,9 @@ tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
         return toxp_export_to_file(Tox_plugin, dst_path, err_buf, err_buf_len);
     // tox is not running: export the on-disk save as-is (preserving its
     // encryption state). this lets an encrypted profile be exported without
-    // first entering its password.
+    // first entering its password. note the save file may not have been
+    // resolved yet if tox has never been started in this session.
+    ensure_save_file();
     DwString src = newfn(Save_file.c_str());
     if(!file_exists(src))
     {
@@ -1181,7 +1555,9 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
         GRTLOG("tox: import prepare failed: %s", err_buf, 0);
         return 0;
     }
-
+    // importing can be the very first thing done in a session, before any
+    // sign in, so the save file name may not be resolved yet.
+    ensure_save_file();
     DwString save_path = newfn(Save_file.c_str());
     DwString backup_path;
     int have_backup = 0;
@@ -1217,7 +1593,9 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
         return 0;
     }
 
-    if(!tox_bridge_init(Save_file.c_str()))
+    // note: no reconcile. the user explicitly chose this identity by
+    // importing it, so don't immediately replace it with the group's copy.
+    if(!tox_bridge_init1(Save_file.c_str(), 0))
     {
         GRTLOG("tox: import re-init failed, restoring backup", 0, 0);
         if(have_backup)
@@ -1234,7 +1612,7 @@ tox_bridge_reset_identity(char *err_buf, int err_buf_len)
     if(err_buf && err_buf_len > 0)
         err_buf[0] = 0;
     if(Save_file.length() == 0)
-        Save_file = "tox_save.tox";
+        Save_file = TOX_SAVE_FILE_DEFAULT;
 
     // shutting down first saves any in-memory state to the save file so the
     // backup below captures the most recent profile.
@@ -1262,7 +1640,10 @@ tox_bridge_reset_identity(char *err_buf, int err_buf_len)
     set_active_password(NULL, 0);
     Needs_password = 0;
 
-    if(!tox_bridge_init(Save_file.c_str()))
+    // note: no reconcile. the save file was just deleted and a brand new
+    // identity minted, so there is nothing to reconcile against, and the
+    // new pubkey certainly has no published copy.
+    if(!tox_bridge_init1(Save_file.c_str(), 0))
     {
         GRTLOG("tox: reset re-init failed, restoring backup", 0, 0);
         if(have_backup)
@@ -1308,14 +1689,14 @@ tox_bridge_factory_reset(char *err_buf, int err_buf_len)
 int
 tox_bridge_save_exists()
 {
-    const char *sf = Save_file.length() ? Save_file.c_str() : "tox_save.tox";
+    const char *sf = Save_file.length() ? Save_file.c_str() : TOX_SAVE_FILE_DEFAULT;
     return file_exists(newfn(sf)) ? 1 : 0;
 }
 
 int
 tox_bridge_save_is_encrypted()
 {
-    const char *sf = Save_file.length() ? Save_file.c_str() : "tox_save.tox";
+    const char *sf = Save_file.length() ? Save_file.c_str() : TOX_SAVE_FILE_DEFAULT;
     return tox_bridge_file_is_encrypted(newfn(sf).c_str());
 }
 
@@ -1411,6 +1792,12 @@ tox_bridge_poll()
         return;
 
     toxp_iterate(Tox_plugin);
+
+    // if another device signed in with the identity we're running, stand
+    // down. this shuts tox down, so check before doing any more work.
+    tox_bridge_check_active_conflict();
+    if(!Started || !Tox_plugin)
+        return;
 
     // reset stale in-progress text-only messages so they get retried
     // (handles lost read receipts). file transfers are one-shot and must

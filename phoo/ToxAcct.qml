@@ -146,6 +146,107 @@ Page {
             resultDialog.open()
         }
         doRefresh()
+        refreshShared()
+    }
+
+    // ---- group-shared tox identities ----
+
+    // one entry per identity the group has published. keys come from
+    // DwycoCore::tox_list_saves(): mid, pubkey, when, size, encrypted,
+    // is_current, holder, held_by_me
+    property var sharedList: []
+    property int sharedSel: -1
+    property var sharedSelRow: sharedSel >= 0 && sharedSel < sharedList.length
+                              ? sharedList[sharedSel] : null
+
+    function refreshShared() {
+        var keepMid = sharedSelRow ? sharedSelRow.mid : ""
+        sharedList = core.tox_list_saves()
+        // keep the selection across a refresh if we can find it again
+        sharedSel = -1
+        if (keepMid.length > 0) {
+            for (var i = 0; i < sharedList.length; ++i) {
+                if (sharedList[i].mid === keepMid) {
+                    sharedSel = i
+                    break
+                }
+            }
+        }
+    }
+
+    // adopt the selected shared identity. leaves tox stopped, so the ui
+    // drops to the "loaded, not signed in" state where Sign In lives.
+    function doSelectShared() {
+        if (!sharedSelRow)
+            return
+        var row = sharedSelRow
+        selectSharedDlg.close()
+        var err = core.tox_select_save(row.mid)
+        if (err.length > 0) {
+            resultText.text = "Could not use that identity: " + err
+            resultDialog.open()
+            return
+        }
+        resultText.text = "Identity " + shortPub(row.pubkey) + " loaded. Sign in to start using it here."
+        resultDialog.open()
+        doRefresh()
+        refreshShared()
+    }
+
+    // drop a shared identity from every group member's list. does not change
+    // any client's tox state, and is a one shot removal: a device still
+    // signed in with the identity can publish it again.
+    function doUnshare() {
+        if (!sharedSelRow)
+            return
+        var row = sharedSelRow
+        unshareConfirmDlg.close()
+        if (core.tox_depublish_save(row.mid)) {
+            resultText.text = "Identity " + shortPub(row.pubkey)
+                            + " is no longer shared with the group."
+            resultDialog.open()
+        } else {
+            // nothing to remove -- another member already unpublished it.
+            resultText.text = "That identity was already not shared."
+            resultDialog.open()
+        }
+        doRefresh()
+        refreshShared()
+    }
+
+    function shortPub(pk) {
+        if (!pk || pk.length < 12)
+            return "?"
+        return pk.substring(0, 12) + "..."
+    }
+
+    function sizeLabel(n) {
+        if (n < 1024)
+            return n + " B"
+        if (n < 1024 * 1024)
+            return Math.round(n / 1024) + " KB"
+        return (Math.round((n / (1024 * 1024)) * 10) / 10) + " MB"
+    }
+
+    function ageLabel(secs) {
+        if (!secs || secs <= 0)
+            return ""
+        var d = Math.floor(secs / 86400)
+        if (d >= 1)
+            return d + (d === 1 ? " day ago" : " days ago")
+        var h = Math.floor(secs / 3600)
+        if (h >= 1)
+            return h + (h === 1 ? " hour ago" : " hours ago")
+        var m = Math.max(1, Math.floor(secs / 60))
+        return m + (m === 1 ? " min ago" : " min ago")
+    }
+
+    function holderLabel(row) {
+        if (row.held_by_me)
+            return "in use here"
+        if (row.holder && row.holder.length > 0)
+            return "in use on " + shortPub(row.holder)
+        return "not in use"
     }
 
     // ---- filename helpers (for default export name) ----
@@ -194,15 +295,22 @@ Page {
         function onTox_enabledChanged() { doRefresh() }
         function onTox_connection_status_changed(connected) { doRefresh() }
         function onTox_import_finished() { doRefresh() }
+        // debounced upstream: the set of shared identities (or who holds one)
+        // changed, eg. another group member published or claimed one.
+        function onTox_saves_changed() { refreshShared() }
+        function onTox_disabled_by_remote(holder) { doRefresh(); refreshShared() }
     }
 
     onVisibleChanged: {
-        if (visible)
+        if (visible) {
             doRefresh()
+            refreshShared()
+        }
     }
 
     Component.onCompleted: {
         doRefresh()
+        refreshShared()
     }
 
     ScrollView {
@@ -301,6 +409,158 @@ Page {
                 enabled: !effRunning
                 Layout.fillWidth: true
                 onClicked: createNewConfirmDlg.open()
+            }
+
+            Label {
+                text: "Shared Identities"
+                font.bold: true
+                Layout.topMargin: mm(2)
+            }
+
+            Label {
+                text: "Tox identities shared with your group. Anyone in the group can run one, but only one device at a time. Picking one here loads it; sign in to start using it. Sharing only happens when you press Publish, and stops when you press Stop Sharing."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: "#666"
+                font.pixelSize: dp(11)
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: mm(1)
+
+                Button {
+                    text: "Refresh"
+                    onClicked: refreshShared()
+                }
+
+                Button {
+                    text: "Publish Mine"
+                    enabled: core.tox_enabled
+                    onClicked: {
+                        if (core.tox_publish_save())
+                            resultText.text = "Your tox identity was published to the group."
+                        else
+                            resultText.text = "Could not publish. Sign in to tox first."
+                        resultDialog.open()
+                        refreshShared()
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+            }
+
+            ListView {
+                id: sharedListView
+                model: sharedList
+                Layout.fillWidth: true
+                Layout.preferredHeight: sharedList.length === 0 ? 0 : mm(9 * Math.min(sharedList.length, 4) + 1)
+                clip: true
+                spacing: mm(0.5)
+                currentIndex: sharedSel
+                highlight: Rectangle { color: amber_accent; opacity: 0.3 }
+                ScrollBar.vertical: ScrollBar { }
+
+                delegate: Item {
+                    width: ListView.view.width
+                    height: mm(9)
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: sharedSel = index
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        color: "transparent"
+                        border.color: modelData.is_current ? amber_accent : "transparent"
+                        border.width: 1
+                        radius: 2
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: mm(1)
+                            spacing: mm(1)
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                Text {
+                                    text: shortPub(modelData.pubkey)
+                                    font.family: "monospace"
+                                    font.pixelSize: dp(11)
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                                Text {
+                                    text: holderLabel(modelData) + " · "
+                                          + sizeLabel(modelData.size) + " · "
+                                          + ageLabel(Math.floor(Date.now() / 1000) - modelData.when)
+                                    font.pixelSize: dp(10)
+                                    color: modelData.held_by_me ? "#070" : "#666"
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            Rectangle {
+                                visible: modelData.encrypted
+                                Layout.preferredWidth: lockedLabel.implicitWidth + mm(1)
+                                Layout.preferredHeight: lockedLabel.implicitHeight + mm(0.5)
+                                radius: 2
+                                color: "#eee"
+                                Text {
+                                    id: lockedLabel
+                                    anchors.centerIn: parent
+                                    text: "locked"
+                                    font.pixelSize: dp(9)
+                                    color: "#444"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Label {
+                visible: sharedList.length === 0
+                text: "(No shared identities yet. Sign in to tox and use \"Publish Mine\" to add one.)"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: "#666"
+                font.pixelSize: dp(11)
+            }
+
+            Button {
+                text: "Use This Identity"
+                enabled: sharedSelRow !== null && !sharedSelRow.is_current
+                Layout.fillWidth: true
+                // note: if the identity is password protected we don't ask
+                // for it here. loading it puts the page into the normal
+                // "loaded_encrypted" state, where the existing Sign In button
+                // asks for the password.
+                onClicked: selectSharedDlg.open()
+            }
+
+            Button {
+                text: "Stop Sharing This Identity"
+                enabled: sharedSelRow !== null
+                Layout.fillWidth: true
+                onClicked: {
+                    if (sharedSelRow)
+                        unshareConfirmDlg.open()
+                }
+            }
+
+            Label {
+                visible: sharedSelRow !== null && sharedSelRow !== null && sharedSelRow.held_by_me
+                text: "This identity is currently in use on this device. Signing in with it elsewhere will turn it off here."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: "#a00"
+                font.pixelSize: dp(11)
             }
 
             Label {
@@ -686,6 +946,108 @@ Page {
                             setPwError.text = "Could not add encryption: " + err
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // ---- shared identity confirmation ----
+
+    Dialog {
+        id: selectSharedDlg
+        title: "Use This Identity?"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: sharedSelRow
+                      ? "Load the shared identity " + shortPub(sharedSelRow.pubkey) + "?"
+                      : ""
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "This replaces the Tox profile currently on this device (a backup is kept). Tox stays signed out until you press Sign In -- signing in is what claims the identity and turns it off on whichever device is currently using it."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: selectSharedDlg.close()
+                }
+
+                Button {
+                    text: "Load"
+                    onClicked: doSelectShared()
+                }
+            }
+        }
+    }
+
+    // ---- stop sharing confirmation ----
+
+    Dialog {
+        id: unshareConfirmDlg
+        title: "Stop Sharing?"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: sharedSelRow
+                      ? "Remove the shared identity " + shortPub(sharedSelRow.pubkey)
+                        + " from your group's list?"
+                      : ""
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "This removes it for everyone in the group. Nobody is signed out and no one's tox settings change."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                visible: sharedSelRow !== null && sharedSelRow !== null
+                         && (sharedSelRow.held_by_me || sharedSelRow.holder.length > 0)
+                text: sharedSelRow && sharedSelRow.held_by_me
+                      ? "This identity is in use on this device. It stays signed in here, and it can be published again at any time."
+                      : "This identity is currently in use on " + (sharedSelRow ? shortPub(sharedSelRow.holder) : "") + ". That device keeps running it and can publish it again at any time."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: "#a00"
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: unshareConfirmDlg.close()
+                }
+
+                Button {
+                    text: "Stop Sharing"
+                    onClicked: doUnshare()
                 }
             }
         }

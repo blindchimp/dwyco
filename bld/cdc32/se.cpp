@@ -90,6 +90,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_TOX_TYPING,
     DWYCO_SE_TOX_FRIEND_USER_STATUS,
     DWYCO_SE_TOX_AVATAR,
+    DWYCO_SE_TOX_DISABLED_BY_REMOTE,
     -1,
 };
 
@@ -572,6 +573,17 @@ se_process()
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_DISABLED_BY_REMOTE:
+            // no arguments: the ui just needs to know tox got stood down.
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
                                            0, 0,
                                            0, 0, 0,
                                            0, 0

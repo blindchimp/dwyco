@@ -529,6 +529,9 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_TOX_TYPING 60
 #define DWYCO_SE_TOX_FRIEND_USER_STATUS 61
 #define DWYCO_SE_TOX_AVATAR 62
+// another device in the group signed in with the tox identity this device
+// was running, so this device stood down. no arguments.
+#define DWYCO_SE_TOX_DISABLED_BY_REMOTE 63
 
 int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -2304,6 +2307,51 @@ int DWYCOEXPORT dwyco_tox_file_is_encrypted(const char *path);
 int DWYCOEXPORT dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
                                          int make_backup, char *err_buf, int err_buf_len);
 int DWYCOEXPORT dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
+
+// --- group-shared tox identities ---
+//
+// a tox save can be published to the device group as a tag payload, so other
+// group members can run the same tox identity, one device at a time. the
+// payload is the raw bytes of the save file (encryption preserved), keyed by
+// hex of the tox pubkey. signing in also claims the identity, and any other
+// client running it stands down. see tox_bridge_publish_save() in
+// bld/cdc32/toxbridge.h for the details.
+
+// push the running identity's save to the group. returns 1 on success.
+int DWYCOEXPORT dwyco_tox_publish_save();
+
+// list the identities the group has published. returns 1 and fills
+// list_out with one row per identity, columns:
+//   "000" mid      - hex of the tox pubkey (ascii hex, this is the key used
+//                    by dwyco_tox_select_save)
+//   "001" time     - unix seconds of the winning copy (int)
+//   "002" size     - size of the save in bytes (int)
+//   "003" encrypted- 1 if the save is password protected (int)
+int DWYCOEXPORT dwyco_tox_list_saves(DWYCO_LIST *list_out);
+
+// adopt the published identity whose mid is mid_hex (ascii hex pubkey) as the
+// identity this device will run. leaves tox stopped: the caller should present
+// the normal "sign in" flow afterwards, and that sign-in is what claims the
+// identity. if the identity is password protected, the user is prompted as
+// usual. returns 1 on success, 0 with a message in err_buf otherwise.
+int DWYCOEXPORT dwyco_tox_select_save(const char *mid_hex, int mid_hex_len,
+                                      char *err_buf, int err_buf_len);
+
+// report which device currently owns an identity. pub_hex is the ascii hex
+// tox pubkey. returns 1 and fills list_out with a single column "000" holding
+// the ascii hex dwyco uid of the owning device, or 0 if nobody has claimed
+// the identity yet.
+int DWYCOEXPORT dwyco_tox_claimant(const char *pub_hex, int pub_hex_len,
+                                    DWYCO_LIST *list_out);
+
+// remove a shared identity from every group member's list. mid_hex is the
+// ascii hex tox pubkey, as reported by dwyco_tox_list_saves. any client may
+// do this; returns 1 if there was something to remove. this does not change
+// any client's tox state (nobody is signed out), and it is a one shot
+// removal -- a device still signed in with the identity can publish it again
+// as a new tag row.
+int DWYCOEXPORT dwyco_tox_depublish_save(const char *mid_hex, int mid_hex_len);
+
 int DWYCOEXPORT dwyco_tox_reset_identity(char *err_buf, int err_buf_len);
 int DWYCOEXPORT dwyco_tox_factory_reset(char *err_buf, int err_buf_len);
 int DWYCOEXPORT dwyco_tox_save_exists();

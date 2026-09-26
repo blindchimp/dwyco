@@ -30,6 +30,64 @@ Page {
     property string cachedName: core.get_local_setting("cached_tox_name")
     property string cachedAddress: core.get_local_setting("cached_tox_address")
 
+    // group-shared identity state. the identity on disk can be claimed by
+    // another device in the group, in which case tox is stopped here and the
+    // user can take it over by signing in again.
+    property var sharedList: []
+    property bool disabledByRemote: false
+    property var remoteRow: null
+
+    function shortHex(s) {
+        if (!s || s.length < 12)
+            return "?"
+        return s.substring(0, 12) + "..."
+    }
+
+    function refreshShared() {
+        sharedList = core.tox_list_saves()
+        // find the identity currently on disk, if the group knows about it
+        var pk = core.tox_get_self_public_key()
+        remoteRow = null
+        if (pk.length > 0) {
+            for (var i = 0; i < sharedList.length; ++i) {
+                if (sharedList[i].mid === pk && !sharedList[i].held_by_me) {
+                    remoteRow = sharedList[i]
+                    break
+                }
+            }
+        }
+    }
+
+    // true when the identity on disk is signed in somewhere else, so the
+    // banner can offer to take it over.
+    property bool identityInUseElsewhere: remoteRow !== null
+
+    function takeOverIdentity() {
+        if (!remoteRow)
+            return
+        // selecting is a file level operation; it leaves tox stopped and
+        // claims nothing. the sign in that follows is what takes the identity
+        // over from the other device.
+        var err = core.tox_select_save(remoteRow.mid)
+        if (err.length > 0) {
+            takeOverError.text = "Could not load that identity: " + err
+            return
+        }
+        takeOverError.text = ""
+        // load it, then immediately sign in, which is what claims it
+        core.enable_tox()
+        if (core.tox_needs_password()) {
+            openToxSignIn()
+        } else {
+            core.set_local_setting("tox_enabled", "1")
+        }
+        disabledByRemote = false
+        remoteRow = null
+        refreshStatus()
+        refreshToxIdentity()
+        refreshShared()
+    }
+
     function isValidToxId(s) {
         if (s.length !== 76)
             return false
@@ -145,6 +203,17 @@ Page {
         function onTox_connection_status_changed(connected) {
             refreshStatus()
         }
+        function onTox_saves_changed() {
+            refreshShared()
+            refreshStatus()
+        }
+        function onTox_disabled_by_remote(holder) {
+            // another device claimed the identity we were running
+            disabledByRemote = true
+            refreshShared()
+            refreshStatus()
+            refreshToxIdentity()
+        }
     }
 
     onVisibleChanged: {
@@ -152,6 +221,7 @@ Page {
             refreshToxAvatar()
             refreshStatus()
             refreshToxIdentity()
+            refreshShared()
         }
     }
 
@@ -179,6 +249,7 @@ Page {
         }
         var toxAutoLogin = core.get_local_setting("tox_auto_login")
         toxAutoLoginCb.checked = (toxAutoLogin === "1")
+        refreshShared()
         refreshToxAvatar()
         refreshStatus()
     }
@@ -322,6 +393,61 @@ Page {
                         onClicked: stack.push(tox_acct)
                     }
                 }
+
+                // the identity on this device is currently signed in on
+                // another device in the group. signing in here takes it over.
+                ColumnLayout {
+                    visible: identityInUseElsewhere
+                    Layout.fillWidth: true
+                    spacing: mm(0.5)
+
+                    Label {
+                        text: disabledByRemote
+                              ? "Tox was turned off here because this identity is now in use on another device."
+                              : "This tox identity is in use on another device in your group."
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        color: "#a00"
+                        font.pixelSize: dp(12)
+                    }
+
+                    Label {
+                        text: remoteRow
+                              ? "Identity " + shortHex(remoteRow.pubkey) + " is held by device "
+                                + shortHex(remoteRow.holder) + "."
+                              : ""
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        color: "#666"
+                        font.pixelSize: dp(11)
+                    }
+
+                    Label {
+                        id: takeOverError
+                        text: ""
+                        color: "red"
+                        visible: text.length > 0
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        font.pixelSize: dp(11)
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Button {
+                            text: "Sign In Here Instead"
+                            onClicked: takeOverIdentity()
+                        }
+
+                        Button {
+                            text: "Go to Account..."
+                            onClicked: stack.push(tox_acct)
+                        }
+
+                        Item { Layout.fillWidth: true }
+                    }
+                }
             }
         }
 
@@ -340,6 +466,10 @@ Page {
                 Layout.fillWidth: true
             }
         }
+
+        // note: publishing/unpublishing a shared identity lives on the
+        // account page (see ToxAcct.qml), next to the shared list itself.
+        // this page only reports who is holding the identity.
 
         RowLayout {
             enabled: core.tox_enabled

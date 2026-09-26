@@ -324,6 +324,7 @@ using namespace CryptoPP;
 #include "fnmod.h"
 #include "profiledb.h"
 #include "toxbridge.h"
+#include "toxd_plugin.h"
 #include "callq.h"
 #include "mmcall.h"
 #include "calldll.h"
@@ -10170,6 +10171,94 @@ int
 dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
 {
     return dwyco::tox_bridge_export_profile(dst_path, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_publish_save()
+{
+    return dwyco::tox_bridge_publish_save();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_list_saves(DWYCO_LIST *list_out)
+{
+    if(!list_out)
+        return 0;
+    vc saves = dwyco::tox_bridge_list_saves();
+    if(saves.is_nil())
+        return 0;
+    // widen the bridge rows (mid_hex, time, size) into the documented
+    // columns. the encrypted flag needs the payload, so re-read it here
+    // rather than pulling the whole save through the list.
+    vc out(VC_VECTOR);
+    for(int i = 0; i < saves.num_elems(); ++i)
+    {
+        const vc &r = saves[i];
+        if(r.num_elems() < 3)
+            continue;
+        vc mid = r[0];
+        vc enc;
+        vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
+        if(win.num_elems() >= 3 && !win[2].is_nil())
+            enc = toxp_data_is_encrypted((const char *)win[2], (int)win[2].len()) ? 1 : 0;
+        else
+            enc = 0;
+        vc row(VC_VECTOR);
+        row.append(mid);
+        row.append(r[1]);
+        row.append(r[2]);
+        row.append(enc);
+        out.append(row);
+    }
+    *list_out = dwyco_list_from_vc(out);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_select_save(const char *mid_hex, int mid_hex_len, char *err_buf, int err_buf_len)
+{
+    if(!mid_hex || mid_hex_len <= 0)
+    {
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "no identity given");
+        return 0;
+    }
+    vc mid(VC_BSTRING, mid_hex, (long)mid_hex_len);
+    return dwyco::tox_bridge_select_save(mid, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_claimant(const char *pub_hex, int pub_hex_len, DWYCO_LIST *list_out)
+{
+    if(!list_out || !pub_hex || pub_hex_len <= 0)
+        return 0;
+    vc who = dwyco::tox_bridge_claimant(vc(VC_BSTRING, pub_hex, (long)pub_hex_len));
+    if(who.is_nil())
+        return 0;
+    // note: must be a 2-d vector (a vector of row vectors), not a 1-d one.
+    // dwyco_list_get walks the column name on top of the row, so a 1-d
+    // vector makes it bail out with an empty value while still returning
+    // success.
+    vc row(VC_VECTOR);
+    row.append(who);
+    vc v(VC_VECTOR);
+    v.append(row);
+    *list_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_depublish_save(const char *mid_hex, int mid_hex_len)
+{
+    if(!mid_hex || mid_hex_len <= 0)
+        return 0;
+    vc mid(VC_BSTRING, mid_hex, (long)mid_hex_len);
+    return dwyco::tox_bridge_depublish_save(mid);
 }
 
 DWYCOEXPORT

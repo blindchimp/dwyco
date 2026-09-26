@@ -956,6 +956,14 @@ toxp_file_is_encrypted(const char *path)
 }
 
 int
+toxp_data_is_encrypted(const char *data, int len)
+{
+    if(!data || len < (int)TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+        return 0;
+    return tox_is_data_encrypted((const uint8_t *)data);
+}
+
+int
 toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
 {
     if(!save_file || !save_file[0])
@@ -1488,6 +1496,14 @@ int
 toxp_file_is_encrypted(const char *path)
 {
     (void)path;
+    return 0;
+}
+
+int
+toxp_data_is_encrypted(const char *data, int len)
+{
+    (void)data;
+    (void)len;
     return 0;
 }
 

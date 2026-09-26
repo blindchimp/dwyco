@@ -97,6 +97,9 @@ enum dwyco_sys_event {
     SE_TOX_TYPING,
     SE_TOX_FRIEND_USER_STATUS,
     SE_TOX_AVATAR,
+    // another device in the group signed in with the tox identity this
+    // device was running, so this device stood down. carries no arguments.
+    SE_TOX_DISABLED_BY_REMOTE,
 };
 
 // at this point, the id can be a uid or a mid

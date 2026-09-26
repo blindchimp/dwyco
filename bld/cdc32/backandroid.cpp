@@ -367,6 +367,12 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
             sql("insert into static_uid_tags values('_tox_friend')");
             sql("insert into static_uid_tags values('_tox_device')");
             sql("insert into static_uid_tags values('_tox')");
+            // note: unlike the main db's static_uid_tags (where these are
+            // excluded on purpose so leaving a group purges them), a backup
+            // is a local, user-owned snapshot, and restoring onto a new
+            // device should bring the tox identities along with it.
+            sql("insert into static_uid_tags values('_tox_save')");
+            sql("insert into static_uid_tags values('_tox_active')");
 
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
                 "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
