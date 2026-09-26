@@ -1109,6 +1109,16 @@ import_remote_mi(const vc& remote_uid)
             update_tags = true;
         s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+        // note: the gmt deletes above run on this separate connection, which
+        // has none of the temp triggers (see the comment about crdt_tags
+        // above), so pgmt_clean did not fire and those payloads are now
+        // orphans. drop exactly the tombstoned ones. note we can't use the
+        // broader "where guid not in (select guid from mt.gmt)" form the
+        // AI comment below warns about: this is a merge, so that would also
+        // destroy payloads for tags this client simply hasn't heard about
+        // yet. a tombstoned guid is different -- it definitively has no live
+        // tag row anywhere, so its payload is unreachable.
+        s.sql_simple("delete from mt.gmt_payload where guid in (select guid from mt.gtomb)");
 
         // note: only dumps from newer clients have a msg_payload table. old dumps
         // are imported as before, just without payloads.
@@ -1406,6 +1416,18 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             const vc& mid = vals[1];
             const vc& tag = vals[2];
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            // note: a tombstoned tag has no payload by definition, so drop it
+            // here rather than leaving it as dead weight in the local
+            // tags.sql. this is what actually reclaims the space for a
+            // depublished shared tox save (whose payload is the identity's
+            // secret keys). we delete the payload directly instead of doing
+            // "delete from gmt where guid = ?1" because pgmt_clean would then
+            // do this for us, but it would also fire dgmt, whose first
+            // statement re-queues an op='d' for every *other* connected peer
+            // (only the sender is out of current_clients here, see the delete
+            // above). the gmt row itself is left to be reaped by the startup
+            // cleanup in init_qmsg_sql, which does run the triggers.
+            sql_simple("delete from mt.gmt_payload where guid = ?1", guid);
             const vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
             {
