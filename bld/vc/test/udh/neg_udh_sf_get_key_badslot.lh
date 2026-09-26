@@ -1,0 +1,19 @@
+;
+; negative: UDH-sf-get-key with nil slots in the pack must return nil
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; records a failure when <v> is NOT nil, i.e. when we wanted a nil back
+gcompile(check-nil name v `if(<v> prog(printl(<name>) printl(FAILED)))')
+UDH-init(nil)
+lbind(s UDH-new-static(nil))
+lbind(pack UDH-sf-material(<s> sk))
+; both pack slots are type-checked before the agreement, so a nil in
+; either one has to be rejected rather than dereferenced
+lbind(p0 vector(nil <pack>[1]))
+lbind(r0 UDH-sf-get-key(<p0> <s>))
+lbind(p1 vector(<pack>[0] nil))
+lbind(r1 UDH-sf-get-key(<p1> <s>))
+check-nil(neg-udh-sf-get-key-badslot0 <r0>)
+check-nil(neg-udh-sf-get-key-badslot1 <r1>)
+printl(NEG-OK)

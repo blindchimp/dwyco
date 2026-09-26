@@ -1029,6 +1029,19 @@ import_remote_mi(const vc& remote_uid)
     s.attach(fn, "mi2");
     s.set_cache_size(100000);
 
+    DwString snfn = DwString("minew%1.tdb").arg((const char *)huid);
+    snfn = newfn(snfn);
+    int sn_ok = 0;
+    try
+    {
+        s.attach(snfn, "sn");
+        sn_ok = 1;
+    }
+    catch(...)
+    {
+        GRTLOG("no existing snapshot reference for %s, deferring", (const char *)huid, 0);
+    }
+
     int ret = 1;
     try
     {
@@ -1113,6 +1126,24 @@ import_remote_mi(const vc& remote_uid)
         s.sql_simple("insert into current_clients values(?1)", huid);
 
         s.sql_simple("insert into deltas(from_client_uid, delta_id) select ?1, delta_id from id", huid);
+        if(sn_ok)
+        {
+            try
+            {
+                s.sql_simple("insert into sn.msg_idx select * from mi2.msg_idx "
+                             "where mid not in (select mid from sn.msg_idx)");
+                s.sql_simple("insert into sn.msg_tomb select * from mi2.msg_tomb "
+                             "where mid not in (select mid from sn.msg_tomb)");
+                s.sql_simple("insert into sn.msg_tags2 select * from mi2.msg_tags2 "
+                             "where guid not in (select guid from sn.msg_tags2)");
+                s.sql_simple("insert into sn.tomb select * from mi2.tomb "
+                             "where guid not in (select guid from sn.tomb)");
+            }
+            catch(...)
+            {
+                GRTLOG("snapshot reference rebase failed for %s", (const char *)huid, 0);
+            }
+        }
         s.commit_transaction();
 #ifndef DWYCO_BACKGROUND_SYNC
         // these will deadlock if done in the background in another thread
@@ -1142,6 +1173,7 @@ import_remote_mi(const vc& remote_uid)
     }
     // explicitly detach so the optimize doesn't
     // look at it.
+    s.detach("sn");
     s.detach("mi2");
     s.optimize();
     s.exit();

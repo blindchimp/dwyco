@@ -14,7 +14,7 @@ gcompile(nl `print(|\n|)')
 gcompile(printl x `print(<x>) nl()')
 
 ; records/prints a failure when <b> is nil
-gcompile(expect name b `if(<b> nil prog(printl(name) printl(FAILED)))')
+gcompile(expect name b `if(<b> nil prog(printl(<name>) printl(FAILED)))')
 
 ; --- ed25519 singleton (global-key) API ---
 ED25519-init(nil)

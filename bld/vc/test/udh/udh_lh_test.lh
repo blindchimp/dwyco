@@ -1,0 +1,110 @@
+;
+; UDH (vcudh.cpp) LH functional tests.
+;
+; Run with the interpreter binary built by vccmd/build.sh:
+;   vccmd -c <this dir> udh_lh_test.lh
+;
+; These drive the four UDH-* builtins registered at vclh.cpp:3529-3539:
+;   UDH-init, UDH-new-static, UDH-gen-keys, UDH-just-publics, UDH-agree,
+;   UDH-sf-material, UDH-sf-get-key
+;
+; Note UDH-init is mandatory: vcudh.cpp has no init guards, so anything
+; before it segfaults. See crash_udh_*.lh for those.
+;
+; Each failure prints "<label>" followed by "FAILED".
+; A clean run prints UDH-LH-TEST-COMPLETE with no FAILED lines.
+;
+
+; printl/nl normally come from lhlib/common.lh loaded via $HOME/lhlib/load.lh
+; by the interpreter; define them locally so the tests are self-contained
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+
+; records a failure when <b> is nil (nil is the only falsy value here)
+gcompile(expect name b `if(<b> nil prog(printl(<name>) printl(FAILED)))')
+
+; records a failure when <v> is NOT nil, i.e. when we wanted a nil back
+gcompile(expect-nil name v `if(<v> prog(printl(<name>) printl(FAILED)))')
+
+; a 256-byte blob of 0xFF: correctly sized, but numerically >= the group
+; prime, so Crypto++ rejects it and DH2::Agree returns false (it does not
+; throw). A SHORT key is not used anywhere: vcudh.cpp passes the key
+; straight to Integer(priv, 256) which would read out of bounds.
+lbind(bad-pub from-hex(ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff))
+
+UDH-init(nil)
+
+; --- static key generation ---
+lbind(a UDH-new-static(nil))
+lbind(apub <a>[0])
+lbind(apriv <a>[1])
+expect(udh-static-sizes and(eq(strlen(<apub>) 256) eq(strlen(<apriv>) 256)))
+lbind(b UDH-new-static(nil))
+lbind(bpub <b>[0])
+lbind(bpriv <b>[1])
+expect(udh-static-distinct not(eq(<apub> <bpub>)))
+
+; entropy of the wrong type is tolerated: the code only asks whether the
+; argument is a string, and a non-string just skips IncorporateEntropy
+lbind(c UDH-new-static(7))
+expect(udh-static-nonstring-entropy eq(strlen(<c>[0]) 256))
+
+; --- ephemeral key generation ---
+lbind(ka UDH-gen-keys(<a> nil))
+lbind(kb UDH-gen-keys(<b> nil))
+expect(udh-genkeys-eph-priv-len eq(strlen(<ka>[0]) 256))
+expect(udh-genkeys-eph-pub-len eq(strlen(<ka>[1]) 256))
+; the static half is carried through from the first argument
+expect(udh-genkeys-static-priv eq(<ka>[2] <apriv>))
+expect(udh-genkeys-static-pub eq(<ka>[3] <apub>))
+expect(udh-genkeys-eph-distinct not(eq(<ka>[0] <ka>[1])))
+lbind(kc UDH-gen-keys(<a> 7))
+expect(udh-genkeys-nonstring-entropy eq(strlen(<kc>[1]) 256))
+
+; --- udh_just_publics strips the private halves ---
+lbind(pa UDH-just-publics(<ka>))
+expect-nil(udh-just-publics-slot0 <pa>[0])
+expect-nil(udh-just-publics-slot2 <pa>[2])
+expect(udh-just-publics-eph-pub eq(<pa>[1] <ka>[1]))
+expect(udh-just-publics-static-pub eq(<pa>[3] <ka>[3]))
+expect(udh-just-publics-drops-priv not(eq(<pa>[1] <ka>[0])))
+
+; --- authenticated agreement: both directions must land on the same key ---
+lbind(sa UDH-agree(<ka> UDH-just-publics(<kb>)))
+lbind(sb UDH-agree(<kb> UDH-just-publics(<ka>)))
+; a DH2 agreement is two 256-byte agreements concatenated
+expect(udh-agree-len eq(strlen(<sa>) 512))
+expect(udh-agree-symmetric eq(<sa> <sb>))
+
+; an invalid peer public value makes Agree return false, so the whole
+; agreement comes back nil
+lbind(badpeer vector(nil <bad-pub> nil <bad-pub>))
+expect-nil(udh-agree-invalid-peer UDH-agree(<ka> <badpeer>))
+; invalid only in the ephemeral slot
+lbind(badeph vector(nil <bad-pub> nil <kb>[3]))
+expect-nil(udh-agree-invalid-peer-eph UDH-agree(<ka> <badeph>))
+
+; --- store and forward: encrypt to b, recover with b's static ---
+lbind(sk nil)
+; note: UDH-sf-material indexes [0] of its first arg, so it wants the whole
+; static key vector, NOT a bare public key string
+lbind(m UDH-sf-material(<b> sk))
+expect(udh-sf-material-pairs eq(numelems(<m>) 2))
+; the encrypted key is 16 bytes, our public DH value is 256
+expect(udh-sf-material-keylen eq(strlen(<m>[0]) 16))
+expect(udh-sf-material-publen eq(strlen(<m>[1]) 256))
+; <sk> was bound by UDH-sf-material as a side effect
+expect(udh-sf-material-keybound eq(strlen(<sk>) 16))
+expect(udh-sf-get-key eq(UDH-sf-get-key(<m> <b>) <sk>))
+
+; the legacy pack carries no integrity check, so the wrong static recovers
+; a *different* key rather than nil. That is fine: the AES/GCM MAC catches
+; it one layer up. Pin it so nobody mistakes "returned a key" for
+; "returned the right key".
+expect(udh-sf-get-key-wrong-static not(eq(UDH-sf-get-key(<m> <a>) <sk>)))
+; an invalid public value in the pack makes the agreement fail, which does
+; return nil
+lbind(badpack vector(<m>[0] <bad-pub>))
+expect-nil(udh-sf-get-key-invalid-pub UDH-sf-get-key(<badpack> <b>))
+
+printl(UDH-LH-TEST-COMPLETE)
