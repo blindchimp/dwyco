@@ -132,6 +132,17 @@ blob(vc m)
     return ret;
 }
 
+// a tombstoned tag row is a *deleted* tag: a '_fav' means un-favorite, a
+// '_pal' means un-pal. the backup carries no tombstones (deleted rows are
+// simply omitted), so every read of mt.gmt below has to skip them itself --
+// otherwise deleted content gets backed up, or prioritized ahead of content
+// the user actually kept, as if it were live.
+// note: a macro, not a const char*, so it composes with the surrounding
+// string literals. use with an explicit "and"/"where" in front of it. the
+// inner column is left bare to match the existing repo idiom of correlating
+// on the outer table (see sql_mid_has_tag in qmsgsql.cpp).
+#define GTOMB_LIVE "not exists (select 1 from mt.gtomb where guid = gmt.guid)"
+
 static
 void
 sql_insert_record(const vc& from_uid, const vc& mid, const vc& msg, const vc& attfn, const vc& att)
@@ -372,13 +383,29 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
             // is a local, user-owned snapshot, and restoring onto a new
             // device should bring the tox identities along with it.
             sql("insert into static_uid_tags values('_tox_save')");
-            sql("insert into static_uid_tags values('_tox_active')");
+            // note: '_tox_active' is deliberately NOT here. it is a claim
+            // about which device is running an identity *right now*, not
+            // durable state, and a claim from a device that no longer exists
+            // (or a different one) means nothing once restored. signing in
+            // always writes a newer claim anyway, so the restored copy would
+            // be dead weight.
 
+            // note: the tombstone filter has to appear in the dedup subquery
+            // as well as the outer query. it only filters the outer one, the
+            // dedup would still pick the newest rowid per (mid,tag) even when
+            // that row is deleted, and "rowid in (...)" would then match
+            // nothing -- dropping the tag entirely even though an older live
+            // row exists. filtering both makes the dedup pick the newest
+            // *live* row, which is what the current value of a tag means.
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
-                "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
+                "and " GTOMB_LIVE " "
+                "and rowid in (select max(rowid) from mt.gmt where " GTOMB_LIVE " group by mid,tag) "
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
                 );
             sql("update main.tags set uid = ?1", to_hex(My_UID));
+            // note: no filter needed here, this is already scoped to the rows
+            // that made it into main.tags, which cannot include a tombstoned
+            // guid now that the insert above filters them.
             sql("insert into main.tags_payload(guid, mid, payload) "
                 "select guid, mid, payload from mt.gmt_payload "
                 "where guid in (select guid from main.tags)");
@@ -391,20 +418,25 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
 
         // prioritize: favorites from pals, favorites, pals, all, then with attachments
         // batch_size 30 for performance; with a size limit, earlier categories get priority
+        // note: every read of mt.gmt here filters tombstones via GTOMB_LIVE, so
+        // an un-favorited message or an un-pal'd sender doesn't consume the size
+        // budget ahead of what was actually kept.
         attempt_backup(
-            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
-            "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment isnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal' and " GTOMB_LIVE ") "
             "and not exists (select 1 from main.msgs where favmid = mid) "
             " order by logical_clock desc", 30);
 
         attempt_backup(
-            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment isnull "
             "and not exists (select 1 from main.msgs where favmid = mid)"
             " order by logical_clock desc", 30);
 
         attempt_backup(
             "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-            "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal' and " GTOMB_LIVE ") "
             "and not exists (select 1 from main.msgs where favmid = mid)"
             " order by logical_clock desc", 30);
 
@@ -414,13 +446,15 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
             " order by logical_clock desc", 30);
 
         attempt_backup(
-            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
-            "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment notnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal' and " GTOMB_LIVE ") "
             "and not exists (select 1 from main.msgs where favmid = mid)"
             " order by logical_clock desc", 30);
 
         attempt_backup(
-            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment notnull "
             "and not exists (select 1 from main.msgs where favmid = mid)"
             " order by logical_clock desc", 30);
 
@@ -862,6 +896,10 @@ restore_msgs(const char *cfn, int no_fnmod, int msgs_only)
 
         // merge in tag payloads from the backup, if present.
         // backups made before payloads existed don't have this table
+        // note: this relies on the export having filtered tombstones out of
+        // main.tags. a backup can't reintroduce a payload for a deleted tag,
+        // because the payload export is scoped to the rows in main.tags and
+        // that insert now skips tombstoned guids. don't reorder those two.
         try
         {
             sql_start_transaction();
