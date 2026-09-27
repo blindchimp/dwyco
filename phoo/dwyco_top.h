@@ -400,7 +400,7 @@ public:
     Q_INVOKABLE QVariantList tox_list_saves();
     Q_INVOKABLE QString tox_select_save(const QString& mid);
     Q_INVOKABLE bool tox_depublish_save(const QString& mid);
-    void copy_to_clipboard(const QString& text);
+    Q_INVOKABLE void copy_to_clipboard(const QString& text);
     Q_INVOKABLE void start_auto_away();
     Q_INVOKABLE void stop_auto_away();
 
