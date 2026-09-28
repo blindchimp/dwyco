@@ -313,4 +313,20 @@ Page {
         }
     }
 
+    Warning {
+        id: obliterate_error_dialog
+        visible: false
+        z: 3
+        warning: ""
+        oops_text: ""
+    }
+
+    Connections {
+        target: core
+        function onObliterate_error(msg) {
+            obliterate_error_dialog.warning = msg
+            obliterate_error_dialog.visible = true
+        }
+    }
+
 }
