@@ -481,6 +481,7 @@ signals:
     void mid_tag_changed(QString mid);
     //void migration_complete();
 	void reindex_complete();
+    void obliterate_error(const QString& msg);
 
     void name_to_uid_result(QString uid, QString handle);
     // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not

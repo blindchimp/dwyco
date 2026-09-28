@@ -2333,6 +2333,20 @@ void
 DwycoCore::obliterate()
 {
 #if 1
+    static const char *expected[] = {"auth", "outbox", "sinfo"};
+    QStringList missing;
+    for(int i = 0; i < 3; ++i)
+    {
+        if(!QFile::exists(add_pfx(User_pfx, expected[i])))
+            missing.append(expected[i]);
+    }
+    if(!missing.isEmpty())
+    {
+        emit obliterate_error("Safety check failed: " + missing.join(", ") +
+            " not found in " + QString::fromUtf8(User_pfx) +
+            ". Obliterate aborted.");
+        return;
+    }
     hangup_all_calls();
     dwyco_disconnect_chat_server();
     // TODO: leave all phoo messenger groups (send group-leave to members)
