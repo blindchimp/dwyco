@@ -14,10 +14,12 @@ import QtQuick.Dialogs
 import QtCore
 
 Page {
+    id: tox_acct
+
     anchors.fill: parent
     header: SimpleToolbar {
         extras: Label {
-            text: "Tox Account"
+            text: "Tox Save"
             color: "white"
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
@@ -28,53 +30,29 @@ Page {
         color: amber_light
     }
 
-    // derived state, refreshed by doRefresh() after every operation.
-    // stored as plain properties so QML bindings stay reactive.
-    property string stateName: "empty"
-    property string stateText: ""
-    property string encText: ""
-    property bool effPresent: false
-    property bool effEncrypted: false
-    property bool effRunning: false
-    property string toxShortId: "-"
+    // ---- state ----
+    // the tox status state is owned by tox_state in main.qml, which both
+    // this page and ToxPage.qml read, so the two panels cannot disagree.
+    // this page only owns the shared-saves list, which is its own thing.
 
-    function oml() // out of main: refresh all state
-    {
-        effPresent = core.tox_save_exists()
-        effEncrypted = core.tox_save_is_encrypted()
-        effRunning = core.tox_enabled && !core.tox_needs_password()
+    function passwordLabel() {
+        return tox_state.encrypted ? "Password protected" : "Not set"
     }
 
+    // re-sample the shared state and this page's list. used when the page
+    // comes forward, and after any operation that changes the state
+    // without emitting a core signal.
     function doRefresh() {
-        oml()
-        if (!effPresent) {
-            stateName = "empty"
-            stateText = "No tox save yet.\nImport a profile or create a new identity to get started."
-            encText = "None"
-            toxShortId = "-"
-        } else if (effRunning) {
-            stateName = effEncrypted ? "active_unlocked" : "active_clear"
-            stateText = effEncrypted ? "Signed in (password protected)." : "Signed in."
-            encText = effEncrypted ? "Password protected" : "None"
-            var addr = core.tox_self_address
-            if (addr.length >= 8)
-                toxShortId = addr.substring(0, 8) + "..."
-            else {
-                var pk = core.tox_get_self_public_key()
-                toxShortId = pk.length >= 8 ? pk.substring(0, 8) + "..." : "-"
-            }
-        } else {
-            stateName = effEncrypted ? "loaded_encrypted" : "loaded_clear"
-            stateText = effEncrypted ? "Tox save is password protected.\nEnter the password to sign in, or export/remove it."
-                                      : "Tox save exists. Not signed in."
-            encText = effEncrypted ? "Password protected" : "None"
-            toxShortId = "-"
-        }
+        tox_state.refresh()
+        refreshShared()
     }
+
+    // ---- sign in / out ----
 
     function signIn(pw) {
         if (!core.tox_enabled)
             core.enable_tox()
+        tox_state.refresh()
         if (core.tox_needs_password()) {
             if (pw.length === 0)
                 return false
@@ -84,16 +62,26 @@ Page {
     }
 
     function doSignIn(pw) {
-        if (signIn(pw)) {
-            core.set_local_setting("tox_enabled", "1")
-            resultText.text = "Signed in to tox."
-            resultDialog.open()
-            doRefresh()
-        } else {
-            pwEntryError.text = "Wrong password or corrupt profile. Try again."
-            pwEntryInput.text = ""
-            pwEntryInput.forceActiveFocus()
+        cardPwError.text = ""
+        if (!signIn(pw)) {
+            cardPwError.text = "Wrong password."
+            cardPwInput.text = ""
+            cardPwInput.forceActiveFocus()
+            return false
         }
+        core.set_local_setting("tox_enabled", "1")
+        showBanner("Signed in.")
+        doRefresh()
+        return true
+    }
+
+    // the card has its own password field, so a locked save never needs
+    // a dialog to sign in.
+    function signInFromCard() {
+        if (cardPwInput.text.length === 0)
+            return
+        if (doSignIn(cardPwInput.text))
+            cardPwInput.text = ""
     }
 
     function signOut() {
@@ -101,19 +89,40 @@ Page {
             core.disable_tox()
         core.set_local_setting("tox_enabled", "0")
         doRefresh()
+        showBanner("Signed out.")
     }
+
+    // ---- transient result banner ----
+    // replaces the single "Tox Account" dialog that used to report both
+    // successes and failures, which made the two indistinguishable.
+
+    property string bannerText: ""
+    property bool bannerError: false
+
+    Timer {
+        id: bannerTimer
+        interval: 4000
+        onTriggered: tox_acct.bannerText = ""
+    }
+
+    function showBanner(text, isError) {
+        bannerText = text
+        bannerError = isError === true
+        bannerTimer.restart()
+    }
+
+    // ---- local save file operations ----
 
     function doImport(path, pw) {
         var err = core.tox_import_profile(path, pw, !importNoBackup.checked)
         if (err.length > 0) {
             importError.text = "Import failed: " + err
-        } else {
-            importConfirmDlg.close()
-            core.set_local_setting("tox_enabled", "1")
-            resultText.text = "Imported. Your new Tox identity is now in use."
-            resultDialog.open()
-            doRefresh()
+            return
         }
+        importConfirmDlg.close()
+        core.set_local_setting("tox_enabled", "1")
+        showBanner("Imported. The new Tox save is in place.")
+        doRefresh()
     }
 
     function doCreateNew() {
@@ -121,103 +130,82 @@ Page {
         var ok = core.tox_reset_identity()
         if (ok) {
             core.set_local_setting("tox_enabled", "1")
-            resultText.text = "A new Tox identity was created."
-            resultDialog.open()
+            showBanner("Created a new Tox save.")
         } else {
-            resultText.text = "Could not create a new Tox identity."
-            resultDialog.open()
+            showBanner("Could not create a new Tox save.", true)
         }
         doRefresh()
     }
 
-    function doReset() {
-        resetConfirmDlg.close()
+    function doDeleteSave() {
+        deleteConfirmDlg.close()
         if (core.tox_enabled)
             core.disable_tox()
         var ok = core.tox_factory_reset()
         core.set_local_setting("tox_enabled", "0")
-        core.set_local_setting("cached_tox_name", "")
-        core.set_local_setting("cached_tox_address", "")
         if (ok) {
-            resultText.text = "Tox was reset. This is a fresh start."
-            resultDialog.open()
+            // the save is gone, so the remembered name/address are stale.
+            // clearing them through the shared owner is what stops the
+            // tox page carrying on showing the deleted identity.
+            tox_state.forgetCachedIdentity()
+            showBanner("Tox save deleted. A copy was saved to disk first.")
         } else {
-            resultText.text = "Reset failed. The tox save was not removed."
-            resultDialog.open()
+            showBanner("Delete failed. The Tox save was not removed.", true)
         }
         doRefresh()
-        refreshShared()
     }
 
-    // ---- group-shared tox identities ----
-
-    // one entry per identity the group has published. keys come from
+    // ---- tox saves shared with the rest of the group ----
+    // one entry per save any group member has published. keys come from
     // DwycoCore::tox_list_saves(): mid, pubkey, when, size, encrypted,
-    // is_current, holder, held_by_me
+    // is_current, holder, held_by_me. note mid and pubkey are the same
+    // string, the hex pubkey of the save.
+
     property var sharedList: []
-    property int sharedSel: -1
-    property var sharedSelRow: sharedSel >= 0 && sharedSel < sharedList.length
-                              ? sharedList[sharedSel] : null
+    // the row a confirmation dialog is about. the list can refresh while
+    // a dialog is open, so the dialogs must not read a live index.
+    property var pendingRow: null
 
     function refreshShared() {
-        var keepMid = sharedSelRow ? sharedSelRow.mid : ""
         sharedList = core.tox_list_saves()
-        // keep the selection across a refresh if we can find it again
-        sharedSel = -1
-        if (keepMid.length > 0) {
-            for (var i = 0; i < sharedList.length; ++i) {
-                if (sharedList[i].mid === keepMid) {
-                    sharedSel = i
-                    break
-                }
-            }
-        }
     }
 
-    // adopt the selected shared identity. leaves tox stopped, so the ui
-    // drops to the "loaded, not signed in" state where Sign In lives.
-    function doSelectShared() {
-        if (!sharedSelRow)
-            return
-        var row = sharedSelRow
+    // load a shared save. this is a file level operation: it leaves tox
+    // signed out, so the card drops to the "loaded" state where the
+    // password field (or a plain sign in) takes over.
+    function doLoad(row) {
         selectSharedDlg.close()
         var err = core.tox_select_save(row.mid)
         if (err.length > 0) {
-            resultText.text = "Could not use that identity: " + err
-            resultDialog.open()
+            showBanner("Could not load that save: " + err, true)
+            pendingRow = null
             return
         }
-        resultText.text = "Identity " + shortPub(row.pubkey) + " loaded. Sign in to start using it here."
-        resultDialog.open()
+        showBanner("Loaded " + shortPub(row.pubkey)
+                   + ". Sign in to use it on this device.")
+        pendingRow = null
         doRefresh()
-        refreshShared()
     }
 
-    // drop a shared identity from every group member's list. does not change
+    // drop a shared save from every group member's list. does not change
     // any client's tox state, and is a one shot removal: a device still
-    // signed in with the identity can publish it again.
-    function doUnshare() {
-        if (!sharedSelRow)
-            return
-        var row = sharedSelRow
+    // signed in with the save can publish it again.
+    function doUnshare(row) {
         unshareConfirmDlg.close()
-        if (core.tox_depublish_save(row.mid)) {
-            resultText.text = "Identity " + shortPub(row.pubkey)
-                            + " is no longer shared with the group."
-            resultDialog.open()
-        } else {
-            // nothing to remove -- another member already unpublished it.
-            resultText.text = "That identity was already not shared."
-            resultDialog.open()
-        }
+        var removed = core.tox_depublish_save(row.mid)
+        pendingRow = null
+        if (removed)
+            showBanner(shortPub(row.pubkey)
+                       + " is no longer shared with your devices.")
+        else
+            showBanner("That save was already not shared.")
         doRefresh()
-        refreshShared()
     }
 
     function shortPub(pk) {
         if (!pk || pk.length < 12)
             return "?"
-        return pk.substring(0, 12) + "..."
+        return pk.substring(0, 12) + "…"
     }
 
     function sizeLabel(n) {
@@ -243,10 +231,25 @@ Page {
 
     function holderLabel(row) {
         if (row.held_by_me)
-            return "in use here"
+            return "In use here"
         if (row.holder && row.holder.length > 0)
-            return "in use on " + shortPub(row.holder)
-        return "not in use"
+            return "In use on " + shortPub(row.holder)
+        return "Not in use"
+    }
+
+    function rowSubLabel(row) {
+        var s = holderLabel(row) + " · " + sizeLabel(row.size)
+        if (row.encrypted)
+            s += " · Password protected"
+        return s
+    }
+
+    function shareCurrent() {
+        if (core.tox_publish_save())
+            showBanner("Shared with your other devices.")
+        else
+            showBanner("Could not share. Sign in to your Tox save first.", true)
+        refreshShared()
     }
 
     // ---- filename helpers (for default export name) ----
@@ -292,13 +295,12 @@ Page {
 
     Connections {
         target: core
-        function onTox_enabledChanged() { doRefresh() }
-        function onTox_connection_status_changed(connected) { doRefresh() }
-        function onTox_import_finished() { doRefresh() }
-        // debounced upstream: the set of shared identities (or who holds one)
-        // changed, eg. another group member published or claimed one.
+        // the tox status state itself is refreshed centrally in main.qml
+        // (see tox_state), so only the shared-saves list is left to track
+        // here. debounced upstream: another group member published,
+        // claimed or dropped a save.
         function onTox_saves_changed() { refreshShared() }
-        function onTox_disabled_by_remote(holder) { doRefresh(); refreshShared() }
+        function onTox_disabled_by_remote(holder) { doRefresh() }
     }
 
     onVisibleChanged: {
@@ -310,7 +312,6 @@ Page {
 
     Component.onCompleted: {
         doRefresh()
-        refreshShared()
     }
 
     ScrollView {
@@ -325,8 +326,37 @@ Page {
             width: acct_scroll.availableWidth
             spacing: mm(1)
 
+            // ---- transient result / error banner ----
+
+            Pane {
+                id: banner
+                visible: tox_acct.bannerText.length > 0
+                Layout.fillWidth: true
+                padding: mm(1)
+                background: Rectangle {
+                    color: tox_acct.bannerError ? "#fdecec" : "#eaf6ec"
+                    radius: mm(1)
+                    border.color: tox_acct.bannerError ? "#e3b0b0" : "#b3d6b8"
+                }
+
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 0
+
+                    Label {
+                        text: tox_acct.bannerText
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        font.pixelSize: dp(12)
+                        color: tox_acct.bannerError ? "#a00" : "#060"
+                    }
+                }
+            }
+
+            // ---- 1. this device ----
+
             Label {
-                text: "Status"
+                text: "This Device"
                 font.bold: true
                 Layout.topMargin: mm(1)
             }
@@ -342,92 +372,295 @@ Page {
 
                 ColumnLayout {
                     width: parent.width
-                    spacing: mm(0.5)
-
-                    Label {
-                        text: stateText
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                        font.pixelSize: dp(14)
-                    }
+                    spacing: mm(1)
 
                     RowLayout {
-                        spacing: mm(1)
                         Layout.fillWidth: true
+                        spacing: mm(1)
+
+                        Rectangle {
+                            Layout.preferredWidth: mm(1.5)
+                            Layout.preferredHeight: mm(1.5)
+                            radius: mm(0.75)
+                            color: tox_state.dotColor
+                        }
 
                         Label {
-                            text: "Encryption:"
+                            text: tox_state.statusText
                             font.bold: true
-                        }
-                        Label {
-                            text: encText
+                            font.pixelSize: dp(14)
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                         }
                     }
 
-                    RowLayout {
-                        spacing: mm(1)
+                    // no save yet: this is where you get one.
+                    ColumnLayout {
+                        visible: tox_state.state === "empty"
                         Layout.fillWidth: true
+                        spacing: mm(1)
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: mm(1)
+
+                            Button {
+                                text: "Import from file…"
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    importPath = ""
+                                    importPw = ""
+                                    importFileDialog.open()
+                                }
+                            }
+
+                            Button {
+                                text: "Create new Tox save"
+                                Layout.fillWidth: true
+                                onClicked: createNewConfirmDlg.open()
+                            }
+                        }
+                    }
+
+                    // save present: identity and password, each with the
+                    // action that changes it right next to the answer.
+                    ColumnLayout {
+                        visible: tox_state.present
+                        Layout.fillWidth: true
+                        spacing: mm(0.5)
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: mm(1)
+
+                            Label {
+                                text: "Tox ID"
+                                font.bold: true
+                            }
+
+                            Label {
+                                text: tox_state.displayId
+                                font.family: "monospace"
+                                font.pixelSize: dp(10)
+                            }
+
+                            Label {
+                                visible: tox_state.displayIdCached
+                                text: "(last used)"
+                                color: "#666"
+                                font.pixelSize: dp(10)
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            Button {
+                                text: "Copy"
+                                enabled: tox_state.displayId !== "-"
+                                onClicked: {
+                                    core.copy_to_clipboard(
+                                        tox_state.state === "signedin"
+                                        ? tox_state.selfAddress
+                                        : tox_state.cachedAddress)
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: mm(1)
+
+                            Label {
+                                text: "Password"
+                                font.bold: true
+                            }
+
+                            Label {
+                                text: passwordLabel()
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+
+                            Button {
+                                visible: !tox_state.encrypted
+                                text: "Set password…"
+                                enabled: tox_state.signedOut
+                                onClicked: {
+                                    setPwInput.text = ""
+                                    setPwConfirmInput.text = ""
+                                    setPwError.text = ""
+                                    setPwDialog.open()
+                                }
+                            }
+
+                            Button {
+                                visible: tox_state.encrypted
+                                text: "Remove password…"
+                                enabled: tox_state.signedOut
+                                onClicked: openPwEntry(
+                                    "removepw",
+                                    "Enter the current password to remove the "
+                                    + "password from this Tox save.")
+                            }
+                        }
+
+                        // locked save: sign in right here, no dialog.
+                        RowLayout {
+                            visible: tox_state.state === "locked"
+                            Layout.fillWidth: true
+                            spacing: mm(1)
+
+                            TextField {
+                                id: cardPwInput
+                                echoMode: TextInput.Password
+                                placeholderText: "Password"
+                                Layout.fillWidth: true
+                                onAccepted: signInFromCard()
+                            }
+
+                            Button {
+                                text: "Sign in"
+                                enabled: cardPwInput.text.length > 0
+                                onClicked: signInFromCard()
+                            }
+                        }
 
                         Label {
-                            text: "Tox ID:"
-                            font.bold: true
+                            id: cardPwError
+                            text: ""
+                            color: "#a00"
+                            visible: text.length > 0
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
                         }
+
                         Label {
-                            font.family: "monospace"
-                            font.pixelSize: 10
-                            text: toxShortId
+                            visible: tox_state.encrypted
+                            text: "Forgot it? You can import a different save "
+                                  + "or delete this one — you don't need the "
+                                  + "old password for either."
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            color: "#666"
+                            font.pixelSize: dp(11)
                         }
-                        Item { Layout.fillWidth: true }
-                        Button {
-                            text: "Copy"
-                            visible: effRunning
-                            onClicked: core.copy_to_clipboard(core.tox_self_address)
+                    }
+
+                    Button {
+                        id: signInOutButton
+                        // hidden while a save is locked, because the card's
+                        // own password field is the sign in for that state.
+                        visible: tox_state.state !== "empty"
+                                 && tox_state.state !== "locked"
+                        text: tox_state.state === "signedin" ? "Sign out" : "Sign in"
+                        Layout.fillWidth: true
+                        onClicked: {
+                            if (tox_state.state === "signedin")
+                                signOut()
+                            else
+                                doSignIn("")
                         }
                     }
                 }
             }
 
+            // ---- 2. swap the local save ----
+
             Label {
-                text: "Setup"
+                visible: tox_state.present
+                text: "Change Tox Save"
                 font.bold: true
                 Layout.topMargin: mm(2)
             }
 
-            Button {
-                text: "Import Profile..."
-                enabled: !effRunning && effPresent || stateName === "empty"
+            ColumnLayout {
+                visible: tox_state.present
                 Layout.fillWidth: true
-                onClicked: {
-                    importPath = ""
-                    importPw = ""
-                    importFileDialog.open()
+                spacing: mm(1)
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: mm(1)
+
+                    Button {
+                        text: "Import from file…"
+                        enabled: tox_state.state !== "signedin"
+                        Layout.fillWidth: true
+                        onClicked: {
+                            importPath = ""
+                            importPw = ""
+                            importFileDialog.open()
+                        }
+                    }
+
+                    Button {
+                        text: "Create new Tox save"
+                        enabled: tox_state.state !== "signedin"
+                        Layout.fillWidth: true
+                        onClicked: createNewConfirmDlg.open()
+                    }
+                }
+
+                Button {
+                    text: "Export to file…"
+                    Layout.fillWidth: true
+                    onClicked: {
+                        var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
+                        if (locs.length > 0) {
+                            exportFileDialog.currentFolder = locs[0]
+                            exportFileDialog.currentFile = locs[0].toString() + "/" + exportDefaultName()
+                        }
+                        exportFileDialog.open()
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.topMargin: mm(1)
+                    implicitHeight: mm(0.25)
+                    color: "#ccc"
+                }
+
+                Button {
+                    text: "Delete this Tox save"
+                    enabled: tox_state.state !== "signedin"
+                    Layout.fillWidth: true
+                    background: Rectangle {
+                        color: tox_state.state === "signedin" ? "#999" : "#c00"
+                        radius: mm(1)
+                    }
+                    contentItem: Label {
+                        text: "Delete this Tox save"
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: deleteConfirmDlg.open()
+                }
+
+                Label {
+                    text: "Deletes the Tox save on this device only. Your messages, "
+                          + "contacts and Dwyco account are not affected. A copy is "
+                          + "saved to disk first. This cannot be undone."
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    color: "#666"
+                    font.pixelSize: dp(11)
                 }
             }
 
-            Button {
-                text: "Create New Identity"
-                enabled: !effRunning
-                Layout.fillWidth: true
-                onClicked: createNewConfirmDlg.open()
-            }
-
-            Label {
-                text: "Shared Identities"
-                font.bold: true
-                Layout.topMargin: mm(2)
-            }
-
-            Label {
-                text: "Tox identities shared with your group. Anyone in the group can run one, but only one device at a time. Picking one here loads it; sign in to start using it. Sharing only happens when you press Publish, and stops when you press Stop Sharing."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: "#666"
-                font.pixelSize: dp(11)
-            }
+            // ---- 3. saves shared with the rest of the group ----
 
             RowLayout {
                 Layout.fillWidth: true
+                Layout.topMargin: mm(2)
+                Layout.bottomMargin: mm(0.5)
                 spacing: mm(1)
+
+                Label {
+                    text: "Shared With My Devices"
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
 
                 Button {
                     text: "Refresh"
@@ -435,90 +668,124 @@ Page {
                 }
 
                 Button {
-                    text: "Publish Mine"
-                    enabled: core.tox_enabled
-                    onClicked: {
-                        if (core.tox_publish_save())
-                            resultText.text = "Your tox identity was published to the group."
-                        else
-                            resultText.text = "Could not publish. Sign in to tox first."
-                        resultDialog.open()
-                        refreshShared()
-                    }
+                    text: "Share this save"
+                    enabled: tox_state.state === "signedin"
+                    onClicked: shareCurrent()
                 }
+            }
 
-                Item { Layout.fillWidth: true }
+            Label {
+                text: "Tox saves shared with your other devices. Anyone in your "
+                      + "group can use one, but only one device at a time."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: "#666"
+                font.pixelSize: dp(11)
+            }
+
+            Label {
+                visible: tox_state.state !== "signedin" && tox_state.present
+                text: "Sign in to your Tox save to share it with your devices."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: "#666"
+                font.pixelSize: dp(11)
             }
 
             ListView {
                 id: sharedListView
                 model: sharedList
+                visible: sharedList.length > 0
                 Layout.fillWidth: true
-                Layout.preferredHeight: sharedList.length === 0 ? 0 : mm(9 * Math.min(sharedList.length, 4) + 1)
+                Layout.preferredHeight: Math.min(sharedListView.contentHeight, mm(100))
                 clip: true
-                spacing: mm(0.5)
-                currentIndex: sharedSel
-                highlight: Rectangle { color: amber_accent; opacity: 0.3 }
+                boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { }
 
                 delegate: Item {
+                    id: sharedRow
                     width: ListView.view.width
-                    height: mm(9)
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: sharedSel = index
-                    }
+                    height: sharedRowCol.implicitHeight + mm(2)
 
                     Rectangle {
                         anchors.fill: parent
-                        anchors.margins: 1
-                        color: "transparent"
-                        border.color: modelData.is_current ? amber_accent : "transparent"
+                        radius: mm(1)
+                        color: modelData.is_current ? "white" : "transparent"
+                        border.color: modelData.is_current ? "#ccc" : "#dedede"
                         border.width: 1
-                        radius: 2
+                    }
+
+                    ColumnLayout {
+                        id: sharedRowCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: mm(1)
+                        spacing: mm(0.5)
 
                         RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: mm(1)
+                            Layout.fillWidth: true
                             spacing: mm(1)
 
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 0
-
-                                Text {
-                                    text: shortPub(modelData.pubkey)
-                                    font.family: "monospace"
-                                    font.pixelSize: dp(11)
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                                Text {
-                                    text: holderLabel(modelData) + " · "
-                                          + sizeLabel(modelData.size) + " · "
-                                          + ageLabel(Math.floor(Date.now() / 1000) - modelData.when)
-                                    font.pixelSize: dp(10)
-                                    color: modelData.held_by_me ? "#070" : "#666"
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                            }
-
                             Rectangle {
-                                visible: modelData.encrypted
-                                Layout.preferredWidth: lockedLabel.implicitWidth + mm(1)
-                                Layout.preferredHeight: lockedLabel.implicitHeight + mm(0.5)
-                                radius: 2
-                                color: "#eee"
-                                Text {
-                                    id: lockedLabel
-                                    anchors.centerIn: parent
-                                    text: "locked"
-                                    font.pixelSize: dp(9)
-                                    color: "#444"
+                                visible: modelData.is_current
+                                Layout.preferredWidth: mm(1.5)
+                                Layout.preferredHeight: mm(1.5)
+                                radius: mm(0.75)
+                                color: accent
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: shortPub(modelData.pubkey)
+                                font.family: "monospace"
+                                font.pixelSize: dp(11)
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: modelData.is_current
+                                      ? "This device"
+                                      : ageLabel(Math.floor(Date.now() / 1000)
+                                                 - modelData.when)
+                                font.pixelSize: dp(10)
+                                font.bold: modelData.is_current
+                                color: modelData.is_current ? accent : "#666"
+                            }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: rowSubLabel(modelData)
+                            font.pixelSize: dp(10)
+                            color: modelData.held_by_me ? "#070" : "#666"
+                            elide: Text.ElideRight
+                        }
+
+                        // actions belong to the row they act on, so
+                        // there is no separate selection to get wrong.
+                        RowLayout {
+                            visible: !modelData.is_current
+                            Layout.fillWidth: true
+                            spacing: mm(1)
+
+                            Button {
+                                text: "Load"
+                                onClicked: {
+                                    pendingRow = modelData
+                                    selectSharedDlg.open()
                                 }
                             }
+
+                            Button {
+                                text: "Stop sharing"
+                                onClicked: {
+                                    pendingRow = modelData
+                                    unshareConfirmDlg.open()
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
                         }
                     }
                 }
@@ -526,179 +793,12 @@ Page {
 
             Label {
                 visible: sharedList.length === 0
-                text: "(No shared identities yet. Sign in to tox and use \"Publish Mine\" to add one.)"
+                text: "No shared saves yet. Sign in to your Tox save and use "
+                      + "\"Share this save\" to add one."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 color: "#666"
                 font.pixelSize: dp(11)
-            }
-
-            Button {
-                text: "Use This Identity"
-                enabled: sharedSelRow !== null && !sharedSelRow.is_current
-                Layout.fillWidth: true
-                // note: if the identity is password protected we don't ask
-                // for it here. loading it puts the page into the normal
-                // "loaded_encrypted" state, where the existing Sign In button
-                // asks for the password.
-                onClicked: selectSharedDlg.open()
-            }
-
-            Button {
-                text: "Stop Sharing This Identity"
-                enabled: sharedSelRow !== null
-                Layout.fillWidth: true
-                onClicked: {
-                    if (sharedSelRow)
-                        unshareConfirmDlg.open()
-                }
-            }
-
-            Label {
-                visible: sharedSelRow !== null && sharedSelRow !== null && sharedSelRow.held_by_me
-                text: "This identity is currently in use on this device. Signing in with it elsewhere will turn it off here."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: "#a00"
-                font.pixelSize: dp(11)
-            }
-
-            Label {
-                text: "Account"
-                font.bold: true
-                Layout.topMargin: mm(2)
-            }
-
-            Button {
-                text: "Export Profile..."
-                enabled: effPresent
-                Layout.fillWidth: true
-                onClicked: {
-                    var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
-                    if (locs.length > 0) {
-                        exportFileDialog.currentFolder = locs[0]
-                        exportFileDialog.currentFile = locs[0].toString() + "/" + exportDefaultName()
-                    }
-                    exportFileDialog.open()
-                }
-            }
-
-            Button {
-                id: signInOutButton
-                text: {
-                    if (stateName === "active_clear" || stateName === "active_unlocked")
-                        return "Sign Out"
-                    if (stateName === "loaded_encrypted")
-                        return "Sign In with Password..."
-                    return "Sign In"
-                }
-                enabled: stateName !== "empty"
-                Layout.fillWidth: true
-                onClicked: {
-                    if (stateName === "active_clear" || stateName === "active_unlocked") {
-                        signOut()
-                    } else if (stateName === "loaded_encrypted") {
-                        pwEntryPurpose = "signin"
-                        openPwEntry("Enter the password for this Tox profile to sign in.")
-                    } else if (stateName === "loaded_clear") {
-                        doSignIn("")
-                    }
-                }
-            }
-
-            Label {
-                visible: stateName === "loaded_encrypted"
-                text: "This profile is password protected. You must enter its password to sign in."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: "#a00"
-            }
-
-            Label {
-                text: "Encryption"
-                font.bold: true
-                Layout.topMargin: mm(2)
-            }
-
-            Button {
-                text: "Add Encryption..."
-                visible: stateName === "loaded_clear"
-                enabled: stateName === "loaded_clear" && !effRunning
-                Layout.fillWidth: true
-                onClicked: {
-                    setPwInput.text = ""
-                    setPwConfirmInput.text = ""
-                    setPwError.text = ""
-                    setPwDialog.open()
-                }
-            }
-
-            Button {
-                text: "Remove Encryption..."
-                visible: stateName === "loaded_encrypted"
-                enabled: stateName === "loaded_encrypted" && !effRunning
-                Layout.fillWidth: true
-                onClicked: {
-                    pwEntryPurpose = "removeenc"
-                    openPwEntry("Enter the current password to remove encryption from this profile.")
-                }
-            }
-
-            Label {
-                text: "Sign out to change encryption."
-                color: "#a00"
-                visible: stateName === "active_clear" || stateName === "active_unlocked"
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.topMargin: mm(2)
-                implicitHeight: mm(1)
-                color: "#ccc"
-            }
-
-            Label {
-                text: "Danger Zone"
-                font.bold: true
-                color: "#a00"
-                Layout.topMargin: mm(1)
-            }
-
-            Button {
-                text: "Reset to Factory"
-                enabled: stateName !== "empty" && !effRunning
-                Layout.fillWidth: true
-                background: Rectangle {
-                    color: stateName !== "empty" && !effRunning ? "#c00" : "#999"
-                    radius: mm(1)
-                }
-                contentItem: Label {
-                    text: "Reset to Factory"
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                onClicked: resetConfirmDlg.open()
-            }
-
-            Label {
-                text: "Reset deletes the current Tox save and returns to the state before Tox was first used. A copy is saved to disk first."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: "#666"
-            }
-
-            Label {
-                text: "Forgot your password?"
-                font.bold: true
-                Layout.topMargin: mm(2)
-            }
-
-            Label {
-                text: "If you forgot the password for a protected profile, you can still import a different profile, create a new identity, or reset to factory above. You don't need the old password for those."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: "#666"
             }
 
             Item {
@@ -714,8 +814,8 @@ Page {
 
     FileDialog {
         id: importFileDialog
-        title: "Choose a Tox profile (.tox) to import"
-        nameFilters: ["Tox profiles (*.tox)", "All files (*)"]
+        title: "Choose a Tox save (.tox) to import"
+        nameFilters: ["Tox saves (*.tox)", "All files (*)"]
         onRejected: {
             importPath = ""
             importPw = ""
@@ -723,14 +823,14 @@ Page {
         onAccepted: {
             var p = core.url_to_filename(selectedFile)
             if (p === "") {
-                resultText.text = "Could not use that file."
-                resultDialog.open()
+                showBanner("Could not use that file.", true)
                 return
             }
             importPath = p
             if (core.tox_file_is_encrypted(p)) {
-                pwEntryPurpose = "import"
-                openPwEntry("This profile was saved with a password. Enter it to import.")
+                openPwEntry("import",
+                            "This save is password protected. Enter its "
+                            + "password to import it.")
             } else {
                 importPw = ""
                 openImportConfirm()
@@ -740,24 +840,22 @@ Page {
 
     FileDialog {
         id: exportFileDialog
-        title: "Export Tox profile"
+        title: "Export Tox save"
         fileMode: FileDialog.SaveFile
-        nameFilters: ["Tox profiles (*.tox)"]
+        nameFilters: ["Tox saves (*.tox)"]
         onAccepted: {
             var p = core.url_to_filename(selectedFile)
             if (p === "") {
-                resultText.text = "Could not use that location."
-                resultDialog.open()
+                showBanner("Could not use that location.", true)
                 return
             }
             if (p.toLowerCase().lastIndexOf(".tox") !== p.length - 4)
                 p += ".tox"
             var err = core.tox_export_profile(p)
             if (err.length > 0)
-                resultText.text = "Export failed: " + err
+                showBanner("Export failed: " + err, true)
             else
-                resultText.text = "Profile exported to " + p
-            resultDialog.open()
+                showBanner("Exported to " + p + ".")
         }
     }
 
@@ -767,12 +865,15 @@ Page {
         importConfirmDlg.open()
     }
 
-    // ---- reusable password entry dialog ----
+    // ---- password entry, for import and remove-password only ----
+    // signing in to a locked save is handled by the card's own field, so
+    // this dialog never has to double as the sign in flow.
 
-    property string pwEntryPurpose: "signin"
+    property string pwEntryPurpose: "import"
     property string pwEntryIntro: ""
 
-    function openPwEntry(intro) {
+    function openPwEntry(purpose, intro) {
+        pwEntryPurpose = purpose
         pwEntryIntro = intro
         pwEntryInput.text = ""
         pwEntryError.text = ""
@@ -782,13 +883,8 @@ Page {
 
     Dialog {
         id: pwEntryDialog
-        title: {
-            if (pwEntryPurpose === "import")
-                return "Password-Protected Profile"
-            if (pwEntryPurpose === "removeenc")
-                return "Remove Encryption"
-            return "Sign In"
-        }
+        title: pwEntryPurpose === "import"
+               ? "Password-protected Tox save" : "Remove password"
         modal: true
         closePolicy: Dialog.NoAutoClose
         anchors.centerIn: Overlay.overlay
@@ -815,7 +911,7 @@ Page {
             Label {
                 id: pwEntryError
                 text: ""
-                color: "red"
+                color: "#a00"
                 visible: text.length > 0
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -828,44 +924,31 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: {
-                        // if tox is "pending" a password (enabled but not
-                        // running), cancel should back out of the sign-in.
-                        if (pwEntryPurpose === "signin" && core.tox_enabled && core.tox_needs_password())
-                            core.disable_tox()
-                        pwEntryDialog.close()
-                    }
+                    onClicked: pwEntryDialog.close()
                 }
 
                 Button {
                     id: pwEntryOkButton
-                    text: {
-                        if (pwEntryPurpose === "import")
-                            return "Next"
-                        if (pwEntryPurpose === "removeenc")
-                            return "Remove Encryption"
-                        return "Sign In"
-                    }
+                    text: pwEntryPurpose === "import" ? "Next" : "Remove password"
                     enabled: pwEntryInput.text.length > 0
                     onClicked: {
                         pwEntryError.text = ""
-                        if (pwEntryPurpose === "signin") {
-                            doSignIn(pwEntryInput.text)
-                            if (pwEntryError.text.length === 0)
-                                pwEntryDialog.close()
-                        } else if (pwEntryPurpose === "import") {
+                        if (pwEntryPurpose === "import") {
                             pwEntryDialog.close()
                             importPw = pwEntryInput.text
                             openImportConfirm()
-                        } else if (pwEntryPurpose === "removeenc") {
+                        } else {
                             var err = core.tox_set_save_password(pwEntryInput.text, "")
                             if (err.length === 0) {
                                 pwEntryDialog.close()
-                                resultText.text = "Encryption removed. The profile is no longer password protected."
-                                resultDialog.open()
+                                showBanner("Password removed. This Tox save is "
+                                           + "no longer protected.")
+                                // tox_set_save_password emits no core
+                                // signal, so the shared state has to be
+                                // re-sampled by hand here.
                                 doRefresh()
                             } else {
-                                pwEntryError.text = "Could not remove encryption: " + err
+                                pwEntryError.text = "Could not remove password: " + err
                                 pwEntryInput.text = ""
                             }
                         }
@@ -875,11 +958,11 @@ Page {
         }
     }
 
-    // ---- add encryption (set new password) dialog ----
+    // ---- set a new password ----
 
     Dialog {
         id: setPwDialog
-        title: "Add Encryption"
+        title: "Set password"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
@@ -889,7 +972,8 @@ Page {
             width: parent.width
 
             Label {
-                text: "Choose a password. From now on you must enter it to sign in to Tox."
+                text: "Choose a password. From now on you must enter it to sign "
+                      + "in to this Tox save."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -911,7 +995,7 @@ Page {
             Label {
                 id: setPwError
                 text: ""
-                color: "red"
+                color: "#a00"
                 visible: text.length > 0
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -928,7 +1012,7 @@ Page {
                 }
 
                 Button {
-                    text: "Add Encryption"
+                    text: "Set password"
                     enabled: setPwInput.text.length > 0
                     onClicked: {
                         setPwError.text = ""
@@ -939,11 +1023,11 @@ Page {
                         var err = core.tox_set_save_password("", setPwInput.text)
                         if (err.length === 0) {
                             setPwDialog.close()
-                            resultText.text = "Encryption added. You will need the password to sign in."
-                            resultDialog.open()
+                            showBanner("Password set. You will need it to sign in.")
+                            // see above: no signal is emitted for this.
                             doRefresh()
                         } else {
-                            setPwError.text = "Could not add encryption: " + err
+                            setPwError.text = "Could not set password: " + err
                         }
                     }
                 }
@@ -951,11 +1035,11 @@ Page {
         }
     }
 
-    // ---- shared identity confirmation ----
+    // ---- load confirmation ----
 
     Dialog {
         id: selectSharedDlg
-        title: "Use This Identity?"
+        title: "Load this Tox save?"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
@@ -965,15 +1049,19 @@ Page {
             width: parent.width
 
             Label {
-                text: sharedSelRow
-                      ? "Load the shared identity " + shortPub(sharedSelRow.pubkey) + "?"
+                text: pendingRow
+                      ? "Make " + shortPub(pendingRow.pubkey) + " the Tox save on "
+                        + "this device?"
                       : ""
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
 
             Label {
-                text: "This replaces the Tox profile currently on this device (a backup is kept). Tox stays signed out until you press Sign In -- signing in is what claims the identity and turns it off on whichever device is currently using it."
+                text: pendingRow && pendingRow.holder && pendingRow.holder.length > 0
+                      ? "It stays in use on " + shortPub(pendingRow.holder)
+                        + " until you sign in here. Signing in is what takes it over."
+                      : "You will be signed out. Sign in afterwards to start using it."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -985,12 +1073,15 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: selectSharedDlg.close()
+                    onClicked: {
+                        pendingRow = null
+                        selectSharedDlg.close()
+                    }
                 }
 
                 Button {
                     text: "Load"
-                    onClicked: doSelectShared()
+                    onClicked: doLoad(pendingRow)
                 }
             }
         }
@@ -1000,7 +1091,7 @@ Page {
 
     Dialog {
         id: unshareConfirmDlg
-        title: "Stop Sharing?"
+        title: "Stop sharing?"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
@@ -1010,26 +1101,25 @@ Page {
             width: parent.width
 
             Label {
-                text: sharedSelRow
-                      ? "Remove the shared identity " + shortPub(sharedSelRow.pubkey)
-                        + " from your group's list?"
+                text: pendingRow
+                      ? "Remove " + shortPub(pendingRow.pubkey) + " from your "
+                        + "devices' shared list?"
                       : ""
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
 
             Label {
-                text: "This removes it for everyone in the group. Nobody is signed out and no one's tox settings change."
+                text: "This removes it for every device in your group. Nobody is "
+                      + "signed out and no one's settings change."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
 
             Label {
-                visible: sharedSelRow !== null && sharedSelRow !== null
-                         && (sharedSelRow.held_by_me || sharedSelRow.holder.length > 0)
-                text: sharedSelRow && sharedSelRow.held_by_me
-                      ? "This identity is in use on this device. It stays signed in here, and it can be published again at any time."
-                      : "This identity is currently in use on " + (sharedSelRow ? shortPub(sharedSelRow.holder) : "") + ". That device keeps running it and can publish it again at any time."
+                visible: pendingRow && pendingRow.held_by_me
+                text: "This save is in use on this device. It stays signed in "
+                      + "here, and it can be shared again at any time."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 color: "#a00"
@@ -1042,12 +1132,15 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: unshareConfirmDlg.close()
+                    onClicked: {
+                        pendingRow = null
+                        unshareConfirmDlg.close()
+                    }
                 }
 
                 Button {
-                    text: "Stop Sharing"
-                    onClicked: doUnshare()
+                    text: "Stop sharing"
+                    onClicked: doUnshare(pendingRow)
                 }
             }
         }
@@ -1057,7 +1150,7 @@ Page {
 
     Dialog {
         id: importConfirmDlg
-        title: "Import Tox Profile"
+        title: "Import Tox save"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
@@ -1067,21 +1160,23 @@ Page {
             width: parent.width
 
             Label {
-                text: "Importing this profile will replace your current Tox identity and friend list. Message history is not stored in Tox profiles and will not be imported."
+                text: "Importing this save replaces the Tox save on this device, "
+                      + "along with its friend list. Message history is not stored "
+                      + "in a Tox save and will not be imported."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
 
             CheckBox {
                 id: importNoBackup
-                text: "Don't save a backup of the current profile"
+                text: "Don't save a backup of the current save"
                 checked: false
             }
 
             Label {
                 id: importError
                 text: ""
-                color: "red"
+                color: "#a00"
                 visible: text.length > 0
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -1094,7 +1189,11 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: importConfirmDlg.close()
+                    onClicked: {
+                        importPath = ""
+                        importPw = ""
+                        importConfirmDlg.close()
+                    }
                 }
 
                 Button {
@@ -1105,11 +1204,11 @@ Page {
         }
     }
 
-    // ---- create new identity confirmation ----
+    // ---- create new save confirmation ----
 
     Dialog {
         id: createNewConfirmDlg
-        title: "Create New Identity"
+        title: "Create new Tox save"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
@@ -1119,7 +1218,9 @@ Page {
             width: parent.width
 
             Label {
-                text: "Your current Tox profile will be replaced with a brand new identity. The old profile (including your Tox ID and friend list) is backed up to a file named replaced_tox_save.tox."
+                text: "This replaces the Tox save on this device with a brand new "
+                      + "identity. The old save (including your Tox ID and friend "
+                      + "list) is backed up to a file named replaced_tox_save.tox."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -1143,18 +1244,18 @@ Page {
                 }
 
                 Button {
-                    text: "Create New Identity"
+                    text: "Create new Tox save"
                     onClicked: doCreateNew()
                 }
             }
         }
     }
 
-    // ---- reset to factory confirmation ----
+    // ---- delete save confirmation ----
 
     Dialog {
-        id: resetConfirmDlg
-        title: "Reset to Factory"
+        id: deleteConfirmDlg
+        title: "Delete Tox save"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
@@ -1164,13 +1265,15 @@ Page {
             width: parent.width
 
             Label {
-                text: "This will delete your current Tox save. Your Tox ID and friend list will be gone. A copy of the current profile is saved to disk first."
+                text: "This deletes the Tox save on this device. Your Tox ID and "
+                      + "friend list are gone. A copy of the current save is saved "
+                      + "to disk first."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
 
             Label {
-                text: "Tox will return to the state it was in before you first used it."
+                text: "Your messages, contacts and Dwyco account are not affected."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -1190,41 +1293,24 @@ Page {
 
                 Button {
                     text: "Cancel"
-                    onClicked: resetConfirmDlg.close()
+                    onClicked: deleteConfirmDlg.close()
                 }
 
                 Button {
-                    text: "Reset to Factory"
+                    text: "Delete this Tox save"
                     background: Rectangle {
                         color: "#c00"
                         radius: mm(1)
                     }
                     contentItem: Label {
-                        text: "Reset to Factory"
+                        text: "Delete this Tox save"
                         color: "white"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
-                    onClicked: doReset()
+                    onClicked: doDeleteSave()
                 }
             }
-        }
-    }
-
-    // ---- generic result dialog ----
-
-    Dialog {
-        id: resultDialog
-        title: "Tox Account"
-        modal: true
-        anchors.centerIn: Overlay.overlay
-        standardButtons: Dialog.Ok
-
-        Label {
-            id: resultText
-            text: ""
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
         }
     }
 }

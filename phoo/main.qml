@@ -102,6 +102,7 @@ ApplicationWindow {
     function maybeAutoLoginTox() {
         if(core.get_local_setting("tox_auto_login") !== "1")
             return
+        tox_state.refresh()
         if(core.tox_enabled && core.tox_needs_password())
             openToxSignIn()
     }
@@ -109,12 +110,147 @@ ApplicationWindow {
     function openToxSignIn() {
         if (!core.tox_enabled)
             core.enable_tox()
+        tox_state.refresh()
         if (core.tox_needs_password()) {
             toxAutoLoginInput.text = ""
             toxAutoLoginError.text = ""
             toxAutoLoginDialog.open()
             toxAutoLoginInput.forceActiveFocus()
+        } else {
+            // enable_tox() above did not go through a sign in, so the
+            // sticky setting has to be set here too or the next start
+            // won't come back up signed in.
+            core.set_local_setting("tox_enabled", "1")
         }
+    }
+
+    // ---- single source of truth for tox state ----
+    //
+    // the tox page and the tox save page each show a status panel, and
+    // they have to agree. they used to each sample core on their own into
+    // their own cached properties, which drifted apart: core's
+    // tox_save_exists() / tox_save_is_encrypted() / tox_needs_password()
+    // are invokable methods with no notify signal, and some mutating
+    // calls (tox_set_save_password, tox_publish_save) emit nothing at all,
+    // so neither page can be driven by bindings alone.
+    //
+    // so the state is sampled here, once, and both pages read it. any
+    // operation that changes the state without emitting a signal still has
+    // to call tox_state.refresh() by hand.
+
+    QtObject {
+        id: tox_state
+
+        property bool present: false
+        property bool encrypted: false
+        property bool enabled: false
+        property bool needsPassword: false
+        property bool connected: false
+        property string selfName: ""
+        property string selfAddress: ""
+        // "empty" | "locked" | "signedout" | "signedin"
+        property string state: "empty"
+        // short form of the address. signed out there is no live address,
+        // so fall back to the last one this device used, so both pages
+        // always show the same id.
+        property string displayId: "-"
+        property bool displayIdCached: false
+        property string cachedName: core.get_local_setting("cached_tox_name")
+        property string cachedAddress: core.get_local_setting("cached_tox_address")
+
+        // one place to ask "is a save loaded but not running", regardless
+        // of whether it is sitting behind a password.
+        readonly property bool signedOut: state === "signedout" || state === "locked"
+
+        // single wording for the status line, shared so it cannot disagree
+        readonly property string statusText: {
+            if (state === "empty")
+                return "No Tox save on this device"
+            if (state === "signedin")
+                return connected ? "Signed in · Connected"
+                                 : "Signed in · Connecting…"
+            return "Signed out"
+        }
+
+        readonly property color dotColor: {
+            if (state === "signedin")
+                return connected ? "green" : "orange"
+            if (state === "empty")
+                return "#999"
+            return "red"
+        }
+
+        function refresh() {
+            present = core.tox_save_exists()
+            encrypted = core.tox_save_is_encrypted()
+            enabled = core.tox_enabled
+            needsPassword = core.tox_needs_password()
+            connected = core.tox_connected !== 0
+            selfAddress = core.tox_self_address
+            selfName = core.tox_get_name()
+
+            if (!present)
+                state = "empty"
+            else if (enabled && !needsPassword)
+                state = "signedin"
+            else
+                state = encrypted ? "locked" : "signedout"
+
+            if (state === "signedin") {
+                displayIdCached = false
+                var a = selfAddress.length >= 8 ? selfAddress
+                        : core.tox_get_self_public_key()
+                displayId = a.length >= 8 ? a.substring(0, 8) + "…" : "-"
+                // remember the live name/address so they survive a sign
+                // out. both pages read these, and the delete path clears
+                // them, so the two can never show different values.
+                if (selfName !== cachedName) {
+                    cachedName = selfName
+                    core.set_local_setting("cached_tox_name", cachedName)
+                }
+                if (selfAddress !== cachedAddress) {
+                    cachedAddress = selfAddress
+                    core.set_local_setting("cached_tox_address", cachedAddress)
+                }
+            } else if (state === "signedout" || state === "locked") {
+                // signed out with a save loaded: there is no live address,
+                // so show the last one this device used for it.
+                displayIdCached = true
+                displayId = cachedAddress.length >= 8
+                        ? cachedAddress.substring(0, 8) + "…" : "-"
+            } else {
+                // no save at all, so there is no id to show, however old
+                // a cached one may be.
+                displayIdCached = false
+                displayId = "-"
+            }
+        }
+
+        // the save is gone, so the remembered name/address are stale.
+        function forgetCachedIdentity() {
+            cachedName = ""
+            cachedAddress = ""
+            core.set_local_setting("cached_tox_name", "")
+            core.set_local_setting("cached_tox_address", "")
+            refresh()
+        }
+    }
+
+    Connections {
+        target: core
+        // union of everything either tox panel cares about. core's
+        // save-related values have no notify, so this list is maintained
+        // by hand; any operation that changes them without emitting one
+        // of these must call tox_state.refresh() explicitly.
+        function onTox_enabledChanged() { tox_state.refresh() }
+        function onTox_connectedChanged() { tox_state.refresh() }
+        function onTox_connection_status_changed(connected) { tox_state.refresh() }
+        function onTox_self_addressChanged() { tox_state.refresh() }
+        function onTox_self_nameChanged() { tox_state.refresh() }
+        function onTox_user_status_changed(status) { tox_state.refresh() }
+        function onTox_import_finished() { tox_state.refresh() }
+        function onTox_saves_changed() { tox_state.refresh() }
+        function onTox_disabled_by_remote(holder) { tox_state.refresh() }
     }
 
     Material.theme: Material.Light
@@ -298,6 +434,10 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        // prime the shared tox state so both tox panels start out
+        // agreeing, before either page is ever shown.
+        tox_state.refresh()
+
         if(camera_permission.status !== Qt.PermissionStatus.Granted) {
             console.log("CAMERA DENIED")
             camera_permission.request()
@@ -903,7 +1043,7 @@ ApplicationWindow {
             width: parent.width
 
             Label {
-                text: "Your Tox profile is password protected.\nEnter your password to sign in."
+                text: "This Tox save is password protected.\nEnter its password to sign in."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -932,13 +1072,11 @@ ApplicationWindow {
 
                 Button {
                     text: "Cancel"
-                    onClicked: {
-                        // if tox is "pending" a password (enabled but not
-                        // running), cancel should back out of the sign-in.
-                        if (core.tox_enabled && core.tox_needs_password())
-                            core.disable_tox()
-                        toxAutoLoginDialog.close()
-                    }
+                    // note: this used to call core.disable_tox() when tox
+                    // was pending a password. a cancel that silently changes
+                    // state is confusing, and the pending state is fully
+                    // recoverable from the tox page.
+                    onClicked: toxAutoLoginDialog.close()
                 }
 
                 Button {
@@ -954,7 +1092,7 @@ ApplicationWindow {
                                 core.set_local_setting("tox_enabled", "1")
                                 toxAutoLoginDialog.close()
                             } else {
-                                toxAutoLoginError.text = "Wrong password or corrupt profile. Try again."
+                                toxAutoLoginError.text = "Wrong password."
                                 toxAutoLoginInput.text = ""
                                 toxAutoLoginInput.forceActiveFocus()
                             }
