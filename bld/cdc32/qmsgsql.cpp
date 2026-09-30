@@ -200,6 +200,14 @@ QMsgSql::init_schema_fav()
     sql_simple("insert into static_crdt_tags values('_tox_device')");
     sql_simple("insert into static_crdt_tags values('_tox')");
     sql_simple("insert into static_crdt_tags values('_tox_mid')");
+    // note: _tox_save mid is hex(tox pubkey), payload is the raw bytes of
+    // tox_save.tox. _tox_active mid is hex(tox pubkey), payload is
+    // hex(dwyco uid) of the device that last signed in with that identity.
+    // both are deliberately absent from static_uid_tags below, so that
+    // leaving a group purges them (see remove_sync_state) -- the save
+    // holds the tox identity's secret keys.
+    sql_simple("insert into static_crdt_tags values('_tox_save')");
+    sql_simple("insert into static_crdt_tags values('_tox_active')");
     commit_transaction();
 }
 
@@ -1101,6 +1109,16 @@ import_remote_mi(const vc& remote_uid)
             update_tags = true;
         s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+        // note: the gmt deletes above run on this separate connection, which
+        // has none of the temp triggers (see the comment about crdt_tags
+        // above), so pgmt_clean did not fire and those payloads are now
+        // orphans. drop exactly the tombstoned ones. note we can't use the
+        // broader "where guid not in (select guid from mt.gmt)" form the
+        // AI comment below warns about: this is a merge, so that would also
+        // destroy payloads for tags this client simply hasn't heard about
+        // yet. a tombstoned guid is different -- it definitively has no live
+        // tag row anywhere, so its payload is unreachable.
+        s.sql_simple("delete from mt.gmt_payload where guid in (select guid from mt.gtomb)");
 
         // note: only dumps from newer clients have a msg_payload table. old dumps
         // are imported as before, just without payloads.
@@ -1398,6 +1416,18 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             const vc& mid = vals[1];
             const vc& tag = vals[2];
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            // note: a tombstoned tag has no payload by definition, so drop it
+            // here rather than leaving it as dead weight in the local
+            // tags.sql. this is what actually reclaims the space for a
+            // depublished shared tox save (whose payload is the identity's
+            // secret keys). we delete the payload directly instead of doing
+            // "delete from gmt where guid = ?1" because pgmt_clean would then
+            // do this for us, but it would also fire dgmt, whose first
+            // statement re-queues an op='d' for every *other* connected peer
+            // (only the sender is out of current_clients here, see the delete
+            // above). the gmt row itself is left to be reaped by the startup
+            // cleanup in init_qmsg_sql, which does run the triggers.
+            sql_simple("delete from mt.gmt_payload where guid = ?1", guid);
             const vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
             {
@@ -1699,6 +1729,13 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_tox_friend')");
     sql_simple("insert into static_uid_tags values('_tox_device')");
     sql_simple("insert into static_uid_tags values('_tox')");
+    // note: '_tox_save' and '_tox_active' are intentionally NOT listed here.
+    // their mids are hex(pubkey), which never appear in msg_idx, so the
+    // delete in remove_sync_state ("tag not in static_uid_tags and mid not in
+    // msg_idx") drops them when leaving a group. that is what we want for
+    // '_tox_save', since it holds the tox identity's secret keys and a
+    // departing member should not keep a copy. on a fresh join there are no
+    // rows, and the first sign-in recreates the claim.
 
     // this is just a scratch table, i put it up here to avoid "create temp"
     // during normal operations...
@@ -1726,7 +1763,7 @@ init_qmsg_sql()
     // note: current_clients is empty here, so no taglog entries are made,
     // but the rows get tombstoned locally so sync imports won't bring
     // them back. every client does this same cleanup on its own at init.
-    sql_simple("delete from mt.gmt where (tag = '_tox_friend' or tag = '_tox_mid') and instr(mid, '_') > 0");
+    sql_simple("delete from mt.gmt where (tag = '_tox_friend' or tag = '_tox_mid' or tag = '_tox_save' or tag = '_tox_active') and instr(mid, '_') > 0");
 
     sql_commit_transaction();
     // this happens one time, the sql file names are changed and old
@@ -3099,6 +3136,35 @@ sql_get_tag_payload(vc mid, vc tag)
     if(res.num_elems() == 0)
         return vcnil;
     return res[0][0];
+}
+
+// returns the winning tag row for (mid, tag) as a 3 element vector
+// (time, guid, payload), or an empty vector if the tag doesn't exist,
+// is tombstoned, or carries no payload.
+//
+// note: unlike sql_get_tag_payload, the ordering here is a *total* order
+// that every client computes identically. gmt.time is whole seconds
+// (strftime('%s','now')), so two clients writing in the same second tie,
+// and sqlite would otherwise break that tie by local rowid, which differs
+// per client. guid is the random 20 hex char crdt identity, which travels
+// with the row, so ordering by it produces the same winner everywhere.
+// this matters for _tox_active, where all clients must independently agree
+// on which device owns a given tox identity.
+vc
+sql_get_tag_payload_ranked(vc mid, vc tag)
+{
+    vc res = sql_simple("select gmt.time, gmt.guid, gp.payload from gmt, mt.gmt_payload as gp using(guid) "
+                "where gmt.mid = ?1 and tag = ?2 "
+                "and not exists(select 1 from mt.gtomb where guid = gmt.guid) "
+                "and gp.payload is not null "
+                "order by gmt.time desc, gmt.guid desc limit 1", mid, tag);
+    if(res.num_elems() == 0)
+        return vc(VC_VECTOR);
+    vc ret(VC_VECTOR);
+    ret.append(res[0][0]);
+    ret.append(res[0][1]);
+    ret.append(res[0][2]);
+    return ret;
 }
 
 void

@@ -24,11 +24,85 @@ Page {
 
     property string origName: ""
     property string origStatus: ""
-    property string connStatusText: "Not signed in"
-    property string connBannerText: "You are not signed in to Tox."
-    property bool showSignInBanner: true
-    property string cachedName: core.get_local_setting("cached_tox_name")
-    property string cachedAddress: core.get_local_setting("cached_tox_address")
+
+    // the tox status state is owned by tox_state in main.qml, which the
+    // tox save page reads too, so the two status panels cannot disagree.
+    // the name/address shown while signed out come from the same place,
+    // which is what stops this page carrying on showing an identity the
+    // save page has already deleted.
+
+    // group-shared identity state. the identity on disk can be claimed by
+    // another device in the group, in which case tox is stopped here and the
+    // user can take it over by signing in again.
+    property var sharedList: []
+    property bool disabledByRemote: false
+    property var remoteRow: null
+
+    // one wording, shared with the tox save page's card.
+    readonly property string connStatusText: tox_state.statusText
+
+    // the extra guidance this page adds on top of the shared headline.
+    readonly property string connBannerText: {
+        if (tox_state.state === "locked")
+            return "This Tox save is password protected. Sign in to unlock it."
+        if (tox_state.state === "signedin")
+            return ""
+        if (tox_state.state === "empty")
+            return "There is no Tox save on this device. Import one or create "
+                   + "a new one on the Tox save page."
+        return "You are not signed in to this Tox save."
+    }
+
+    // the banner is only for states where signing in is the thing to do.
+    readonly property bool showSignInBanner:
+        tox_state.state === "locked" || tox_state.state === "signedout"
+        || tox_state.state === "empty"
+
+    function shortHex(s) {
+        if (!s || s.length < 12)
+            return "?"
+        return s.substring(0, 12) + "..."
+    }
+
+    function refreshShared() {
+        sharedList = core.tox_list_saves()
+        // find the identity currently on disk, if the group knows about it
+        var pk = core.tox_get_self_public_key()
+        remoteRow = null
+        if (pk.length > 0) {
+            for (var i = 0; i < sharedList.length; ++i) {
+                if (sharedList[i].mid === pk && !sharedList[i].held_by_me) {
+                    remoteRow = sharedList[i]
+                    break
+                }
+            }
+        }
+    }
+
+    // true when the identity on disk is signed in somewhere else, so the
+    // banner can offer to take it over.
+    property bool identityInUseElsewhere: remoteRow !== null
+
+    function takeOverIdentity() {
+        if (!remoteRow)
+            return
+        // selecting is a file level operation; it leaves tox stopped and
+        // claims nothing. the sign in that follows is what takes the identity
+        // over from the other device.
+        var err = core.tox_select_save(remoteRow.mid)
+        if (err.length > 0) {
+            takeOverError.text = "Could not load that save: " + err
+            return
+        }
+        takeOverError.text = ""
+        // one sign in path, shared with the banner button and the tox save
+        // page, so all of them do the same thing.
+        openToxSignIn()
+        disabledByRemote = false
+        remoteRow = null
+        refreshToxIdentity()
+        refreshShared()
+    }
 
     function isValidToxId(s) {
         if (s.length !== 76)
@@ -48,20 +122,8 @@ Page {
         return xorEven === ck && xorOdd === co
     }
 
-    function refreshStatus() {
-        if (!core.tox_enabled) {
-            connStatusText = "Not signed in"
-            connBannerText = "You are not signed in to Tox."
-            showSignInBanner = true
-        } else if (core.tox_needs_password()) {
-            connStatusText = "Pending password"
-            connBannerText = "Your Tox profile is password protected. Sign in to unlock it."
-            showSignInBanner = true
-        } else {
-            connStatusText = core.tox_connected ? "Connected" : "Connecting..."
-            showSignInBanner = false
-        }
-    }
+    // status text and the sign in banner are now bound to tox_state, so
+    // there is nothing to re-derive here.
 
     function autoInitToxIdentity() {
         if (core.tox_get_name() === "" && core.tox_get_status_message() === "") {
@@ -76,14 +138,13 @@ Page {
     }
 
     function refreshToxIdentity() {
-        if (!core.tox_enabled || core.tox_needs_password())
+        // only meaningful while tox is actually running.
+        if (tox_state.state !== "signedin")
             return
         toxNameInput.text_input = core.tox_get_name()
         toxStatusInput.text_input = core.tox_get_status_message()
-        core.set_local_setting("cached_tox_name", core.tox_get_name())
-        core.set_local_setting("cached_tox_address", core.tox_self_address)
-        cachedName = core.tox_get_name()
-        cachedAddress = core.tox_self_address
+        // note: the cached name/address that survive a sign out are owned
+        // and written by tox_state now, so both pages read the same values.
         origName = toxNameInput.text_input
         origStatus = toxStatusInput.text_input
         autoInitToxIdentity()
@@ -109,6 +170,8 @@ Page {
 
     Connections {
         target: core
+        // the tox status state is refreshed centrally in main.qml (see
+        // tox_state), so only this page's own widgets are handled here.
         function onAuto_away_state_changed(isAway) {
             if (isAway)
                 userStatusCombo.currentIndex = 1
@@ -139,35 +202,37 @@ Page {
         }
         function onTox_enabledChanged() {
             refreshToxAvatar()
-            refreshStatus()
             refreshToxIdentity()
         }
-        function onTox_connection_status_changed(connected) {
-            refreshStatus()
+        function onTox_saves_changed() {
+            refreshShared()
+        }
+        function onTox_disabled_by_remote(holder) {
+            // another device claimed the identity we were running
+            disabledByRemote = true
+            refreshShared()
+            refreshToxIdentity()
         }
     }
 
     onVisibleChanged: {
         if(visible) {
+            // pick up anything that changed while this page was hidden,
+            // and drop the "was turned off" wording: that describes a
+            // one-off event, not a standing condition, so it must not
+            // outlive the visit it happened during.
+            tox_state.refresh()
+            disabledByRemote = false
             refreshToxAvatar()
-            refreshStatus()
             refreshToxIdentity()
+            refreshShared()
         }
     }
 
     Component.onCompleted: {
+        tox_state.refresh()
         ToxFriendModel.load_friends()
-        if (core.tox_enabled && !core.tox_needs_password()) {
-            toxNameInput.text_input = core.tox_get_name()
-            toxStatusInput.text_input = core.tox_get_status_message()
-            origName = toxNameInput.text_input
-            origStatus = toxStatusInput.text_input
-            autoInitToxIdentity()
-            var curStatus = core.tox_get_user_status()
-            var statusIdx = ["none", "away", "busy"].indexOf(curStatus)
-            if(statusIdx >= 0)
-                userStatusCombo.currentIndex = statusIdx
-        }
+        refreshToxIdentity()
         var aaEnabled = core.get_local_setting("auto_away_enabled")
         autoAwayCb.checked = (aaEnabled === "1")
         var aaTimeout = core.get_local_setting("auto_away_timeout")
@@ -179,13 +244,13 @@ Page {
         }
         var toxAutoLogin = core.get_local_setting("tox_auto_login")
         toxAutoLoginCb.checked = (toxAutoLogin === "1")
+        refreshShared()
         refreshToxAvatar()
-        refreshStatus()
     }
 
     Timer {
         interval: 5000
-        running: core.tox_enabled
+        running: tox_state.state === "signedin"
         repeat: true
         onTriggered: ToxFriendModel.load_friends()
     }
@@ -203,7 +268,7 @@ Page {
                 width: 16
                 height: 16
                 radius: 8
-                color: core.tox_enabled ? (core.tox_connected ? "green" : "orange") : "red"
+                color: tox_state.dotColor
             }
 
             Label {
@@ -212,13 +277,13 @@ Page {
 
             Label {
                 text: "Status:"
-                enabled: core.tox_enabled
+                enabled: tox_state.state === "signedin"
             }
 
             ComboBox {
                 id: userStatusCombo
                 model: ["Available", "Away", "Busy"]
-                enabled: core.tox_enabled
+                enabled: tox_state.state === "signedin"
                 onActivated: {
                     var map = ["none", "away", "busy"]
                     core.tox_set_user_status(map[currentIndex])
@@ -230,7 +295,7 @@ Page {
             }
 
             Button {
-                text: "Account..."
+                text: "Tox save…"
                 onClicked: stack.push(tox_acct)
             }
         }
@@ -258,7 +323,7 @@ Page {
                 }
 
                 ColumnLayout {
-                    visible: core.tox_save_exists()
+                    visible: tox_state.present
                     spacing: mm(0.5)
                     Layout.fillWidth: true
 
@@ -267,22 +332,22 @@ Page {
                         Layout.fillWidth: true
 
                         Label {
-                            text: "Identity:"
+                            text: "Tox save"
                             font.bold: true
                         }
 
                         Label {
-                            visible: core.tox_save_is_encrypted()
-                            text: "Encrypted profile"
+                            visible: tox_state.encrypted
+                            text: "Password protected"
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
                         }
 
                         Label {
-                            visible: !core.tox_save_is_encrypted()
+                            visible: !tox_state.encrypted
                             text: {
-                                if (cachedName !== "")
-                                    return cachedName
+                                if (tox_state.cachedName !== "")
+                                    return tox_state.cachedName
                                 var name = core.tox_get_name()
                                 if (name !== "")
                                     return name
@@ -293,17 +358,19 @@ Page {
                         }
 
                         Label {
-                            visible: !core.tox_save_is_encrypted() && cachedAddress.length > 0
+                            visible: !tox_state.encrypted
+                                     && tox_state.cachedAddress.length > 0
                             font.family: "monospace"
                             font.pixelSize: 10
-                            text: cachedAddress.substring(0, 8)
+                            text: tox_state.displayId
                             verticalAlignment: Text.AlignVCenter
                         }
 
                         Button {
-                            visible: !core.tox_save_is_encrypted() && cachedAddress.length > 0
+                            visible: !tox_state.encrypted
+                                     && tox_state.cachedAddress.length > 0
                             text: "Copy"
-                            onClicked: core.copy_to_clipboard(cachedAddress)
+                            onClicked: core.copy_to_clipboard(tox_state.cachedAddress)
                         }
                     }
                 }
@@ -313,13 +380,68 @@ Page {
                     spacing: mm(2)
 
                     Button {
-                        text: "Sign In"
+                        text: "Sign in"
                         onClicked: openToxSignIn()
                     }
 
                     Button {
-                        text: "Go to Account..."
+                        text: "Go to Tox save…"
                         onClicked: stack.push(tox_acct)
+                    }
+                }
+
+                // the identity on this device is currently signed in on
+                // another device in the group. signing in here takes it over.
+                ColumnLayout {
+                    visible: identityInUseElsewhere
+                    Layout.fillWidth: true
+                    spacing: mm(0.5)
+
+                    Label {
+                        text: disabledByRemote
+                              ? "Tox was turned off here because this Tox save is now in use on another device."
+                              : "This Tox save is in use on another device."
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        color: "#a00"
+                        font.pixelSize: dp(12)
+                    }
+
+                    Label {
+                        text: remoteRow
+                              ? "Tox save " + shortHex(remoteRow.pubkey) + " is in use on device "
+                                + shortHex(remoteRow.holder) + "."
+                              : ""
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        color: "#666"
+                        font.pixelSize: dp(11)
+                    }
+
+                    Label {
+                        id: takeOverError
+                        text: ""
+                        color: "red"
+                        visible: text.length > 0
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        font.pixelSize: dp(11)
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Button {
+                            text: "Sign in here instead"
+                            onClicked: takeOverIdentity()
+                        }
+
+                        Button {
+                            text: "Go to Tox save…"
+                            onClicked: stack.push(tox_acct)
+                        }
+
+                        Item { Layout.fillWidth: true }
                     }
                 }
             }
@@ -341,8 +463,12 @@ Page {
             }
         }
 
+        // note: publishing/unpublishing a shared identity lives on the
+        // account page (see ToxAcct.qml), next to the shared list itself.
+        // this page only reports who is holding the identity.
+
         RowLayout {
-            enabled: core.tox_enabled
+            enabled: tox_state.state === "signedin"
             spacing: mm(1)
 
             CheckBox {
@@ -362,7 +488,7 @@ Page {
             ComboBox {
                 id: autoAwayTimeout
                 model: ["1 min", "2 min", "5 min", "10 min", "15 min", "30 min"]
-                enabled: core.tox_enabled && autoAwayCb.checked
+                enabled: tox_state.state === "signedin" && autoAwayCb.checked
                 onActivated: {
                     var values = [60, 120, 300, 600, 900, 1800]
                     core.auto_away_timeout = values[currentIndex]
@@ -376,8 +502,8 @@ Page {
         }
 
         RowLayout {
-            enabled: core.tox_enabled
-            visible: core.tox_enabled
+            enabled: tox_state.state === "signedin"
+            visible: tox_state.state === "signedin"
             spacing: mm(1)
 
             TextFieldX {
@@ -394,7 +520,7 @@ Page {
 
             Button {
                 text: "Update"
-                enabled: core.tox_enabled && (toxNameInput.text_input !== origName || toxStatusInput.text_input !== origStatus)
+                enabled: tox_state.state === "signedin" && (toxNameInput.text_input !== origName || toxStatusInput.text_input !== origStatus)
                 onClicked: {
                     core.tox_set_name(toxNameInput.text_input)
                     core.tox_set_status_message(toxStatusInput.text_input)
@@ -405,8 +531,8 @@ Page {
         }
 
         RowLayout {
-            enabled: core.tox_enabled
-            visible: core.tox_enabled
+            enabled: tox_state.state === "signedin"
+            visible: tox_state.state === "signedin"
             spacing: mm(1)
 
             Button {
@@ -425,14 +551,14 @@ Page {
 
         Label {
             text: "Add Friend"
-            enabled: core.tox_enabled
+            enabled: tox_state.state === "signedin"
             font.bold: true
             Layout.topMargin: mm(2)
         }
 
         TextFieldX {
             id: toxIdInput
-            enabled: core.tox_enabled
+            enabled: tox_state.state === "signedin"
             placeholder_text: "Paste Tox ID here..."
             validator: RegularExpressionValidator { regularExpression: /[0-9a-fA-F]{0,76}/ }
             Layout.fillWidth: true
@@ -441,7 +567,7 @@ Page {
         Button {
             id: addFriendButton
             text: "Add Friend"
-            enabled: core.tox_enabled && isValidToxId(toxIdInput.text_input)
+            enabled: tox_state.state === "signedin" && isValidToxId(toxIdInput.text_input)
             onClicked: {
                 core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
                 toxIdInput.text_input = ""
@@ -458,15 +584,15 @@ Page {
 
         Label {
             text: "Profile"
-            enabled: core.tox_enabled
-            visible: core.tox_enabled
+            enabled: tox_state.state === "signedin"
+            visible: tox_state.state === "signedin"
             font.bold: true
             Layout.topMargin: mm(2)
         }
 
         RowLayout {
-            enabled: core.tox_enabled
-            visible: core.tox_enabled
+            enabled: tox_state.state === "signedin"
+            visible: tox_state.state === "signedin"
             spacing: mm(1)
 
             Image {
@@ -500,15 +626,15 @@ Page {
 
         Label {
             text: "Friends"
-            enabled: core.tox_enabled
+            enabled: tox_state.state === "signedin"
             font.bold: true
             Layout.topMargin: mm(2)
-            visible: core.tox_enabled
+            visible: tox_state.state === "signedin"
         }
 
         Item {
-            enabled: core.tox_enabled
-            visible: core.tox_enabled
+            enabled: tox_state.state === "signedin"
+            visible: tox_state.state === "signedin"
             Layout.fillWidth: true
             Layout.fillHeight: true
             implicitHeight: mm(40)

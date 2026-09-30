@@ -58,6 +58,10 @@ int toxp_has_password(ToxPlugin *p);
 int toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len);
 // returns 1 if the file at path is a toxencryptsave-encrypted tox save
 int toxp_file_is_encrypted(const char *path);
+// same check against an in-memory save blob (eg. one read out of a tag
+// payload), so callers can tell whether a save needs a password without
+// having to stage it on disk first.
+int toxp_data_is_encrypted(const char *data, int len);
 // encrypt/decrypt a tox save file on disk without a running instance.
 // old_pw must match if the file is currently encrypted (may be NULL/0 length
 // for a plain save). empty new_pw writes the save unencrypted, otherwise it

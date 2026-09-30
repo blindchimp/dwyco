@@ -78,6 +78,34 @@ void tox_bridge_poll();
 vc tox_bridge_get_address();
 vc tox_bridge_get_pubkey();
 
+// group-shared tox identities.
+//
+// a tox save is published as a crdt tag payload so the whole device group
+// sees it: tag '_tox_save', mid is hex(pubkey), payload is the raw bytes of
+// the save file, read verbatim so any encryption state is preserved. several
+// rows can exist for one mid; the newest wins on read. to keep a single tox
+// identity from running on two group members at once, signing in also writes
+// tag '_tox_active' (same mid, payload is hex of the signing-in device's
+// dwyco uid). newest row wins, so the last device to sign in owns the
+// identity, and any other client running it stands down.
+int tox_bridge_publish_save();
+vc tox_bridge_list_saves();
+// adopt the published save for mid_hex (hex pubkey) as the identity this
+// device runs. leaves tox stopped; the user signs in explicitly afterwards,
+// which is what writes the '_tox_active' claim.
+int tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len);
+// remove the shared identity with mid_hex (hex pubkey) from every group
+// member's list. any client may do this. deliberately does not change any
+// client's tox state: nobody is signed out, and a device still signed in
+// with the identity can publish it again.
+int tox_bridge_depublish_save(const vc &mid_hex);
+// hex(uid) of the device that currently owns the identity with the given hex
+// pubkey, or nil if nobody has claimed it.
+vc tox_bridge_claimant(const vc &pub_hex);
+// called from the poll loop; shuts tox down if another device has claimed
+// the identity we're running.
+void tox_bridge_check_active_conflict();
+
 // contact management
 int tox_bridge_friend_add(const vc &address, const vc &message);
 int tox_bridge_friend_add_norequest(const vc &pubkey);

@@ -665,6 +665,9 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     {
         reload_ignore_list();
         TheConvListModel->redecorate();
+        // uid tag changes (including the shared tox saves and claims) arrive
+        // as this event, so nudge the tox identity list to refresh.
+        TheDwycoCore->schedule_tox_saves_changed();
         break;
     }
     case DWYCO_SE_SERVER_ATTR:
@@ -746,6 +749,24 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         // profile preview so it re-fetches the cached avatar
         emit TheDwycoCore->sys_uid_resolved(huid);
         break;
+    case DWYCO_SE_TOX_DISABLED_BY_REMOTE:
+    {
+        // another device in the group signed in with the identity we were
+        // running, so the bridge stopped tox. reflect that in the ui. we do
+        // not sign in anywhere automatically -- the point of the claim is
+        // that one device runs the identity, and the user picks which.
+        TheDwycoCore->stop_auto_away();
+        TheDwycoCore->set_tox_enabled(false);
+        TheDwycoCore->update_tox_connected(0);
+        TheDwycoCore->update_tox_self_address("");
+        TheDwycoCore->update_tox_self_name("");
+        emit TheDwycoCore->tox_connection_status_changed(0);
+        TheDwycoCore->set_local_setting("tox_enabled", "0");
+        emit TheDwycoCore->tox_disabled_by_remote(QString());
+        reload_conv_list();
+        TheDwycoCore->schedule_tox_saves_changed();
+        break;
+    }
     default:
         break;
     }
@@ -2758,6 +2779,24 @@ DwycoCore::schedule_tox_plink()
 }
 
 void
+DwycoCore::schedule_tox_saves_changed()
+{
+    if(!m_tox_saves_timer)
+    {
+        m_tox_saves_timer = new QTimer(this);
+        m_tox_saves_timer->setSingleShot(true);
+        m_tox_saves_timer->setInterval(700);
+        connect(m_tox_saves_timer, &QTimer::timeout, this, [this]() {
+            emit tox_saves_changed();
+        });
+    }
+    // uid tag changes (which is how the shared tox saves arrive) also cover
+    // every other uid tag, so this can fire a lot. coalesce.
+    if(!m_tox_saves_timer->isActive())
+        m_tox_saves_timer->start();
+}
+
+void
 DwycoCore::set_ignore(QString uid, int is_ignored)
 {
     // let's just avoid this from the outset
@@ -3325,6 +3364,101 @@ DwycoCore::tox_set_save_password(const QString& oldPw, const QString& newPw)
     if(ret)
         return QString();
     return QString::fromUtf8(err_buf);
+}
+
+bool
+DwycoCore::tox_publish_save()
+{
+    return dwyco_tox_publish_save() != 0;
+}
+
+QVariantList
+DwycoCore::tox_list_saves()
+{
+    QVariantList out;
+    DWYCO_LIST saves = 0;
+    if(!dwyco_tox_list_saves(&saves))
+        return out;
+    simple_scoped l(saves);
+    // which identity is on disk right now, so the ui can mark it. compare on
+    // the ascii hex pubkey, which is exactly what the list reports.
+    QString cur_pub = tox_get_self_public_key();
+    const char *my_uid = nullptr;
+    int my_uid_len = 0;
+    dwyco_get_my_uid(&my_uid, &my_uid_len);
+    QByteArray myhex = (my_uid && my_uid_len > 0)
+        ? QByteArray(my_uid, my_uid_len).toHex() : QByteArray();
+
+    int rows = l.rows();
+    for(int i = 0; i < rows; ++i)
+    {
+        QVariantMap m;
+        QString mid = QString::fromLatin1(l.get<QByteArray>(i, "000"));
+        m["mid"] = mid;
+        // the mid *is* the hex pubkey for a shared identity
+        m["pubkey"] = mid;
+        m["when"] = (qlonglong)l.get_long(i, "001");
+        m["size"] = (qlonglong)l.get_long(i, "002");
+        m["encrypted"] = l.get_long(i, "003") != 0;
+        m["is_current"] = (!cur_pub.isEmpty() && cur_pub == mid);
+
+        DWYCO_LIST cl = 0;
+        QByteArray clbuf = mid.toLatin1();
+        if(dwyco_tox_claimant(clbuf.constData(), clbuf.length(), &cl))
+        {
+            simple_scoped c(cl);
+            QByteArray holder = c.get<QByteArray>(0, "000");
+            m["holder"] = QString::fromLatin1(holder);
+            m["held_by_me"] = (!myhex.isEmpty() && holder == myhex);
+        }
+        else
+        {
+            m["holder"] = QString();
+            m["held_by_me"] = false;
+        }
+        out.append(m);
+    }
+    return out;
+}
+
+QString
+DwycoCore::tox_select_save(const QString& mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_select_save(bmid.constData(), bmid.length(),
+                                    err_buf, sizeof(err_buf));
+    if(!ret)
+        return QString::fromUtf8(err_buf);
+
+    // selecting an identity is a file-level operation: tox stays stopped and
+    // the ui moves to the "loaded but not signed in" state, where the normal
+    // sign in button takes over (and is what claims the identity).
+    stop_auto_away();
+    set_tox_enabled(false);
+    update_tox_connected(0);
+    update_tox_self_address("");
+    update_tox_self_name("");
+    emit tox_connection_status_changed(0);
+    set_local_setting("tox_enabled", "0");
+    reload_conv_list();
+    emit tox_import_finished();
+    emit tox_saves_changed();
+    return QString();
+}
+
+bool
+DwycoCore::tox_depublish_save(const QString& mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    int ret = dwyco_tox_depublish_save(bmid.constData(), bmid.length());
+    // note: this deliberately does not touch tox state. no sign out, no
+    // identity file changes -- it only drops the shared copy (and its claim)
+    // from the group. a device still signed in with the identity can publish
+    // it again, which puts it back in the list.
+    if(ret)
+        emit tox_saves_changed();
+    return ret != 0;
 }
 
 void
