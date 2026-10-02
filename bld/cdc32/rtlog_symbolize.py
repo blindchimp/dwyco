@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import re
 import subprocess
 import sys
 
 ADDR_RE = re.compile(r'0x[0-9a-fA-F]+')
+FRAME_RE = re.compile(r'^(?P<func>.+?) at (?P<file>.+?):(?P<line>\d+)(?: \(discriminator \d+\))?\s*$')
+
+def format_frame(s):
+    if s == '?? at ??:?' or s == '?? at ??:0':
+        return '??(??)'
+    m = FRAME_RE.match(s)
+    if not m:
+        return re.sub(r'\s+\(discriminator \d+\)\s*$', '', s)
+    func = m.group('func').split('(')[0]
+    base = os.path.basename(m.group('file'))
+    return f"{func}({base}:{m.group('line')})"
 
 def resolve_many(addr2line, exe, addrs):
     if not addrs:
@@ -68,7 +80,7 @@ def main():
             if not addrs:
                 f.write(line)
                 continue
-            symlist = [symbols.get(a, a) for a in addrs]
+            symlist = [format_frame(symbols.get(a, a)) for a in addrs]
             tail = ADDR_RE.sub('', rest)
             tail = ' '.join(tail.split())
             if tail:
