@@ -8,12 +8,16 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/dwrtlog.cc 1.16 1999/01/10 16:09:42 dwight Checkpoint $
 #ifdef DW_RTLOG
+#define _GNU_SOURCE
 #include <windows.h>
 #include "dwrtlog.h"
 #include "dwstr.h"
 #include <stdarg.h>
 #include "sepstr.h"
 #include "fnmod.h"
+#ifdef __linux__
+#include <execinfo.h>
+#endif
 
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
 #include <android/log.h>
@@ -223,6 +227,54 @@ DwRTLog::vlog(const char *fmt, const char *file, int line, ...)
     LeaveCriticalSection(&cs);
     va_end(ap);
 }
+
+#ifdef __linux__
+#define RTLOG_MAX_BACKTRACE 127
+void
+DwRTLog::backtrace(const char *file, int line, int n)
+{
+    if(n < 0)
+        n = 0;
+    if(n > RTLOG_MAX_BACKTRACE)
+        n = RTLOG_MAX_BACKTRACE;
+    void *frames[RTLOG_MAX_BACKTRACE + 1];
+    int num_frames = ::backtrace(frames, n + 1);
+    if(num_frames <= 1)
+        return;
+    char **symbols = backtrace_symbols(frames, num_frames);
+    if(!symbols)
+        return;
+
+    unsigned long time = flush_timer.time_now();
+    char tmp[TMPBUFSIZE];
+
+    EnterCriticalSection(&cs);
+    if(os->pcount() >= bsize - 1000)
+        flush_to_file();
+    DwString a(file);
+    int i = a.rfind("\\");
+    if(i == -1)
+        i = a.rfind("/");
+    if(i != -1)
+        a.remove(0, i + 1);
+    DWORD tid = GetCurrentThreadId();
+    snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (double)time/1000, a.c_str(), line);
+    tmp[sizeof(tmp) - 1] = 0;
+    (*os) << tmp;
+    int last = n + 1;
+    if(last > num_frames)
+        last = num_frames;
+    for(int j = 1; j < last; j++)
+    {
+        (*os) << symbols[j];
+        if(j < last - 1)
+            (*os) << " <- ";
+    }
+    (*os) << "\n";
+    LeaveCriticalSection(&cs);
+    free(symbols);
+}
+#endif
 
 void
 DwRTLog::log(const char *file, int line, vc v)
