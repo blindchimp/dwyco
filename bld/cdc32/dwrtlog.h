@@ -41,7 +41,7 @@ public:
     void tick();
     void flush_to_file();
 #ifdef __linux__
-    void backtrace(const char *file, int line, int n);
+    void backtrace(const char *file, int line, int skip, int count);
 #endif
 
 private:
@@ -77,9 +77,9 @@ vc logbasename(const char *);
 #define GRTLOGF(fmt, v1, v2, v3, v4, v5, v6) do { {if(RTLog) RTLOGSTART RTLog->vlog((fmt), __FILE__, __LINE__, (v1), (v2), (v3), (v4), (v5), (v6)); RTLOGEND } } while(0)
 #define GRTLOGVC(v) do { {if(RTLog) RTLOGSTART RTLog->log(__FILE__, __LINE__, (v)); RTLOGEND } } while(0)
 #ifdef __linux__
-#define GRTLOGBACKTRACE(n) do { {if(RTLog) RTLOGSTART RTLog->backtrace(__FILE__, __LINE__, (n)); RTLOGEND } } while(0)
+#define GRTLOGBACKTRACE(skip, count) do { {if(RTLog) RTLOGSTART RTLog->backtrace(__FILE__, __LINE__, (skip), (count)); RTLOGEND } } while(0)
 #else
-#define GRTLOGBACKTRACE(n) do {} while(0)
+#define GRTLOGBACKTRACE(skip, count) do {} while(0)
 #endif
 extern DwRTLog *RTLog;
 extern vc RTLogOn;
@@ -93,7 +93,7 @@ void init_rtlog();
 #define GRTLOGA(fmt, v1, v2, v3, v4, v5) do {} while(0)
 #define GRTLOGF(fmt, v1, v2, v3, v4, v5, v6) do {} while(0)
 #define GRTLOGVC(v) do {} while(0)
-#define GRTLOGBACKTRACE(n) do {} while(0)
+#define GRTLOGBACKTRACE(skip, count) do {} while(0)
 #endif
 
 #endif

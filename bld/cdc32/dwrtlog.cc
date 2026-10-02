@@ -308,14 +308,19 @@ rtlog_exe_maps(char *exe, size_t exesize, unsigned long *base,
 
 #define RTLOG_MAX_BACKTRACE 127
 void
-DwRTLog::backtrace(const char *file, int line, int n)
+DwRTLog::backtrace(const char *file, int line, int skip, int count)
 {
-    if(n < 0)
-        n = 0;
-    if(n > RTLOG_MAX_BACKTRACE)
-        n = RTLOG_MAX_BACKTRACE;
+    if(skip < 0)
+        skip = 0;
+    if(count < 0)
+        count = 0;
+    int max_frames = RTLOG_MAX_BACKTRACE + 1;
+    if(skip > max_frames - 1)
+        skip = max_frames - 1;
+    if(count > max_frames - 1 - skip)
+        count = max_frames - 1 - skip;
     void *frames[RTLOG_MAX_BACKTRACE + 1];
-    int num_frames = ::backtrace(frames, n + 1);
+    int num_frames = ::backtrace(frames, 1 + skip + count);
     if(num_frames <= 1)
         return;
 
@@ -340,11 +345,12 @@ DwRTLog::backtrace(const char *file, int line, int n)
     snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (double)time/1000, a.c_str(), line);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp;
-    int last = n + 1;
+    int first = 1 + skip;
+    int last = first + count;
     if(last > num_frames)
         last = num_frames;
     (*os) << "backtrace:";
-    for(int j = 1; j < last; j++)
+    for(int j = first; j < last; j++)
     {
         char addr[32];
         unsigned long v = (unsigned long)frames[j];
