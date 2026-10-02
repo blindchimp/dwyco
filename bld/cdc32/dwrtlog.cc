@@ -8,12 +8,19 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/dwrtlog.cc 1.16 1999/01/10 16:09:42 dwight Checkpoint $
 #ifdef DW_RTLOG
+#define _GNU_SOURCE
 #include <windows.h>
 #include "dwrtlog.h"
 #include "dwstr.h"
 #include <stdarg.h>
 #include "sepstr.h"
 #include "fnmod.h"
+#ifdef __linux__
+#include <execinfo.h>
+#include <unistd.h>
+#include <limits.h>
+#include <stdlib.h>
+#endif
 
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
 #include <android/log.h>
@@ -223,6 +230,139 @@ DwRTLog::vlog(const char *fmt, const char *file, int line, ...)
     LeaveCriticalSection(&cs);
     va_end(ap);
 }
+
+#ifdef __linux__
+static bool
+rtlog_is_pie_executable()
+{
+    FILE *f = fopen("/proc/self/exe", "rb");
+    if(!f)
+        return false;
+    unsigned char e[18];
+    size_t n = fread(e, 1, sizeof(e), f);
+    fclose(f);
+    if(n < 18 || e[0] != 0x7f || e[1] != 'E' || e[2] != 'L' || e[3] != 'F')
+        return false;
+    int et = e[16] | (e[17] << 8);
+    return et == 3;
+}
+
+static bool
+rtlog_exe_maps(char *exe, size_t exesize, unsigned long *base,
+               unsigned long *lo, unsigned long *hi)
+{
+    ssize_t n = readlink("/proc/self/exe", exe, exesize - 1);
+    if(n <= 0)
+        return false;
+    exe[n] = 0;
+    FILE *f = fopen("/proc/self/maps", "r");
+    if(!f)
+        return false;
+    bool any = false;
+    bool have_base = false;
+    *base = 0;
+    *lo = (unsigned long)-1;
+    *hi = 0;
+    char line[2048];
+    while(fgets(line, sizeof(line), f))
+    {
+        unsigned long s, e;
+        char perms[16], off[32], dev[32], ino[64], path[PATH_MAX];
+        path[0] = 0;
+        int r = sscanf(line, "%lx-%lx %15s %31s %31s %63s %1023s",
+                       &s, &e, perms, off, dev, ino, path);
+        if(r < 6)
+            continue;
+        if(r == 7)
+        {
+            if(strncmp(path, " (deleted)", 10) == 0)
+                path[0] = 0;
+        }
+        char pbuf[PATH_MAX + 32];
+        pbuf[0] = 0;
+        if(r == 7)
+        {
+            strcpy(pbuf, path);
+            char *del = strstr(pbuf, " (deleted)");
+            if(del)
+                *del = 0;
+        }
+        if(strcmp(pbuf, exe) != 0)
+            continue;
+        if(!any || s < *lo)
+            *lo = s;
+        if(e > *hi)
+            *hi = e;
+        any = true;
+        if(strcmp(off, "00000000") == 0 && (!have_base || s < *base))
+        {
+            *base = s;
+            have_base = true;
+        }
+    }
+    fclose(f);
+    if(!have_base && any)
+        *base = *lo;
+    return any;
+}
+
+#define RTLOG_MAX_BACKTRACE 127
+void
+DwRTLog::backtrace(const char *file, int line, int skip, int count)
+{
+    if(skip < 0)
+        skip = 0;
+    if(count < 0)
+        count = 0;
+    int max_frames = RTLOG_MAX_BACKTRACE + 1;
+    if(skip > max_frames - 1)
+        skip = max_frames - 1;
+    if(count > max_frames - 1 - skip)
+        count = max_frames - 1 - skip;
+    void *frames[RTLOG_MAX_BACKTRACE + 1];
+    int num_frames = ::backtrace(frames, 1 + skip + count);
+    if(num_frames <= 1)
+        return;
+
+    bool pie = rtlog_is_pie_executable();
+    char exe[PATH_MAX];
+    unsigned long exe_base = 0, exe_lo = 0, exe_hi = 0;
+    bool have_exe = rtlog_exe_maps(exe, sizeof(exe), &exe_base, &exe_lo, &exe_hi);
+
+    unsigned long time = flush_timer.time_now();
+    char tmp[TMPBUFSIZE];
+
+    EnterCriticalSection(&cs);
+    if(os->pcount() >= bsize - 1000)
+        flush_to_file();
+    DwString a(file);
+    int i = a.rfind("\\");
+    if(i == -1)
+        i = a.rfind("/");
+    if(i != -1)
+        a.remove(0, i + 1);
+    DWORD tid = GetCurrentThreadId();
+    snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (double)time/1000, a.c_str(), line);
+    tmp[sizeof(tmp) - 1] = 0;
+    (*os) << tmp;
+    int first = 1 + skip;
+    int last = first + count;
+    if(last > num_frames)
+        last = num_frames;
+    (*os) << "backtrace:";
+    for(int j = first; j < last; j++)
+    {
+        char addr[32];
+        unsigned long v = (unsigned long)frames[j];
+        if(pie && have_exe && v >= exe_lo && v < exe_hi)
+            v -= exe_base;
+        snprintf(addr, sizeof(addr), " 0x%lx", v);
+        (*os) << addr;
+    }
+    (*os) << "\n";
+    LeaveCriticalSection(&cs);
+}
+#endif
 
 void
 DwRTLog::log(const char *file, int line, vc v)

@@ -145,6 +145,8 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a, sqlite3_stmt **stmt_in_out)
     const char *tail = 0;
     int errcode;
 
+    GRTLOGBACKTRACE(4, 4);
+
 #ifdef DWYCO_DBG_CHECK_SQL
     GRTLOG("sql: %d %s", aa.num_elems(), (const char *)sql);
     {
