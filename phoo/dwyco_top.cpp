@@ -3383,6 +3383,17 @@ DwycoCore::tox_list_saves()
     // which identity is on disk right now, so the ui can mark it. compare on
     // the ascii hex pubkey, which is exactly what the list reports.
     QString cur_pub = tox_get_self_public_key();
+    if(cur_pub.isEmpty())
+    {
+        // tox is stopped (signed out, or a save was just loaded), so there
+        // is no live key: fall back to the identity this device's save
+        // carries. the cached address is the live address written at the
+        // last sign in (or the loaded save's pubkey, which is all the shared
+        // list carries), and its first 64 hex chars are the pubkey.
+        QString cached = get_local_setting("cached_tox_address");
+        if(cached.length() >= 64)
+            cur_pub = cached.left(64);
+    }
     const char *my_uid = nullptr;
     int my_uid_len = 0;
     dwyco_get_my_uid(&my_uid, &my_uid_len);

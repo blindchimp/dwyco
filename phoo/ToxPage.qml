@@ -105,6 +105,10 @@ Page {
             return
         }
         takeOverError.text = ""
+        // the save on disk is now the remote one; the identity cache
+        // has to follow it, or cancelling the sign in below would leave
+        // this page showing the id that was replaced.
+        tox_state.setLoadedIdentity(remoteRow.pubkey)
         // one sign in path, shared with the banner button and the tox save
         // page, so all of them do the same thing.
         openToxSignIn()
@@ -390,7 +394,7 @@ Page {
 
                             Button {
                                 visible: !tox_state.encrypted
-                                         && tox_state.cachedAddress.length > 0
+                                         && tox_state.canCopyAddress
                                 text: "Copy"
                                 onClicked: core.copy_to_clipboard(tox_state.cachedAddress)
                             }
