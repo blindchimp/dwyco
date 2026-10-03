@@ -151,18 +151,12 @@ ApplicationWindow {
         // "empty" | "locked" | "signedout" | "signedin"
         property string state: "empty"
         // short form of the address. signed out there is no live address,
-        // so fall back to the identity of the save sitting on this device,
-        // so both pages always show the same id.
+        // so fall back to the last one this device used, so both pages
+        // always show the same id.
         property string displayId: "-"
         property bool displayIdCached: false
         property string cachedName: core.get_local_setting("cached_tox_name")
         property string cachedAddress: core.get_local_setting("cached_tox_address")
-
-        // only put a real tox id on the clipboard: a full address, either
-        // live or cached. a save loaded from the group is remembered by its
-        // pubkey until the user signs in, and a bare pubkey is not an id.
-        readonly property bool canCopyAddress: displayId !== "-"
-            && (state === "signedin" || cachedAddress.length === 76)
 
         // one place to ask "is a save loaded but not running", regardless
         // of whether it is sitting behind a password.
@@ -220,7 +214,7 @@ ApplicationWindow {
                 }
             } else if (state === "signedout" || state === "locked") {
                 // signed out with a save loaded: there is no live address,
-                // so show the identity of the save on this device.
+                // so show the last one this device used for it.
                 displayIdCached = true
                 displayId = cachedAddress.length >= 8
                         ? cachedAddress.substring(0, 8) + "…" : "-"
@@ -230,22 +224,6 @@ ApplicationWindow {
                 displayIdCached = false
                 displayId = "-"
             }
-        }
-
-        // the save on disk was just replaced by a load (tox_select_save),
-        // which deliberately leaves tox stopped: there is no live address
-        // to refresh from, and the cached identity still describes the
-        // save that was replaced. the shared list only carries the hex
-        // pubkey — that is also the address prefix, so the short id shown
-        // is right; the full address comes back when the user signs in and
-        // refresh() rewrites the cache from the live one. the name is
-        // cleared because the loaded save's name is not known until then.
-        function setLoadedIdentity(pubkeyHex) {
-            cachedAddress = pubkeyHex
-            cachedName = ""
-            core.set_local_setting("cached_tox_address", cachedAddress)
-            core.set_local_setting("cached_tox_name", cachedName)
-            refresh()
         }
 
         // the save is gone, so the remembered name/address are stale.

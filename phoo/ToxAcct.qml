@@ -184,10 +184,6 @@ Page {
         showBanner("Loaded " + shortPub(row.pubkey)
                    + ". Sign in to use it on this device.")
         pendingRow = null
-        // the save on disk is now this one; move the shared identity
-        // cache to match so the card shows the id the next sign-in
-        // will use instead of the one that was replaced.
-        tox_state.setLoadedIdentity(row.pubkey)
         doRefresh()
     }
 
@@ -450,8 +446,7 @@ Page {
 
                             Label {
                                 visible: tox_state.displayIdCached
-                                         && tox_state.displayId !== "-"
-                                text: "(on this device)"
+                                text: "(last used)"
                                 color: "#666"
                                 font.pixelSize: dp(10)
                             }
@@ -460,7 +455,7 @@ Page {
 
                             Button {
                                 text: "Copy"
-                                enabled: tox_state.canCopyAddress
+                                enabled: tox_state.displayId !== "-"
                                 onClicked: {
                                     core.copy_to_clipboard(
                                         tox_state.state === "signedin"
