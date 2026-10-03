@@ -226,7 +226,7 @@ Page {
         if (h >= 1)
             return h + (h === 1 ? " hour ago" : " hours ago")
         var m = Math.max(1, Math.floor(secs / 60))
-        return m + (m === 1 ? " min ago" : " min ago")
+        return m + " min ago"
     }
 
     function holderLabel(row) {
@@ -503,6 +503,15 @@ Page {
                             }
                         }
 
+                        Label {
+                            visible: tox_state.state === "signedin"
+                            text: "Sign out to change the password."
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            color: "#666"
+                            font.pixelSize: dp(11)
+                        }
+
                         // locked save: sign in right here, no dialog.
                         RowLayout {
                             visible: tox_state.state === "locked"
@@ -563,11 +572,11 @@ Page {
                 }
             }
 
-            // ---- 2. swap the local save ----
+            // ---- 2. back up or replace the local save ----
 
             Label {
                 visible: tox_state.present
-                text: "Change Tox Save"
+                text: "Back Up or Replace"
                 font.bold: true
                 Layout.topMargin: mm(2)
             }
@@ -600,6 +609,15 @@ Page {
                     }
                 }
 
+                Label {
+                    visible: tox_state.state === "signedin"
+                    text: "Sign out to import or create a Tox save."
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    color: "#666"
+                    font.pixelSize: dp(11)
+                }
+
                 Button {
                     text: "Export to file…"
                     Layout.fillWidth: true
@@ -612,40 +630,6 @@ Page {
                         exportFileDialog.open()
                     }
                 }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.topMargin: mm(1)
-                    implicitHeight: mm(0.25)
-                    color: "#ccc"
-                }
-
-                Button {
-                    text: "Delete this Tox save"
-                    enabled: tox_state.state !== "signedin"
-                    Layout.fillWidth: true
-                    background: Rectangle {
-                        color: tox_state.state === "signedin" ? "#999" : "#c00"
-                        radius: mm(1)
-                    }
-                    contentItem: Label {
-                        text: "Delete this Tox save"
-                        color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: deleteConfirmDlg.open()
-                }
-
-                Label {
-                    text: "Deletes the Tox save on this device only. Your messages, "
-                          + "contacts and Dwyco account are not affected. A copy is "
-                          + "saved to disk first. This cannot be undone."
-                    wrapMode: Text.WordWrap
-                    Layout.fillWidth: true
-                    color: "#666"
-                    font.pixelSize: dp(11)
-                }
             }
 
             // ---- 3. saves shared with the rest of the group ----
@@ -657,14 +641,9 @@ Page {
                 spacing: mm(1)
 
                 Label {
-                    text: "Shared With My Devices"
+                    text: "Shared Saves"
                     font.bold: true
                     Layout.fillWidth: true
-                }
-
-                Button {
-                    text: "Refresh"
-                    onClicked: refreshShared()
                 }
 
                 Button {
@@ -683,9 +662,24 @@ Page {
                 font.pixelSize: dp(11)
             }
 
+            // one hint for the whole section, chosen by state: an empty
+            // list, a signed out save, or nothing to show at all.
             Label {
-                visible: tox_state.state !== "signedin" && tox_state.present
-                text: "Sign in to your Tox save to share it with your devices."
+                visible: text.length > 0
+                text: {
+                    if (sharedList.length === 0) {
+                        if (tox_state.state === "empty")
+                            return "No shared saves yet. Create or import a "
+                                   + "Tox save to get started."
+                        if (tox_state.state !== "signedin")
+                            return "No shared saves yet. Sign in to your Tox save "
+                                   + "and use \"Share this save\" to add one."
+                        return "No shared saves yet. Use \"Share this save\" to add one."
+                    }
+                    if (tox_state.state !== "signedin" && tox_state.present)
+                        return "Sign in to your Tox save to share it with your devices."
+                    return ""
+                }
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 color: "#666"
@@ -791,14 +785,66 @@ Page {
                 }
             }
 
+            // ---- 4. delete the local save (destructive, so it gets its
+            // own card at the bottom, away from the routine operations) ----
+
             Label {
-                visible: sharedList.length === 0
-                text: "No shared saves yet. Sign in to your Tox save and use "
-                      + "\"Share this save\" to add one."
-                wrapMode: Text.WordWrap
+                visible: tox_state.present
+                text: "Delete"
+                font.bold: true
+                Layout.topMargin: mm(2)
+            }
+
+            Pane {
+                visible: tox_state.present
                 Layout.fillWidth: true
-                color: "#666"
-                font.pixelSize: dp(11)
+                padding: mm(2)
+                background: Rectangle {
+                    color: "white"
+                    radius: mm(1)
+                    border.color: "#ddd"
+                }
+
+                ColumnLayout {
+                    width: parent.width
+                    spacing: mm(1)
+
+                    Button {
+                        text: "Delete this Tox save"
+                        enabled: tox_state.state !== "signedin"
+                        Layout.fillWidth: true
+                        background: Rectangle {
+                            color: tox_state.state === "signedin" ? "#999" : "#c00"
+                            radius: mm(1)
+                        }
+                        contentItem: Label {
+                            text: "Delete this Tox save"
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: deleteConfirmDlg.open()
+                    }
+
+                    Label {
+                        visible: tox_state.state === "signedin"
+                        text: "Sign out to delete this Tox save."
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        color: "#666"
+                        font.pixelSize: dp(11)
+                    }
+
+                    Label {
+                        text: "Deletes the Tox save on this device only. A copy is "
+                              + "saved to disk first. Your messages, contacts and "
+                              + "Dwyco account are not affected."
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                        color: "#666"
+                        font.pixelSize: dp(11)
+                    }
+                }
             }
 
             Item {
