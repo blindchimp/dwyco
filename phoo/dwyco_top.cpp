@@ -25,6 +25,11 @@
 #ifdef ANDROID
 //#include <QtAndroid>
 #endif
+#include <QFile>
+#include <QDateTime>
+#include <QTextStream>
+#include <QStandardPaths>
+#include <QRegularExpression>
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
@@ -4266,6 +4271,132 @@ DwycoCore::export_attachment(QString mid)
     return QFile::decodeName(lfn);
 }
 #endif
+
+// display names come from the network, so they can be arbitrarily long
+// and can contain newlines (which would break the one-message-per-line
+// format). squash whitespace and clip to something reasonable.
+static
+QString
+export_conv_name(const QString& name)
+{
+    static const int max_len = 24;
+    QString n = QString(name);
+    n.replace(QRegularExpression("[\\r\\n\\t]+"), " ");
+    n = n.simplified();
+    if(n.length() > max_len)
+        n = n.left(max_len - 3) + "...";
+    if(n.isEmpty())
+        n = "(unknown)";
+    return n;
+}
+
+QString
+DwycoCore::export_conversation(QString uid, qint64 unix_time)
+{
+    QByteArray buid = uid.toLatin1();
+    buid = QByteArray::fromHex(buid);
+
+    if(buid.length() != 10)
+        return "";
+
+    DWYCO_MSG_IDX msg_idx;
+    if(!dwyco_get_message_index(&msg_idx, buid.constData(), buid.length()))
+        return "";
+    simple_scoped qmi(msg_idx);
+
+    DWYCO_UNFETCHED_MSG_LIST unfetched;
+    if(!dwyco_get_unfetched_messages(&unfetched, buid.constData(), buid.length()))
+        return "";
+    simple_scoped quf(unfetched);
+
+    QString userdir;
+#ifdef ANDROID
+    userdir = add_pfx(User_pfx, "exports");
+#else
+    userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+
+    QString filename = QString("/phoo_conversation_%1_%2.txt")
+        .arg(uid.left(8))
+        .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+    userdir += filename;
+
+    QFile file(userdir);
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return "";
+
+    QTextStream out(&file);
+
+    // resolve the display names for both participants. fall back to the
+    // hex uid if we don't know a name for someone.
+    QString my_name = uid_to_name(My_uid.toHex());
+    if(my_name.isEmpty())
+        my_name = My_uid.toHex();
+    QString them_name = uid_to_name(uid);
+    if(them_name.isEmpty())
+        them_name = uid;
+
+    out << "Conversation with: " << export_conv_name(them_name) << "\n";
+    out << "Exported: " << QDateTime::currentDateTime().toString(Qt::ISODate) << "\n";
+    out << "Messages after: " << QDateTime::fromSecsSinceEpoch(unix_time).toString(Qt::ISODate) << "\n";
+    out << "\n";
+
+    int num_msgs = qmi.rows();
+    int available_count = 0;
+    int unavailable_count = 0;
+
+    out << "--- Messages ---\n\n";
+
+    // note: the message index is sorted newest to oldest, so walk it
+    // backwards to end up with the newest message at the bottom of the file.
+    for(int i = num_msgs - 1; i >= 0; --i)
+    {
+        long msg_date = qmi.get_long(i, DWYCO_MSG_IDX_DATE);
+        if(msg_date <= (long)unix_time)
+            continue;
+
+        QByteArray mid = qmi.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        bool is_sent = !qmi.is_nil(i, DWYCO_MSG_IDX_IS_SENT);
+
+        QString timestamp = QDateTime::fromSecsSinceEpoch(msg_date).toString(Qt::ISODate);
+        QString sender = export_conv_name(is_sent ? my_name : them_name);
+
+        DWYCO_SAVED_MSG_LIST sm;
+        if(dwyco_get_saved_message3(&sm, mid.constData()) == DWYCO_GSM_SUCCESS)
+        {
+            simple_scoped qsm(sm);
+            DWYCO_LIST ba = dwyco_get_body_array(qsm);
+            simple_scoped qba(ba);
+            QByteArray txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
+            out << "[" << timestamp << "] " << sender << ": " << QString::fromUtf8(txt) << "\n";
+            available_count++;
+        }
+        else
+        {
+            out << "[" << timestamp << "] " << sender << ": [Message text not available]\n";
+            unavailable_count++;
+        }
+    }
+
+    if(quf.rows() > 0)
+    {
+        out << "\n--- Unfetched Messages (not yet downloaded from server) ---\n\n";
+        for(int i = quf.rows() - 1; i >= 0; --i)
+        {
+            QByteArray mid = quf.get<QByteArray>(i, DWYCO_QMS_ID);
+            out << "Message " << QString::fromLatin1(mid.toHex()) << " not yet fetched\n";
+            unavailable_count++;
+        }
+    }
+
+    out << "\n--- Summary ---\n";
+    out << "Total messages after given time: " << (available_count + unavailable_count) << "\n";
+    out << "Available messages: " << available_count << "\n";
+    out << "Unavailable messages: " << unavailable_count << "\n";
+
+    file.close();
+    return userdir;
+}
 
 
 int

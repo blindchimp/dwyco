@@ -491,6 +491,18 @@ Page {
                                 stack.push(simp_msg_browse)
                             }
                         }
+                        MenuItem {
+                            text: "Export last 30 days"
+                            onTriggered: {
+                                var thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60)
+                                var result = core.export_conversation(to_uid, thirtyDaysAgo)
+                                if(result !== "") {
+                                    showToast("Conversation exported to: " + result)
+                                } else {
+                                    showToast("Export failed")
+                                }
+                            }
+                        }
 
 //                        MenuItem {
 //                            text: "Clear msgs"
