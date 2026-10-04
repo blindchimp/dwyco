@@ -78,6 +78,14 @@ void tox_bridge_poll();
 vc tox_bridge_get_address();
 vc tox_bridge_get_pubkey();
 
+// identity of the save on disk, whether or not tox is running. returns the
+// live identity when the bridge is up, otherwise peeks the save file (which
+// only works for unencrypted saves, or encrypted saves when the password is
+// known). nil when it can't be determined.
+vc tox_bridge_disk_address();
+vc tox_bridge_disk_pubkey();
+vc tox_bridge_disk_name();
+
 // group-shared tox identities.
 //
 // a tox save is published as a crdt tag payload so the whole device group

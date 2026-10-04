@@ -3233,6 +3233,42 @@ DwycoCore::tox_get_self_address()
     return ret.toHex();
 }
 
+QString
+DwycoCore::tox_disk_pubkey()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_disk_pubkey(&out, &len_out))
+        return QString();
+    QByteArray ret(out, len_out);
+    dwyco_free_array(out);
+    return ret.toHex();
+}
+
+QString
+DwycoCore::tox_disk_address()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_disk_address(&out, &len_out))
+        return QString();
+    QByteArray ret(out, len_out);
+    dwyco_free_array(out);
+    return ret.toHex();
+}
+
+QString
+DwycoCore::tox_disk_name()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_disk_name(&out, &len_out))
+        return QString();
+    QString s = QString::fromUtf8(out, len_out);
+    dwyco_free_array(out);
+    return s;
+}
+
 bool
 DwycoCore::tox_needs_password()
 {
@@ -3387,7 +3423,7 @@ DwycoCore::tox_list_saves()
     simple_scoped l(saves);
     // which identity is on disk right now, so the ui can mark it. compare on
     // the ascii hex pubkey, which is exactly what the list reports.
-    QString cur_pub = tox_get_self_public_key();
+    QString cur_pub = tox_disk_pubkey();
     const char *my_uid = nullptr;
     int my_uid_len = 0;
     dwyco_get_my_uid(&my_uid, &my_uid_len);

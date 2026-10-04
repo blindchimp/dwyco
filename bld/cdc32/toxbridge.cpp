@@ -89,6 +89,11 @@ static DwString Save_file;
 static uint8_t *Active_password;
 static int Active_password_len;
 static int Needs_password;
+// raw binary pubkey of the identity most recently written to disk by
+// tox_bridge_select_save. lets the ui show the loaded identity even when the
+// save is encrypted (and so can't be peeked) and tox is stopped. cleared by
+// factory reset / reset identity, which replace the save with something else.
+static vc Disk_pubkey_hint;
 static const uint64_t TOX_AVATAR_MAX_SIZE = 128 * 1024;
 // the synced tox save rides in a single tag payload, which the sync channel
 // sends as one vc. this bound is well above any realistic identity (the save
@@ -1258,6 +1263,7 @@ tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
     // password protected the user will be prompted the same way as any other
     // protected identity, and their remembered password is deliberately left
     // alone.
+    Disk_pubkey_hint = from_hex(mid_hex);
     GRTLOG("tox bridge: selected synced identity (tox left stopped)", 0, 0);
     return 1;
 }
@@ -1639,6 +1645,7 @@ tox_bridge_reset_identity(char *err_buf, int err_buf_len)
     }
     set_active_password(NULL, 0);
     Needs_password = 0;
+    Disk_pubkey_hint = vcnil;
 
     // note: no reconcile. the save file was just deleted and a brand new
     // identity minted, so there is nothing to reconcile against, and the
@@ -1680,6 +1687,7 @@ tox_bridge_factory_reset(char *err_buf, int err_buf_len)
     }
     set_active_password(NULL, 0);
     Needs_password = 0;
+    Disk_pubkey_hint = vcnil;
 
     // intentionally do NOT re-initialize: this restores the first-run state
     // where no tox save exists yet.
@@ -1856,6 +1864,80 @@ tox_bridge_get_pubkey()
     if(!result.find("pubkey", pk))
         return vcnil;
     return pk;
+}
+
+// identity of the save on disk, whether or not tox is running. when the
+// bridge is up the live identity is authoritative; otherwise peek the save
+// file (unencrypted, or encrypted with a known password). the pubkey also
+// falls back to the hint recorded by tox_bridge_select_save, so an encrypted
+// loaded save still reports its identity.
+static vc
+tox_bridge_disk_peek(int want_address, int want_pubkey, int want_name)
+{
+    if(Tox_plugin)
+    {
+        if(want_address)
+        {
+            vc a = tox_bridge_get_address();
+            if(!a.is_nil())
+                return a;
+        }
+        if(want_pubkey)
+        {
+            vc p = tox_bridge_get_pubkey();
+            if(!p.is_nil())
+                return p;
+        }
+        if(want_name)
+        {
+            vc n = tox_bridge_get_name();
+            if(!n.is_nil())
+                return n;
+        }
+        return vcnil;
+    }
+
+    ensure_save_file();
+    DwString save_path = newfn(Save_file.c_str());
+    if(!file_exists(save_path))
+        return vcnil;
+
+    vc address, pubkey, name;
+    if(toxp_peek_save(save_path.c_str(), Active_password, Active_password_len,
+                      want_address ? &address : NULL,
+                      want_pubkey ? &pubkey : NULL,
+                      want_name ? &name : NULL))
+    {
+        if(want_address && !address.is_nil())
+            return address;
+        if(want_pubkey && !pubkey.is_nil())
+            return pubkey;
+        if(want_name && !name.is_nil())
+            return name;
+    }
+
+    if(want_pubkey && !Disk_pubkey_hint.is_nil())
+        return Disk_pubkey_hint;
+
+    return vcnil;
+}
+
+vc
+tox_bridge_disk_address()
+{
+    return tox_bridge_disk_peek(1, 0, 0);
+}
+
+vc
+tox_bridge_disk_pubkey()
+{
+    return tox_bridge_disk_peek(0, 1, 0);
+}
+
+vc
+tox_bridge_disk_name()
+{
+    return tox_bridge_disk_peek(0, 0, 1);
 }
 
 int

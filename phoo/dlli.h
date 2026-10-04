@@ -2260,6 +2260,11 @@ int DWYCOEXPORT dwyco_enable_tox(const char *tox_save_file);
 int DWYCOEXPORT dwyco_disable_tox();
 int DWYCOEXPORT dwyco_tox_get_self_public_key(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_get_self_address(char **out, int *len_out);
+// identity of the save on disk, whether or not tox is running (the identity
+// the next sign-in will use). returns 0 if it can't be determined.
+int DWYCOEXPORT dwyco_tox_disk_address(char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_disk_pubkey(char **out, int *len_out);
+int DWYCOEXPORT dwyco_tox_disk_name(char **out, int *len_out);
 int DWYCOEXPORT dwyco_tox_is_tox_uid(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg);
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);

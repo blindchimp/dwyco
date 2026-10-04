@@ -9917,6 +9917,45 @@ dwyco_tox_get_self_address(char **out, int *len_out)
     return 1;
 }
 
+// identity of the save on disk, whether or not tox is running. used by the
+// ui to show which identity the next sign-in will use, even while signed out.
+static int
+dwyco_tox_disk_identity(vc (*getter)(), char **out, int *len_out)
+{
+    vc val = getter();
+    if(val.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[val.len()];
+        memcpy(*out, (const char *)val, val.len());
+    }
+    if(len_out)
+        *len_out = val.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_disk_address(char **out, int *len_out)
+{
+    return dwyco_tox_disk_identity(&dwyco::tox_bridge_disk_address, out, len_out);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_disk_pubkey(char **out, int *len_out)
+{
+    return dwyco_tox_disk_identity(&dwyco::tox_bridge_disk_pubkey, out, len_out);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_disk_name(char **out, int *len_out)
+{
+    return dwyco_tox_disk_identity(&dwyco::tox_bridge_disk_name, out, len_out);
+}
+
 DWYCOEXPORT
 int
 dwyco_tox_is_tox_uid(const char *uid, int len_uid)

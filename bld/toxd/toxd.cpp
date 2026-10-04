@@ -837,6 +837,115 @@ toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
 }
 
 int
+toxp_peek_save(const char *save_file, const uint8_t *pw, int pw_len,
+               vc *address_out, vc *pubkey_out, vc *name_out)
+{
+    if(!save_file || !save_file[0])
+        return 0;
+
+    FILE *f = fopen(save_file, "rb");
+    if(!f)
+        return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz >= 10 * 1024 * 1024)
+    {
+        fclose(f);
+        return 0;
+    }
+    uint8_t *raw = (uint8_t *)malloc((size_t)sz);
+    if(fread(raw, 1, (size_t)sz, f) != (size_t)sz)
+    {
+        fclose(f);
+        free(raw);
+        return 0;
+    }
+    fclose(f);
+
+    uint8_t *plain = raw;
+    size_t plain_len = (size_t)sz;
+    if(tox_is_data_encrypted(raw))
+    {
+        if(!pw || pw_len == 0)
+        {
+            free(raw);
+            return 0;
+        }
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt(raw, salt, NULL))
+        {
+            free(raw);
+            return 0;
+        }
+        Tox_Err_Key_Derivation kerr;
+        Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len,
+                                                          salt, &kerr);
+        if(!key)
+        {
+            free(raw);
+            return 0;
+        }
+        if(sz < TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+        {
+            tox_pass_key_free(key);
+            free(raw);
+            return 0;
+        }
+        plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+        Tox_Err_Decryption derr;
+        if(!tox_pass_key_decrypt(key, raw, (size_t)sz, plain, &derr))
+        {
+            free(plain);
+            free(raw);
+            tox_pass_key_free(key);
+            return 0;
+        }
+        free(raw);
+        tox_pass_key_free(key);
+    }
+
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, plain, plain_len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    free(plain);
+    if(!tmp)
+        return 0;
+
+    if(address_out)
+    {
+        uint8_t address[TOX_ADDRESS_SIZE];
+        tox_self_get_address(tmp, address);
+        *address_out = vc(VC_BSTRING, (const char *)address, TOX_ADDRESS_SIZE);
+    }
+    if(pubkey_out)
+    {
+        uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+        tox_self_get_public_key(tmp, pubkey);
+        *pubkey_out = vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE);
+    }
+    if(name_out)
+    {
+        size_t nlen = tox_self_get_name_size(tmp);
+        uint8_t *name = (uint8_t *)malloc(nlen + 1);
+        tox_self_get_name(tmp, name);
+        name[nlen] = 0;
+        *name_out = vc(VC_BSTRING, (const char *)name, (long)nlen);
+        free(name);
+    }
+    tox_kill(tmp);
+    return 1;
+}
+
+int
 toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
                    const uint8_t *dst_pw, int dst_pw_len,
                    char *err_buf, int err_buf_len)
@@ -1464,6 +1573,19 @@ toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
     (void)dst_pw_len;
     if(err_buf && err_buf_len > 0)
         snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_peek_save(const char *save_file, const uint8_t *pw, int pw_len,
+               vc *address_out, vc *pubkey_out, vc *name_out)
+{
+    (void)save_file;
+    (void)pw;
+    (void)pw_len;
+    (void)address_out;
+    (void)pubkey_out;
+    (void)name_out;
     return 0;
 }
 

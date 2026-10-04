@@ -150,17 +150,46 @@ ApplicationWindow {
         property string selfAddress: ""
         // "empty" | "locked" | "signedout" | "signedin"
         property string state: "empty"
-        // short form of the address. signed out there is no live address,
-        // so fall back to the last one this device used, so both pages
-        // always show the same id.
+        // short form of the id. signed in it is the live address; signed out
+        // it is the identity on disk (the one the next sign-in will use),
+        // falling back to the last-used id only when the on-disk identity
+        // can't be read (an encrypted save with no remembered password).
         property string displayId: "-"
         property bool displayIdCached: false
         property string cachedName: core.get_local_setting("cached_tox_name")
         property string cachedAddress: core.get_local_setting("cached_tox_address")
+        // identity of the save on disk, whether or not tox is running.
+        property string pendingAddress: ""
+        property string pendingPubkey: ""
+        property string pendingName: ""
 
         // one place to ask "is a save loaded but not running", regardless
         // of whether it is sitting behind a password.
         readonly property bool signedOut: state === "signedout" || state === "locked"
+
+        // the id to copy to the clipboard: the live address when signed in,
+        // otherwise the on-disk identity's full address, falling back to the
+        // last-used address. empty when only the pubkey is known (an encrypted
+        // loaded save), since a bare pubkey isn't usable by another client.
+        readonly property string copyId: {
+            if (state === "signedin")
+                return selfAddress
+            if (pendingAddress.length > 0)
+                return pendingAddress
+            if (pendingPubkey.length > 0)
+                return ""
+            return cachedAddress
+        }
+
+        // the name to show: live when signed in, otherwise the on-disk
+        // identity's name, falling back to the last-used name.
+        readonly property string displayName: {
+            if (state === "signedin")
+                return selfName
+            if (pendingName.length > 0)
+                return pendingName
+            return cachedName
+        }
 
         // single wording for the status line, shared so it cannot disagree
         readonly property string statusText: {
@@ -188,6 +217,9 @@ ApplicationWindow {
             connected = core.tox_connected !== 0
             selfAddress = core.tox_self_address
             selfName = core.tox_get_name()
+            pendingAddress = core.tox_disk_address()
+            pendingPubkey = core.tox_disk_pubkey()
+            pendingName = core.tox_disk_name()
 
             if (!present)
                 state = "empty"
@@ -213,11 +245,13 @@ ApplicationWindow {
                     core.set_local_setting("cached_tox_address", cachedAddress)
                 }
             } else if (state === "signedout" || state === "locked") {
-                // signed out with a save loaded: there is no live address,
-                // so show the last one this device used for it.
+                // signed out with a save loaded: show the identity on disk
+                // (the one the next sign-in will use), not the last-used one.
                 displayIdCached = true
-                displayId = cachedAddress.length >= 8
-                        ? cachedAddress.substring(0, 8) + "…" : "-"
+                var id = pendingAddress.length >= 8 ? pendingAddress
+                         : (pendingPubkey.length >= 8 ? pendingPubkey
+                            : cachedAddress)
+                displayId = id.length >= 8 ? id.substring(0, 8) + "…" : "-"
             } else {
                 // no save at all, so there is no id to show, however old
                 // a cached one may be.

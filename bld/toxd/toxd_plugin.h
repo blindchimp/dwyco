@@ -44,6 +44,14 @@ int toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_
 int toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
                        const uint8_t *dst_pw, int dst_pw_len,
                        char *err_buf, int err_buf_len);
+// read the identity of the tox save at save_file without a live instance.
+// decrypts with pw if the save is encrypted (pw may be NULL/0 for a plain
+// save). on success the requested outputs (any may be NULL) are filled with
+// the raw binary address (TOX_ADDRESS_SIZE), pubkey (TOX_PUBLIC_KEY_SIZE) and
+// name, and 1 is returned. returns 0 if the identity can't be read (eg. the
+// save is encrypted and no password was supplied).
+int toxp_peek_save(const char *save_file, const uint8_t *pw, int pw_len,
+                   vc *address_out, vc *pubkey_out, vc *name_out);
 // set/clear the password used to encrypt this profile's save data
 // (immediately re-encrypts the on-disk save). empty pw clears it.
 int toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len);

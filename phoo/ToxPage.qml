@@ -77,7 +77,7 @@ Page {
     function refreshShared() {
         sharedList = core.tox_list_saves()
         // find the identity currently on disk, if the group knows about it
-        var pk = core.tox_get_self_public_key()
+        var pk = core.tox_disk_pubkey()
         remoteRow = null
         if (pk.length > 0) {
             for (var i = 0; i < sharedList.length; ++i) {
@@ -368,9 +368,7 @@ Page {
                             Label {
                                 visible: !tox_state.encrypted
                                 text: {
-                                    if (tox_state.cachedName !== "")
-                                        return tox_state.cachedName
-                                    var name = core.tox_get_name()
+                                    var name = tox_state.displayName
                                     if (name !== "")
                                         return name
                                     return "Unnamed"
@@ -381,7 +379,7 @@ Page {
 
                             Label {
                                 visible: !tox_state.encrypted
-                                         && tox_state.cachedAddress.length > 0
+                                         && tox_state.displayId !== "-"
                                 font.family: "monospace"
                                 font.pixelSize: 10
                                 text: tox_state.displayId
@@ -390,9 +388,9 @@ Page {
 
                             Button {
                                 visible: !tox_state.encrypted
-                                         && tox_state.cachedAddress.length > 0
+                                         && tox_state.copyId.length > 0
                                 text: "Copy"
-                                onClicked: core.copy_to_clipboard(tox_state.cachedAddress)
+                                onClicked: core.copy_to_clipboard(tox_state.copyId)
                             }
                         }
                     }

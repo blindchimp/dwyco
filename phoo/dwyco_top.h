@@ -374,6 +374,9 @@ public:
     Q_INVOKABLE bool is_tox_uid(const QString& uid);
     Q_INVOKABLE QString tox_get_self_public_key();
     Q_INVOKABLE QString tox_get_self_address();
+    Q_INVOKABLE QString tox_disk_pubkey();
+    Q_INVOKABLE QString tox_disk_address();
+    Q_INVOKABLE QString tox_disk_name();
     Q_INVOKABLE bool tox_needs_password();
     Q_INVOKABLE bool tox_unlock(const QString& pw);
     Q_INVOKABLE bool tox_set_profile_password(const QString& pw);

@@ -285,9 +285,9 @@ Page {
 
     function exportDefaultName() {
         var name8 = sanitizeFilename(visiblePrefix(core.tox_get_name(), 8))
-        var id = core.tox_self_address
+        var id = core.tox_disk_address()
         if (id.length === 0)
-            id = core.tox_get_self_public_key()
+            id = core.tox_disk_pubkey()
         if (name8.length === 0)
             return "tox-" + (id.length > 8 ? id.substring(0, 8) : id) + ".tox"
         return name8 + (id.length > 4 ? id.substring(0, 4) : id) + ".tox"
@@ -446,7 +446,7 @@ Page {
 
                             Label {
                                 visible: tox_state.displayIdCached
-                                text: "(last used)"
+                                text: "(not signed in)"
                                 color: "#666"
                                 font.pixelSize: dp(10)
                             }
@@ -455,12 +455,9 @@ Page {
 
                             Button {
                                 text: "Copy"
-                                enabled: tox_state.displayId !== "-"
+                                enabled: tox_state.copyId.length > 0
                                 onClicked: {
-                                    core.copy_to_clipboard(
-                                        tox_state.state === "signedin"
-                                        ? tox_state.selfAddress
-                                        : tox_state.cachedAddress)
+                                    core.copy_to_clipboard(tox_state.copyId)
                                 }
                             }
                         }
