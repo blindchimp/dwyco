@@ -9755,7 +9755,7 @@ int
 dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
                          int make_backup, char *err_buf, int err_buf_len)
 {
-    return dwyco::tox_bridge_import_profile(src_path, (const uint8_t *)src_pw, src_pw_len,
+    return dwyco::tox_bridge_load_from_file(src_path, (const uint8_t *)src_pw, src_pw_len,
                                             make_backup, err_buf, err_buf_len);
 }
 

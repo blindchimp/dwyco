@@ -41,10 +41,6 @@ int tox_bridge_check_password(const uint8_t *pw, int pw_len);
 // import a qTox-style .tox file as the active profile. the existing profile
 // is validated/decrypted (src_pw), backed up to replaced_tox_save[.N].tox
 // unless make_backup is 0, the live instance is replaced while running, and
-// the imported save keeps its own password (empty src_pw leaves it
-// unencrypted).
-int tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_pw_len,
-                              int make_backup, char *err_buf, int err_buf_len);
 int tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_pw_len,
                               int make_backup, char *err_buf, int err_buf_len);
 int tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
