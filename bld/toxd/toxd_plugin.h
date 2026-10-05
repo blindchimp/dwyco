@@ -44,6 +44,8 @@ int toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_
 int toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
                        const uint8_t *dst_pw, int dst_pw_len,
                        char *err_buf, int err_buf_len);
+// validate that data is a loadable tox save. returns 1 if valid, 0 otherwise.
+int toxp_validate_save(const uint8_t *data, size_t len);
 // set/clear the password used to encrypt this profile's save data
 // (immediately re-encrypts the on-disk save). empty pw clears it.
 int toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len);

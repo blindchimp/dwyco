@@ -897,6 +897,27 @@ toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
 }
 
 int
+toxp_validate_save(const uint8_t *data, size_t len)
+{
+    if(!data || len == 0)
+        return 0;
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, data, len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+        return 0;
+    tox_kill(tmp);
+    return 1;
+}
+
+int
 toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
 {
     if(p->pass_key)

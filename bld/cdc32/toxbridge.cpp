@@ -1607,6 +1607,113 @@ tox_bridge_import_profile(const char *src_path, const uint8_t *src_pw, int src_p
 }
 
 int
+tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                          int make_backup, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!src_path || !src_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "cannot open %s", src_path ? src_path : "");
+        return 0;
+    }
+
+    uint8_t *data = NULL;
+    size_t len = 0;
+    if(!toxp_import_prepare(src_path, src_pw, src_pw_len, &data, &len,
+                            err_buf, err_buf_len))
+    {
+        GRTLOG("tox: load prepare failed: %s", err_buf, 0);
+        return 0;
+    }
+    ensure_save_file();
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(make_backup && file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up profile to %s", backup_path.c_str(), 0);
+        }
+        else
+        {
+            GRTLOG("tox: backup failed, continuing without backup", 0, 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+    set_active_password(src_pw, src_pw_len);
+
+    int ret = toxp_import_commit(Save_file.c_str(), data, len,
+                                 src_pw, src_pw_len,
+                                 err_buf, err_buf_len);
+    free(data);
+    if(!ret)
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        return 0;
+    }
+    GRTLOG("tox bridge: loaded profile from file", 0, 0);
+    return 1;
+}
+
+int
+tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
+                           char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(save_bytes.is_nil() || save_bytes.len() <= 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "empty save bytes");
+        return 0;
+    }
+
+    if(!toxp_validate_save((const uint8_t *)(const char *)save_bytes, (size_t)save_bytes.len()))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "not a valid tox save file");
+        return 0;
+    }
+
+    ensure_save_file();
+    DwString save_path = newfn(Save_file.c_str());
+    DwString backup_path;
+    int have_backup = 0;
+    if(make_backup && file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up profile to %s", backup_path.c_str(), 0);
+        }
+        else
+        {
+            GRTLOG("tox: backup failed, continuing without backup", 0, 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+
+    // write bytes as-is, preserving whatever encryption state they already have
+    if(!write_save_bytes(save_bytes))
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        snprintf(err_buf, (size_t)err_buf_len, "write failed");
+        return 0;
+    }
+    GRTLOG("tox bridge: loaded profile from bytes, %d bytes", (int)save_bytes.len(), 0);
+    return 1;
+}
+
+int
 tox_bridge_reset_identity(char *err_buf, int err_buf_len)
 {
     if(err_buf && err_buf_len > 0)
