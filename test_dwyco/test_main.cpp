@@ -53,9 +53,6 @@ struct Event {
 struct {
     std::vector<Event> events;
     int login_status;
-    int fetch_id;
-    int fetch_what;
-    char fetch_msgid[256];
     char my_uid[64];
     int my_uid_len;
 } g_state;
@@ -91,54 +88,10 @@ emergency_cb(int problem, int must_exit, const char *msg)
         problem, must_exit, msg ? msg : "null");
 }
 
-static void DWYCOCALLCONV
-fetch_cb(int id, int what, const char *msgid, void *arg)
-{
-    g_state.fetch_id = id;
-    g_state.fetch_what = what;
-    if (msgid) {
-        strncpy(g_state.fetch_msgid, msgid, sizeof(g_state.fetch_msgid) - 1);
-        g_state.fetch_msgid[sizeof(g_state.fetch_msgid) - 1] = 0;
-    }
-}
-
-static void
-service_once(void)
-{
-    int spin;
-    dwyco_service_channels(&spin);
-}
-
-static int
-service_until(int target_cmd, int timeout_ms)
-{
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin;
-        int next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        for (auto &e : g_state.events) {
-            if (e.cmd == target_cmd) return 1;
-        }
-    }
-    return 0;
-}
-
 static int
 wait_login(int timeout_ms)
 {
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin;
-        int next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (g_state.login_status) return 1;
-    }
-    return 0;
+    return wait_for([]() { return g_state.login_status != 0; }, timeout_ms);
 }
 
 static void
@@ -147,14 +100,9 @@ clear_events(void)
     g_state.events.clear();
 }
 
-static int
-event_seen(int cmd)
-{
-    for (auto &e : g_state.events)
-        if (e.cmd == cmd) return 1;
-    return 0;
-}
-
+// Count how many events with this cmd have been seen since the last
+// clear_events(). Used instead of event_seen() where a callback may fire
+// more than once (a per-attachment download event, say).
 static int
 count_events(int cmd)
 {
@@ -164,10 +112,24 @@ count_events(int cmd)
     return n;
 }
 
-// Test peer UID (set from command line)
-static char g_peer_uid[64];
-static int g_peer_uid_len;
-static int g_has_peer;
+static int
+event_seen(int cmd)
+{
+    return count_events(cmd) > 0;
+}
+
+// Print every event seen since the last clear_events(). Tests that cannot
+// make a hard assertion about which events the library chooses to emit
+// still call this, so the run leaves a record instead of proving nothing.
+// Starts on its own line so it does not collide with RUN_TEST's OK.
+static void
+dump_events(const char *what)
+{
+    printf("\n      [%s] %d event(s):", what, (int)g_state.events.size());
+    for (auto &e : g_state.events)
+        printf(" %s", dwyco_se_name_lookup(e.cmd));
+    printf("\n");
+}
 
 static void
 init_test(const char *user_dir)
@@ -221,18 +183,19 @@ test_compose_empty(void)
 static void
 test_compose_file_zap(void)
 {
+    const char *path = "/tmp/dwytest_test_file.txt";
     // Create a temp file for the test
-    FILE *f = fopen("/tmp/dwytest_test_file.txt", "w");
+    FILE *f = fopen(path, "w");
     ASSERT(f);
     fprintf(f, "test content");
     fclose(f);
 
-    int cid = dwyco_make_file_zap_composition("/tmp/dwytest_test_file.txt", 26);
+    int cid = dwyco_make_file_zap_composition(path, (int)strlen(path));
     ASSERT(cid > 0);
     ASSERT(dwyco_is_file_zap(cid) != 0);
     ASSERT(dwyco_delete_zap_composition(cid) != 0);
 
-    unlink("/tmp/dwytest_test_file.txt");
+    unlink(path);
 }
 
 static void
@@ -677,56 +640,74 @@ test_event_send_cancel(void)
     dwyco_zap_send6(cid, g_peer_uid, g_peer_uid_len,
         "event test", 10, 0, 0, 1, &pers_id, &pers_len);
     dwyco_delete_zap_composition(cid);
+    ASSERT(pers_id && pers_len > 0);
 
-    // Kill it to trigger a cancel event (if the library sends one for deferred msgs)
+    // Kill it. DWYCO_SE_MSG_SEND_CANCELED (19) is documented as being
+    // emitted for interrupted background sends, but only "these messages
+    // are delivered for interrupted background sends too" -- it is not
+    // guaranteed for a deferred send that never went on the wire. So give
+    // the library a bounded window to emit it and record what it did emit
+    // rather than hard-asserting, which is what this test did before
+    // (it asserted nothing at all).
     dwyco_kill_message(pers_id, pers_len);
-    service_once();
+    wait_for([]() { return event_seen(DWYCO_SE_MSG_SEND_CANCELED); }, 2000);
+    dump_events("after kill");
+
+    clear_events();
 }
 
 static void
 test_event_tag_change(void)
 {
-    clear_events();
-
     const char *mid = "event_tag_test_mid";
     const char *tag = "event_tag";
 
+    // Same reasoning as test_event_send_cancel: DWYCO_SE_MSG_TAG_CHANGE
+    // (37) is documented, but whether it fires for a mid that is not in
+    // any index is not specified. Wait a bounded window, then record.
+    clear_events();
     dwyco_set_msg_tag(mid, tag);
-    service_once();
+    service_ms(500);
+    dump_events("after set");
 
+    clear_events();
     dwyco_unset_msg_tag(mid, tag);
-    service_once();
+    service_ms(500);
+    dump_events("after unset");
+
+    clear_events();
 }
 
 int
 main(int argc, char **argv)
 {
-    const char *user_dir = "/tmp/dwytest";
-    if (argc > 1) user_dir = argv[1];
-    if (argc > 2) {
-        // The peer UID is passed on the command line as a hex string.
-        // Convert it to the 10-byte binary form the C API expects.
-        int peer_hex_len = strlen(argv[2]);
-        if (peer_hex_len != 20) {
-            fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
-                peer_hex_len, argv[2]);
-            return 1;
-        }
-        g_peer_uid_len = peer_hex_len / 2;
-        for (int i = 0; i < g_peer_uid_len; i++) {
-            unsigned int b;
-            if (sscanf(argv[2] + i * 2, "%2x", &b) != 1) {
-                fprintf(stderr, "Invalid hex peer UID: %s\n", argv[2]);
-                return 1;
-            }
-            g_peer_uid[i] = (char)b;
-        }
+    // argv[1..3] may also be supplied as DWYTEST_DIR / DWYTEST_PEER /
+    // DWYTEST_SEED so ctest can run this without knowing the uids at
+    // configure time. argv wins when both are present.
+    const char *user_dir, *peer_hex, *seed_hex;
+
+    user_dir = arg_or_env(argc, argv, 1, "DWYTEST_DIR");
+    if (!user_dir)
+        user_dir = "/tmp/dwytest";
+
+    peer_hex = arg_or_env(argc, argv, 2, "DWYTEST_PEER");
+    if (peer_hex && !test_uid_arg(peer_hex, "Peer UID",
+            g_peer_uid, sizeof(g_peer_uid), &g_peer_uid_len))
+        return 1;
+    if (peer_hex)
         g_has_peer = 1;
-    }
+
+    seed_hex = arg_or_env(argc, argv, 3, "DWYTEST_SEED");
+    if (seed_hex && !test_uid_arg(seed_hex, "Seed UID",
+            g_seed_uid, sizeof(g_seed_uid), &g_seed_uid_len))
+        return 1;
+    if (seed_hex)
+        g_has_seed = 1;
 
     printf("DWYCO Messaging Local Tests\n");
     printf("  User dir: %s\n", user_dir);
     printf("  Peer UID: %s\n", g_has_peer ? "(provided)" : "(none - send tests skipped)");
+    printf("  Seed UID: %s\n", g_has_seed ? "(provided)" : "(none - seed tests skipped)");
 
     init_test(user_dir);
 

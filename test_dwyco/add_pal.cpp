@@ -12,14 +12,11 @@ main(int argc, char **argv)
     if (argc < 3) { fprintf(stderr, "usage: %s <user_dir> <peer_uid_hex>\n", argv[0]); return 1; }
     const char *user_dir = argv[1];
     const char *peer_hex = argv[2];
-    int hlen = strlen(peer_hex);
-    if (hlen != 20) { fprintf(stderr, "peer must be 20 hex chars\n"); return 1; }
-    char uid[10];
-    for (int i = 0; i < 10; i++) {
-        unsigned b;
-        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) { fprintf(stderr, "bad hex\n"); return 1; }
-        uid[i] = (char)b;
-    }
+    char uid[64];
+    int uid_len;
+    if (!test_uid_arg(peer_hex, "Peer UID", uid, sizeof(uid), &uid_len))
+        return 1;
+    if (uid_len != 10) { fprintf(stderr, "peer must be 10 bytes\n"); return 1; }
     char tmp_dir[512];
     snprintf(tmp_dir, sizeof(tmp_dir), "%s/tmp", user_dir);
     mkdir(user_dir, 0755);
@@ -30,10 +27,9 @@ main(int argc, char **argv)
     if (!dwyco_init()) { fprintf(stderr, "init failed\n"); return 1; }
     dwyco_finish_startup();
     dwyco_set_disposition("foreground", 10);
-    dwyco_pal_add(uid, 10);
-    int spin;
-    for (int i = 0; i < 10; i++) dwyco_service_channels(&spin);
-    printf("is_pal=%d\n", dwyco_is_pal(uid, 10));
+    dwyco_pal_add(uid, uid_len);
+    service_ms(500);
+    printf("is_pal=%d\n", dwyco_is_pal(uid, uid_len));
     dwyco_exit();
     return 0;
 }

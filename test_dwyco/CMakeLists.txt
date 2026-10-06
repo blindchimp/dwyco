@@ -87,3 +87,79 @@ target_link_libraries(test_lists_12 PRIVATE ${BASELIBS})
 
 add_executable(list_helpers_test list_helpers_test.cpp)
 target_link_libraries(list_helpers_test PRIVATE ${BASELIBS})
+
+# Covers the list functions the other list tests never call:
+# dwyco_list_print / _copy / _to_string / _from_string.
+add_executable(dwytest_list dwytest_list.cpp)
+target_link_libraries(dwytest_list PRIVATE ${BASELIBS})
+
+# Covers the standalone crypto / string / password utilities. Needs no
+# dwyco_init() and no server -- the entropy pool, the eze key and the file
+# encryption context are all initialized lazily on first use.
+add_executable(dwytest_utils dwytest_utils.cpp)
+target_link_libraries(dwytest_utils PRIVATE ${BASELIBS})
+
+# Settings / codec / runtime state / contacts. Needs dwyco_init() because the
+# settings live in a set.sql that init creates, but does not need a login --
+# registered under the "server" label anyway since it needs a client dir.
+add_executable(dwytest_settings dwytest_settings.cpp)
+target_link_libraries(dwytest_settings PRIVATE ${BASELIBS})
+
+# Audio/mute/pause state plus the video-capture dispatch API. No peer, no
+# call and no audio hardware needed, but dwyco_init() is required for the
+# audio subsystem.
+add_executable(dwytest_media_state dwytest_media_state.cpp)
+target_link_libraries(dwytest_media_state PRIVATE ${BASELIBS})
+
+# ---- ctest ----
+#
+# Previously every binary here was run by hand. What can be driven by ctest
+# falls into two groups:
+#
+#  * The list data structure tests. No account, no network, no cwd state, so
+#    they are registered unconditionally and are the ones to run first when
+#    something breaks.
+#
+#  * The account tests. These need a live server plus a writable client dir,
+#    and several need the uids of other accounts, which are not knowable at
+#    configure time. dwytest_local falls back to the DWYTEST_DIR /
+#    DWYTEST_PEER / DWYTEST_SEED environment variables for its arguments (see
+#    arg_or_env() in test_common.h), so set those and ctest picks them up:
+#
+#      DWYTEST_DIR=/tmp/dwyctest \
+#      DWYTEST_PEER=<20 hex chars> \
+#      DWYTEST_SEED=<20 hex chars> \
+#      ctest --output-on-failure
+#
+#    Values may come from the environment or from -D at configure time.
+#    With no uids set, dwytest_local still runs; the peer-dependent tests
+#    report SKIP rather than failing.
+
+enable_testing()
+
+foreach(v DIR PEER SEED)
+    if(NOT DEFINED DWYTEST_${v})
+        set(DWYTEST_${v} "$ENV{DWYTEST_${v}}")
+    endif()
+endforeach()
+
+foreach(server_free_target
+        list_test_suite_part1
+        test_creation_destruction
+        test_append_operations
+        test_lists_12
+        list_helpers_test
+        dwytest_list
+        dwytest_utils)
+    add_test(NAME ${server_free_target} COMMAND ${server_free_target})
+    set_tests_properties(${server_free_target} PROPERTIES LABELS "server-free")
+endforeach()
+
+foreach(account_target dwytest_local dwytest_settings dwytest_media_state)
+    add_test(NAME ${account_target} COMMAND ${account_target})
+    set_tests_properties(${account_target} PROPERTIES
+        LABELS "server"
+        TIMEOUT 300
+        ENVIRONMENT
+            "DWYTEST_DIR=${DWYTEST_DIR};DWYTEST_PEER=${DWYTEST_PEER};DWYTEST_SEED=${DWYTEST_SEED}")
+endforeach()

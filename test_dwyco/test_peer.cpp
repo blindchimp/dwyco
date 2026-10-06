@@ -77,26 +77,10 @@ emergency_cb(int problem, int must_exit, const char *msg)
         problem, must_exit, msg ? msg : "null");
 }
 
-static void DWYCOCALLCONV
-service_once(void)
-{
-    int spin;
-    dwyco_service_channels(&spin);
-}
-
 static int
 wait_login(int timeout_ms)
 {
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (g_login_done) return 1;
-    }
-    return 0;
+    return wait_for([]() { return g_login_done != 0; }, timeout_ms);
 }
 
 static void
@@ -150,16 +134,8 @@ shutdown(void)
 static int
 wait_peer_online(const char *peer_uid, int peer_uid_len, int timeout_ms)
 {
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (dwyco_uid_online(peer_uid, peer_uid_len)) return 1;
-    }
-    return 0;
+    return wait_for([=]() { return dwyco_uid_online(peer_uid, peer_uid_len) != 0; },
+        timeout_ms);
 }
 
 // ===== SEND MODE =====
@@ -178,29 +154,14 @@ mode_send(int argc, char **argv)
     const char *att_path = (argc > 6 && strlen(argv[6]) > 0) ? argv[6] : 0;
 
     // Convert hex peer UID to binary
-    int peer_hex_len = strlen(peer_hex);
-    if (peer_hex_len != 20) {
-        fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
-            peer_hex_len, peer_hex);
+    char peer_uid[64];
+    int peer_uid_len;
+    if (!test_uid_arg(peer_hex, "Peer UID", peer_uid, sizeof(peer_uid), &peer_uid_len))
         return 1;
-    }
-    int peer_uid_len = peer_hex_len / 2;
-    char *peer_uid = (char *)malloc(peer_uid_len + 1);
     if (peer_uid_len != 10) {
-        fprintf(stderr, "Peer UID must be 10 bytes\n");
-        free(peer_uid);
+        fprintf(stderr, "Peer UID must be 10 bytes, got %d\n", peer_uid_len);
         return 1;
     }
-    for (int i = 0; i < peer_uid_len; i++) {
-        unsigned int b;
-        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) {
-            fprintf(stderr, "Invalid hex peer UID: %s\n", peer_hex);
-            free(peer_uid);
-            return 1;
-        }
-        peer_uid[i] = (char)b;
-    }
-    peer_uid[peer_uid_len] = 0;
 
     init(user_dir, "dwytest-send");
 
@@ -210,7 +171,6 @@ mode_send(int argc, char **argv)
     dwyco_get_my_uid(&my_uid, &my_uid_len);
     if (my_uid_len != 10) {
         fprintf(stderr, "My UID is not 10 bytes (got %d)\n", my_uid_len);
-        free(peer_uid);
         shutdown();
         return 1;
     }
@@ -224,7 +184,6 @@ mode_send(int argc, char **argv)
         unsigned long long h = 0;
         if (file_hash(att_path, &h) < 0) {
             fprintf(stderr, "Cannot read attachment '%s'\n", att_path);
-            free(peer_uid);
             shutdown();
             return 1;
         }
@@ -237,7 +196,6 @@ mode_send(int argc, char **argv)
         printf("  Waiting for peer to come online...\n");
         if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
             fprintf(stderr, "Peer never came online\n");
-            free(peer_uid);
             shutdown();
             return 1;
         }
@@ -265,33 +223,23 @@ mode_send(int argc, char **argv)
     // Poll until send completes or fails
     printf("  Waiting for send result...\n");
     clear_events();
-    int got_result = 0;
-    int elapsed = 0;
-    while (elapsed < 90000) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
+    int got_result = wait_for([&]() {
         for (auto &e : g_events) {
             if (e.cmd == DWYCO_SE_MSG_SEND_SUCCESS) {
                 printf("  Send success\n");
-                got_result = 1;
-                break;
+                return true;
             }
             if (e.cmd == DWYCO_SE_MSG_SEND_FAIL) {
                 printf("  Send fail\n");
-                got_result = 1;
-                break;
+                return true;
             }
         }
-        if (got_result) break;
-    }
+        return false;
+    }, 90000);
     if (!got_result)
         printf("  Send timed out\n");
 
     dwyco_delete_zap_composition(cid);
-    free(peer_uid);
     shutdown();
     return got_result ? 0 : 1;
 }
@@ -308,27 +256,13 @@ mode_recv(int argc, char **argv)
     const char *user_dir = argv[2];
     const char *peer_hex = argv[3];
 
-    int peer_hex_len = strlen(peer_hex);
-    if (peer_hex_len != 20) {
-        fprintf(stderr, "Peer UID must be 20 hex chars (10 bytes), got %d: %s\n",
-            peer_hex_len, peer_hex);
+    int peer_uid_len;
+    char peer_uid[64];
+    if (!test_uid_arg(peer_hex, "Peer UID", peer_uid, sizeof(peer_uid), &peer_uid_len))
         return 1;
-    }
-    int peer_uid_len = peer_hex_len / 2;
-    char *peer_uid = (char *)malloc(peer_uid_len + 1);
     if (peer_uid_len != 10) {
-        fprintf(stderr, "Peer UID must be 10 bytes\n");
-        free(peer_uid);
+        fprintf(stderr, "Peer UID must be 10 bytes, got %d\n", peer_uid_len);
         return 1;
-    }
-    for (int i = 0; i < peer_uid_len; i++) {
-        unsigned int b;
-        if (sscanf(peer_hex + i * 2, "%2x", &b) != 1) {
-            fprintf(stderr, "Invalid hex peer UID: %s\n", peer_hex);
-            free(peer_uid);
-            return 1;
-        }
-        peer_uid[i] = (char)b;
     }
     peer_uid[peer_uid_len] = 0;
 
@@ -341,7 +275,6 @@ mode_recv(int argc, char **argv)
         printf("  Waiting for sender to come online...\n");
         if (!wait_peer_online(peer_uid, peer_uid_len, 90000)) {
             fprintf(stderr, "Sender never came online\n");
-            free(peer_uid);
             shutdown();
             return 1;
         }
@@ -356,11 +289,11 @@ mode_recv(int argc, char **argv)
     printf("  Waiting for message...\n");
     int elapsed = 0;
     while (elapsed < 120000) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
+        // service_step() owns the "clamp the dll's requested spin to
+        // 1..50ms" rule and the elapsed accounting. Kept as an explicit
+        // loop rather than wait_for() because this body has to service
+        // first and then do real work, not just test a predicate.
+        service_step(&elapsed);
 
         for (size_t gi = 0; gi < g_events.size(); ++gi) {
             static size_t last_printed = 0;
@@ -406,14 +339,12 @@ mode_recv(int argc, char **argv)
             dwyco_delete_saved_message(ruid.c_str(), ruid.length(), mid.c_str());
             dwyco_delete_unfetched_message(mid.c_str());
 
-            free(peer_uid);
             shutdown();
             printf("  Receive OK\n");
             return 0;
         }
     }
     fprintf(stderr, "Timed out waiting for message\n");
-    free(peer_uid);
     shutdown();
     return 1;
 }

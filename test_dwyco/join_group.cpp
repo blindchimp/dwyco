@@ -47,31 +47,13 @@ emergency_cb(int problem, int must_exit, const char *msg)
 static int
 wait_login(int timeout_ms)
 {
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (g_login_done) return 1;
-    }
-    return 0;
+    return wait_for([]() { return g_login_done != 0; }, timeout_ms);
 }
 
 static int
 wait_join(int timeout_ms)
 {
-    int elapsed = 0;
-    while (elapsed < timeout_ms) {
-        int spin, next;
-        next = dwyco_service_channels(&spin);
-        if (next <= 0 || next > 50) next = 50;
-        usleep(next * 1000);
-        elapsed += next;
-        if (g_join_result != -1) return 1;
-    }
-    return 0;
+    return wait_for([]() { return g_join_result != -1; }, timeout_ms);
 }
 
 int
