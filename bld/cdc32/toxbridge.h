@@ -29,7 +29,14 @@ int tox_bridge_is_active();
 void tox_bridge_cleanup_incomplete();
 
 // encrypted-save support
-// bridge remembers the last profile password in memory (never persisted).
+// the bridge remembers the password of the identity it currently has loaded,
+// in memory only (never persisted). invariant: whenever the save file is
+// replaced -- select_save, load_from_file, load_from_bytes, reset_identity,
+// factory_reset -- the remembered password is cleared as part of the same
+// operation. it is never carried across an identity change, because
+// tox_bridge_init1 passes it to toxp_init as the candidate password and a new
+// identity that happens to share a password would unlock without prompting.
+// when adding a new save-swapping path, clear it too.
 int tox_bridge_needs_password();
 int tox_bridge_unlock(const uint8_t *pw, int pw_len);
 int tox_bridge_set_password(const uint8_t *pw, int pw_len);
@@ -45,6 +52,9 @@ int tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int s
                               int make_backup, char *err_buf, int err_buf_len);
 int tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
                                char *err_buf, int err_buf_len);
+int tox_bridge_peek_pubkey_from_file(const char *path, const uint8_t *pw, int pw_len,
+                                     vc &pubkey_out);
+int tox_bridge_peek_pubkey_from_bytes(const vc &bytes, vc &pubkey_out);
 // discard the current profile (backing it up to replaced_tox_save[.N].tox) and
 // start fresh with a brand new identity. on failure err_buf is filled with a
 // message and the old profile is restored.
@@ -89,6 +99,12 @@ vc tox_bridge_get_pubkey();
 // dwyco uid). newest row wins, so the last device to sign in owns the
 // identity, and any other client running it stands down.
 int tox_bridge_publish_save();
+// human readable name for a hex tox pubkey, from the dwyco '_tox_friend' tags.
+// nil if we've never seen this identity as a friend. works for encrypted saves,
+// since the name lives in the dwyco db, not inside the tox save.
+vc tox_bridge_name_for_pubkey_hex(const vc &pub_hex);
+// one row per published identity: mid_hex, time, size, encrypted, name.
+// name may be nil.
 vc tox_bridge_list_saves();
 // adopt the published save for mid_hex (hex pubkey) as the identity this
 // device runs. leaves tox stopped; the user signs in explicitly afterwards,

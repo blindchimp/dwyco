@@ -138,9 +138,22 @@ Page {
     }
 
     function refreshToxIdentity() {
-        // only meaningful while tox is actually running.
-        if (tox_state.state !== "signedin")
+        // not signed in. there is no live identity to read the profile from,
+        // and whatever was last typed into these boxes belongs to the identity
+        // that was running before, not to the save sitting on disk now. falling
+        // back to the cached name is safe because the save-changing paths call
+        // tox_state.forgetCachedIdentity(), so a brand new or newly adopted
+        // identity has nothing cached and shows blank rather than inheriting
+        // the previous identity's name.
+        if (tox_state.state !== "signedin") {
+            toxNameInput.text_input = tox_state.cachedName
+            // the status message is not cached, so there is nothing honest to
+            // fall back to here.
+            toxStatusInput.text_input = ""
+            origName = toxNameInput.text_input
+            origStatus = ""
             return
+        }
         toxNameInput.text_input = core.tox_get_name()
         toxStatusInput.text_input = core.tox_get_status_message()
         // note: the cached name/address that survive a sign out are owned
@@ -206,6 +219,10 @@ Page {
         }
         function onTox_saves_changed() {
             refreshShared()
+            // the save on disk may have just been replaced, created or
+            // deleted, so the profile boxes can be about a different identity
+            // than the one they were filled in for.
+            refreshToxIdentity()
         }
         function onTox_disabled_by_remote(holder) {
             // another device claimed the identity we were running

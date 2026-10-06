@@ -9761,6 +9761,26 @@ dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_le
 
 DWYCOEXPORT
 int
+dwyco_tox_peek_pubkey_from_file(const char *path, const char *pw, int pw_len,
+                                char **pubkey_out, int *pubkey_len_out)
+{
+    vc pk;
+    const char *p = (path && path[0]) ? path : 0;
+    const uint8_t *pwp = (const uint8_t *)pw;
+    if(!dwyco::tox_bridge_peek_pubkey_from_file(p, pwp, pw_len, pk))
+    {
+        *pubkey_out = 0;
+        *pubkey_len_out = 0;
+        return 0;
+    }
+    *pubkey_len_out = (int)pk.len();
+    *pubkey_out = (char *)malloc((size_t)pk.len());
+    memcpy(*pubkey_out, (const char *)pk, (size_t)pk.len());
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
 {
     return dwyco::tox_bridge_export_profile(dst_path, err_buf, err_buf_len);
@@ -9782,30 +9802,45 @@ dwyco_tox_list_saves(DWYCO_LIST *list_out)
     vc saves = dwyco::tox_bridge_list_saves();
     if(saves.is_nil())
         return 0;
-    // widen the bridge rows (mid_hex, time, size) into the documented
-    // columns. the encrypted flag needs the payload, so re-read it here
-    // rather than pulling the whole save through the list.
+    // widen the bridge rows into the documented columns. the bridge already
+    // resolved the encryption flag and the dwyco-side name while it had the
+    // winning tag payload in hand, so nothing here needs to re-read it.
     vc out(VC_VECTOR);
     for(int i = 0; i < saves.num_elems(); ++i)
     {
         const vc &r = saves[i];
         if(r.num_elems() < 3)
             continue;
-        vc mid = r[0];
-        vc enc;
-        vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
-        if(win.num_elems() >= 3 && !win[2].is_nil())
-            enc = toxp_data_is_encrypted((const char *)win[2], (int)win[2].len()) ? 1 : 0;
-        else
-            enc = 0;
         vc row(VC_VECTOR);
-        row.append(mid);
-        row.append(r[1]);
-        row.append(r[2]);
-        row.append(enc);
+        for(int j = 0; j < r.num_elems(); ++j)
+            row.append(r[j]);
+        // pad out to the documented column count so callers can index blindly.
+        while(row.num_elems() < 5)
+            row.append(vcnil);
         out.append(row);
     }
     *list_out = dwyco_list_from_vc(out);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_name_for_pubkey(const char *pub_hex, int pub_hex_len,
+                          char **name_out, int *name_len_out)
+{
+    if(!name_out || !name_len_out)
+        return 0;
+    *name_out = 0;
+    *name_len_out = 0;
+    if(!pub_hex || pub_hex_len <= 0)
+        return 0;
+    vc hex(pub_hex, (long)pub_hex_len);
+    vc nm = dwyco::tox_bridge_name_for_pubkey_hex(hex);
+    if(nm.is_nil() || nm.len() <= 0)
+        return 0;
+    *name_len_out = (int)nm.len();
+    *name_out = (char *)malloc((size_t)nm.len());
+    memcpy(*name_out, (const char *)nm, (size_t)nm.len());
     return 1;
 }
 

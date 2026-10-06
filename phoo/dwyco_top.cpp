@@ -3290,10 +3290,18 @@ DwycoCore::tox_import_profile(const QString& path, const QString& pw, bool makeB
                                        makeBackup ? 1 : 0, err_buf, sizeof(err_buf));
     if(ret)
     {
-        update_tox_self_address(tox_get_self_address());
-        update_tox_self_name(tox_get_name());
+        // importing only puts the save on disk; tox stays stopped. clear the
+        // identity we were showing rather than querying a bridge that isn't
+        // running, which would come back empty anyway.
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        emit tox_connection_status_changed(0);
+        set_local_setting("tox_enabled", "0");
         reload_conv_list();
         emit tox_import_finished();
+        emit tox_saves_changed();
         return QString();
     }
     return QString::fromUtf8(err_buf);
@@ -3318,10 +3326,24 @@ DwycoCore::tox_reset_identity()
     update_tox_reset_error(QString::fromUtf8(err_buf));
     if(ret)
     {
-        set_tox_enabled(true);
-        update_tox_self_address(tox_get_self_address());
-        update_tox_self_name(tox_get_name());
+        // minting a new identity is account manipulation, not a sign in, so it
+        // should leave the same "loaded but not signed in" state that selecting
+        // a shared save does. the reset had to bring tox up briefly --
+        // tox_bridge_reset_identity re-inits, and that init is what actually
+        // creates and persists the new save, since toxcore mints a fresh
+        // identity when the save file is missing -- so take it back down here.
+        // call dwyco_disable_tox directly rather than disable_tox(), which
+        // early-returns when the flag is already false, so the shutdown does
+        // not depend on flag ordering.
+        dwyco_disable_tox();
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        emit tox_connection_status_changed(0);
+        set_local_setting("tox_enabled", "0");
         reload_conv_list();
+        emit tox_saves_changed();
         return true;
     }
     return false;
@@ -3374,7 +3396,15 @@ DwycoCore::tox_set_save_password(const QString& oldPw, const QString& newPw)
 bool
 DwycoCore::tox_publish_save()
 {
-    return dwyco_tox_publish_save() != 0;
+    if(!dwyco_tox_publish_save())
+        return false;
+    // note: this used to return silently, leaving the shared-saves list on
+    // this device showing the pre-publish state even though the tag was
+    // written and peers saw it fine. schedule rather than emit so a burst of
+    // publishes coalesces into one list rebuild, same as inbound uid-tag
+    // churn.
+    schedule_tox_saves_changed();
+    return true;
 }
 
 QVariantList
@@ -3405,6 +3435,11 @@ DwycoCore::tox_list_saves()
         m["when"] = (qlonglong)l.get_long(i, "001");
         m["size"] = (qlonglong)l.get_long(i, "002");
         m["encrypted"] = l.get_long(i, "003") != 0;
+        // column 004 is the dwyco-side name for this pubkey. it comes out of
+        // the '_tox_friend' tags, so it is available even for encrypted saves.
+        // may be nil when we've never seen this identity as a friend.
+        QByteArray nm = l.get<QByteArray>(i, "004");
+        m["name"] = nm.isEmpty() ? QString() : QString::fromUtf8(nm);
         m["is_current"] = (!cur_pub.isEmpty() && cur_pub == mid);
 
         DWYCO_LIST cl = 0;
@@ -3448,6 +3483,108 @@ DwycoCore::tox_select_save(const QString& mid)
     set_local_setting("tox_enabled", "0");
     reload_conv_list();
     emit tox_import_finished();
+    emit tox_saves_changed();
+    return QString();
+}
+
+// dwyco-side name for a hex tox pubkey. resolves through the '_tox_friend'
+// tags rather than the tox save, so it works for password protected saves.
+// empty string when we've never seen the identity as a friend.
+QString DwycoCore::tox_name_for_pubkey(const QString& pubHex)
+{
+    QByteArray b = pubHex.toLatin1();
+    char *nm = 0;
+    int len = 0;
+    if(!dwyco_tox_name_for_pubkey(b.constData(), b.length(), &nm, &len))
+        return QString();
+    QByteArray ret(nm, len);
+    dwyco_free_array(nm);
+    return QString::fromUtf8(ret);
+}
+
+QVariantList
+DwycoCore::tox_list_all_saves()
+{
+    QVariantList out;
+
+    // local save (if any)
+    if(tox_save_exists())
+    {
+        QVariantMap m;
+        // note: mid stays empty for the local save. a non-empty mid means
+        // "adopt this from a group tag", and the local save is already on
+        // disk -- looking its own pubkey up in the tag store would fail.
+        // the ui selects rows by key, not mid.
+        m["mid"] = QString();
+        m["key"] = QString("local");
+        m["pubkey"] = QString();
+        m["local"] = true;
+        m["encrypted"] = tox_save_is_encrypted();
+        m["is_current"] = true;
+
+        char *pk = 0;
+        int pk_len = 0;
+        if(dwyco_tox_peek_pubkey_from_file(0, 0, 0, &pk, &pk_len) && pk && pk_len > 0)
+        {
+            QByteArray pubkey(pk, pk_len);
+            dwyco_free_array(pk);
+            m["pubkey"] = pubkey.toHex();
+            // same dwyco-side name lookup the shared rows use, so an encrypted
+            // local save still gets a label.
+            m["name"] = tox_name_for_pubkey(pubkey.toHex());
+        }
+        out.append(m);
+    }
+
+    // shared saves
+    QVariantList shared = tox_list_saves();
+    for(int i = 0; i < shared.size(); ++i)
+    {
+        QVariantMap m = shared[i].toMap();
+        m["local"] = false;
+        // for a shared save the mid is the hex pubkey, which is a unique key.
+        m["key"] = m.value("mid").toString();
+        out.append(m);
+    }
+
+    return out;
+}
+
+QString
+DwycoCore::tox_sign_in(const QString& mid, const QString& pw)
+{
+    // if mid is non-empty, it's a shared save -- adopt it first. this leaves
+    // tox stopped, which is what we want: we haven't started it yet.
+    if(!mid.isEmpty())
+    {
+        QString err = tox_select_save(mid);
+        if(!err.isEmpty())
+            return err;
+    }
+
+    // start the bridge for real. note the order matters: needs_password() only
+    // means something once tox_bridge_init has actually run and reported
+    // whether the save is locked. checking it before this point reads a stale
+    // flag, which skips the unlock entirely and leaves the ui claiming to be
+    // signed in against a bridge that never came up.
+    enable_tox();
+
+    if(tox_needs_password())
+    {
+        if(pw.isEmpty())
+        {
+            disable_tox();
+            return "Password required";
+        }
+        if(!tox_unlock(pw))
+        {
+            disable_tox();
+            return "Wrong password";
+        }
+    }
+
+    // last, so the flag never outlives a failed start.
+    set_local_setting("tox_enabled", "1");
     emit tox_saves_changed();
     return QString();
 }

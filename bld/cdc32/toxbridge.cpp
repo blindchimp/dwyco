@@ -1166,10 +1166,35 @@ tox_bridge_check_active_conflict()
     se_emit(SE_TOX_DISABLED_BY_REMOTE, vcnil);
 }
 
-// list the identities this group has published, as a vector of rows:
-// (mid_hex, time, size). the payload itself is not returned -- callers that
-// want it use the mid. mid is hex(pubkey), and "time" is the tag row time of
-// the winning copy, so it doubles as "last updated".
+// human readable name for a hex tox pubkey, as known to dwyco.
+//
+// tox keeps its own profile name inside the save, but that is useless here:
+// an encrypted save can't be read without its password, which is exactly the
+// case where a label matters most. dwyco already mirrors every tox friend name
+// into a '_tox_friend' crdt tag keyed by hex(pseudo_uid), and a pseudo uid is
+// just the first 10 bytes of the pubkey. so the name comes out of the dwyco
+// database and is available regardless of the save's encryption state.
+//
+// returns nil when we've never seen this identity as a friend, which is normal
+// for a save just published by another device.
+vc
+tox_bridge_name_for_pubkey_hex(const vc &pub_hex)
+{
+    if(pub_hex.is_nil() || pub_hex.len() <= 0)
+        return vcnil;
+    if(!sql_is_initialized())
+        return vcnil;
+    vc pseudo = tox_pubkey_to_pseudo_uid(from_hex(pub_hex));
+    if(pseudo.is_nil())
+        return vcnil;
+    vc name = sql_get_tag_payload(to_hex(pseudo), "_tox_friend");
+    if(name.is_nil() || name.len() <= 0)
+        return vcnil;
+    return name;
+}
+
+// one entry per identity the group has published.
+// row layout: mid_hex, time, size, encrypted, name. name may be nil.
 vc
 tox_bridge_list_saves()
 {
@@ -1187,6 +1212,11 @@ tox_bridge_list_saves()
         row.append(mid);
         row.append(win[0]);
         row.append(vc((long)win[2].len()));
+        // the encryption probe needs the payload, and we already have the
+        // winning copy in hand, so answer it here rather than making every
+        // caller re-read the tag.
+        row.append(toxp_data_is_encrypted((const char *)win[2], (int)win[2].len()) ? 1 : 0);
+        row.append(tox_bridge_name_for_pubkey_hex(mid));
         out.append(row);
     }
     return out;
@@ -1254,10 +1284,14 @@ tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
         snprintf(err_buf, (size_t)err_buf_len, "could not write identity file");
         return 0;
     }
-    // the bytes now on disk came from the tag, so if this save happens to be
-    // password protected the user will be prompted the same way as any other
-    // protected identity, and their remembered password is deliberately left
-    // alone.
+    // the remembered password belongs to the identity we just replaced, not to
+    // the one now on disk. drop it, otherwise tox_bridge_init1 hands it to
+    // toxp_init as the candidate password for the new identity, and any save
+    // that happens to share a password unlocks without the user being asked.
+    // cleared unconditionally: for an unencrypted save toxp_init ignores it
+    // anyway, so there's nothing to preserve and no reason to branch.
+    set_active_password(NULL, 0);
+    Needs_password = 0;
     GRTLOG("tox bridge: selected synced identity (tox left stopped)", 0, 0);
     return 1;
 }
@@ -1547,6 +1581,15 @@ tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_p
         return 0;
     }
 
+    // drop the outgoing identity's password up front, before anything can
+    // fail. src_pw is the *incoming* save's password; the one in memory is
+    // stale the moment the user chooses to switch identities. clearing here
+    // means every early return below leaves nothing behind, so a failed import
+    // can't leave a password that a later identity switch would silently
+    // reuse. the cost is that a failed import makes the user retype.
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+
     uint8_t *data = NULL;
     size_t len = 0;
     if(!toxp_import_prepare(src_path, src_pw, src_pw_len, &data, &len,
@@ -1574,7 +1617,6 @@ tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_p
     }
 
     tox_bridge_shutdown();
-    set_active_password(src_pw, src_pw_len);
 
     int ret = toxp_import_commit(Save_file.c_str(), data, len,
                                  src_pw, src_pw_len,
@@ -1586,6 +1628,11 @@ tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_p
             copy_file(backup_path, save_path);
         return 0;
     }
+    // only now, with the imported save actually on disk, is it safe to
+    // remember a password for it. the imported save keeps its own encryption
+    // state, so an empty src_pw stores nothing and an encrypted one lets the
+    // caller's immediate sign in proceed without a second prompt.
+    set_active_password(src_pw, src_pw_len);
     GRTLOG("tox bridge: loaded profile from file", 0, 0);
     return 1;
 }
@@ -1637,8 +1684,54 @@ tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
         snprintf(err_buf, (size_t)err_buf_len, "write failed");
         return 0;
     }
+    // the password in memory belonged to the identity we just replaced. these
+    // bytes carry their own encryption state and the caller supplied no
+    // password, so there is nothing to preserve: clear it so the next sign in
+    // has to ask rather than trying the previous identity's password.
+    set_active_password(NULL, 0);
+    Needs_password = 0;
     GRTLOG("tox bridge: loaded profile from bytes, %d bytes", (int)save_bytes.len(), 0);
     return 1;
+}
+
+int
+tox_bridge_peek_pubkey_from_file(const char *path, const uint8_t *pw, int pw_len,
+                                 vc &pubkey_out)
+{
+    if(path && path[0])
+    {
+        uint8_t *data = NULL;
+        size_t len = 0;
+        if(!toxp_import_prepare(path, pw, pw_len, &data, &len, NULL, 0))
+            return 0;
+        int ret = toxp_get_pubkey_from_save(data, len, pubkey_out);
+        free(data);
+        return ret;
+    }
+
+    if(!tox_bridge_save_exists())
+        return 0;
+    ensure_save_file();
+    vc bytes = read_whole_file(newfn(Save_file.c_str()), TOX_SAVE_MAX_PUBLISH);
+    if(bytes.is_nil())
+        return 0;
+    // note: an encrypted save on disk is toxencryptsave-wrapped, not a plain
+    // tox save, so handing it to tox_new below would just fail. say so
+    // explicitly instead -- the caller shows "Password protected" and the user
+    // types the password. we deliberately do not peek with the remembered
+    // active password here.
+    if(toxp_data_is_encrypted((const char *)bytes, (int)bytes.len()))
+        return 0;
+    return tox_bridge_peek_pubkey_from_bytes(bytes, pubkey_out);
+}
+
+int
+tox_bridge_peek_pubkey_from_bytes(const vc &bytes, vc &pubkey_out)
+{
+    if(bytes.is_nil() || bytes.len() <= 0)
+        return 0;
+    return toxp_get_pubkey_from_save((const uint8_t *)(const char *)bytes,
+                                     (size_t)bytes.len(), pubkey_out);
 }
 
 int
@@ -1681,6 +1774,11 @@ tox_bridge_reset_identity(char *err_buf, int err_buf_len)
     if(!tox_bridge_init1(Save_file.c_str(), 0))
     {
         GRTLOG("tox: reset re-init failed, restoring backup", 0, 0);
+        // note: the restored backup keeps whatever encryption it had, but the
+        // password we cleared above is not restored with it. that is
+        // deliberate -- fail closed. the user gets asked for the password
+        // again rather than the bridge unlocking an identity the user did not
+        // just choose.
         if(have_backup)
             copy_file(backup_path, save_path);
         if(err_buf && err_buf_len > 0)

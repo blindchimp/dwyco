@@ -399,7 +399,11 @@ public:
     // empty return string == success, matching tox_import_profile().
     Q_INVOKABLE bool tox_publish_save();
     Q_INVOKABLE QVariantList tox_list_saves();
+    Q_INVOKABLE QVariantList tox_list_all_saves();
+    // dwyco-side name for a hex tox pubkey. works for encrypted saves.
+    Q_INVOKABLE QString tox_name_for_pubkey(const QString& pubHex);
     Q_INVOKABLE QString tox_select_save(const QString& mid);
+    Q_INVOKABLE QString tox_sign_in(const QString& mid, const QString& pw);
     Q_INVOKABLE bool tox_depublish_save(const QString& mid);
     Q_INVOKABLE void copy_to_clipboard(const QString& text);
     Q_INVOKABLE void start_auto_away();

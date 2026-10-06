@@ -131,7 +131,7 @@ ApplicationWindow {
     // their own cached properties, which drifted apart: core's
     // tox_save_exists() / tox_save_is_encrypted() / tox_needs_password()
     // are invokable methods with no notify signal, and some mutating
-    // calls (tox_set_save_password, tox_publish_save) emit nothing at all,
+    // calls (tox_set_save_password) emit nothing at all,
     // so neither page can be driven by bindings alone.
     //
     // so the state is sampled here, once, and both pages read it. any

@@ -918,6 +918,30 @@ toxp_validate_save(const uint8_t *data, size_t len)
 }
 
 int
+toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out)
+{
+    if(!data || len == 0)
+        return 0;
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, data, len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+        return 0;
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_self_get_public_key(tmp, pubkey);
+    tox_kill(tmp);
+    pubkey_out = vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE);
+    return 1;
+}
+
+int
 toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
 {
     if(p->pass_key)

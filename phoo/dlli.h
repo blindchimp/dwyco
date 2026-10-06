@@ -2278,6 +2278,12 @@ int DWYCOEXPORT dwyco_tox_file_is_encrypted(const char *path);
 int DWYCOEXPORT dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
                                          int make_backup, char *err_buf, int err_buf_len);
 int DWYCOEXPORT dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_peek_pubkey_from_file(const char *path, const char *pw, int pw_len,
+                                               char **pubkey_out, int *pubkey_len_out);
+// dwyco-side name for a hex tox pubkey, from the '_tox_friend' tags. works
+// for encrypted saves. returns 0 if no name is known.
+int DWYCOEXPORT dwyco_tox_name_for_pubkey(const char *pub_hex, int pub_hex_len,
+                                          char **name_out, int *name_len_out);
 
 // --- group-shared tox identities ---
 //
