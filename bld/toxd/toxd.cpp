@@ -1513,6 +1513,23 @@ toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
 }
 
 int
+toxp_validate_save(const uint8_t *data, size_t len)
+{
+    (void)data;
+    (void)len;
+    return 0;
+}
+
+int
+toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out)
+{
+    (void)data;
+    (void)len;
+    (void)pubkey_out;
+    return 0;
+}
+
+int
 toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
 {
     (void)p;
