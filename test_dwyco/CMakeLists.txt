@@ -111,6 +111,34 @@ target_link_libraries(dwytest_settings PRIVATE ${BASELIBS})
 add_executable(dwytest_media_state dwytest_media_state.cpp)
 target_link_libraries(dwytest_media_state PRIVATE ${BASELIBS})
 
+# User list, presence, uid resolution, trash, and the run_sql escape hatch.
+add_executable(dwytest_users dwytest_users.cpp)
+target_link_libraries(dwytest_users PRIVATE ${BASELIBS})
+
+# Message tagging. Builds its own gi fixtures with dwyco_run_sql so the
+# positive path does not need a second live process.
+add_executable(dwytest_tags dwytest_tags.cpp)
+target_link_libraries(dwytest_tags PRIVATE ${BASELIBS})
+
+# Received-message API. Spawns itself as a second dwyco client so the tests
+# have a real peer to receive from.
+add_executable(dwytest_msg dwytest_msg.cpp dwyco_new_msg.cpp)
+target_link_libraries(dwytest_msg PRIVATE ${BASELIBS})
+
+# Attachment copy-out, views, previews, and forwarding. Spawns itself as a
+# second dwyco client, as dwytest_msg does.
+add_executable(dwytest_attach dwytest_attach.cpp dwyco_new_msg.cpp)
+target_link_libraries(dwytest_attach PRIVATE ${BASELIBS})
+
+# Profiles: one client sets a profile, the other fetches it. Spawns itself.
+add_executable(dwytest_profile dwytest_profile.cpp dwyco_new_msg.cpp)
+target_link_libraries(dwytest_profile PRIVATE ${BASELIBS})
+
+# Call/channel state, pals-only filtering, selective chat, and callback
+# registration. No live media session, so it needs no peer.
+add_executable(dwytest_calls dwytest_calls.cpp)
+target_link_libraries(dwytest_calls PRIVATE ${BASELIBS})
+
 # ---- ctest ----
 #
 # Previously every binary here was run by hand. What can be driven by ctest
@@ -155,7 +183,7 @@ foreach(server_free_target
     set_tests_properties(${server_free_target} PROPERTIES LABELS "server-free")
 endforeach()
 
-foreach(account_target dwytest_local dwytest_settings dwytest_media_state)
+foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls)
     add_test(NAME ${account_target} COMMAND ${account_target})
     set_tests_properties(${account_target} PROPERTIES
         LABELS "server"

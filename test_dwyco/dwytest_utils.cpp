@@ -13,7 +13,8 @@
 //  * dwyco_eze2 / dwyco_ezd2 return void. There is no return value to
 //    check. dwyco_ezd2 signals failure by setting *str_out to 0 and
 //    leaving *len_out completely untouched -- callers must branch on the
-//    pointer and must not read len_out when the pointer is 0.
+//    pointer and must not read len_out when the pointer is 0. Input shorter
+//    than the 8-byte IV is rejected up front rather than decrypted.
 //  * dwyco_random_string2 has no length output parameter and does not
 //    NUL-terminate. It also produces AT LEAST the requested number of
 //    bytes, not exactly that many: it appends whole entropy chunks. See
@@ -223,67 +224,97 @@ ezd2_rejects_garbage(void)
     CHECK(dlen == -99);
 }
 
-// ===== known defect: dwyco_ezd2 on input shorter than the IV =====
+// Input shorter than the IV is rejected up front.
 //
-// DEFECT (bld/cdc32/dlli.cpp, dwyco_ezd2):
+// dwyco_ezd2 originally had no length check at all and computed
+// "len_str - 8", which went negative and threw std::bad_alloc out of the
+// DwString constructor, terminating the process. It now has a guard, and
+// this test covers the lengths that guard is supposed to handle.
 //
-//   vc iv(VC_BSTRING, str, 8);          // overreads if len_str < 8
-//   vc es(VC_BSTRING, str + 8, len_str - 8);   // negative length if len_str < 8
+// NOTE: the guard is "len_str < 8", which leaves len_str == 8 broken -- see
+// ezd2_exactly_iv_length_still_crashes() below.
 //
-// There is no length check. When len_str is below 8 the second constructor
-// is handed a negative length, which throws std::bad_alloc from inside the
-// DwString constructor. Nothing in dlli.h catches it, so the process
-// terminates. The first constructor also reads 8 bytes out of a shorter
-// buffer.
+// Failure is always signalled the same way: *str_out = 0, *len_out untouched.
+static void
+ezd2_rejects_short_input(void)
+{
+    static const int lens[] = { 0, 1, 2, 7, 9, 15, 16, 17 };
+    char buf[64];
+    memset(buf, 'x', sizeof(buf));
+    for (unsigned i = 0; i < sizeof(lens) / sizeof(lens[0]); i++) {
+        char *dec = (char *)0x1;
+        int dlen = -99;
+        dwyco_ezd2(buf, lens[i], &dec, &dlen);
+        if (dec != 0 || dlen != -99) {
+            printf("[FAIL] len=%d: ptr=%s len_out=%d (want NULL, -99)\n",
+                lens[i], dec ? "non-null" : "NULL", dlen);
+            g_fail++;
+        }
+    }
+}
+
+// ===== remaining defect: len_str == 8 =====
 //
-// This is a genuine robustness bug, not a test artifact -- the header gives
-// no minimum-length precondition. It cannot be asserted in-process because
-// there is no way to catch a cross-library C++ exception here, so the
-// behavior is pinned in a subprocess instead: the child is expected to die
-// on SIGABRT (which run_subprocess reports as 128+SIGABRT == 134).
+// DEFECT (bld/cdc32/dlli.cpp, dwyco_ezd2), off-by-one in the new guard:
 //
-// If the library is ever fixed to validate its input, this test will start
-// failing, which is the point: the fix should flip the expectation to
-// "*str_out == 0 and no crash".
+//   if(len_str < 8) { *str_out = 0; return; }
+//   ...
+//   vc iv(VC_BSTRING, str, 8);
+//   vc es(VC_BSTRING, str + 8, len_str - 8);   // len_str == 8 -> es is EMPTY
+//
+// The guard lets 8 through, which builds vector(iv, ""). The blowfish xfer
+// decoder rejects a zero-length body via USER_BOMB, which calls user_panic()
+// -> exit(1):
+//
+//   runtime error: BF-xfer-dec arg must be vector(iv, string)
+//
+// Lengths 0..7 and 9 and up are all handled cleanly; only exactly 8 dies.
+// For reference, the shortest string dwyco_eze2 can produce is 16 bytes
+// (8 IV + one block), so the real precondition is len_str > 8, not >= 8.
+//
+// The fix is to make the guard "len_str <= 8". This test pins the current
+// behavior out-of-process; it will start failing once the guard is corrected,
+// which is deliberate.
 
 static const char *g_argv0 = 0;
 
 static void
-ezd2_short_input_child(void)
+ezd2_iv_len_child(int argc, char **argv)
 {
-    // The abort message is the expected result here, so keep the child's
-    // stderr out of the parent's log. stdout is untouched, so the note
-    // printed below still shows up if the library ever stops crashing.
+    (void)argc;
+    // The exit is expected for the len==8 case, so keep the child's panic
+    // message out of the parent's log. stdout survives, so a fixed library
+    // still reports what it did instead.
     int null_fd = open("/dev/null", O_WRONLY);
     if (null_fd >= 0) {
         dup2(null_fd, 2);
         close(null_fd);
     }
-
+    int n = atoi(argv[2]);
+    char buf[64];
+    memset(buf, 'x', sizeof(buf));
     char *dec = (char *)0x1;
     int dlen = -99;
-    dwyco_ezd2("abc", 3, &dec, &dlen);
-    // Only reached if the library stopped crashing. Report what it did so
-    // the fix is visible.
-    printf("      ezd2 survived short input: ptr=%s dlen=%d\n",
-        dec ? "non-null" : "NULL", dlen);
+    dwyco_ezd2(buf, n, &dec, &dlen);
+    printf("      survived len=%d: ptr=%s len_out=%d\n",
+        n, dec ? "non-null" : "NULL", dlen);
     exit(0);
 }
 
 static void
-ezd2_short_input_aborts(void)
+ezd2_exactly_iv_length_still_exits(void)
 {
     if (!g_argv0) {
         printf("[FAIL] no argv[0] recorded for subprocess test\n");
         g_fail++;
         return;
     }
-    char *argv[] = { (char *)g_argv0, (char *)"--ezd-short", 0 };
-    int status = run_subprocess(argv);
-    // SIGABRT is 6, so an uncaught std::bad_alloc surfaces as 134.
-    // 0 means the library was fixed and now handles the input gracefully;
-    // anything else is a different crash worth looking at.
-    CHECK(status == 128 + 6);
+    // len 9 is the control: one past the boundary, must survive.
+    char *ok_argv[] = { (char *)g_argv0, (char *)"--ezd-len", (char *)"9", 0 };
+    CHECK(run_subprocess(ok_argv) == 0);
+    // len 8 is the off-by-one: user_panic() -> exit(1), not a signal.
+    char *bad_argv[] = { (char *)g_argv0, (char *)"--ezd-len", (char *)"8", 0 };
+    CHECK(run_subprocess(bad_argv) == 1);
 }
 
 // ===== dwyco_gen_pass =====
@@ -484,8 +515,9 @@ dealloc_pairing(void)
 int
 main(int argc, char **argv)
 {
-    if (argc > 1 && strcmp(argv[1], "--ezd-short") == 0) {
-        ezd2_short_input_child();
+    if (argc > 2 && strcmp(argv[1], "--ezd-len") == 0) {
+        setvbuf(stdout, 0, _IOLBF, 0);
+        ezd2_iv_len_child(argc, argv);
         return 0;
     }
     g_argv0 = argv[0];
@@ -507,7 +539,8 @@ main(int argc, char **argv)
     RUN(eze2_ezd2_round_trip_empty);
     RUN(eze2_is_randomized);
     RUN(ezd2_rejects_garbage);
-    RUN(ezd2_short_input_aborts);
+    RUN(ezd2_rejects_short_input);
+    RUN(ezd2_exactly_iv_length_still_exits);
 
     printf("\ngen_pass:\n");
     RUN(gen_pass_is_salted_and_deterministic);

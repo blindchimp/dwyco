@@ -181,6 +181,43 @@ wait_for_fn(bool (*pred)(void *), void *arg, int timeout_ms)
     return wait_for([=]() { return pred(arg) != 0; }, timeout_ms);
 }
 
+// ===== file hashing =====
+//
+// FNV-1a 64. Used to prove that an attachment came back out of the library
+// byte-identical to what went in, which is the only meaningful check for the
+// copy-out and attachment round trips.
+//
+// Returns 0 when the file could not be read, so callers must check for that
+// before comparing hashes; a real hash of a non-empty file is never 0 (the
+// return is nudged to 1 if the arithmetic lands on 0).
+
+// Hash the contents of 'path'. Returns 0 on success, or -1 if the file could
+// not be opened. *size_out receives the byte count.
+static unsigned long long
+file_hash64(const char *path, long *size_out)
+{
+    unsigned long long h = 14695981039346656037ULL;
+    FILE *f = fopen(path, "rb");
+    char buf[8192];
+    size_t n;
+    long total = 0;
+
+    if (!f)
+        return 0; /* 0 is the "unreadable" sentinel; see the note below */
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+        size_t i;
+        for (i = 0; i < n; i++) {
+            h ^= (unsigned char)buf[i];
+            h *= 1099511628211ULL;
+        }
+        total += (long)n;
+    }
+    fclose(f);
+    if (size_out)
+        *size_out = total;
+    return h ? h : 1; /* 0 means "could not read", so never return it */
+}
+
 // ===== subprocess driver =====
 
 // fork/exec argv, wait, and return the child's exit status (128+signal if
@@ -217,6 +254,74 @@ run_subprocess(char *const argv[])
             perror("run_subprocess: waitpid");
             return -1;
         }
+    }
+    if (WIFEXITED(status))
+        return WEXITSTATUS(status);
+    if (WIFSIGNALED(status))
+        return 128 + WTERMSIG(status);
+    return -1;
+}
+
+// fork/exec argv but do NOT wait. Returns the child's pid, or -1 on failure.
+//
+// run_subprocess() is for APIs that call exit() on us, where the child's
+// death is the thing being asserted. This is the other case: tests that need
+// two dwyco clients talking to each other at the same time, such as
+// receiving a message and then inspecting the received mid. The parent stays
+// in its own service loop while the child drives its own.
+//
+// The child gets a fresh argv, so it must be told everything it needs --
+// there is no shared state beyond what it inherits.
+static pid_t
+spawn_subprocess(char *const argv[])
+{
+    pid_t pid;
+
+    if (!argv || !argv[0]) {
+        fprintf(stderr, "spawn_subprocess: no argv\n");
+        return -1;
+    }
+    fflush(stdout);
+    fflush(stderr);
+    pid = fork();
+    if (pid < 0) {
+        perror("spawn_subprocess: fork");
+        return -1;
+    }
+    if (pid == 0) {
+        execvp(argv[0], argv);
+        perror("spawn_subprocess: execvp");
+        _exit(127);
+    }
+    return pid;
+}
+
+// Reap a child started by spawn_subprocess(). Returns its exit status using
+// the same convention as run_subprocess(). If wait_for_ms is positive, give up
+// after that many milliseconds and return -2, so a stuck child cannot wedge
+// the test run.
+static int
+wait_subprocess(pid_t pid, int wait_for_ms)
+{
+    int status = 0;
+    if (pid <= 0)
+        return -1;
+
+    for (;;) {
+        pid_t r = waitpid(pid, &status, WNOHANG);
+        if (r == pid)
+            break;
+        if (r < 0) {
+            if (errno == EINTR)
+                continue;
+            perror("wait_subprocess: waitpid");
+            return -1;
+        }
+        if (wait_for_ms > 0) {
+            if (--wait_for_ms <= 0)
+                return -2;
+        }
+        usleep(20000);
     }
     if (WIFEXITED(status))
         return WEXITSTATUS(status);

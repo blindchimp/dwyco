@@ -18,28 +18,8 @@
     } \
 } while(0)
 
-// FNV-1a 64-bit hash over a file's bytes. Returns the file size on
-// success, or -1 if the file cannot be opened/read.
-static long
-file_hash(const char *path, unsigned long long *hash_out)
-{
-    FILE *f = fopen(path, "rb");
-    if (!f) return -1;
-    unsigned long long h = 14695981039346656037ULL;
-    long size = 0;
-    char buf[8192];
-    size_t n;
-    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
-        size += (long)n;
-        for (size_t i = 0; i < n; ++i) {
-            h ^= (unsigned char)buf[i];
-            h *= 1099511628211ULL;
-        }
-    }
-    fclose(f);
-    if (hash_out) *hash_out = h;
-    return size;
-}
+// File hashing now lives in test_common.h as file_hash64(), shared with
+// dwytest_attach.
 
 // Event recording
 struct Event {
@@ -181,8 +161,8 @@ mode_send(int argc, char **argv)
 
     // Sanity-check the attachment file is readable before sending.
     if (att_path) {
-        unsigned long long h = 0;
-        if (file_hash(att_path, &h) < 0) {
+        long h_size = 0;
+        if (file_hash64(att_path, &h_size) == 0) {
             fprintf(stderr, "Cannot read attachment '%s'\n", att_path);
             shutdown();
             return 1;

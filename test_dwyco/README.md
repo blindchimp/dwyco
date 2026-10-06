@@ -36,7 +36,7 @@ Tests are split into two labels:
 | Label | Tests | Needs |
 |-------|-------|-------|
 | `server-free` | the 5 list binaries, `dwytest_list`, `dwytest_utils` | nothing |
-| `server` | `dwytest_local`, `dwytest_settings`, `dwytest_media_state` | a running server; a writable client dir |
+| `server` | `dwytest_local`, `dwytest_settings`, `dwytest_media_state`, `dwytest_users`, `dwytest_tags`, `dwytest_msg`, `dwytest_attach`, `dwytest_profile`, `dwytest_calls` | a running server; a writable client dir |
 
 `dwytest_local` reads `DWYTEST_DIR`, `DWYTEST_PEER` and `DWYTEST_SEED` from
 the environment when the corresponding arguments are not on the command line,
@@ -142,6 +142,287 @@ These do not require a server — they test the list data structure in isolation
 ./dwytest_list
 ```
 
+### `dwytest_users` — Users, Presence, UID Resolution, Trash, SQL
+
+Covers `dwyco_get_user_list2`, `dwyco_load_users2`, `dwyco_load_users_internal`,
+`dwyco_get_updated_uids`, `dwyco_uid_status`, `dwyco_uid_online`, `dwyco_uid_g`,
+`dwyco_uid_to_info`, `dwyco_uid_to_ip` / `_2`, `dwyco_map_uid_to_uids`,
+`dwyco_map_uid_to_representative`, `dwyco_name_to_uid`, `dwyco_delete_user`,
+`dwyco_clear_user`, `dwyco_fetch_info`, the trash API and `dwyco_run_sql`.
+
+Uses its own client dir at `/tmp/dwytest_users`. The uid-resolution test needs
+a server login and skips without one.
+
+```bash
+./dwytest_users
+```
+
+#### Documentation bug: `dwyco_uid_status` never returns 0 or 1
+
+`dlli.h:780` documents:
+
+```
+// 0 for offline
+// 1 for online, not available
+// 3 for online, available
+```
+
+The implementation is `uid_online_display(v) | 2`, and
+`uid_online_display()` only ever returns 0 or 1. So **0 and 1 are unreachable**
+— the real values are 2 (offline) and 3 (online). The bit meanings still hold:
+bit 0 is online-ness, bit 1 is always set.
+
+`dwyco_uid_status_never_returns_0_or_1` pins this. If the header is corrected
+to match reality, or the `| 2` is dropped, the test fails.
+
+#### `dwyco_run_sql` is only safe with valid SQL
+
+The library's `sql_run_sql` wraps statements in try/catch and rolls back, and
+`dwyco_run_sql` maps a nil result to 0 — but a statement SQLite rejects makes
+the SQL layer call `user_panic()` → `exit(1)` before the catch can help, and
+an empty statement segfaults:
+
+| statement | result |
+|-----------|--------|
+| `select 1` | returns 1 |
+| `create table ...`, `insert ...`, `select ...`, `drop table` | return 1 |
+| `this is not sql` | `exit(1)` |
+| `select * from no_such_table` | `exit(1)` |
+| `""` (empty) | `SIGSEGV` |
+
+So the 0/1 return only distinguishes "ran fine" from "did not get that far".
+Valid SQL including bound `?1`/`?2`/`?3` is tested in-process; the failure
+cases are tested out-of-process. Note `dwyco_run_sql` binds at most **three**
+positional arguments.
+
+#### Other contracts this test pins
+
+- `dwyco_uid_to_info` falls back to the uid's **ASCII hex** in the
+  `DWYCO_INFO_HANDLE` column when the uid cannot be resolved, and returns a
+  1-row × 6-column record either way.
+- `dwyco_uid_to_ip` hands back a pointer straight out of `inet_ntoa()`, i.e.
+  static storage: copy it out, never free it. `dwyco_uid_to_ip2` by contrast
+  allocates an `"ip:port"` string that **does** need `dwyco_free_array` — and
+  on failure it returns 0 **without writing `*str_out` at all**.
+- `DWYCO_SE_IDENT_TO_UID` carries the queried handle in the **value**
+  parameter; the name parameter is always null for this event. The resolved
+  uid is in the uid parameter, empty when the handle does not resolve.
+- `dwyco_uid_g` returns 1 unconditionally for one hardcoded uid
+  (`5a098f3df49015331d74`) — a backdoor, pinned so nobody is surprised.
+- `dwyco_get_user_list2`'s `nelems_out` always equals the row count.
+
+### `dwytest_tags` — Message Tagging
+
+Covers the whole tag API, and fixes the fact that the existing tag tests in
+`test_main.cpp` were crash-checks at best.
+
+```bash
+./dwytest_tags
+```
+
+#### Why the old tag tests proved nothing
+
+`test_main.cpp` tagged mids like `"test_mid_001"` that exist in no index, and
+the comment there admitted `get_tagged_mids` returns nothing for them. The
+reason is a real and testable split in the SQL layer:
+
+| API | reads |
+|-----|--------|
+| `dwyco_count_tag`, `dwyco_get_tagged_mids_older_than` | `mt.gmt` only |
+| `dwyco_valid_tag_exists`, `dwyco_get_tagged_mids`, `dwyco_uid_has_tag`, `dwyco_uid_count_tag`, `dwyco_all_messages_tagged` | `mt.gmt` **inner-joined to `gi`** |
+
+So a tagged mid with no global-index row is *counted* yet invisible to
+everything else. `synthetic_mids_are_invisible_to_the_gi_joins` pins exactly
+that, and `test_main.cpp`'s tag tests have been updated to assert it.
+
+To cover the **positive** path without depending on a second live process,
+this binary inserts a row straight into `gi` with `dwyco_run_sql` — the
+documented debugging escape hatch. The cost is that these tests know about
+two table layouts; if either schema changes the fixture stops working and says
+so.
+
+#### Remaining defect: `dwyco_get_tagged_mids2` always terminates the process
+
+Its body is a bare `oopanic("broken")` with the real code commented out
+behind it, so calling it kills the process for *any* tag. The header documents
+it as an ordinary function with no such restriction.
+`get_tagged_mids2_terminates` pins this out-of-process and will fail if it is
+ever implemented. Callers needing uid/mid pairs should use
+`dwyco_get_tagged_mids`, whose uid column really is the hex form.
+
+#### Other contracts this test pins
+
+- `dwyco_get_tagged_mids` returns 2 columns, and `DWYCO_TAGGED_MIDS_HEX_UID`
+  really is ASCII hex as the header warns.
+- `dwyco_get_mid_tag_payload` returns 0 for an empty mid or tag **without
+  touching `payload_out`**; otherwise 1 plus a 1-element list that is
+  `DWYCO_TYPE_NIL` when no payload is stored.
+- `dwyco_all_messages_tagged` is the complement of `dwyco_uid_has_tag` — "are
+  **all** messages tagged" vs "is **any** tagged". Its query reads as the
+  inverse (it selects untagged messages and returns "there was one"), but the
+  observable result matches the name.
+- Setting the same `(mid, tag)` twice is idempotent; `gmt` is keyed on
+  `(mid, tag, uid, guid)`.
+- `dwyco_get_tagged_mids_older_than` filters on the tag's own timestamp and
+  does **not** join `gi`. Note its window compares against SQLite's
+  `strftime('%s','now')`, which is UTC, while `time(NULL)` is local — the
+  test keeps its boundaries far apart so that skew cannot make it flaky.
+
+### `dwytest_msg`, `dwytest_attach`, `dwytest_profile` — Two-Client Tests
+
+These three need a real message to work with, so each re-executes itself as
+a second dwyco client: the parent is the receiver and spawns a child running
+`--peer-send` / `--peer`, which is a separate process with its own account.
+Same binary on both sides so the init sequence is identical.
+
+| Binary | Covers |
+|--------|--------|
+| `dwytest_msg` | `get_saved_message3`, `get_body_text`, `get_body_array`, `authenticate_body`, `is_special_message`(`2`), `is_delivery_report`, `get_new_message_index`, `get_message_bodies`, `save_message`, `clear_user_unfav`, `qd_message_to_body`, `cancel_message_fetch` |
+| `dwytest_attach` | `make_zap_composition_raw`, `set_special_zap`, `is_forward_composition`, `make_forward_zap_composition2`, `zap_send4`, `zap_cancel`, `zap_still_active`, `zap_composition_chan_id`, `copy_out_file_zap2`, `copy_out_file_zap_buf2`, `make_zap_view2`, `make_zap_view_file`(`_raw`), `delete_zap_view`, `zap_quick_stats_view`, `zap_stop_view`, `zap_play_view_no_audio`, `zap_create_preview`(`_buf`) |
+| `dwytest_profile` | `create_bootstrap_profile`, `make_profile_pack`, `set_profile_from_composer`, `get_profile_to_viewer`, `get_profile_to_viewer_sync` |
+
+`dwytest_attach` proves the **forward round trip**: the receiver forwards a
+message back to the sender, and the sender confirms the message it received
+has 2 body components instead of 1. Nothing tested that before.
+
+#### The sender's directory is a deliberate cache
+
+Each of these keeps its **sender** data directory between runs, and wipes only
+its own. This is load-bearing, not laziness: a brand new account registers
+with the server asynchronously, and messages sent during that window are
+accepted locally (`dwyco_zap_send6` returns nonzero and
+`DWYCO_SE_MSG_SEND_SUCCESS` fires) but never actually routed — so nothing
+arrives and the test hangs for its full timeout. With the sender's directory
+in place the tests are reproducible run to run. The receiver may be fresh
+every time; sending outbound from a new account is fine.
+
+#### How a received message actually shows up
+
+The single most important thing learned here: **a message that arrives
+peer-to-peer never appears in `dwyco_get_unfetched_messages()`**. It goes
+straight into the local message table tagged `"_inbox"`. A receiver that only
+polls the unfetched queue sees nothing at all, even with the message sitting
+right there. The working loop is:
+
+1. if the rescan flag is set, clear it and process the unfetched queue — this
+   is how *server-queued* messages get fetched
+2. **every** iteration, call `dwyco_new_msg2()`, which reads the `_inbox` tag
+
+Step 2 is the one that catches direct messages. `dwytest_peer` already did
+this; the first version of these tests did not, and hung silently.
+
+Second gotcha: `install_app_files()` must run before `dwyco_init()`, or the
+client has no `servers2`, silently falls back to the compiled-in production
+server list, logs in successfully, and then never receives anything.
+
+#### Defect: `dwyco_get_user_payload` faults on any non-special message
+
+The function's job is to return 0 when a message carries no user payload, but
+the check that would make that safe is commented out in
+`bld/cdc32/dlli.cpp`:
+
+```cpp
+vc sv = body[QM_BODY_SPECIAL_TYPE];
+//  if(sv[0] != vc("user")) return 0;     <-- disabled
+vc msg_type_vec = sv[1];                 <-- faults when sv is nil
+```
+
+For an ordinary text message `SPECIAL_TYPE` is nil, so `sv[1]` indexes a nil
+container and the process dies:
+
+```
+runtime error: can't do set operation on atomic (4)
+```
+
+So the function is only safe on a message that actually *is* a user-defined
+special message, and the header does not say so. Pinned out-of-process.
+
+#### Defect: `dwyco_make_zap_view_file` always terminates the process
+
+```cpp
+m->actual_filename = newfn(filename);
+```
+
+`newfn()` → `filename_modify()` maps a filename onto one of dwyco's known file
+types via a perfect hash on the trailing suffix, and for anything else does
+`oopanic("<fn> didn't match anything")` — `[[noreturn]]`, `exit(1)`. So the
+function kills the process for *any* filename that is not one of dwyco's own
+types: a `.png`, a `.jpg`, anything a caller would plausibly want to view.
+Verified with a plain PNG in `/tmp` and with the bundled app PNG; both exit.
+
+`dwyco_make_zap_view_file_raw` is the escape hatch — it assigns
+`actual_filename` directly and works on any path. `dlli.h` documents no such
+restriction on either function.
+
+#### Other contracts these tests pin
+
+- `dwyco_make_profile_pack` writes into a **function-static** buffer. The
+  pointer can even move between calls, so the value must be copied out
+  immediately — and must **not** be freed, because it is neither a `new[]`
+  buffer nor a borrowed pointer. Every other string-returning call in this API
+  is one or the other.
+- `DwycoProfileCallback`'s `s1` is the profile **handle**, not the
+  description. `get_peer_profile` asserts the handle we expect comes back.
+- `dwyco_make_zap_composition_raw` only accepts a filename ending in `.dyc`
+  or `.fle` — it checks the extension and does **not** validate the contents, so
+  a renamed text file is accepted.
+- `dwyco_make_zap_view_file`/`_raw` do not return 0 on failure; they hand back
+  `DwVP`'s invalid-cookie sentinel `0x55555555`. Every consumer validates it,
+  so it is safe to pass on — but a caller testing `if (viewid > 0)` will treat
+  it as success.
+- `DWYCO_QM_BODY_FROM` is a **binary** uid column, while the index's
+  `DWYCO_MSG_IDX_ASSOC_UID` and `dwyco_get_tagged_mids`' uid column are
+  **hex**. Easy to get wrong; both are asserted.
+- `DWYCO_MSG_IDX_IS_SENT` is nil (not `"0"`) for a received message.
+
+### `dwytest_calls` — Call / Channel State
+
+Covers selective chat, pals-only filtering, the channel/call lookups with an
+unknown id, keyboard input, and all the call/chat callback registrations.
+Needs no peer and no media hardware.
+
+```bash
+./dwytest_calls
+```
+
+#### Defect: `dwyco_set_zap_appearance_callback` always terminates
+
+```cpp
+oopanic("zap appearances not supported anymore");
+//zap_appearance_callback = cb;
+```
+
+Zap appearances were removed but the declaration was left in `dlli.h` as an
+ordinary setter, so a client that still installs one dies at startup with a
+confusing message rather than getting a link error or a no-op. Pinned
+out-of-process.
+
+#### Not covered here, and why
+
+`dwyco_connect_uid`, `dwyco_connect_all4`, `dwyco_connect_msg_chan`, the
+`DWYCO_CSC_ACCEPT`/`DEFER`/`REJECT` screening matrix, and the
+`DWYCO_CALLDISP_*` dispositions all need two endpoints that can actually
+establish a media session. This build reports no audio hardware
+(`dwyco_get_audio_hw` gives no input and no output), so those are untestable
+here. They are the natural next chunk and would have to run against a live
+peer with working capture devices.
+
+#### Other contracts this test pins
+
+- `dwyco_zap_accept` and `dwyco_zap_reject` are hardcoded `return 0` — not
+  broken, just unimplemented. A test asserting 1 would be wrong.
+- **Selective chat needs a live private chat session.** Both halves bail out
+  with 0 when there is no "message xmitter" channel, so they always report
+  failure and their state is unobservable. `dlli.h` documents no such
+  precondition. The positive path belongs with the chat-server work.
+- `dwyco_set_pals_only` is backed by the `zap/ignore` setting, and
+  `dwyco_get_pals_only` reads it back, so the pair round-trips.
+- Every channel/call-keyed function validates its id and returns 0 (or −1 for
+  `dwyco_chan_to_call`) for an unknown one, leaving out parameters untouched.
+- `dwyco_channel_create` to an unreachable address reports
+  `DWYCO_CALLDISP_STARTED` synchronously. That is fine; a synchronous
+  `DWYCO_CALLDISP_ESTABLISHED` would not be, and is asserted against.
+
 ### `dwytest_settings` — Settings, Codec, Runtime State, Contacts
 
 Covers `dwyco_set_setting` / `dwyco_get_setting`, `dwyco_set_codec_data` /
@@ -157,28 +438,21 @@ but does **not** need a server login. Uses its own client dir at
 ./dwytest_settings
 ```
 
-#### Documentation bugs found
+#### Setting groups and the `user` group
 
-Two things in `dlli.h` do not match the library:
+`dwyco_set_setting` rejects the whole `user/` group ("user settings cant be
+set this way anymore"); those settings are only reachable through the profile
+API. Reading `user/*` back with `dwyco_get_setting` does work. There is no
+`display` setting group — nothing is ever registered under it.
 
-1. **The header's own example for `dwyco_set_setting` does not work.**
-   `dlli.h:2261` says:
+Both of these used to be wrong in the header, which listed `display` and
+`user` among the valid groups and gave `dwyco_set_setting("user/email", ...)`
+as the worked example. The header now lists `net`, `call_acceptance`,
+`raw_files`, `video_format`, `video_input`, `zap`, notes that `user` is
+profile-managed, and uses `zap/save_sent` as the example.
 
-   ```
-   // dwyco_set_setting("user/email", "foo@bar.com");
-   // will set the email address in the user data.
-   ```
-
-   It returns 0 and changes nothing. `dwyco_set_setting` rejects the whole
-   `user/` group ("user settings cant be set this way anymore"); those
-   settings are only reachable through the profile API. Reading `user/*` back
-   with `dwyco_get_setting` does work.
-
-2. **There is no `display` setting group.** `dlli.h:2256` lists `display`
-   among the valid groups, but nothing is ever registered under it. The real
-   groups are `net`, `call_acceptance`, `raw_files`, `user`, `video_format`,
-   `video_input`, `zap`, `rate`, `auth`, `group`, `sync`, `server`, `app`,
-   plus a typo'd `vid_input`.
+Beyond the documented groups, these also exist: `rate`, `auth`, `group`,
+`sync`, `server`, `app`, and a typo'd `vid_input`.
 
 #### Other contracts this test pins
 
@@ -187,11 +461,11 @@ Two things in `dlli.h` do not match the library:
   `oopanic("bad setting")` — `[[noreturn]]`, `exit(1)`. Only the two names
   handled *before* the lookup fail safely: a name with no `/` at all, and
   anything under `user`. Verified in a subprocess.
-- **`dwyco_get_setting`'s `*value_out` is a borrowed pointer** into the
-  setting's internal storage, not an allocation. Freeing it corrupts the
-  settings database. This is the opposite of `dwyco_get_authenticator` and
-  `dwyco_get_aux_string`, which *do* hand back `new[]` buffers that need
-  `dwyco_free_array` — the latter is documented, the former is not.
+- **`dwyco_get_setting`'s `*value_out` must be copied out immediately and
+  must not be freed.** Like the `dwyco_list_get` family, it hands back a
+  pointer into the value's own storage. This is the opposite of
+  `dwyco_get_authenticator` and `dwyco_get_aux_string`, which *do* return
+  `new[]` buffers that need `dwyco_free_array`.
 - An int setting reads back as decimal ASCII with `DWYCO_TYPE_INT`, the same
   convention `dwyco_list_get` uses.
 - **Do not assert setting defaults.** `net/primary_port` is overwritten
@@ -295,26 +569,36 @@ on first use.
 ./dwytest_utils
 ```
 
-#### Defect found: `dwyco_ezd2` aborts on input shorter than 8 bytes
+#### Remaining defect: `dwyco_ezd2` off-by-one at exactly 8 bytes
 
-`dwyco_ezd2` in `bld/cdc32/dlli.cpp` has no minimum-length check:
+`dwyco_ezd2` used to have no length check at all and computed
+`len_str - 8`, which went negative and threw an uncaught `std::bad_alloc`
+out of the `DwString` constructor, terminating the process.
+
+That is fixed, but the new guard is off by one:
 
 ```cpp
-vc iv(VC_BSTRING, str, 8);                 // overreads when len_str < 8
-vc es(VC_BSTRING, str + 8, len_str - 8);  // negative length when len_str < 8
+if(len_str < 8) { *str_out = 0; return; }   // should be <= 8
+...
+vc es(VC_BSTRING, str + 8, len_str - 8);   // len_str == 8 -> es is EMPTY
 ```
 
-With `len_str < 8` the second constructor gets a negative length and throws
-`std::bad_alloc` from inside the `DwString` constructor. Nothing catches it,
-so the process terminates. `dlli.h` documents no such precondition, and
-passing a short buffer is not a null-pointer mistake — it is a length this
-function never validated.
+At exactly 8 bytes the guard passes, `es` is empty, and the blowfish
+decoder's `USER_BOMB` fires — `user_panic()` → `exit(1)`, printing
+`runtime error: BF-xfer-dec arg must be vector(iv, string)`.
 
-`dwytest_utils` pins the current behavior in a subprocess
-(`ezd2_short_input_aborts`) because an uncaught exception from inside the
-library cannot be caught in-process. **If the library is fixed to reject
-short input, that test will fail** — that is deliberate, so the fix shows up
-as a test change rather than silently.
+Measured behavior across lengths:
+
+| `len_str` | result |
+|-----------|--------|
+| 0–7 | `*str_out = 0`, `*len_out` untouched |
+| **8** | **`exit(1)` via `user_panic`** |
+| 9 and up | `*str_out = 0`, `*len_out` untouched |
+
+The shortest string `dwyco_eze2` can produce is 16 bytes (8 IV + one block),
+so the real precondition is `len_str > 8`. `ezd2_exactly_iv_length_still_exits`
+pins this out-of-process and **will fail once the guard is corrected** — that
+is deliberate.
 
 Other contracts this test pins, none of which are in the header:
 
@@ -337,6 +621,41 @@ Other contracts this test pins, none of which are in the header:
   `ppm_freearray((pixel **)p, rows)` and needs a real ppm pixel array. The
   only API that produces one is `dwyco_zap_create_preview_buf`, which needs
   a zap view, so that pairing is covered alongside attachments instead.
+
+### Functions that cannot be called at all
+
+`dlli.h` declares **18** functions that have no definition anywhere in the
+library. Calling any of them is a link error, so they are excluded from the
+tests entirely. A further 15 are inside `#if 0` blocks and are not declared to
+callers at all.
+
+Both groups are intentional dead code (pal auth was retired, most of the rest
+are Windows-only or superseded), but the visible ones are a trap for anyone
+reading the header.
+
+**Declared but undefined — calling these will not link:**
+
+| Function | Header | Why |
+|----------|--------|-----|
+| `dwyco_update_profile`, `dwyco_remove_profile` | `:593`, `:592` | marked `// not impl.`; zero definitions repo-wide |
+| `dwyco_set_group_profile_from_composer`, `dwyco_get_group_profile`, `dwyco_get_group_profile_sync`, `dwyco_get_group_profile_by_name` | `:609`–`:628` | absent from `bld/cdc32/dlli.h` *and* from `dlli.cpp` — `test_dwyco/dlli.h` advertises intended-but-unfinished work |
+| `dwyco_set_auto_reply_msgNA` | `:1034` | the whole auto-reply feature is `#if 0`'d out in `dlli.cpp` |
+| `dwyco_get_lobby_name_by_id` | `:1450` | commented out; superseded by `dwyco_get_lobby_name_by_id2` |
+| `dwyco_inhibit_chat` | `:1353` | commented out |
+| `dwyco_set_login_password` | `:1340` | commented out |
+| `dwyco_set_chat_server_status_callback` | `:411` | commented out |
+| `dwyco_set_main_msg_window`, `dwyco_handle_msg` | `:1596`, `:1597` | Windows-only, and not defined for any platform |
+| `dwyco_is_capturing_video` | `:1041` | Windows-only, `return 0` stub where it is defined |
+| `dwyco_request_singleton_lock` | `:1639` | Android-only |
+
+**Inside `#if 0` — not declared at all:** the pal-auth family
+(`dwyco_get_pal_auth_state`, `dwyco_set_pal_auth_state`,
+`dwyco_get_my_pal_auth_state`, `dwyco_get_pal_auth_warning`,
+`dwyco_pal_auth_granted`, `dwyco_handle_pal_auth`, `dwyco_handle_pal_auth2`,
+`dwyco_revoke_pal_auth`, `dwyco_clear_pal_auths`,
+`dwyco_set_pal_auth_callback`), the visibility family
+(`dwyco_always_visible`, `dwyco_never_visible`, `dwyco_is_always_visible`,
+`dwyco_is_never_visible`), and `dwyco_set_video_display_init_callback`.
 
 ### Things `dwyco_list_*` does that are easy to get wrong
 
@@ -470,6 +789,12 @@ test_dwyco/
 ├── dwytest_utils.cpp           # eze2/ezd2/gen_pass/load_file_e/random_string2
 ├── dwytest_settings.cpp        # set/get_setting, codec, state flags, contacts
 ├── dwytest_media_state.cpp     # audio/pause state, vfw, external driver callbacks
+├── dwytest_users.cpp           # user list, presence, uid resolution, trash, run_sql
+├── dwytest_tags.cpp            # message tagging, incl. hand-built gi fixtures
+├── dwytest_msg.cpp             # received-message API (spawns a 2nd client)
+├── dwytest_attach.cpp          # attachments, views, forwarding (spawns a 2nd client)
+├── dwytest_profile.cpp         # profiles (spawns a 2nd client)
+├── dwytest_calls.cpp           # call/channel state, pals-only, callback registration
 ├── list_readback.h             # List readback helpers
 ├── create_account.cpp
 ├── dump_uid.cpp

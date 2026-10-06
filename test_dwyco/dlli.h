@@ -2253,18 +2253,19 @@ void DWYCOEXPORT dwyco_set_external_audio_output_callbacks(
 // group/setting-name
 //
 // where "group" is one of:
-// net, call_acceptance, display, raw_files, user, video_format, video_input, zap
+// net, call_acceptance, raw_files, video_format, video_input, zap
 //
 // the setting name is one of the parameter names below in the set/get_data calls.
+// note: the "user" group is no longer updated via this api. it is managed as a "profile" now.
 
 // so, for example
-// dwyco_set_setting("user/email", "foo@bar.com");
-// will set the email address in the user data.
+// dwyco_set_setting("zap/save_sent", "1");
+//
 // likewise
-// dwyco_get_setting("user/email", &val, &len, &type);
+// dwyco_get_setting("zap/save_sent", &val, &len, &type);
 // will get the same setting, where val, len, and type are
 // the same as for dwyco_list_get calls.
-// note: when setting values that are integers, you still have to pass
+// note: when setting values that are integers, you  have to pass
 // in a string representing the value. the dll knows what type to
 // regurgitate in the get_setting (or corresponding get_*_data call.
 //

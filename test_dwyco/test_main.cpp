@@ -473,6 +473,11 @@ test_tag_set_check_unset(void)
     ASSERT(dwyco_mid_has_tag(mid, tag) == 0);
 }
 
+// get_tagged_mids inner-joins the global message index, so a mid that exists
+// only in the tag table is counted by dwyco_count_tag but is invisible here.
+// The test asserts exactly that split rather than just "does not crash".
+//
+// See dwytest_tags for the positive path, which needs a real global-index row.
 static void
 test_tag_get_tagged(void)
 {
@@ -483,22 +488,41 @@ test_tag_get_tagged(void)
     dwyco_set_msg_tag(mid1, tag);
     dwyco_set_msg_tag(mid2, tag);
 
-    // Note: get_tagged_mids joins against global message index,
-    // so fake mids won't appear. Just check the API doesn't crash.
+    // Counted: gmt has the rows.
+    ASSERT(dwyco_count_tag(tag) == 2);
+    // Not "valid": no gi row for either mid.
+    ASSERT(dwyco_valid_tag_exists(tag) == 0);
+
+    // Tagged but absent from every gi-join readback.
     DWYCO_LIST mids = 0;
     int res = dwyco_get_tagged_mids(&mids, tag);
     ASSERT(res != 0);
-    if (mids) dwyco_list_release(mids);
+    ASSERT(mids != 0);
+    if (mids) {
+        int rows = -1, cols = -1;
+        ASSERT(dwyco_list_numelems(mids, &rows, &cols) != 0);
+        ASSERT(rows == 0);
+        dwyco_list_release(mids);
+    }
 
-    // Check get_tagged_idx
     DWYCO_MSG_IDX idx = 0;
     res = dwyco_get_tagged_idx(&idx, tag, 0);
-    if (idx) dwyco_list_release(idx);
+    ASSERT(res != 0);
+    ASSERT(idx != 0);
+    if (idx) {
+        int rows = -1, cols = -1;
+        ASSERT(dwyco_list_numelems(idx, &rows, &cols) != 0);
+        ASSERT(rows == 0);
+        dwyco_list_release(idx);
+    }
 
     dwyco_unset_msg_tag(mid1, tag);
     dwyco_unset_msg_tag(mid2, tag);
+    ASSERT(dwyco_count_tag(tag) == 0);
 }
 
+// count_tag reads the tag table directly with no global-index join, so these
+// synthetic mids are counted exactly.
 static void
 test_tag_count(void)
 {
@@ -506,13 +530,17 @@ test_tag_count(void)
     const char *mid2 = "test_mid_cnt2";
     const char *tag = "count_tag";
 
-    ASSERT(dwyco_count_tag(tag) >= 0);
+    ASSERT(dwyco_count_tag(tag) == 0);
     dwyco_set_msg_tag(mid1, tag);
+    ASSERT(dwyco_count_tag(tag) == 1);
     dwyco_set_msg_tag(mid2, tag);
-    // Note: count_tag may require real mids in global index
-    ASSERT(dwyco_count_tag(tag) >= 0);
+    ASSERT(dwyco_count_tag(tag) == 2);
+    // Setting the same pair again is idempotent.
+    dwyco_set_msg_tag(mid2, tag);
+    ASSERT(dwyco_count_tag(tag) == 2);
     dwyco_unset_msg_tag(mid1, tag);
     dwyco_unset_msg_tag(mid2, tag);
+    ASSERT(dwyco_count_tag(tag) == 0);
 }
 
 static void
@@ -524,12 +552,14 @@ test_tag_unset_all(void)
 
     dwyco_set_msg_tag(mid1, tag);
     dwyco_set_msg_tag(mid2, tag);
+    ASSERT(dwyco_count_tag(tag) == 2);
     ASSERT(dwyco_mid_has_tag(mid1, tag) != 0);
     ASSERT(dwyco_mid_has_tag(mid2, tag) != 0);
 
     dwyco_unset_all_msg_tag(tag);
     ASSERT(dwyco_mid_has_tag(mid1, tag) == 0);
     ASSERT(dwyco_mid_has_tag(mid2, tag) == 0);
+    ASSERT(dwyco_count_tag(tag) == 0);
 }
 
 static void

@@ -19,24 +19,23 @@
 // Contracts encoded here were established by probing the library, because
 // several are not in the header and two contradict it:
 //
-//  * dwyco_set_setting("user/...", ...) ALWAYS returns 0. The header's own
-//    example at dlli.h:2261 -- dwyco_set_setting("user/email", "foo@bar.com")
-//    -- is documented as working and does not. user/* settings are only
-//    reachable through the profile API.
+//  * dwyco_set_setting("user/...", ...) ALWAYS returns 0; user/* settings
+//    are profile-managed now and are only reachable through the profile API.
+//    (The header used to give exactly this call as its worked example.)
 //
-//  * There is no "display" setting group. The header lists display among the
-//    valid groups; nothing is ever registered under it. The real groups are
-//    net, call_acceptance, raw_files, user, video_format, video_input, zap,
-//    rate, auth, group, sync, server, app -- plus a typo'd "vid_input".
+//  * There is no "display" setting group -- nothing is ever registered under
+//    it. The documented groups are net, call_acceptance, raw_files,
+//    video_format, video_input, zap; rate, auth, group, sync, server, app
+//    also exist, plus a typo'd "vid_input".
 //
 //  * dwyco_get_setting / dwyco_set_setting call oopanic() (exit(1)) for an
 //    unknown setting name. Only the two names handled before the lookup --
 //    one with no '/' at all, and anything under "user" -- fail safely.
 //
-//  * dwyco_get_setting's *value_out is a BORROWED pointer into the setting's
-//    internal storage, not an allocation. Freeing it would corrupt the
-//    settings database. Only dwyco_get_authenticator and
-//    dwyco_get_aux_string hand back buffers that must be freed.
+//  * dwyco_get_setting's *value_out must be copied out immediately and must
+//    not be freed -- same rule as the dwyco_list_get family. Only
+//    dwyco_get_authenticator and dwyco_get_aux_string hand back buffers
+//    that must be freed.
 //
 //  * dwyco_get_setting on an int setting returns decimal ASCII with
 //    DWYCO_TYPE_INT, matching the dwyco_list_get convention.
@@ -200,9 +199,10 @@ setting_rejected_names(void)
     CHECK(type == DWYCO_TYPE_STRING);
 }
 
-// get_setting's value_out points into the setting's own storage, so it must
-// NOT be freed. Reading it twice must give the same bytes, and the pointer
-// must stay stable as long as the setting is unchanged.
+// get_setting's value_out points into the setting's own storage: copy it out
+// before the next call and do NOT free it. Reading it twice must give the
+// same bytes, and the pointer must stay stable as long as the setting is
+// unchanged.
 static void
 setting_output_is_borrowed(void)
 {
@@ -216,10 +216,9 @@ setting_output_is_borrowed(void)
     CHECK(get_setting("net/app_id", &b, &blen, &btype) != 0);
     CHECK(a == b);
     CHECK(alen == blen);
-    // No dwyco_free_array here on purpose: freeing a borrowed pointer would
-    // corrupt the settings db. If the library ever changes this to return an
-    // allocation, this test would leak rather than crash -- the leak is the
-    // cheap failure mode, so the leak check is done by inspection instead.
+    // No dwyco_free_array here on purpose: the pointer is borrowed, so
+    // freeing it would corrupt the settings db. This mirrors how every other
+    // dwyco_list_get-style accessor has to be used.
 }
 
 // Unknown names abort inside the library (get_settings_value calls
