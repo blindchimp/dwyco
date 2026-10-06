@@ -900,6 +900,11 @@ DWYCOEXPORT
 void
 dwyco_ezd2(const char *str, int len_str, char **str_out, int *len_out)
 {
+    if(len_str < 8)
+    {
+        *str_out = 0;
+        return;
+    }
     vc key(VC_BSTRING, EZEKEY, 10);
     // hokey, we know the first 8 bytes are iv
     vc iv(VC_BSTRING, str, 8);
