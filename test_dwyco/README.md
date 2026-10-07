@@ -36,7 +36,7 @@ Tests are split into two labels:
 | Label | Tests | Needs |
 |-------|-------|-------|
 | `server-free` | the 5 list binaries, `dwytest_list`, `dwytest_utils` | nothing |
-| `server` | `dwytest_local`, `dwytest_settings`, `dwytest_media_state`, `dwytest_users`, `dwytest_tags`, `dwytest_msg`, `dwytest_attach`, `dwytest_profile`, `dwytest_calls` | a running server; a writable client dir |
+| `server` | `dwytest_local`, `dwytest_settings`, `dwytest_media_state`, `dwytest_users`, `dwytest_tags`, `dwytest_msg`, `dwytest_attach`, `dwytest_profile`, `dwytest_calls`, `dwytest_chat` | a running server; a writable client dir |
 
 `dwytest_local` reads `DWYTEST_DIR`, `DWYTEST_PEER` and `DWYTEST_SEED` from
 the environment when the corresponding arguments are not on the command line,
@@ -414,7 +414,9 @@ peer with working capture devices.
 - **Selective chat needs a live private chat session.** Both halves bail out
   with 0 when there is no "message xmitter" channel, so they always report
   failure and their state is unobservable. `dlli.h` documents no such
-  precondition. The positive path belongs with the chat-server work.
+  precondition. Note this is *not* the chat server: `dwytest_chat` covers the
+  chat server and its queue thoroughly, but a private chat session is a
+  peer-to-peer channel, so the positive path still needs two live peers.
 - `dwyco_set_pals_only` is backed by the `zap/ignore` setting, and
   `dwyco_get_pals_only` reads it back, so the pair round-trips.
 - Every channel/call-keyed function validates its id and returns 0 (or −1 for
@@ -422,6 +424,158 @@ peer with working capture devices.
 - `dwyco_channel_create` to an unreachable address reports
   `DWYCO_CALLDISP_STARTED` synchronously. That is fine; a synchronous
   `DWYCO_CALLDISP_ESTABLISHED` would not be, and is asserted against.
+
+### `dwytest_chat` — Chat Server, Chat Context, User Lobbies
+
+Covers the chat server API: the server list, switching to a chat server, the
+chat context lifecycle and both its callbacks, the user-lobby table, the full
+lobby password matrix, the whole chat queue command set, and the offline half.
+
+Needs a running server, because a directory server doubles as a chat server.
+No peer required.
+
+```bash
+./dwytest_chat                                     # normal
+DWYTEST_CHAT_STABILITY_SECONDS=60 ./dwytest_chat   # longer stability watch
+```
+
+The last phase spawns a second client (itself, with a `checker` argument) to
+reach the one password-check outcome a single account cannot.
+
+#### Login is a precondition, but not quite where you would expect
+
+`dwyco_switch_to_chat_server` indexes into `Server_list`
+(`dirth_switch_to_chat_server`, dirth.cc:830), so the list has to exist first.
+It is filled by the directory server's response, which arrives *before* the
+`DwycoServerLoginCallback` fires — so the switch itself is accepted even
+pre-login. What genuinely needs the login is a **usable session**: `Chat_online`
+is set in one place only, `chat_online()` in chatops.cc:120, which runs after
+the chat server answers the auth challenge using the logged-in identity.
+
+Measured before login: `switch_to_chat_server(0)` returns `1`, but
+`dwyco_chat_online()` is `0` and every chat queue command returns `0`. So
+"wait for login, then switch" is right in practice and undocumented in
+`dlli.h`. On a brand new account the server list can even lag the login
+callback, so the checker child retries the switch rather than assuming.
+
+#### Switch deliberately, and wait each time
+
+`dwyco_switch_to_chat_server` calls `stop_chat_thread()` **unconditionally**
+(dirth.cc:834) — even for a valid index — then starts a fresh thread, which
+sets `Chat_online = 0` (chatops.cc:190) until the new server issues its
+challenge. Every call is a full teardown and rebuild, not a re-login.
+
+Once up, the session is genuinely stable: 20 s (or 60 s with the env var) with
+**zero** `dwyco_chat_online()` transitions is asserted. An earlier draft of this
+test switched twice and produced ten failures that looked exactly like a
+flapping connection; they were the test tearing down its own session.
+
+`dwyco_switch_to_chat_server2` is much better behaved — it looks the lobby up
+and checks the password *before* calling `stop_chat_thread()`, so a refused
+switch leaves the session untouched. Both halves are asserted.
+
+#### The user lobby lifecycle
+
+The order that works, and that `cdcx/mainwin.cpp` follows:
+
+```
+create_user_lobby -> wait for ADD_LOBBY -> switch_to_chat_server2 (enter)
+                  -> remove_user_lobby
+```
+
+Points worth knowing, all asserted here:
+
+- **`ADD_LOBBY` does arrive for your own lobby**, and fast — measured at
+  200–900 ms, well inside the 30 s worst case. It lands in the lobby list like
+  any other, and you can select it and enter it normally. Do not conclude
+  "you never get your own lobby" from a short wait.
+- The creator is the lobby's subgod, so `check_chat_server_pw()` returns `1`
+  for *any* password and entering needs none at all (dlli.cpp:3898). That is a
+  different code path from a genuinely passwordless lobby.
+- `create_user_lobby`'s success callback passes `failed_reason == NULL` and
+  **never the new lobby's id** (dlli.cpp:2684), so the id has to be picked out
+  of the lobby list by display name.
+- **Removal only works for a lobby you can get into, and only the creator or a
+  system god may remove one.** A non-creator member gets
+  `Permission denied.`, and the lobby survives.
+- **Removing the lobby you are currently inside drops you from the chat
+  server.** You therefore never receive the `DEL_LOBBY` for it, and your local
+  lobby table goes stale — it still reports the lobby as existing until you
+  reconnect. Asserted rather than papered over.
+- After you *leave* a lobby, its id is unknown again (`has_pw` returns `-1`).
+  So assertion order matters: a `switch_to_chat_server2` done after switching
+  away will return `0` (not found) where it would have returned `-1` (wrong
+  password) if asked while the lobby was still known.
+- `create_user_lobby` / `remove_user_lobby` go through the *directory*
+  connection, so they fail with "not connected to directory" if you are sitting
+  inside some other user lobby when you call them. Return to server 0 first.
+
+#### The password matrix, fully covered
+
+Real ids look like `U_19a99a9e`, one per user lobby, delivered by
+`DWYCO_CHAT_CTX_ADD_LOBBY` and broadcast to clients already connected (seen
+within ~2.7 s). `DWYCO_SL_ULOBBY_*` are **column positions**, not values —
+there is no lobby with id `"000"`, so a test that hardcodes `"000"` tests
+nothing and silently reports "unknown lobby" for everything.
+
+| who | id | `has_pw` | `check_pw("")` | `check_pw(guess)` | `check_pw(right)` |
+| --- | --- | --- | --- | --- | --- |
+| anyone | unknown | `-1` | `0` | `0` | `0` |
+| anyone | passwordless | `0` | `1` | `1` | `1` |
+| non-creator | passworded | `1` | `-1` | `-1` | **`2`** |
+| creator | passworded | `1` | `1` | `1` | `1` (subgod bypass) |
+
+Outcome `2` needs an account that is not the lobby's subgod, so it requires a
+second client. The `checker` child creates a passworded lobby with a known
+password, the primary inspects it, and then the checker deletes it — the
+creator can always clean up, so the suite leaves nothing on the server.
+
+#### Header bug: lobbies do **not** arrive via `ChatCtxCallback2`
+
+dlli.h:257 says user-defined lobbies are "Only available via
+`ChatCtxCallback2`". That is wrong. `add_user_lobby` and `del_user_lobby` both
+fire `dwyco_pg_callback`, i.e. **callback1** (pgdll.cpp:253, pgdll.cpp:273),
+with the lobby as a `DWYCO_LIST` in the value parameters.
+
+`dwyco_pg_callback2` fires for exactly one event — `DWYCO_CHAT_CTX_SYS_ATTR` —
+and only when the attribute value is a *vector* (pgdll.cpp:200-205). Scalar
+sys attrs go to callback1. A client that registers only callback2, as the
+header instructs, sees no lobbies at all.
+
+#### Header bug: the two callbacks share a signature but not an event space
+
+`DWYCO_CHAT_CTX_*` overlaps numerically with `DWYCO_SE_*` but means unrelated
+things: `DWYCO_CHAT_CTX_NEW` is `0`, which is not a valid `DWYCO_SE_*` value.
+`dwyco_se_name_lookup()` in `test_common.h` is a system-event table and prints
+`(unknown)` for a perfectly well-defined chat event. `dwytest_chat` keeps its
+own `chat_ctx_name()` table. `START_UPDATE`/`END_UPDATE` (5 and 6) bracket each
+batch of updates and must balance.
+
+Reading the lobby out of the callback is `dwyco_list_get(l, 0, COL, &v, &len,
+&type)` on the value pointer directly — `val` **is** the lobby list, one row,
+twelve columns. Do not unwrap a nested list, and do not release `val`;
+pgdll.cpp:257 releases it after the callback returns. (cdcx's
+`dwyco_get_attr` is a client-side helper, not dll API, and it `abort()`s on any
+non-string column type.)
+
+#### Other contracts this test pins
+
+- `dwyco_get_server_list` reports `numlines_out` equal to the row count, and
+  every row carries a usable hostname, port and name.
+- `dwyco_switch_to_chat_server` refuses an out-of-range index with `0`, and
+  range-checks *before* calling `stop_chat_thread()`.
+- `dwyco_switch_to_chat_server2` returns `0` for an unknown id and `-1` for a
+  wrong password, both without disturbing the live session.
+- `dwyco_disconnect_chat_server` always returns `1`, is safe to call twice, and
+  leaves `Chat_id == -1` — so all 15 chat queue commands return `0`
+  deterministically afterwards. That offline half is covered unconditionally.
+- **God-only chat calls are not client-side god checks.** They report only
+  whether the command reached the server, returning `1` with a session up
+  regardless of who you are; the server applies the god check. A test
+  asserting `0` for a non-god account would be wrong.
+- Both user-lobby calls are asynchronous and report through
+  `DwycoCommandCallback`, which must fire and must name the operation.
+  Removing an unknown id reports `succ == 0` with a reason string.
 
 ### `dwytest_settings` — Settings, Codec, Runtime State, Contacts
 
@@ -795,6 +949,7 @@ test_dwyco/
 ├── dwytest_attach.cpp          # attachments, views, forwarding (spawns a 2nd client)
 ├── dwytest_profile.cpp         # profiles (spawns a 2nd client)
 ├── dwytest_calls.cpp           # call/channel state, pals-only, callback registration
+├── dwytest_chat.cpp             # chat server, chat context, chat queue, user lobbies
 ├── list_readback.h             # List readback helpers
 ├── create_account.cpp
 ├── dump_uid.cpp

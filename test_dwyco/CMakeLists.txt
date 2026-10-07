@@ -139,6 +139,11 @@ target_link_libraries(dwytest_profile PRIVATE ${BASELIBS})
 add_executable(dwytest_calls dwytest_calls.cpp)
 target_link_libraries(dwytest_calls PRIVATE ${BASELIBS})
 
+# Chat server, chat context, and the chat queue. Needs a directory server
+# (which doubles as a chat server), but no peer.
+add_executable(dwytest_chat dwytest_chat.cpp)
+target_link_libraries(dwytest_chat PRIVATE ${BASELIBS})
+
 # ---- ctest ----
 #
 # Previously every binary here was run by hand. What can be driven by ctest
@@ -183,7 +188,7 @@ foreach(server_free_target
     set_tests_properties(${server_free_target} PROPERTIES LABELS "server-free")
 endforeach()
 
-foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls)
+foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls dwytest_chat)
     add_test(NAME ${account_target} COMMAND ${account_target})
     set_tests_properties(${account_target} PROPERTIES
         LABELS "server"
