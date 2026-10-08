@@ -26,13 +26,14 @@
 #include "imgmisc.h"
 #include "jccolor.h"
 
-// acquire data from PBM files. init must be called with
+// acquire data from PPM files. init must be called with
 // a file that contains a list of filenames that will
 // be returned as if they were comming from an acquisition
 // device.
+//
+// Only the color (P6) variant is supported; see acqfile.cc.
 
-gray **readfile(gray *, FILE *f, int *cols, int *rows, gray *maxval);
-pixel **readfile(pixel *, FILE *f, int *cols, int *rows, gray *maxval);
+pixel **readfile(pixel *, FILE *f, int *cols, int *rows);
 
 template<class T>
 class FileAcquire : public VidAcquire
@@ -57,7 +58,6 @@ private:
     int filenum;
     int cols;
     int rows;
-    gray maxval;
     int preloaded;
     double fake_time;
     void bump(int&);
@@ -72,7 +72,6 @@ FileAcquire<T>::FileAcquire()
     rows = 0;
     cols = 0;
     preloaded = 0;
-    maxval = 0;
     fake_time = GetTickCount();
 }
 
@@ -84,7 +83,7 @@ FileAcquire<T>::~FileAcquire()
         free(filenames[i]);
     for(i = 0; i < imgs.num_elems(); ++i)
         if(imgs[i])
-            pm_freearray((char **)imgs[i], rows);
+            ppm_freearray(imgs[i], rows);
 }
 
 template<class T>
@@ -144,11 +143,11 @@ FileAcquire<T>::init(const char *file, int pattern, int preload)
                 sprintf(a, "can't open file %s", filenames[i]);
                 set_fail_reason(a);
                 for(int j = i - 1; j >= 0; ++j)
-                    pm_freearray((char **)imgs[j], rows);
+                    ppm_freearray(imgs[j], rows);
                 return 0;
             }
             T dummy;
-            T **img = readfile(&dummy, f, &cols, &rows, &maxval);
+            T **img = readfile(&dummy, f, &cols, &rows);
             flip_in_place(img, cols, rows);
             imgs.append(img);
             fclose(f);
@@ -195,7 +194,7 @@ FileAcquire<T>::need()
         return;
     }
     T dummy;
-    imgs[current] = readfile(&dummy, f, &cols, &rows, &maxval);
+    imgs[current] = readfile(&dummy, f, &cols, &rows);
     flip_in_place(imgs[current], cols, rows);
     fclose(f);
 }
@@ -216,7 +215,7 @@ FileAcquire<T>::get_data(int& c, int& r, void*& y, void*& cb, void*& cr, int& fm
     if(g == 0) oopanic("fileaq bad get");
     if(preloaded)
     {
-        T **g2 = (T **)pm_allocarray(cols, rows, sizeof(T));
+        T **g2 = (T **)ppm_allocarray(cols, rows);
         bcopy(&g[0][0], &g2[0][0], cols * rows * sizeof(T));
         g = g2;
         bump(current);

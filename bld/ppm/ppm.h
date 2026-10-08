@@ -1,6 +1,8 @@
 #ifndef PPM_H
 #define PPM_H
 
+#include <stdio.h>
+
 typedef struct
 {
     unsigned char r;
@@ -10,8 +12,10 @@ typedef struct
 
 pixel **ppm_allocarray(int cols, int rows);
 void ppm_freearray(pixel **arr, int rows) ;
-#if 0
+// Reads a binary P6 PPM. Returns a pixel array, or NULL on error. The caller
+// frees it with ppm_freearray().
 pixel **ppm_readppm(FILE *, int *colsP, int *rowsP) ;
+#if 0
 int ppm_writeppm(FILE *, pixel **img, int cols, int rows) ;
 #endif
 

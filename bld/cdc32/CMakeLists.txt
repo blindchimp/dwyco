@@ -57,7 +57,20 @@ if(APPLE AND NOT UNIX)
     add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
 
-if(${DWYCOBG} EQUAL 1)
+if(DWYCO_TESTING)
+    # Headless testing config. Same trimming as DWYCOBG, EXCEPT these three
+    # stay compiled in so tests can drive video with no camera and no peer:
+    #   DWYCO_NO_THEORA_CODEC  -- without a video codec coder_from_config()
+    #                              has nothing to instantiate and fails, so
+    #                              capture can never come up at all.
+    #   DWYCO_NO_VIDEO_FROM_PPM -- the built-in file-based capture source,
+    #                              needed to test capture without hardware.
+    #   DWYCO_NO_VIDEO_MSGS     -- dwyco_zap_create_preview (the PNG-writing
+    #                              variant of the zap preview api).
+    # See test_dwyco_cmake/conf.cmake for the matching set(DWYCO_TESTING 1).
+    add_compile_definitions(DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_ACQ_VIDEO_MEDIA
+)
+elseif(${DWYCOBG} EQUAL 1)
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS DWYCO_NO_ACQ_VIDEO_MEDIA
 )
 endif()
@@ -68,7 +81,6 @@ add_compile_definitions(
 	DWVEC_DOINIT
         DWYCO_USE_SQLITE
         DWYCO_USE_STATIC_SQLITE
-        DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
 	#LOCAL_TOXCORE
 )

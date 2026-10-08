@@ -12,19 +12,15 @@
  */
 #include "acqfile.h"
 
-// these are overloaded functions that have a dummy type
-// arg to get around the naming problem in the pbm read
-// functions.
-
-gray **
-readfile(gray *, FILE *f, int *cols, int *rows, gray *maxval)
-{
-    return pgm_readpgm(f, cols, rows, maxval);
-}
+// read a color (P6) PPM file. The dummy pixel type arg is what lets readfile
+// overload the pbm read functions without a name clash.
+//
+// Only the color variant is supported: the raw-file capture source has always
+// instantiated FileAcquire<pixel>, so a gray (P5) reader was never reachable.
 
 pixel **
-readfile(pixel *, FILE *f, int *cols, int *rows, gray *maxval)
+readfile(pixel *, FILE *f, int *cols, int *rows)
 {
-    return ppm_readppm(f, cols, rows, maxval);
+    return ppm_readppm(f, cols, rows);
 }
 #endif
