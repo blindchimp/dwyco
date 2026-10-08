@@ -98,6 +98,13 @@ static int g_fail = 0;
 static const char *g_dir = "/tmp/dwytest_zap";
 static const char *g_file_list;
 
+// File zap fixtures. The source deliberately lives in a subdirectory so that
+// comparing the stored FILE_ATTACHMENT against FILE_ZAP_BASENAME is a real test
+// of the basename logic rather than a tautology.
+static const char *FILE_ZAP_SRC = "/tmp/dwytest_zap_src/submission.bin";
+static const char *FILE_ZAP_BASENAME = "submission.bin";
+static const char *FILE_ZAP_OUT = "/tmp/dwytest_zap_out.bin";
+
 static char g_my_uid[64];
 static int g_my_uid_len;
 
@@ -148,6 +155,11 @@ system_event(int cmd, int ctx_id, const char *uid, int len_uid,
 }
 
 static const char *ZAP_TEXT = "zap coverage test";
+static const char *FILE_ZAP_TEXT = "file zap coverage test";
+
+// mid of the self-sent file zap, located by its body text.
+static char g_file_mid[256];
+static int g_file_mid_len;
 
 // ===== composition =====
 
@@ -468,77 +480,90 @@ send_zap_to_self(void)
     service_ms(500);
 }
 
-// Find the message we just sent. Must use the message index rather than
-// dwyco_get_tagged_idx("_inbox"), because a self-send is stored, never
-// received, so it has no _inbox tag.
-static void
-find_self_sent_message(void)
+// Find a saved message we sent to ourselves by its body text.
+//
+// Must use the message index rather than dwyco_get_tagged_idx("_inbox"): a
+// self-send is *stored*, never received, and do_local_store adds no _inbox tag,
+// so dwyco_new_msg2() would never see it. For a sent message assoc_uid is the
+// recipient, which here is us.
+//
+// Matching on the text rather than blindly taking row 0 matters: this test
+// sends two different messages (a media zap and a file zap) and the client dir
+// may carry messages from earlier runs. The index is ordered newest-first by
+// logical clock.
+//
+// Returns 1 and fills out/len_out on success.
+static int
+find_mid_by_text(const char *want_text, char *out, int out_size, int *len_out)
 {
     DWYCO_MSG_IDX idx = 0;
 
+    if (!want_text || !out || out_size < 2 || !len_out)
+        return 0;
+    out[0] = 0;
+    *len_out = 0;
+
+    if (!dwyco_get_message_index(&idx, g_my_uid, g_my_uid_len)) {
+        printf("[FAIL] dwyco_get_message_index failed for our own uid\n");
+        return 0;
+    }
+
+    int rows = 0, cols = 0;
+    if (dwyco_list_numelems(idx, &rows, &cols) != 0 && rows > 0) {
+        for (int i = 0; i < rows; ++i) {
+            const char *mid = 0;
+            int mid_len = 0, type = 0;
+            if (!dwyco_list_get(idx, i, DWYCO_MSG_IDX_MID, &mid, &mid_len, &type))
+                continue;
+            if (type != DWYCO_TYPE_STRING || mid_len <= 0)
+                continue;
+            char midbuf[256];
+            int n = mid_len < (int)sizeof(midbuf) - 1
+                ? mid_len : (int)sizeof(midbuf) - 1;
+            memcpy(midbuf, mid, (size_t)n);
+            midbuf[n] = 0;
+
+            DWYCO_SAVED_MSG_LIST sm = 0;
+            if (dwyco_get_saved_message3(&sm, midbuf) != DWYCO_GSM_SUCCESS)
+                continue;
+            // dwyco_get_body_array returns one row per forwarded component, with
+            // the top-level body at row 0. lr_rows() *asserts* a count, so ask
+            // for the real one first rather than guessing.
+            DWYCO_LIST ba = dwyco_get_body_array(sm);
+            int ba_rows = -1, ba_cols = -1;
+            int matched = 0;
+            if (ba && dwyco_list_numelems(ba, &ba_rows, &ba_cols) != 0
+                && ba_rows >= 1)
+                matched = lr_col_str(ba, 0, DWYCO_QM_BODY_NEW_TEXT2, want_text,
+                    (int)strlen(want_text));
+            if (ba)
+                dwyco_list_release(ba);
+            dwyco_list_release(sm);
+            if (matched) {
+                memcpy(out, midbuf, (size_t)n + 1);
+                *len_out = n;
+                dwyco_list_release(idx);
+                return 1;
+            }
+        }
+    }
+    dwyco_list_release(idx);
+    printf("[note] no saved message with text \'%s\' (%d index rows scanned)\n",
+        want_text, rows);
+    return 0;
+}
+
+static void
+find_self_sent_message(void)
+{
     if (g_zap_mid_len) {           // already found
         CHECK(g_zap_mid_len > 0);
         return;
     }
-
-    if (!dwyco_get_message_index(&idx, g_my_uid, g_my_uid_len)) {
-        printf("[FAIL] dwyco_get_message_index failed for our own uid\n");
-        g_fail++;
-        return;
-    }
-
-    int rows = 0, cols = 0;
-    CHECK(dwyco_list_numelems(idx, &rows, &cols) != 0);
-    CHECK(rows > 0);
-    if (rows <= 0) {
-        dwyco_list_release(idx);
-        return;
-    }
-
-    // Newest first: the index is ordered by descending logical clock. Find the
-    // one carrying our text rather than blindly taking row 0, so a leftover
-    // message in a reused client dir cannot fool us.
-    for (int i = 0; i < rows; ++i) {
-        const char *mid = 0;
-        int mid_len = 0, type = 0;
-        if (!dwyco_list_get(idx, i, DWYCO_MSG_IDX_MID, &mid, &mid_len, &type))
-            continue;
-        if (type != DWYCO_TYPE_STRING || mid_len <= 0)
-            continue;
-        char midbuf[256];
-        int n = mid_len < (int)sizeof(midbuf) - 1 ? mid_len : (int)sizeof(midbuf) - 1;
-        memcpy(midbuf, mid, (size_t)n);
-        midbuf[n] = 0;
-
-        DWYCO_SAVED_MSG_LIST sm = 0;
-        if (dwyco_get_saved_message3(&sm, midbuf) != DWYCO_GSM_SUCCESS)
-            continue;
-        // dwyco_get_body_array returns one row per forwarded component, with the
-        // top-level body at row 0. lr_rows() *asserts* a count, so ask for the
-        // real one first rather than guessing.
-        DWYCO_LIST ba = dwyco_get_body_array(sm);
-        int ba_rows = -1, ba_cols = -1;
-        int matched = 0;
-        if (ba && dwyco_list_numelems(ba, &ba_rows, &ba_cols) != 0
-            && ba_rows >= 1)
-            matched = lr_col_str(ba, 0, DWYCO_QM_BODY_NEW_TEXT2, ZAP_TEXT,
-                (int)strlen(ZAP_TEXT));
-        if (ba)
-            dwyco_list_release(ba);
-        if (matched) {
-            memcpy(g_zap_mid, midbuf, (size_t)n + 1);
-            g_zap_mid_len = n;
-            dwyco_list_release(sm);
-            break;
-        }
-        dwyco_list_release(sm);
-    }
-
-    dwyco_list_release(idx);
-
-    if (!g_zap_mid_len) {
-        printf("[FAIL] could not find a saved message with our text via the"
-            " message index (%d rows scanned)\n", rows);
+    if (!find_mid_by_text(ZAP_TEXT, g_zap_mid, (int)sizeof(g_zap_mid),
+        &g_zap_mid_len)) {
+        printf("[FAIL] could not locate the self-sent media zap via the"
+            " message index\n");
         g_fail++;
         return;
     }
@@ -722,6 +747,464 @@ view_play_and_stop(void)
     g_viewid = 0;
 }
 
+// ===== bogus ids and other error paths =====
+
+// Every view accessor must reject a bad cookie rather than dereference it.
+static void
+view_accessors_reject_bad_ids(void)
+{
+    int hv = -1, ha = -1, sv = -1;
+    int chan_id = 0;
+    const char *buf = 0;
+    int blen = 0, cols = 0, rows = 0;
+
+    CHECK(dwyco_zap_quick_stats_view(-1, &hv, &ha, &sv) == 0);
+    CHECK(dwyco_zap_stop_view(-1) == 0);
+    CHECK(dwyco_delete_zap_view(-1) == 0);
+    CHECK(dwyco_zap_play_view_no_audio(-1, play_dcb, 0, &chan_id) == 0);
+    CHECK(dwyco_zap_play_view(-1, play_dcb, 0, &chan_id) == 0);
+    CHECK(dwyco_zap_play_preview(-1, play_dcb, 0, &chan_id) == 0);
+
+    // The preview entry points also touch the filesystem on success, so make
+    // sure the failure path never gets that far.
+    CHECK(dwyco_zap_create_preview_buf(-1, &buf, &blen, &cols, &rows) == 0);
+    CHECK(buf == 0);
+    CHECK(blen == 0 && cols == 0 && rows == 0);
+    CHECK(dwyco_zap_create_preview(-1, "/tmp/dwytest_zap_should_not_exist.ppm",
+        34) == 0);
+    unlink("/tmp/dwytest_zap_should_not_exist.ppm");
+}
+
+// A view cookie is single-use: once deleted, every accessor must refuse it.
+static void
+deleted_view_id_is_rejected(void)
+{
+    int viewid = dwyco_make_zap_view_file_raw(FILE_ZAP_SRC);
+    CHECK(viewid != 0);
+    CHECK(viewid != 0x55555555);
+    if (!viewid) return;
+
+    CHECK(dwyco_delete_zap_view(viewid) != 0);
+    // Second delete, and every accessor, must all refuse.
+    CHECK(dwyco_delete_zap_view(viewid) == 0);
+    CHECK(dwyco_zap_quick_stats_view(viewid, 0, 0, 0) == 0);
+    CHECK(dwyco_zap_stop_view(viewid) == 0);
+    int chan_id = 0;
+    CHECK(dwyco_zap_play_view_no_audio(viewid, play_dcb, 0, &chan_id) == 0);
+}
+
+// ===== file zaps =====
+//
+// A file zap is an ordinary file from the filesystem, copied in and renamed to
+// a random <hex>.fle, with the original basename remembered in the message
+// body. See import_file() [dlli.cpp:4853] and make_file_zap_composition()
+// [dlli.cpp:5220].
+//
+// There is deliberately nothing here about the internals of that container. The
+// test only relies on the public behaviour: a file on disk goes in, the bytes
+// come back out, and the original name is preserved in the body.
+
+// Locate the self-sent file zap. Same mechanism as the media zap, matched on
+// its own body text so the two coexist in one client dir.
+static void
+find_self_sent_file_zap(void)
+{
+    if (!find_mid_by_text(FILE_ZAP_TEXT, g_file_mid, (int)sizeof(g_file_mid),
+        &g_file_mid_len)) {
+        printf("[FAIL] could not locate the self-sent file zap via the"
+            " message index\n");
+        g_fail++;
+        return;
+    }
+    printf("\n      found self-sent file zap mid=%s\n", g_file_mid);
+}
+
+// The source file. Deliberately small and with non-text bytes including an
+// embedded NUL and a stray 0xff/0xfe, so a text-mode mistake shows up as a
+// hash mismatch. Named with a directory component so the basename comparison
+// below is actually meaningful.
+static void
+write_file_zap_source(void)
+{
+    FILE *f = fopen(FILE_ZAP_SRC, "wb");
+    if (!f) {
+        printf("[FAIL] could not create %s\n", FILE_ZAP_SRC);
+        g_fail++;
+        return;
+    }
+    static const unsigned char body[] = {
+        'd', 'w', 'y', 't', 'e', 's', 't', 0x00, 0x01,
+        (unsigned char)0xff, (unsigned char)0xfe, '\n', 'e', 'n', 'd'
+    };
+    fwrite(body, 1, sizeof(body), f);
+    fclose(f);
+}
+
+// A file zap is refused a recording, and refused no-forward sends.
+//
+// The record refusal is the interesting half: a plain composition accepts
+// dwyco_zap_record, a file composition must not, because you cannot record new
+// media into a file you are attaching. That guard lives at dlli.cpp:5522 and
+// keys off user_filename being set.
+static void
+file_zap_composition_refuses_record(void)
+{
+    int compid = dwyco_make_file_zap_composition(FILE_ZAP_SRC,
+        (int)strlen(FILE_ZAP_SRC));
+    CHECK(compid != 0);
+    if (!compid) {
+        printf("[FAIL] dwyco_make_file_zap_composition refused a readable file\n");
+        return;
+    }
+
+    // It IS a file zap.
+    CHECK(dwyco_is_file_zap(compid) != 0);
+    // Nothing is recording, so there is no recording channel.
+    CHECK(dwyco_zap_composition_chan_id(compid) == -1);
+
+    // Recording into it is refused, unlike a plain composition.
+    int chan_id = 12345;
+    CHECK(dwyco_zap_record(compid, 1, 0, 0, 1, record_dcb, 0, &chan_id) == 0);
+    CHECK(dwyco_zap_record2(compid, 1, 0, 10, 1000, 0, 0, 0, record_dcb, 0,
+        &chan_id) == 0);
+    CHECK(dwyco_zap_composition_chan_id(compid) == -1);
+
+    CHECK(dwyco_delete_zap_composition(compid) != 0);
+}
+
+// An unreadable path is refused before anything is copied.
+static void
+file_zap_composition_rejects_bad_path(void)
+{
+    CHECK(dwyco_make_file_zap_composition("/tmp/dwytest_zap_no_such_file",
+        29) == 0);
+    CHECK(dwyco_make_file_zap_composition("", 0) == 0);
+}
+
+// Sending a file zap with no_forward is refused: the flag cannot be honoured
+// for a file attachment [dlli.cpp:5661]. Sending it normally is fine.
+static void
+file_zap_no_forward_send_is_refused(void)
+{
+    int compid = dwyco_make_file_zap_composition(FILE_ZAP_SRC,
+        (int)strlen(FILE_ZAP_SRC));
+    const char *pers = 0;
+    int pers_len = 0;
+    CHECK(compid != 0);
+    if (!compid) return;
+
+    g_send_done = 0;
+    g_send_was_fail = 0;
+    int rc = dwyco_zap_send6(compid, g_my_uid, g_my_uid_len, FILE_ZAP_TEXT,
+        (int)strlen(FILE_ZAP_TEXT), /*no_forward*/1, /*save_sent*/0,
+        /*defer*/0, &pers, &pers_len);
+    CHECK(rc == 0);
+
+    // Same composition, no_forward cleared: this is the one that goes out.
+    rc = dwyco_zap_send6(compid, g_my_uid, g_my_uid_len, FILE_ZAP_TEXT,
+        (int)strlen(FILE_ZAP_TEXT), /*no_forward*/0, /*save_sent*/0,
+        /*defer*/0, &pers, &pers_len);
+    CHECK(rc != 0);
+    if (!rc) {
+        dwyco_delete_zap_composition(compid);
+        return;
+    }
+
+    if (!wait_for([&]() { return g_send_done != 0; }, 60000)) {
+        printf("[FAIL] no send completion for the file zap within 60s\n");
+        g_fail++;
+    } else {
+        CHECK(!g_send_was_fail);
+    }
+    service_ms(500);
+    dwyco_delete_zap_composition(compid);
+}
+
+// The stored body is the mirror image of a media zap: the file attachment name
+// is set where a media zap has nil, and the attachment itself was renamed to
+// <random>.fle. The original basename must survive untouched.
+static void
+file_zap_body_preserves_original_name(void)
+{
+    DWYCO_SAVED_MSG_LIST sm = 0;
+
+    if (!g_file_mid_len) {
+        printf("[skip] no file zap message located\n");
+        return;
+    }
+    if (dwyco_get_saved_message3(&sm, g_file_mid) != DWYCO_GSM_SUCCESS || !sm) {
+        printf("[FAIL] could not reopen the file zap message\n");
+        g_fail++;
+        return;
+    }
+
+    const char *v = 0;
+    int vl = 0, vt = 0;
+
+    // The attachment got renamed by import_file to a random name ending .fle.
+    CHECK(dwyco_list_get(sm, 0, DWYCO_QM_BODY_ATTACHMENT, &v, &vl, &vt) != 0);
+    CHECK(vt == DWYCO_TYPE_STRING);
+    CHECK(vl > 5);
+    if (vt == DWYCO_TYPE_STRING && vl > 5)
+        CHECK(memcmp(v + vl - 4, ".fle", 4) == 0);
+    printf("\n      attachment renamed to: %.*s\n", vl, v ? v : "");
+
+    // ...but the name the user gave us is preserved exactly, as the basename.
+    v = 0;
+    CHECK(dwyco_list_get(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT, &v, &vl,
+        &vt) != 0);
+    CHECK(vt == DWYCO_TYPE_STRING);
+    CHECK(vl == (int)strlen(FILE_ZAP_BASENAME));
+    if (vt == DWYCO_TYPE_STRING)
+        CHECK(v && memcmp(v, FILE_ZAP_BASENAME, (size_t)vl) == 0);
+    printf("      original name preserved as: %.*s\n", vl, v ? v : "");
+
+    dwyco_list_release(sm);
+}
+
+// The index flags the message as a file and, crucially, does NOT claim it has
+// video: the media probe is skipped for file attachments [qmsgsql.cpp:2532].
+static void
+file_zap_index_flags_it_as_a_file(void)
+{
+    DWYCO_MSG_IDX idx = 0;
+
+    if (!g_file_mid_len) {
+        printf("[skip] no file zap message located\n");
+        return;
+    }
+    if (!dwyco_get_message_index(&idx, g_my_uid, g_my_uid_len)) {
+        printf("[FAIL] dwyco_get_message_index failed\n");
+        g_fail++;
+        return;
+    }
+
+    int rows = 0, cols = 0;
+    dwyco_list_numelems(idx, &rows, &cols);
+
+    int found = 0;
+    for (int i = 0; i < rows && !found; ++i) {
+        const char *mid = 0;
+        int mid_len = 0, type = 0;
+        if (!dwyco_list_get(idx, i, DWYCO_MSG_IDX_MID, &mid, &mid_len, &type))
+            continue;
+        if (type != DWYCO_TYPE_STRING || mid_len != g_file_mid_len)
+            continue;
+        if (memcmp(mid, g_file_mid, (size_t)mid_len) != 0)
+            continue;
+
+        found = 1;
+        // is_file is set for a file attachment and nil for a media zap.
+        const char *v = 0;
+        int vl = 0, vt = 0;
+        CHECK(dwyco_list_get(idx, i, DWYCO_MSG_IDX_IS_FILE, &v, &vl, &vt) != 0);
+        CHECK(vt != DWYCO_TYPE_NIL);
+        // No video: it is a file, not a recorded .dyc.
+        v = 0;
+        CHECK(dwyco_list_get(idx, i, DWYCO_MSG_IDX_ATT_HAS_VIDEO, &v, &vl, &vt) != 0);
+        CHECK(vt == DWYCO_TYPE_NIL);
+    }
+    dwyco_list_release(idx);
+
+    if (!found) {
+        printf("[FAIL] file zap mid %s not present in the message index\n",
+            g_file_mid);
+        g_fail++;
+    }
+}
+
+// A file attachment cannot be viewed as a zap: make_zap_view2 refuses it
+// outright [dlli.cpp:5910]. The bytes come out through the copy-out api
+// instead, and they must be identical to what we put in.
+static void
+file_zap_copies_out_byte_identical(void)
+{
+    DWYCO_SAVED_MSG_LIST sm = 0;
+
+    if (!g_file_mid_len) {
+        printf("[skip] no file zap message located\n");
+        return;
+    }
+
+    // The view entry point is the wrong one and says so.
+    if (dwyco_get_saved_message3(&sm, g_file_mid) == DWYCO_GSM_SUCCESS && sm) {
+        int viewid = dwyco_make_zap_view2(sm, 0);
+        CHECK(viewid == 0);
+        if (viewid) {
+            printf("[FAIL] make_zap_view2 accepted a file attachment (%d),"
+                " expected refusal\n", viewid);
+            dwyco_delete_zap_view(viewid);
+        }
+        dwyco_list_release(sm);
+    }
+
+    long src_size = 0;
+    CHECK(file_hash64(FILE_ZAP_SRC, &src_size) != 0);
+    CHECK(src_size > 0);
+
+    // To a path.
+    unlink(FILE_ZAP_OUT);
+    int rc = dwyco_copy_out_file_zap2(g_file_mid, FILE_ZAP_OUT);
+    CHECK(rc != 0);
+    if (rc) {
+        long out_size = 0;
+        unsigned long long h = file_hash64(FILE_ZAP_OUT, &out_size);
+        CHECK(h != 0);
+        CHECK(h == file_hash64(FILE_ZAP_SRC, NULL));
+        CHECK(out_size == src_size);
+        unlink(FILE_ZAP_OUT);
+    }
+
+    // To a buffer. 'max' caps the copy, so a too-small max must decline
+    // rather than truncate.
+    const char *buf = "";
+    int blen = 0;
+    rc = dwyco_copy_out_file_zap_buf2(g_file_mid, &buf, &blen,
+        (int)src_size + 1024);
+    CHECK(rc != 0);
+    CHECK(buf != 0);
+    if (rc && buf) {
+        CHECK(blen == (int)src_size);
+        // Compare against the file's CONTENTS, not FILE_ZAP_SRC itself, which
+        // is a path string.
+        std::vector<unsigned char> want((size_t)src_size);
+        FILE *sf = fopen(FILE_ZAP_SRC, "rb");
+        size_t got = sf ? fread(&want[0], 1, want.size(), sf) : 0;
+        if (sf) fclose(sf);
+        CHECK(got == want.size());
+        CHECK(blen == (int)want.size());
+        if (blen == (int)want.size())
+            CHECK(memcmp(buf, &want[0], want.size()) == 0);
+        // Allocated with new char[] by the library, so this is the right free.
+        dwyco_free_array((char *)buf);
+    }
+
+    // DEFECT: a max too small to hold the file does not decline, it TRUNCATES.
+    // The implementation does `if(sz > max) sz = max` [dlli.cpp:5421-5422] and
+    // then reports success with the short length, so a caller checking only the
+    // return value would silently store a partial file. dwytest_attach.cpp
+    // hedges on exactly this with `rc2 == 0 || blen > 0`.
+    //
+    // Pinned as the truncation it is. If this ever starts returning 0, the
+    // truncation was fixed and this test should be tightened.
+    buf = "";
+    blen = 0;
+    int rc2 = dwyco_copy_out_file_zap_buf2(g_file_mid, &buf, &blen, 1);
+    CHECK(rc2 != 0);
+    CHECK(blen == 1);
+    if (buf)
+        dwyco_free_array((char *)buf);
+}
+
+// copy_out_qd_file_zap is the outbox counterpart and expects a body obtained
+// via dwyco_qd_message_to_body. Handing it a saved message is off-label, and
+// its CopyFile(newfn(attachment)) omits the <uid>.usr directory component
+// [dlli.cpp:5280], so it cannot find the attachment.
+//
+// Asserted only as "does not crash and reports failure": the off-label path
+// is not something to pin a specific value on.
+static void
+qd_copy_out_on_saved_message_is_rejected(void)
+{
+    DWYCO_SAVED_MSG_LIST sm = 0;
+
+    if (!g_file_mid_len) {
+        printf("[skip] no file zap message located\n");
+        return;
+    }
+    if (dwyco_get_saved_message3(&sm, g_file_mid) != DWYCO_GSM_SUCCESS || !sm) {
+        printf("[skip] could not reopen the message\n");
+        return;
+    }
+
+    unlink(FILE_ZAP_OUT);
+    int rc = dwyco_copy_out_qd_file_zap(sm, FILE_ZAP_OUT);
+    CHECK(rc == 0);
+    printf("\n      qd copy-out on a saved message: rc=%d\n", rc);
+    unlink(FILE_ZAP_OUT);
+
+    dwyco_list_release(sm);
+}
+
+// A view can still be built from the local file path directly. The _raw form
+// takes the path as given and works on any file; the plain form goes through
+// newfn(), which oopanic()s (and so exits) on any suffix that is not one of
+// dwyco's own registered types. dwytest_attach.cpp already pins that
+// process-killing defect out-of-process -- see its make_zap_view_file section.
+//
+// make_zap_view_file looks like an internal api: it is called from the profile
+// machinery, and as a public entry point its filename mapping means it cannot
+// be used for anything but dwyco's own container types. It would be reasonable
+// to take it out of the public header and leave _raw as the supported form.
+static void
+view_from_local_file_raw(void)
+{
+    int viewid = dwyco_make_zap_view_file_raw(FILE_ZAP_SRC);
+    CHECK(viewid != 0);
+    CHECK(viewid != 0x55555555);
+    if (!viewid) return;
+
+    // A valid cookie, but nothing decodable inside, so the probe declines and
+    // zeroes its outputs rather than reporting media that is not there.
+    int hv = -1, ha = -1, sv = -1;
+    CHECK(dwyco_zap_quick_stats_view(viewid, &hv, &ha, &sv) == 0);
+    CHECK(hv == 0 && ha == 0 && sv == 0);
+
+    // No playable media either.
+    const char *buf = 0;
+    int blen = 0, cols = 0, rows = 0;
+    CHECK(dwyco_zap_create_preview_buf(viewid, &buf, &blen, &cols, &rows) == 0);
+    CHECK(buf == 0);
+
+    // Stopping something that is not playing is a no-op, not an error.
+    CHECK(dwyco_zap_stop_view(viewid) == 0);
+    CHECK(dwyco_delete_zap_view(viewid) != 0);
+}
+
+// DEFECT: dwyco_zap_play accepts a file zap composition and reports success.
+//
+// Record is refused correctly (dlli.cpp:5522) but play is not:
+//   * FormShow() sees a non-empty actual_filename and calls stop_buttonClick(),
+//     which sets play_button_enabled = 1 [mcc.cpp:536, 898]
+//   * play_buttonClick only bails on an empty name or ".jpg" [mcc.cpp:545-547],
+//     so a .fle sails straight past
+//   * quick_stats on non-container bytes finds nothing, leaving codec 0
+//   * build_incoming_video() fails and the return value is DISCARDED
+//     [mcc.cpp:597]
+//
+// The result is a dead channel reported as a successful play. Pinned so that
+// fixing it has to update this test.
+static void
+file_zap_play_defect_returns_success(void)
+{
+    int compid = dwyco_make_file_zap_composition(FILE_ZAP_SRC,
+        (int)strlen(FILE_ZAP_SRC));
+    int chan_id = 0;
+    CHECK(compid != 0);
+    if (!compid) return;
+
+    g_play_dcb_calls = 0;
+    raw_rec_reset();
+
+    int rc = dwyco_zap_play(compid, play_dcb, 0, &chan_id);
+    printf("\n      dwyco_zap_play on a file zap: rc=%d chan=%d\n", rc, chan_id);
+    // Reports success. If this ever starts returning 0, the defect is fixed and
+    // this test must be updated.
+    CHECK(rc != 0);
+    CHECK(chan_id > 0);
+
+    service_ms(400);
+
+    // But nothing was ever decoded, so no frames appeared.
+    CHECK(raw_rec.size() == 0);
+
+    // The channel is stoppable and the composition deletable, so the test does
+    // not wedge.
+    CHECK(dwyco_zap_stop(compid) != 0);
+    service_ms(200);
+    CHECK(dwyco_delete_zap_composition(compid) != 0);
+}
+
 static int
 init_test(void)
 {
@@ -768,6 +1251,11 @@ main(void)
     }
     printf("  file list: %s\n", g_file_list);
 
+    // The file zap source lives in a subdirectory (see FILE_ZAP_SRC), so make
+    // sure it exists before the tests that need it.
+    mkdir("/tmp/dwytest_zap_src", 0755);
+    write_file_zap_source();
+
     if (!init_test()) {
         fprintf(stderr, "dwyco_init failed\n");
         return 1;
@@ -808,6 +1296,24 @@ main(void)
     RUN(view_quick_stats);
     RUN(view_create_preview_decodes_a_frame);
     RUN(view_play_and_stop);
+    RUN(view_accessors_reject_bad_ids);
+    RUN(deleted_view_id_is_rejected);
+
+    printf("\nFile zaps - composition:\n");
+    RUN(file_zap_composition_rejects_bad_path);
+    RUN(file_zap_composition_refuses_record);
+    RUN(file_zap_no_forward_send_is_refused);
+
+    printf("\nFile zaps - message:\n");
+    RUN(find_self_sent_file_zap);
+    RUN(file_zap_body_preserves_original_name);
+    RUN(file_zap_index_flags_it_as_a_file);
+    RUN(file_zap_copies_out_byte_identical);
+    RUN(qd_copy_out_on_saved_message_is_rejected);
+
+    printf("\nFile zaps - views and errors:\n");
+    RUN(view_from_local_file_raw);
+    RUN(file_zap_play_defect_returns_success);
 
     if (g_last_compid)
         dwyco_delete_zap_composition(g_last_compid);
