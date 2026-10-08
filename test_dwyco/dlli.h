@@ -529,6 +529,9 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_TOX_TYPING 60
 #define DWYCO_SE_TOX_FRIEND_USER_STATUS 61
 #define DWYCO_SE_TOX_AVATAR 62
+// another device in the group signed in with the tox identity this device
+// was running, so this device stood down. no arguments.
+#define DWYCO_SE_TOX_DISABLED_BY_REMOTE 63
 
 int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -597,35 +600,6 @@ int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfil
 int DWYCOEXPORT dwyco_create_bootstrap_profile(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email);
 // note: output is to static area, must be copied out immediately
 int DWYCOEXPORT dwyco_make_profile_pack(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email, const char **str_out, int *len_str_out);
-
-// these are similar to the profile functions above, but they store/retrieve
-// a profile keyed to the current device GROUP (the group id / gid) rather
-// than to an individual (ephemeral) member uid. this lets a group have one
-// profile that isn't confused by which device's uid you happen to be viewing.
-//
-// set the profile for the current device group. inside a group this stores
-// a single group profile; it also updates the server profile for My_UID for
-// backward compat. returns 1 on success.
-int DWYCOEXPORT dwyco_set_group_profile_from_composer(int compid, const char *text, int len_text,
-        DwycoProfileCallback cb, void *arg);
-
-// get the profile for the device group that the given member uid belongs to.
-// resolves the uid to its group id, then returns the group profile. if the
-// uid is not in a group, this falls back to the uid's own profile (same as
-// dwyco_get_profile_to_viewer). the callback semantics are the same as
-// dwyco_get_profile_to_viewer. returns 1 on success.
-int DWYCOEXPORT dwyco_get_group_profile(const char *uid, int len_uid, DwycoProfileCallback cb, void *arg);
-
-// synchronous version of dwyco_get_group_profile. this returns whatever is
-// currently in the local group profile cache without querying the server.
-// same return value semantics as dwyco_get_profile_to_viewer_sync.
-int DWYCOEXPORT dwyco_get_group_profile_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
-
-// get the device-group profile for the group named by the given group name
-// (alt_name, e.g. "jane@mumble"). resolves the name to a member uid, then
-// to the group id. same callback semantics as dwyco_get_profile_to_viewer.
-// returns 1 on success.
-int DWYCOEXPORT dwyco_get_group_profile_by_name(const char *gname, int len_gname, DwycoProfileCallback cb, void *arg);
 
 //
 // WARNING: this char-by-char chat interface isn't used any more, as most
@@ -2260,7 +2234,7 @@ void DWYCOEXPORT dwyco_set_external_audio_output_callbacks(
 
 // so, for example
 // dwyco_set_setting("zap/save_sent", "1");
-//
+
 // likewise
 // dwyco_get_setting("zap/save_sent", &val, &len, &type);
 // will get the same setting, where val, len, and type are
@@ -2305,6 +2279,64 @@ int DWYCOEXPORT dwyco_tox_file_is_encrypted(const char *path);
 int DWYCOEXPORT dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
                                          int make_backup, char *err_buf, int err_buf_len);
 int DWYCOEXPORT dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_peek_pubkey_from_file(const char *path, const char *pw, int pw_len,
+                                               char **pubkey_out, int *pubkey_len_out);
+// dwyco-side name for a hex tox pubkey, from the '_tox_friend' tags. works
+// for encrypted saves. returns 0 if no name is known.
+int DWYCOEXPORT dwyco_tox_name_for_pubkey(const char *pub_hex, int pub_hex_len,
+                                          char **name_out, int *name_len_out);
+
+// --- group-shared tox identities ---
+//
+// a tox save can be published to the device group as a tag payload, so other
+// group members can run the same tox identity, one device at a time. the
+// payload is the raw bytes of the save file (encryption preserved), keyed by
+// hex of the tox pubkey. signing in also claims the identity, and any other
+// client running it stands down. see tox_bridge_publish_save() in
+// bld/cdc32/toxbridge.h for the details.
+
+// push the running identity's save to the group. returns 1 on success.
+int DWYCOEXPORT dwyco_tox_publish_save();
+
+// list the identities the group has published. returns 1 and fills
+// list_out with one row per identity, columns:
+//   "000" mid      - hex of the tox pubkey (ascii hex, this is the key used
+//                    by dwyco_tox_select_save)
+//   "001" time     - unix seconds of the winning copy (int)
+//   "002" size     - size of the save in bytes (int)
+//   "003" encrypted- 1 if the save is password protected (int)
+int DWYCOEXPORT dwyco_tox_list_saves(DWYCO_LIST *list_out);
+
+// adopt the published identity whose mid is mid_hex (ascii hex pubkey) as the
+// identity this device will run. leaves tox stopped: the caller should present
+// the normal "sign in" flow afterwards, and that sign-in is what claims the
+// identity. if the identity is password protected, the user is prompted as
+// usual. returns 1 on success, 0 with a message in err_buf otherwise.
+int DWYCOEXPORT dwyco_tox_select_save(const char *mid_hex, int mid_hex_len,
+                                      char *err_buf, int err_buf_len);
+
+// report which device currently owns an identity. pub_hex is the ascii hex
+// tox pubkey. returns 1 and fills list_out with a single column "000" holding
+// the ascii hex dwyco uid of the owning device, or 0 if nobody has claimed
+// the identity yet.
+int DWYCOEXPORT dwyco_tox_claimant(const char *pub_hex, int pub_hex_len,
+                                    DWYCO_LIST *list_out);
+
+// remove a shared identity from every group member's list. mid_hex is the
+// ascii hex tox pubkey, as reported by dwyco_tox_list_saves. any client may
+// do this; returns 1 if there was something to remove. this does not change
+// any client's tox state (nobody is signed out), and it is a one shot
+// removal -- a device still signed in with the identity can publish it again
+// as a new tag row.
+int DWYCOEXPORT dwyco_tox_depublish_save(const char *mid_hex, int mid_hex_len);
+
+int DWYCOEXPORT dwyco_tox_reset_identity(char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_factory_reset(char *err_buf, int err_buf_len);
+int DWYCOEXPORT dwyco_tox_save_exists();
+int DWYCOEXPORT dwyco_tox_save_is_encrypted();
+int DWYCOEXPORT dwyco_tox_set_save_password(const char *old_pw, int old_pw_len,
+                                            const char *new_pw, int new_pw_len,
+                                            char *err_buf, int err_buf_len);
 
 typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_FRIEND_NUMBER "000"
