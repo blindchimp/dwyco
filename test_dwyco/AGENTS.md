@@ -12,3 +12,4 @@
 * use the dumpxfer.lh script to dump out files in the client directory that are not sqlite databases. most files are encoded using dwyco xfer format. the script is invoked as "./vc dumpxfer.lh filename"
 * if you need to create clients for testing, make them in /tmp/dwyXYZ where XYZ is an arbitrary identifier.
 * CRITICAL: if the API specifies that a pointer is required, IT IS ASSUMED THE POINTER IS NON-NULL! IT DOES NOT CHECK FOR NULL POINTERS. if you send a null pointer to an api function, it is likely to crash the system. ALL tests should avoid passing null pointers to the API.
+* for testing video capture, use the file input facility in cdc32. the settings are "raw_files/raw_files_list" = /tmp/128x96/tennis.lst, "raw_files_use_list_of_files" = 1, and "video_input/source" = "raw".
