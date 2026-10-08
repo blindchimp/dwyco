@@ -291,6 +291,59 @@ Page {
         showBanner("Signed out.")
     }
 
+    // ---- file-level password on the local save ----
+    //
+    // the same core call covers all three cases: an empty old password with a
+    // new one adds encryption, the current password with an empty new one
+    // removes it. tox has to be stopped for it to touch the file on disk, and
+    // nothing is emitted when it succeeds, so refresh by hand.
+
+    property string savePwMode: "add"
+
+    function openAddSavePassword() {
+        savePwMode = "add"
+        savePwError.text = ""
+        savePwOld.text = ""
+        savePwNew.text = ""
+        savePwConfirm.text = ""
+        savePwDlg.open()
+        savePwNew.forceActiveFocus()
+    }
+
+    function openRemoveSavePassword() {
+        savePwMode = "remove"
+        savePwError.text = ""
+        savePwOld.text = ""
+        savePwNew.text = ""
+        savePwConfirm.text = ""
+        savePwDlg.open()
+        savePwOld.forceActiveFocus()
+    }
+
+    function applySavePassword() {
+        if(savePwMode === "add") {
+            if(savePwNew.text.length === 0) {
+                savePwError.text = "Enter a password."
+                return
+            }
+            if(savePwNew.text !== savePwConfirm.text) {
+                savePwError.text = "The passwords do not match."
+                return
+            }
+        }
+        var err = core.tox_set_save_password(savePwOld.text, savePwNew.text)
+        if(err.length > 0) {
+            savePwError.text = err
+            return
+        }
+        savePwDlg.close()
+        if(savePwMode === "add")
+            showBanner("Password added. This save now needs it to sign in.")
+        else
+            showBanner("Password removed.")
+        doRefresh()
+    }
+
     // ---- local save file operations ----
 
     function doImport(path, pw) {
@@ -1013,6 +1066,25 @@ function doUnshare(row) {
                     }
                 }
 
+                // add or remove the file-level password on the local save.
+                // the bridge refuses while tox is running, so this is only
+                // offered when signed out, like the other file operations.
+                Button {
+                    text: tox_state.encrypted ? "Remove password…" : "Add a password…"
+                    flat: true
+                    enabled: tox_state.state !== "signedin"
+                              && tox_state.state !== "empty"
+                    ToolTip.visible: hovered
+                    ToolTip.text: tox_state.state === "signedin"
+                                  ? "Sign out first to change the save's password"
+                                  : (tox_state.encrypted
+                                     ? "Take the password off this device's tox save"
+                                     : "Password protect this device's tox save")
+                    onClicked: tox_state.encrypted
+                              ? openRemoveSavePassword()
+                              : openAddSavePassword()
+                }
+
                 Item { Layout.fillWidth: true }
 
                 Button {
@@ -1025,6 +1097,7 @@ function doUnshare(row) {
                         color: "#c00"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
                     }
                     onClicked: deleteConfirmDlg.open()
                 }
@@ -1033,9 +1106,10 @@ function doUnshare(row) {
             Label {
                 text: "Export writes a .tox file you can import on another device. "
                       + "Sharing publishes this tox-id to the other devices in your "
-                      + "group. Deleting removes it from this device only — your "
-                      + "messages, contacts and Dwyco account are not affected, and a "
-                      + "copy is saved to disk first."
+                      + "group. Password protecting the save also protects every .tox "
+                      + "file you export from it. Deleting removes it from this device "
+                      + "only — your messages, contacts and Dwyco account are not "
+                      + "affected, and a copy is saved to disk first."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 color: secondary_text
@@ -1234,6 +1308,98 @@ Dialog {
                         importPw = pwEntryInput.text
                         openImportConfirm()
                     }
+                }
+            }
+        }
+    }
+
+    // ---- add / remove the save's password ----
+
+    Dialog {
+        id: savePwDlg
+        title: tox_acct.savePwMode === "add"
+               ? "Add a password" : "Remove the password"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                visible: tox_acct.savePwMode === "add"
+                text: "Password protect the Tox save on this device. You will "
+                      + "need the password every time this device signs in, "
+                      + "and any .tox file exported from it will be protected "
+                      + "too."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                visible: tox_acct.savePwMode === "remove"
+                text: "Take the password off the Tox save on this device. It "
+                      + "will no longer ask for one to sign in here. Enter the "
+                      + "current password to confirm."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            // current password, only when taking one off
+            TextField {
+                id: savePwOld
+                visible: tox_acct.savePwMode === "remove"
+                echoMode: TextInput.Password
+                placeholderText: "Current password"
+                Layout.fillWidth: true
+                onAccepted: applySavePassword()
+            }
+
+            ColumnLayout {
+                visible: tox_acct.savePwMode === "add"
+                Layout.fillWidth: true
+                spacing: mm(1)
+
+                TextField {
+                    id: savePwNew
+                    echoMode: TextInput.Password
+                    placeholderText: "New password"
+                    Layout.fillWidth: true
+                }
+
+                TextField {
+                    id: savePwConfirm
+                    echoMode: TextInput.Password
+                    placeholderText: "New password again"
+                    Layout.fillWidth: true
+                    onAccepted: applySavePassword()
+                }
+            }
+
+            Label {
+                id: savePwError
+                text: ""
+                color: "#a00"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: savePwDlg.close()
+                }
+
+                Button {
+                    text: tox_acct.savePwMode === "add" ? "Add password"
+                                                       : "Remove password"
+                    onClicked: applySavePassword()
                 }
             }
         }
