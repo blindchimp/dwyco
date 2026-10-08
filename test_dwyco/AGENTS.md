@@ -1,3 +1,4 @@
+```
 * Use CMake files to understand the project. Ignore the qmake files.
 * ignore what is in the build directory
 * ignore trc_wrappers.cpp, it is auto-generated for debugging the api.
@@ -12,4 +13,6 @@
 * use the dumpxfer.lh script to dump out files in the client directory that are not sqlite databases. most files are encoded using dwyco xfer format. the script is invoked as "./vc dumpxfer.lh filename"
 * if you need to create clients for testing, make them in /tmp/dwyXYZ where XYZ is an arbitrary identifier.
 * CRITICAL: if the API specifies that a pointer is required, IT IS ASSUMED THE POINTER IS NON-NULL! IT DOES NOT CHECK FOR NULL POINTERS. if you send a null pointer to an api function, it is likely to crash the system. ALL tests should avoid passing null pointers to the API.
-* for testing video capture, use the file input facility in cdc32. the settings are "raw_files/raw_files_list" = /tmp/128x96/tennis.lst, "raw_files_use_list_of_files" = 1, and "video_input/source" = "raw".
+* for testing video capture, use the file input facility in cdc32. the settings are "raw_files/raw_files_list" = /tmp/128x96/tennis.lst, "raw_files/use_pattern" = 0, and "video_input/source" = "raw". see dwytest_vidcap_raw.cpp, which drives this end to end. NOTE: "raw_files/use_list_of_files" is dead, it is declared in ezset2.cpp but init_raw_files() never reads it. "raw_files/use_pattern" alone selects list-vs-pattern. also note the frames under /tmp/128x96 are actually 128x87 despite the directory name.
+* video capture needs a video codec to initialize at all. if "DWYCO_NO_THEORA_CODEC" is defined, every branch of MMChannel::coder_from_config() compiles away and capture can never come up, even though the raw-file path is fine. that and the raw-file path are both enabled by "DWYCO_TESTING=1", which test_dwyco_cmake/conf.cmake sets and bld/cdc32/CMakeLists.txt acts on.
+```

@@ -111,6 +111,13 @@ target_link_libraries(dwytest_settings PRIVATE ${BASELIBS})
 add_executable(dwytest_media_state dwytest_media_state.cpp)
 target_link_libraries(dwytest_media_state PRIVATE ${BASELIBS})
 
+# Video capture initialized from the raw (PPM) file input, so it needs no
+# camera. This only links and runs when test_dwyco_cmake/conf.cmake sets
+# DWYCO_TESTING=1; without it the raw-file path is compiled out and the test
+# fails by design. Needs dwyco_init() for the settings map, but no peer.
+add_executable(dwytest_vidcap_raw dwytest_vidcap_raw.cpp)
+target_link_libraries(dwytest_vidcap_raw PRIVATE ${BASELIBS})
+
 # User list, presence, uid resolution, trash, and the run_sql escape hatch.
 add_executable(dwytest_users dwytest_users.cpp)
 target_link_libraries(dwytest_users PRIVATE ${BASELIBS})
@@ -188,7 +195,7 @@ foreach(server_free_target
     set_tests_properties(${server_free_target} PROPERTIES LABELS "server-free")
 endforeach()
 
-foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls dwytest_chat)
+foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_vidcap_raw dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls dwytest_chat)
     add_test(NAME ${account_target} COMMAND ${account_target})
     set_tests_properties(${account_target} PROPERTIES
         LABELS "server"
