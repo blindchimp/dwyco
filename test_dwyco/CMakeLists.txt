@@ -118,6 +118,15 @@ target_link_libraries(dwytest_media_state PRIVATE ${BASELIBS})
 add_executable(dwytest_vidcap_raw dwytest_vidcap_raw.cpp)
 target_link_libraries(dwytest_vidcap_raw PRIVATE ${BASELIBS})
 
+# Zap composition / record / play / send-to-self / view. Records from the same
+# synthetic PPM frames (raw_frames.h), so no camera. The send goes to our own
+# uid, which short-circuits locally in directsend.cpp, so it needs no peer and
+# no live server -- it really does run offline. Registered under the "server"
+# label anyway, like dwytest_settings, because it still needs dwyco_init() and
+# a client dir.
+add_executable(dwytest_zap dwytest_zap.cpp)
+target_link_libraries(dwytest_zap PRIVATE ${BASELIBS})
+
 # User list, presence, uid resolution, trash, and the run_sql escape hatch.
 add_executable(dwytest_users dwytest_users.cpp)
 target_link_libraries(dwytest_users PRIVATE ${BASELIBS})
@@ -195,7 +204,7 @@ foreach(server_free_target
     set_tests_properties(${server_free_target} PROPERTIES LABELS "server-free")
 endforeach()
 
-foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_vidcap_raw dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls dwytest_chat)
+foreach(account_target dwytest_local dwytest_settings dwytest_media_state dwytest_vidcap_raw dwytest_zap dwytest_users dwytest_tags dwytest_msg dwytest_attach dwytest_profile dwytest_calls dwytest_chat)
     add_test(NAME ${account_target} COMMAND ${account_target})
     set_tests_properties(${account_target} PROPERTIES
         LABELS "server"

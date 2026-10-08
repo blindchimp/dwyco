@@ -1,9 +1,8 @@
-// Can video capture be initialized from the raw-file (PPM) test input?
+// Can video capture be initialized from the raw-file (PPM) test input, and do
+// the preview callbacks get the same frames the source produced?
 //
 // The raw files input is the one capture source that needs no camera, so it is
-// the only way to exercise the capture path on a headless build machine. This
-// test points the settings at a list of PPM files and asks the library to bring
-// capture up, then reports what happened.
+// the only way to exercise the capture path on a headless build machine.
 //
 // How capture actually gets initialized
 // -------------------------------------
@@ -29,14 +28,10 @@
 // synthetic PPM source produced -- same pixels, same size, in list order.
 //
 // The frames can be compared bit-exactly because the preview path never touches
-// the codec: dwyco_finish_startup() sets MMChannel::Moron_dork_mode, which
-// routes the frame timer through grab_and_code(showonly=1) ->
-// get_data(no_convert=1) -> code_preprocess(inhibit_coding=1), and
-// theoracol.cc's code_preprocess then early-returns straight to
-// display_img_2b_coded() before any subsample, crop, pad or encode. The only
-// thing applied to the pixels is a row reversal by FileAcquire::need().
+// the codec. Full chain with citations is on raw_video_display() in
+// raw_frames.h.
 //
-// Full chain with citations is on the g_rec/rec_frame declaration below.
+// The frame source itself lives in raw_frames.h, shared with dwytest_zap.cpp.
 //
 // Settings that matter
 // ---------------------
@@ -62,15 +57,15 @@
 // trims the same things DWYCOBG=1 does, EXCEPT it keeps three of them compiled
 // in:
 //
-//   DWYCO_NO_THEORA_CODEC    a video codec is mandatory, not optional. With it
-//                            defined, every branch of the if/else chain in
-//                            MMChannel::coder_from_config() [mmchan.cc:1881]
-//                            compiles away and it degrades to
-//                            FAILRET("incompatible coding style"), so
-//                            build_outgoing() fails at the coder step and
-//                            preview() returns 0 even though initaq()
-//                            succeeded. Capture cannot initialize at all without
-//                            this, so it is not just about frames.
+//   DWYCO_NO_THEORA_CODEC  a video codec is mandatory, not optional. With it
+//                         defined, every branch of the if/else chain in
+//                         MMChannel::coder_from_config() [mmchan.cc:1881]
+//                         compiles away and it degrades to
+//                         FAILRET("incompatible coding style"), so
+//                         build_outgoing() fails at the coder step and
+//                         preview() returns 0 even though initaq()
+//                         succeeded. Capture cannot initialize at all without
+//                         this, so it is not just about frames.
 //   DWYCO_NO_VIDEO_FROM_PPM  init_raw_files()/FileAcquire<>/readfile().
 //   DWYCO_NO_VIDEO_MSGS      dwyco_zap_create_preview(), the PNG-writing zap
 //                            preview api.
@@ -95,6 +90,7 @@
 #include <unistd.h>
 
 #include "test_common.h"
+#include "raw_frames.h"
 
 static int g_pass = 0;
 static int g_fail = 0;
@@ -114,117 +110,6 @@ static int g_fail = 0;
 } while (0)
 
 static const char *g_dir = "/tmp/dwytest_vidcap";
-
-// The frame source.
-//
-// This test verifies frame CONTENT, so it must know the exact pixels it wrote.
-// That means it always generates its own frames rather than pointing at an
-// external sequence like /tmp/128x96/tennis.lst, whose contents are unknown to
-// the test.
-//
-// DWYTEST_RAW_LIST overrides this and points the capture path at a real file
-// list instead. Content verification is impossible then, so the test drops to
-// structural checks only and says so on stdout.
-static int g_content_known;
-
-#define SYNTH_DIR    "/tmp/dwytest_vidcap_frames"
-#define SYNTH_LIST   SYNTH_DIR "/list.lst"
-#define SYNTH_COLS   128
-#define SYNTH_ROWS   96
-#define SYNTH_FRAMES 20
-
-// Expected pixel value for source frame 'frame' at file coordinates (x, y),
-// channel c (0=r, 1=g, 2=b). This mirrors write_ppm() exactly -- same integer
-// arithmetic, same truncation -- so the two can be compared bit-exactly.
-//
-// The per-frame design serves the comparison:
-//   r is a ramp across x  -> catches horizontal geometry errors and R/B swaps
-//   g is a ramp across y  -> catches vertical geometry errors and the row flip
-//   b is constant per frame -> identifies which frame this is
-static int
-expected_file_pixel(int frame, int x, int y, int c)
-{
-    switch (c) {
-    case 0: return (x * 255) / (SYNTH_COLS - 1);
-    case 1: return (y * 255) / (SYNTH_ROWS - 1);
-    default: return (frame * 255) / SYNTH_FRAMES;
-    }
-}
-
-// Write a binary P6 (maxval 255) frame matching expected_file_pixel().
-static int
-write_ppm(const char *path, int frame)
-{
-    FILE *f = fopen(path, "wb");
-    int x, y;
-    if (!f)
-        return 0;
-    fprintf(f, "P6\n%d %d\n255\n", SYNTH_COLS, SYNTH_ROWS);
-    for (y = 0; y < SYNTH_ROWS; ++y) {
-        for (x = 0; x < SYNTH_COLS; ++x) {
-            unsigned char rgb[3];
-            rgb[0] = (unsigned char)expected_file_pixel(frame, x, y, 0);
-            rgb[1] = (unsigned char)expected_file_pixel(frame, x, y, 1);
-            rgb[2] = (unsigned char)expected_file_pixel(frame, x, y, 2);
-            fwrite(rgb, 1, 3, f);
-        }
-    }
-    fclose(f);
-    return 1;
-}
-
-// Produce the file list the capture path will read.
-//
-// Default: write SYNTH_FRAMES known-content P6 frames and list them. The test
-// then knows every pixel it handed over and can check the preview callbacks
-// got those exact pixels back.
-//
-// With DWYTEST_RAW_LIST set: use that list instead and set g_content_known to 0,
-// since the frames are no longer known. Only the structural assertions run.
-//
-// Returns NULL if the list could not be produced.
-static const char *
-ensure_file_list(void)
-{
-    const char *want = getenv("DWYTEST_RAW_LIST");
-    struct stat st;
-    char frame[512];
-    FILE *lst;
-    int i;
-
-    if (want && *want) {
-        if (stat(want, &st) != 0 || st.st_size == 0) {
-            fprintf(stderr, "DWYTEST_RAW_LIST=%s is missing or empty\n", want);
-            return 0;
-        }
-        printf("  using DWYTEST_RAW_LIST: %s\n", want);
-        printf("  note: frame CONTENT is unknown for an external list, so"
-            " content checks are skipped\n");
-        g_content_known = 0;
-        return want;
-    }
-
-    printf("  synthesizing %d %dx%d P6 frames in %s\n",
-        SYNTH_FRAMES, SYNTH_COLS, SYNTH_ROWS, SYNTH_DIR);
-    mkdir(SYNTH_DIR, 0755);
-    lst = fopen(SYNTH_LIST, "wt");
-    if (!lst)
-        return 0;
-    for (i = 0; i < SYNTH_FRAMES; ++i) {
-        snprintf(frame, sizeof(frame), SYNTH_DIR "/frame.%d.ppm", i);
-        if (!write_ppm(frame, i)) {
-            fclose(lst);
-            return 0;
-        }
-        fprintf(lst, "%s\n", frame);
-    }
-    fclose(lst);
-    g_content_known = 1;
-    return SYNTH_LIST;
-}
-
-// The settings must be written before anything asks for capture, and they are
-// only addressable after dwyco_init() has built the settings map.
 static const char *g_file_list;
 
 static void
@@ -241,7 +126,7 @@ configure_raw_input(void)
     CHECK(dwyco_set_setting("raw_files/use_list_of_files", "1") != 0);
 
     // Lazy loading keeps init cheap; the frame timer pulls each file in as it
-    // cycles. Preloading is also fine and exercises a different branch.
+    // cycles.
     CHECK(dwyco_set_setting("raw_files/preload", "0") != 0);
 
     // Not consulted by initaq, but it is the master video switch during call
@@ -267,148 +152,6 @@ raw_input_settings_read_back(void)
     CHECK(dwyco_get_setting("raw_files/raw_files_list", &v, &len, &type) != 0);
     if (v && type == DWYCO_TYPE_STRING)
         CHECK(strcmp(v, g_file_list) == 0);
-}
-
-// ===== recorded frames =====
-//
-// The preview path is a bit-exact passthrough, so the frames are recorded in
-// full and compared pixel-for-pixel against what the test wrote. The chain is:
-//
-//   dwyco_finish_startup() sets MMChannel::Moron_dork_mode = 1  [dlli.cpp:1555]
-//     -> frame timer at rate/max_fps (50ms default)             [mmbld.cc:476]
-//     -> !has_data() ? sampler->need() : grab_and_code(..., showonly=1)
-//                                                            [mmchan.cc:4440]
-//     -> get_data(..., no_convert=1) skips rgb_ycc_convert     [mmchan.cc:4010]
-//     -> code_preprocess(0,0,0,...,bits) with inhibit_coding=1
-//     -> early return: display_img_2b_coded((pixel**)bits,..) [theoracol.cc:417]
-//        which is BEFORE any subsample/crop/pad/encode
-//     -> ppm_to_colorview -> this callback, depth 3            [dlli.cpp:1255]
-//
-// So nothing lossy is in the path and the pixels can be compared exactly. The
-// one transform applied is a row reversal: FileAcquire::need() calls
-// flip_in_place() [acqfile.h:199], which for T=pixel resolves to the template
-// at imgmisc.h:43 (the gray** overload at imgmisc.cc:557 is inside #if 0).
-//
-// NOTE this exact comparison is only valid because the codec is bypassed. With
-// Moron_dork_mode 0, or on the decode path, frames come back lossy and a
-// bit-exact compare would be wrong -- not a regression.
-
-struct rec_frame
-{
-    int chan;
-    int cols;
-    int rows;
-    int depth;
-    std::vector<unsigned char> rgb; // cols*rows*3, row-major
-};
-
-static std::vector<rec_frame> g_rec;
-
-static void DWYCOCALLCONV
-vid_display(int chan_id, void *img, int cols, int rows, int depth)
-{
-    rec_frame f;
-
-    // The api hands us a non-null pointer. It is a pixel** -- the library casts
-    // with (char **) when calling [dlli.cpp:1255]. pixel is a struct of three
-    // unsigned chars with no padding, so sizeof(pixel) == 3 and it can be read
-    // as unsigned char** without pulling in ppm.h.
-    if (!img)
-        return;
-    if (cols <= 0 || rows <= 0)
-        return;
-
-    f.chan = chan_id;
-    f.cols = cols;
-    f.rows = rows;
-    f.depth = depth;
-    f.rgb.resize((size_t)cols * (size_t)rows * 3);
-    const unsigned char **rows_ptr = (const unsigned char **)img;
-    for (int y = 0; y < rows; ++y)
-        memcpy(&f.rgb[(size_t)y * (size_t)cols * 3], rows_ptr[y], (size_t)cols * 3);
-    // Must copy: the library frees the buffer right after this returns
-    // (ppm_freearray at mmchan.cc:4067).
-    g_rec.push_back(f);
-}
-
-// Reset between preview on-cycles. Turning preview off tears down TheAq, so the
-// next cycle restarts the file list at frame 0 -- without this the ordering
-// check would see a decrease and fail spuriously.
-static void
-reset_frames(void)
-{
-    g_rec.clear();
-}
-
-// Compare a recorded frame against source frame 'frame'. Returns 1 if identical.
-// On mismatch, and if 'why' is non-null, fills it with a human-readable
-// description of the first differing byte.
-static int
-frame_matches(int frame, const rec_frame &f, int flipped, char *why, size_t why_size)
-{
-    for (int y = 0; y < SYNTH_ROWS; ++y) {
-        // flipped: displayed row y corresponds to file row SYNTH_ROWS-1-y.
-        int fy = flipped ? (SYNTH_ROWS - 1 - y) : y;
-        for (int x = 0; x < SYNTH_COLS; ++x) {
-            for (int c = 0; c < 3; ++c) {
-                int want = expected_file_pixel(frame, x, fy, c);
-                int got = f.rgb[((size_t)y * SYNTH_COLS + x) * 3 + c];
-                if (want != got) {
-                    if (why && why_size)
-                        snprintf(why, why_size,
-                            "frame %d (%s): first diff at x=%d y=%d chan=%d"
-                            " (file row %d) want %d got %d",
-                            frame, flipped ? "flipped" : "unflipped",
-                            x, y, c, fy, want, got);
-                    return 0;
-                }
-            }
-        }
-    }
-    return 1;
-}
-
-// Find which source frame this recorded frame is. Returns the index, or -1 if
-// it matches none.
-//
-// Row order is the one transform the pipeline applies (see the flip_in_place
-// note above), so that is the primary model. If nothing matches, retry the
-// other orientation so the failure message can distinguish "row order differs
-// from what this test models" -- a real pipeline finding -- from "the pixels
-// are actually different", which would point at a resample or a channel swap.
-static int
-identify_frame(const rec_frame &f, char *why, size_t why_size)
-{
-    char flip_detail[256];
-    char noflip_detail[256];
-
-    for (int frame = 0; frame < SYNTH_FRAMES; ++frame)
-        if (frame_matches(frame, f, 1, 0, 0))
-            return frame;
-
-    flip_detail[0] = 0;
-    noflip_detail[0] = 0;
-    // Record where frame 0 diverges under each row order. Note these must go
-    // into separate buffers -- probing the other orientation must not clobber
-    // the detail from the first.
-    frame_matches(0, f, 1, flip_detail, sizeof(flip_detail));
-    if (frame_matches(0, f, 0, 0, 0)) {
-        if (why && why_size)
-            snprintf(why, why_size,
-                "recorded %dx%d frame matches NO source frame under the row-flip"
-                " model, but matches source frame 0 WITHOUT the flip -- the"
-                " pipeline's row order differs from what this test models",
-                f.cols, f.rows);
-        return -1;
-    }
-    frame_matches(0, f, 0, noflip_detail, sizeof(noflip_detail));
-
-    if (why && why_size)
-        snprintf(why, why_size,
-            "recorded %dx%d frame matches NO source frame under either row"
-            " order. vs source 0 flipped: %s | vs source 0 unflipped: %s",
-            f.cols, f.rows, flip_detail, noflip_detail);
-    return -1;
 }
 
 // THE TEST.
@@ -442,15 +185,14 @@ capture_initializes_from_raw_files(void)
         return;
     }
 
-    // Capture is up. Pump the service loop so the frame timer runs, then report
-    // what the display callback saw.
+    // Capture is up. Pump the service loop so the frame timer runs.
     service_ms(500);
 
-    printf("\n      frames=%zu\n", g_rec.size());
     // Don't pin the count. The timer runs at rate/max_fps (50ms default,
     // mmbld.cc:476) and the load/consume alternation at mmchan.cc:4440 means one
     // frame per two ticks, so ~5 per 500ms -- but that is timing dependent.
-    CHECK(g_rec.size() >= 3);
+    printf("\n      frames=%zu\n", raw_rec.size());
+    CHECK(raw_rec.size() >= 3);
 }
 
 // Every recorded frame must be structurally correct and, when the content is
@@ -468,61 +210,26 @@ capture_initializes_from_raw_files(void)
 static void
 frames_match_the_synthesized_source(void)
 {
-    char why[512];
-    int prev_idx = -1;
-    int content_fail = 0;
-
-    if (g_rec.empty()) {
+    if (raw_rec.empty()) {
         printf("[FAIL] no frames were recorded\n");
         g_fail++;
         return;
     }
 
-    for (size_t i = 0; i < g_rec.size(); ++i) {
-        const rec_frame &f = g_rec[i];
+    for (size_t i = 0; i < raw_rec.size(); ++i) {
+        const raw_captured_frame &f = raw_rec[i];
         CHECK(f.chan == DWYCO_VIDEO_PREVIEW_CHAN);
         // depth 3 == color, depth 1 == gray. The raw source is P6.
         CHECK(f.depth == 3);
-        if (g_content_known) {
-            CHECK(f.cols == SYNTH_COLS);
-            CHECK(f.rows == SYNTH_ROWS);
-        } else {
-            CHECK(f.cols > 0);
-            CHECK(f.rows > 0);
-        }
         CHECK(f.rgb.size() == (size_t)f.cols * (size_t)f.rows * 3);
     }
 
-    if (!g_content_known)
+    if (!raw_frame_content_known)
         return;
 
-    for (size_t i = 0; i < g_rec.size(); ++i) {
-        why[0] = 0;
-        int idx = identify_frame(g_rec[i], why, sizeof(why));
-        if (idx < 0) {
-            printf("[FAIL] recorded frame #%zu: %s\n", i, why);
-            g_fail++;
-            content_fail++;
-            continue;
-        }
-        // Strictly increasing: frames must be consumed from the list in order,
-        // one per tick, with nothing skipped or repeated. Starting at 0 comes
-        // from prev_idx being -1 here.
-        if (idx <= prev_idx) {
-            printf("[FAIL] recorded frame #%zu is source frame %d, but the"
-                " previous one was source frame %d -- frames must arrive in"
-                " list order\n", i, idx, prev_idx);
-            g_fail++;
-            content_fail++;
-        }
-        prev_idx = idx;
-    }
-
-    if (content_fail == 0) {
-        // Compact proof the sequence really advanced rather than repeating.
-        printf("\n      source frames %d..%d matched bit-exactly, in order\n",
-            0, prev_idx);
-    }
+    int cols = raw_frame_content_known ? RAW_FRAME_COLS : 0;
+    int rows = raw_frame_content_known ? RAW_FRAME_ROWS : 0;
+    g_fail += raw_check_frame_sequence(cols, rows);
 }
 
 // Turning preview back off must always succeed, whether or not the on-call
@@ -544,18 +251,18 @@ preview_off_is_safe(void)
 static void
 preview_can_be_cycled(void)
 {
-    reset_frames();
+    raw_rec_reset();
     int first = dwyco_enable_video_capture_preview(1);
     service_ms(200);
-    size_t after_first = g_rec.size();
+    size_t after_first = raw_rec.size();
     CHECK(dwyco_enable_video_capture_preview(0) != 0);
     service_ms(100);
 
     // Second cycle starts from scratch: frame 0 of the list again.
-    reset_frames();
+    raw_rec_reset();
     int second = dwyco_enable_video_capture_preview(1);
     service_ms(200);
-    size_t after_second = g_rec.size();
+    size_t after_second = raw_rec.size();
     CHECK(dwyco_enable_video_capture_preview(0) != 0);
 
     // Both attempts should agree with each other. If the first succeeded and
@@ -567,9 +274,9 @@ preview_can_be_cycled(void)
 
     // The restart check: after re-enabling, the first frame recorded must be
     // source frame 0, i.e. the list restarted rather than resuming.
-    if (g_content_known && after_second > 0) {
+    if (raw_frame_content_known && after_second > 0) {
         char why[512];
-        int idx = identify_frame(g_rec[0], why, sizeof(why));
+        int idx = raw_identify_frame(raw_rec[0], why, sizeof(why));
         if (idx != 0) {
             printf("[FAIL] after cycling preview, the first frame of the second"
                 " cycle is source frame %d, expected 0 (the list should"
@@ -606,7 +313,7 @@ main(void)
     setvbuf(stdout, 0, _IOLBF, 0);
     printf("Dwyco video capture from raw (PPM) files\n");
 
-    g_file_list = ensure_file_list();
+    g_file_list = raw_ensure_file_list();
     if (!g_file_list) {
         fprintf(stderr, "no usable raw file list\n");
         return 1;
@@ -619,7 +326,7 @@ main(void)
     }
 
     // Before any capture request, so the frames land somewhere.
-    dwyco_set_video_display_callback(vid_display);
+    dwyco_set_video_display_callback(raw_video_display);
 
     printf("\nSettings:\n");
     RUN(configure_raw_input);
