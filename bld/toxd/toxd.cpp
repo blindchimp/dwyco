@@ -737,8 +737,17 @@ toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
 {
     *out_data = NULL;
     *out_len = 0;
+    // err_buf is optional: callers that only want a yes/no answer (eg. peeking
+    // a pubkey before importing) pass NULL and just don't get to see why it
+    // failed. route those into a scratch buffer so the messages below can stay
+    // unconditional.
+    char scratch[256];
     if(!err_buf || err_buf_len <= 0)
-        return 0;
+    {
+        err_buf = scratch;
+        err_buf_len = (int)sizeof(scratch);
+    }
+    err_buf[0] = 0;
 
     FILE *f = fopen(src_path, "rb");
     if(!f)

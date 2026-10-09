@@ -1258,6 +1258,43 @@ tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
     }
     vc bytes = win[2];
 
+    // the mid is hex(pubkey) by construction (see save_tag_mid), so the payload
+    // filed under it is supposed to hold that same identity. verify rather than
+    // assume: adopting is the one path that replaces the save file, so a
+    // payload filed under the wrong mid -- a buggy publisher, or a group member
+    // that just got it wrong -- would otherwise silently hand this device
+    // somebody else's identity while the ui says it took the one that was
+    // picked. refuse instead.
+    //
+    // compare the decoded bytes rather than the hex text, so a differently
+    // cased mid_hex coming back from the ui still matches.
+    vc want_pk = from_hex(mid_hex);
+    if(want_pk.is_nil() || want_pk.len() <= 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "malformed identity id");
+        return 0;
+    }
+    // note: an encrypted payload is toxencryptsave-wrapped, so its pubkey can't
+    // be read without the password we don't have here. the check is skipped in
+    // that case, and the identity only gets verified once the user actually
+    // unlocks it. everything else has to match.
+    if(!toxp_data_is_encrypted((const char *)bytes, (int)bytes.len()))
+    {
+        vc got_pk;
+        if(!tox_bridge_peek_pubkey_from_bytes(bytes, got_pk))
+        {
+            snprintf(err_buf, (size_t)err_buf_len, "synced identity could not be read");
+            return 0;
+        }
+        if(got_pk != want_pk)
+        {
+            GRTLOG("tox: refusing to adopt payload filed under a mismatched mid", 0, 0);
+            snprintf(err_buf, (size_t)err_buf_len,
+                     "synced identity does not match the id it is filed under");
+            return 0;
+        }
+    }
+
     // back up whatever identity is currently on disk. note this can be called
     // before tox has ever been started (eg. adopting a shared identity as the
     // very first thing the user does), so don't rely on tox_bridge_init having
@@ -1285,7 +1322,7 @@ tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
         return 0;
     }
     // the remembered password belongs to the identity we just replaced, not to
-    // the one now on disk. drop it, otherwise tox_bridge_init1 hands it to
+    // the one now on disk. drop it, otherwise tox_bridge_init hands it to
     // toxp_init as the candidate password for the new identity, and any save
     // that happens to share a password unlocks without the user being asked.
     // cleared unconditionally: for an unencrypted save toxp_init ignores it
@@ -1339,19 +1376,18 @@ tox_bridge_depublish_save(const vc &mid_hex)
     return 1;
 }
 
-// the real sign-in path. allow_reconcile is 1 on a normal sign-in and 0 when
-// re-initializing after we already reconciled, so this can't recurse.
+// the sign-in path.
 //
-// reconciliation: if the group has a published copy of the identity we just
-// loaded, and it differs from what's on our disk, the published one wins.
-// this is what makes "the last device to sign in publishes the state that
-// counts" actually true -- otherwise a device that has been offline could
-// sign in with a stale copy and clobber newer friend list edits. note the
-// check is self limiting: if we were the last ones to run this identity, the
-// winning row is our own publish and the bytes are identical, so there's
-// nothing to do.
-static int
-tox_bridge_init1(const char *save_file, int allow_reconcile)
+// note there is deliberately NO reconcile against the group's published copy
+// of this identity here. signing in runs exactly the bytes in the save file,
+// and nothing else. a published '_tox_save' payload is only ever adopted
+// through tox_bridge_select_save, which the user asks for. this is what makes
+// "the identity this device is running is the one on disk" true by
+// construction: no automatic path can swap the save out from under a running
+// sign-in, so a stale device coming back from offline runs its own copy
+// rather than silently adopting (or silently having adopted) someone else's.
+int
+tox_bridge_init(const char *save_file)
 {
     if(Started)
         return 1;
@@ -1367,44 +1403,7 @@ tox_bridge_init1(const char *save_file, int allow_reconcile)
             Needs_password = 1;
         return 0;
     }
-    // note: mark the bridge up as soon as the plugin is live, because the
-    // reconcile below has to be able to tear it down again through
-    // tox_bridge_shutdown. toxcore is not being iterated here, so no events
-    // can fire during that window.
     Started = 1;
-
-    if(allow_reconcile)
-    {
-        vc mid = save_tag_mid();
-        if(!mid.is_nil())
-        {
-            vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
-            if(win.num_elems() >= 3)
-            {
-                vc local = read_whole_file(newfn(Save_file.c_str()), TOX_SAVE_MAX_PUBLISH);
-                // note: vc == on two strings is hash + length + full memcmp,
-                // so this is an exact byte comparison of the whole file.
-                if(!local.is_nil() && local != win[2])
-                {
-                    GRTLOG("tox bridge: adopting newer synced save, %d bytes", (int)win[2].len(), 0);
-                    vc adopted = win[2];
-                    // note: nothing is published on the way out. this copy
-                    // is the stale one, and replacing it is the whole point.
-                    tox_bridge_shutdown();
-                    if(!write_save_bytes(adopted))
-                    {
-                        GRTLOG("tox bridge: failed to adopt synced save", 0, 0);
-                        return 0;
-                    }
-                    // note: if the adopted save is encrypted under a password
-                    // we don't have, the re-init below comes back
-                    // NEEDS_PASSWORD and waits for the user, which is the
-                    // right outcome.
-                    return tox_bridge_init1(save_file, 0);
-                }
-            }
-        }
-    }
 
     if(!Tox_q)
     {
@@ -1418,29 +1417,18 @@ tox_bridge_init1(const char *save_file, int allow_reconcile)
     if(Tox_q)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
-    // note: if we got here by adopting someone else's save, the file on disk
-    // and the live plugin agree, so there is nothing left to reconcile.
     tox_bridge_rebuild_friend_cache();
     vc self_pseudo = self_tox_pseudo();
     if(!self_pseudo.is_nil())
         tox_uid_tag_add(self_pseudo);
     safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     backfill_tox_mid_tags();
-    // note: claim after reconcile, so a device that just adopted someone
-    // else's identity claims it as the winner rather than publishing a copy
-    // that predates the reconcile.
     publish_active_claim();
     // note: the identity is *not* published here. sharing is something the
     // user asks for explicitly (see tox_bridge_publish_save), so signing in
     // only claims the identity.
     GRTLOG("tox bridge: initialized", 0, 0);
     return 1;
-}
-
-int
-tox_bridge_init(const char *save_file)
-{
-    return tox_bridge_init1(save_file, 1);
 }
 
 void
@@ -1499,10 +1487,7 @@ tox_bridge_unlock(const uint8_t *pw, int pw_len)
     if(Started)
         return 1;
     set_active_password(pw, pw_len);
-    // note: no reconcile. the user just typed a password to unlock the file
-    // that's on disk, so swapping that file out from under them would be
-    // wrong even if the group has a different copy.
-    return tox_bridge_init1(Save_file.c_str(), 0);
+    return tox_bridge_init(Save_file.c_str());
 }
 
 int
@@ -1768,10 +1753,7 @@ tox_bridge_reset_identity(char *err_buf, int err_buf_len)
     set_active_password(NULL, 0);
     Needs_password = 0;
 
-    // note: no reconcile. the save file was just deleted and a brand new
-    // identity minted, so there is nothing to reconcile against, and the
-    // new pubkey certainly has no published copy.
-    if(!tox_bridge_init1(Save_file.c_str(), 0))
+    if(!tox_bridge_init(Save_file.c_str()))
     {
         GRTLOG("tox: reset re-init failed, restoring backup", 0, 0);
         // note: the restored backup keeps whatever encryption it had, but the

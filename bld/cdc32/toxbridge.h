@@ -34,7 +34,7 @@ void tox_bridge_cleanup_incomplete();
 // replaced -- select_save, load_from_file, load_from_bytes, reset_identity,
 // factory_reset -- the remembered password is cleared as part of the same
 // operation. it is never carried across an identity change, because
-// tox_bridge_init1 passes it to toxp_init as the candidate password and a new
+// tox_bridge_init passes it to toxp_init as the candidate password and a new
 // identity that happens to share a password would unlock without prompting.
 // when adding a new save-swapping path, clear it too.
 int tox_bridge_needs_password();
@@ -98,6 +98,14 @@ vc tox_bridge_get_pubkey();
 // tag '_tox_active' (same mid, payload is hex of the signing-in device's
 // dwyco uid). newest row wins, so the last device to sign in owns the
 // identity, and any other client running it stands down.
+//
+// note a published copy is NEVER adopted automatically. signing in runs the
+// bytes in the save file and nothing else; the only way a '_tox_save' payload
+// becomes this device's identity is an explicit tox_bridge_select_save. the
+// save file is written by exactly these paths and no others:
+// tox_bridge_select_save, tox_bridge_load_from_file, tox_bridge_load_from_bytes,
+// tox_bridge_reset_identity, tox_bridge_factory_reset. do not add a reconcile
+// to tox_bridge_init.
 int tox_bridge_publish_save();
 // human readable name for a hex tox pubkey, from the dwyco '_tox_friend' tags.
 // nil if we've never seen this identity as a friend. works for encrypted saves,
@@ -109,6 +117,11 @@ vc tox_bridge_list_saves();
 // adopt the published save for mid_hex (hex pubkey) as the identity this
 // device runs. leaves tox stopped; the user signs in explicitly afterwards,
 // which is what writes the '_tox_active' claim.
+//
+// refuses (err_buf set, nothing written) if the payload's pubkey does not
+// match mid_hex, so a payload filed under the wrong mid can't be adopted as
+// the wrong identity. that check is skipped for encrypted payloads, whose
+// pubkey can't be read without a password.
 int tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len);
 // remove the shared identity with mid_hex (hex pubkey) from every group
 // member's list. any client may do this. deliberately does not change any
