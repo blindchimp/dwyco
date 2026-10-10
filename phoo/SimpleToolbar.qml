@@ -31,6 +31,7 @@ ToolBar {
 
         TipButton {
             id: back_button
+            objectName: "phoo.toolbar.back"
             contentItem: Image {
                 source: mi("ic_arrow_back_black_24dp.png")
                 anchors.centerIn: parent

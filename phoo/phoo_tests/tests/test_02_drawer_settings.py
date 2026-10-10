@@ -72,8 +72,9 @@ def test_navigate_to_settings_and_back(phoo, agent, on_convlist):
     p = agent.probe(SETTINGS)
     assert p.visible, f"settings page not visible: {p.why_not()}"
 
-    # and back out again
-    agent.set(STACK, "depth", 1)
+    # and back out again. StackView.depth isn't writable, so pop with the
+    # page's own back button.
+    agent.back()
     agent.wait_settled(max_ms=3000)
 
 
@@ -86,8 +87,8 @@ def test_navigate_to_settings_and_back(phoo, agent, on_convlist):
         SETTINGS_PIN_EXPIRE,
     ],
 )
-def test_settings_checkboxes_are_interactable(phoo, agent, control):
-    p = agent.probe(control)
+def test_settings_checkboxes_are_interactable(phoo, agent, settings_page, control):
+    p = agent.probe(control)  # noqa
     assert p.exists, f"{control} not found on the settings page"
     assert p.interactable, f"{control} not interactable: {p.why_not()}"
 

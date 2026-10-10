@@ -80,6 +80,8 @@ DIRECTORY = "phoo.directory"
 DIRECTORY_LIST = "phoo.directory.list"
 DIRECTORY_BUSY = "phoo.directory.busy"
 
+TOOLBAR_BACK = "phoo.toolbar.back"
+
 
 class AgentError(RuntimeError):
     """The agent replied, but with ok:false."""
@@ -301,14 +303,18 @@ class Agent:
             p = self.ping()
         raise AgentTimeout(f"app never became alive: {p}")
 
-    def assert_responsive(self, max_frame_age_ms: int = 2000) -> Ping:
+    def assert_responsive(self, expect_frames: bool = False) -> Ping:
         """The ui thread is not wedged.
 
-        The heartbeat check is the real assertion: it advances on every
-        event loop turn, so a blocking core.init(), a deadlock or a
-        synchronous network call stops it dead. The frame check is
-        secondary and only applies once the app has painted something --
-        on a static screen frames legitimately stop.
+        The heartbeat is the real assertion: it advances on every event
+        loop turn, so a blocking core.init(), a deadlock or a synchronous
+        network call stops it dead.
+
+        Frame freshness is deliberately NOT asserted by default. An idle
+        app stops painting entirely -- frame_count only moves when the
+        scene is dirty -- so "last frame was N seconds ago" is the normal
+        resting state, not a fault. Pass expect_frames=True right after an
+        interaction that must repaint, and then it is worth checking.
         """
         before = self.ping()
         time.sleep(0.25)
@@ -326,9 +332,9 @@ class Agent:
                 f"frame counter went backwards: "
                 f"{before.frame_count} -> {after.frame_count}"
             )
-            assert after.last_frame_age_ms < max_frame_age_ms, (
-                f"last frame was {after.last_frame_age_ms}ms ago "
-                f"(limit {max_frame_age_ms}ms)"
+        if expect_frames:
+            assert after.frame_count > before.frame_count, (
+                "expected a repaint after that interaction, got none"
             )
         return after
 
@@ -519,6 +525,52 @@ class Agent:
             latency: LatencyReport | None = None) -> Ping:
         self.cmd("key", keycode=keycode, shift=shift or None, ctrl=ctrl or None)
         return self._after_input(f"key:{keycode}", latency)
+
+    def back(self, timeout: float = 8.0) -> bool:
+        """Click the current page's back button.
+
+        Used instead of setting StackView.depth, which is not a writable
+        property -- `set` on it fails, and silently skipping the pop would
+        leave the next test looking at the wrong screen.
+        """
+        target = int(self.get(STACK, "depth"))
+        if target <= 1:
+            return False
+        for name in (TOOLBAR_BACK, CHAT_BACK):
+            if self.exists(name) and self.get(name, "visible"):
+                self.click(name)
+                break
+        else:
+            self.escape()
+        self.wait_prop(STACK, "depth", target - 1, timeout=timeout)
+        return True
+
+    def escape(self, latency: LatencyReport | None = None) -> Ping:
+        return self.key(0x01000000, latency=latency)   # Qt::Key_Escape
+
+    def open_drawer(self, latency: LatencyReport | None = None) -> None:
+        """Open the navigation drawer the way a user would."""
+        self.click(CONVLIST_DRAWER_BTN, latency=latency)
+        self.wait_prop(DRAWER, "opened", True, timeout=8)
+
+    def close_drawer(self, timeout: float = 8.0) -> None:
+        """Close the drawer the way a user would.
+
+        Not by clicking the hamburger again: once the drawer is open it
+        covers that button, so the second click lands on the drawer's own
+        content and nothing happens. Escape is the standard way out and
+        works on a real keyboard.
+        """
+        if not self.get(DRAWER, "opened"):
+            return
+        self.escape()
+        try:
+            self.wait_prop(DRAWER, "opened", False, timeout=timeout)
+        except AgentTimeout:
+            # fall back to clicking the scrim, right of the drawer
+            r = self.rect("phoo.drawer.form")
+            self.click(x=int(r["scene_x"] + r["scene_w"] + 40), y=int(r["scene_y"] + 40))
+            self.wait_prop(DRAWER, "opened", False, timeout=timeout)
 
     # ---- lifecycle ----
 
@@ -753,12 +805,22 @@ class Recording:
 
     def stop(self) -> RecordResult:
         r = self.agent.cmd("record", sub="stop")
-        meta = json.loads((self.path / "meta.json").read_text())
+        # meta.json is the source of truth, not the reply. If the recorder
+        # already auto-stopped (max_ms) the reply just says "was not
+        # recording" with zeroed counts, but the frames and the log are on
+        # disk and perfectly good.
+        meta_path = self.path / "meta.json"
+        if not meta_path.exists():
+            raise AgentError(
+                "record stop",
+                {"error": f"no {meta_path}; agent said {r}"},
+            )
+        meta = json.loads(meta_path.read_text())
         self.result = RecordResult(
             dir=self.path,
-            frames=r.get("frames", 0),
-            dropped=r.get("dropped", 0),
-            duration_ms=r.get("duration_ms", 0),
+            frames=meta.get("frames", r.get("frames", 0)),
+            dropped=meta.get("dropped", r.get("dropped", 0)),
+            duration_ms=meta.get("duration_ms", r.get("duration_ms", 0)),
             events=meta.get("events", []),
             meta=meta,
         )

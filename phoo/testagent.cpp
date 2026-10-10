@@ -75,6 +75,83 @@ PhooFrameWriter::flush()
     emit done();
 }
 
+// Debug aid: logs every mouse event Qt actually delivers to the window,
+// so "the injector sent it" can be distinguished from "qt dropped it".
+class PhooInputTracer : public QObject
+{
+public:
+    PhooInputTracer(PhooTestAgent *a, QObject *parent = nullptr)
+        : QObject(parent), m_agent(a) {}
+
+protected:
+    bool eventFilter(QObject *o, QEvent *ev) override
+    {
+        switch(ev->type()) {
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseMove:
+        case QEvent::Enter:
+        case QEvent::Leave:
+        case QEvent::MouseButtonDblClick: {
+            auto *me = static_cast<QMouseEvent *>(ev);
+            qInfo().noquote()
+                << QStringLiteral("[trace] %1 pos=(%2,%3) buttons=%4 grabber=%5")
+                       .arg(QString::fromLatin1(ev->type() == QEvent::MouseMove
+                                                    ? "move"
+                                                    : ev->type() == QEvent::Enter
+                                                          ? "enter"
+                                                          : ev->type() == QEvent::Leave
+                                                                ? "leave"
+                                                                : ev->type() == QEvent::MouseButtonPress
+                                                                      ? "press"
+                                                                      : ev->type() == QEvent::MouseButtonRelease
+                                                                            ? "release"
+                                                                            : "dblclick"),
+                       QString::number(qRound(me->position().x())),
+                       QString::number(qRound(me->position().y())),
+                       QString::number(int(me->buttons())),
+                       m_agent && m_agent->window()
+                           ? (m_agent->window()->mouseGrabberItem()
+                                  ? QStringLiteral("yes")
+                                  : QStringLiteral("no"))
+                           : QStringLiteral("?"));
+            break;
+        }
+        default:
+            break;
+        }
+        return QObject::eventFilter(o, ev);
+    }
+
+private:
+    PhooTestAgent *m_agent;
+};
+
+// ---------------------------------------------------------------------------
+// input tracing
+// ---------------------------------------------------------------------------
+
+void
+PhooTestAgent::setInputTrace(bool on)
+{
+    if(!m_window) {
+        qWarning() << "[testagent] trace: no window bound yet";
+        return;
+    }
+    if(on) {
+        if(!m_inputTracer) {
+            m_inputTracer = new PhooInputTracer(this);
+            m_inputTracer->setParent(this);
+            m_window->installEventFilter(m_inputTracer);
+        }
+        qInfo() << "[testagent] input trace ON";
+    } else {
+        if(m_inputTracer)
+            m_window->removeEventFilter(m_inputTracer);
+        qInfo() << "[testagent] input trace OFF";
+    }
+}
+
 // ---------------------------------------------------------------------------
 
 PhooTestAgent::PhooTestAgent(const QString &socket_path, QObject *parent)
@@ -138,6 +215,11 @@ PhooTestAgent::onWindowPoll()
 void
 PhooTestAgent::bindWindow()
 {
+    // idempotent: dispatch() calls this on every request, and a second
+    // connect() to frameSwapped would fire onFrameSwapped N times per
+    // frame and leak connections.
+    if(m_window)
+        return;
     for(QWindow *w : QGuiApplication::topLevelWindows()) {
         if(auto *qw = qobject_cast<QQuickWindow *>(w)) {
             m_window = qw;
@@ -308,13 +390,35 @@ PhooTestAgent::findObject(const QString &name) const
     if(name.isEmpty() || !m_window)
         return nullptr;
 
-    // walk both the visual tree and the qobject tree. popups/dialogs/menus
-    // are plain qobjects and never show up in childItems(), and repeater
-    // delegates are qobject children but not always visual children.
+    // Pass 1: the live visual tree, depth first. This is the one that
+    // matters -- it is what the user can actually see and click, and it
+    // gives the object that is really in the scene at its real position.
+    //
+    // The QObject-children fallback below is deliberately second: walking
+    // it can turn up an object that shares an objectName but is not the
+    // one being painted (a twin left over in the component/qml object
+    // tree), which then reports a bogus position and swallows clicks.
+    QList<QQuickItem *> stack;
+    if(QQuickItem *root = m_window->contentItem())
+        stack.append(root);
+    QSet<QQuickItem *> seenItems;
+    while(!stack.isEmpty()) {
+        QQuickItem *it = stack.takeLast();
+        if(!it || seenItems.contains(it))
+            continue;
+        seenItems.insert(it);
+        if(it->objectName() == name)
+            return it;
+        const QList<QQuickItem *> kids = it->childItems();
+        for(int i = kids.size() - 1; i >= 0; --i)
+            stack.append(kids.at(i));
+    }
+
+    // Pass 2: popups, dialogs, menus and other plain QObjects that never
+    // appear in childItems(). Breadth first, and only now.
     QList<QObject *> queue;
     queue.append(const_cast<QQuickWindow *>(m_window));
     QSet<QObject *> seen;
-
     while(!queue.isEmpty()) {
         QObject *o = queue.takeFirst();
         if(!o || seen.contains(o))
@@ -322,7 +426,6 @@ PhooTestAgent::findObject(const QString &name) const
         seen.insert(o);
         if(o->objectName() == name)
             return o;
-
         if(auto *it = qobject_cast<QQuickItem *>(o)) {
             for(QQuickItem *c : it->childItems())
                 queue.append(c);
@@ -349,6 +452,28 @@ PhooTestAgent::isDescendantOrSelf(QQuickItem *maybe_child, QQuickItem *ancestor)
     return false;
 }
 
+// A QQuickOverlay is the container Qt parks popups in. It sits above the
+// whole window at z=1000001 and reports acceptedMouseButtons == all, so a
+// naive geometric walk always stops there. But Qt's own delivery ignores
+// the overlay unless a popup inside it is actually showing, and matching
+// that is the difference between reporting every control as occluded and
+// reporting the truth. An overlay with nothing visible inside it cannot
+// block anything.
+static bool
+overlayBlocks(const QQuickItem *overlay)
+{
+    const auto kids = overlay->childItems();
+    for(QQuickItem *k : kids) {
+        if(k->isVisible() && k->opacity() > 0.0)
+            return true;
+        for(QQuickItem *g : k->childItems()) {
+            if(g->isVisible() && g->opacity() > 0.0)
+                return true;
+        }
+    }
+    return false;
+}
+
 // frontmost item at a scene point that would actually receive the click.
 // last child == topmost in qt quick, so walk children in reverse.
 QQuickItem *
@@ -371,8 +496,15 @@ PhooTestAgent::hitTest(const QPointF &scene_pos) const
             continue;
         if(!it->contains(it->mapFromScene(scene_pos)))
             continue;
-        if(it->acceptedMouseButtons() != Qt::NoButton)
+        const bool is_overlay =
+            qstrcmp(it->metaObject()->className(), "QQuickOverlay") == 0;
+        if(is_overlay) {
+            if(!overlayBlocks(it))
+                continue;   // no popup showing: not a blocker
             best = it;
+        } else if(it->acceptedMouseButtons() != Qt::NoButton) {
+            best = it;
+        }
         const QList<QQuickItem *> kids = it->childItems();
         for(int i = kids.size() - 1; i >= 0; --i)
             stack.append(kids.at(i));
@@ -540,8 +672,29 @@ PhooTestAgent::injectMouse(const QPointF &p, Qt::MouseButton button,
     if(!m_window)
         return false;
     const QPointF global = m_window->mapToGlobal(p.toPoint());
+
+    // the event's button state has to be the set of buttons still held
+    // *after* this event, which is what the platform plugin would report.
+    // handing back the released button on a release event makes Qt drop
+    // the delivery: the press lands on the button but the release never
+    // does, so onReleased and onClicked never fire.
+    Qt::MouseButtons state;
+    switch(type) {
+    case QEvent::MouseButtonPress:
+        m_buttons |= button;
+        state = m_buttons;
+        break;
+    case QEvent::MouseButtonRelease:
+        m_buttons &= ~button;
+        state = m_buttons;
+        break;
+    default:
+        state = m_buttons;
+        break;
+    }
+
     QWindowSystemInterface::handleMouseEvent<QWindowSystemInterface::SynchronousDelivery>(
-        m_window, p, global, button, button, type, mods);
+        m_window, p, global, state, button, type, mods);
     return true;
 }
 
@@ -554,10 +707,18 @@ PhooTestAgent::injectMove(const QPointF &p)
 void
 PhooTestAgent::injectClick(const QPointF &p, Qt::MouseButton b, Qt::KeyboardModifiers m)
 {
+    // Qt only delivers a press to an item that is already in the window's
+    // hover chain, so a move has to land at the point *before* the press.
+    // Without this the press goes nowhere on windows that have never seen
+    // a real pointer (i.e. always, for in-process injection).
+    //
+    // Deliberately NO move between the press and the release. A button's
+    // press handling goes through a mouse grabber, and nudging the point
+    // by a pixel mid-click is enough to make Qt Quick drop the release --
+    // the button sees onPressed and then never sees onReleased, so
+    // onClicked never fires. A real mouse doesn't jitter mid-click either.
+    injectMove(p);
     injectMouse(p, b, m, QEvent::MouseButtonPress);
-    // a small move between press and release keeps hover handlers and
-    // press-and-hold machinery seeing a sane event stream
-    injectMouse(p + QPointF(1, 0), b, m, QEvent::MouseMove);
     injectMouse(p, b, m, QEvent::MouseButtonRelease);
 }
 
@@ -637,7 +798,8 @@ PhooTestAgent::recordCmd(const QJsonObject &req)
     if(sub == "status") {
         QJsonObject o;
         o["ok"] = true;
-        o["recording"] = m_recording;
+        o["recording"] = m_recording || m_stopping;
+        o["stopping"] = m_stopping;
         o["frames"] = m_recFrameIndex;
         o["dropped"] = qint64(m_recDropped);
         o["dir"] = m_recDir;
@@ -655,9 +817,10 @@ QJsonObject
 PhooTestAgent::recordStart(const QJsonObject &req)
 {
     QJsonObject o;
-    if(m_recording) {
+    if(m_recording || m_stopping) {
         o["ok"] = false;
-        o["error"] = "already recording";
+        o["error"] = m_stopping ? "a stop is still in progress"
+                                : "already recording";
         return o;
     }
     if(!m_window) {
@@ -755,7 +918,7 @@ PhooTestAgent::captureFrame()
 void
 PhooTestAgent::onRecordTick()
 {
-    if(!m_recording)
+    if(!m_recording || m_stopping)
         return;
     captureFrame();
     if(m_recMaxMs > 0 && m_clock.elapsed() - m_recStartMs >= m_recMaxMs)
@@ -826,26 +989,36 @@ PhooTestAgent::recordStop()
         return o;
     }
 
-    m_recording = false;
+    // A stop is not finished when the flag flips: the writer queue still
+    // has to drain and meta.json still has to be written. Keep reporting
+    // "recording" until that is all done, or a harness that waits for the
+    // stop races ahead of the files it came for.
+    m_stopping = true;
+
     if(m_recTimer) {
         m_recTimer->stop();
         m_recTimer->deleteLater();
         m_recTimer = nullptr;
     }
 
-    // drain: flush is queued behind every writeFrame, so once done()
-    // fires the whole queue is on disk. bounded so a wedged writer can't
-    // hang the harness.
+    // Drain: flush() is queued behind every writeFrame(), so once done()
+    // fires the whole queue is on disk.
+    //
+    // done() MUST be a QueuedConnection here. The writer lives on the
+    // writer thread, so a direct connection would run the lambda *there*
+    // and mutate `flushed` from another thread while the gui thread spins
+    // on it -- a data race that means the loop always runs to its deadline
+    // and meta.json never gets written.
     bool flushed = false;
     if(m_recThread && m_recWriter) {
-        connect(m_recWriter, &PhooFrameWriter::done, this, [&flushed]() {
-            flushed = true;
-        }, Qt::DirectConnection);
+        connect(m_recWriter, &PhooFrameWriter::done, this,
+                [&flushed]() { flushed = true; }, Qt::QueuedConnection);
         QMetaObject::invokeMethod(m_recWriter, "flush", Qt::QueuedConnection);
+        // bounded so a wedged writer can't hang the harness
         const qint64 deadline = m_clock.elapsed() + 5000;
         while(!flushed && m_clock.elapsed() < deadline) {
             QEventLoop loop;
-            QTimer::singleShot(10, &loop, &QEventLoop::quit);
+            QTimer::singleShot(5, &loop, &QEventLoop::quit);
             loop.exec();
         }
         m_recThread->quit();
@@ -899,6 +1072,7 @@ PhooTestAgent::recordStop()
     o["duration_ms"] = duration;
     o["dir"] = m_recDir;
     o["meta"] = m_recDir + "/meta.json";
+    o["flushed"] = flushed;
     o["events"] = m_recEvents;
     return o;
 }
@@ -907,6 +1081,7 @@ void
 PhooTestAgent::cleanupRecorder()
 {
     m_recording = false;
+    m_stopping = false;
     if(m_recTimer) {
         m_recTimer->stop();
         m_recTimer->deleteLater();
@@ -970,6 +1145,12 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
     if(cmd == "record")
         return recordCmd(req);
 
+    if(cmd == "trace_input") {
+        setInputTrace(req["on"].toBool(true));
+        out["ok"] = true;
+        return out;
+    }
+
     // Commands that need a window. Anything not in this list is rejected
     // first so a typo reports "unknown cmd" rather than "no window yet".
     static const QStringList need_window = {
@@ -1011,17 +1192,30 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
     }
 
     if(cmd == "probe") {
-        QQuickItem *it = findItem(req["name"].toString());
-        if(!it) {
+        const QString name = req["name"].toString();
+        QObject *obj = findObject(name);
+        if(!obj) {
             out["ok"] = false;
-            out["error"] = "not found: " + req["name"].toString();
+            out["error"] = "not found: " + name;
             return out;
         }
-        const QRectF r =
-            it->mapRectToScene(QRectF(0, 0, it->width(), it->height()));
+        out["ok"] = true;
+        out["exists"] = true;
+
+        // the target may not be a QQuickItem at all: a Dialog, a Menu, or
+        // the QQuickWindow itself. Report what we actually know rather
+        // than failing, and don't invent a geometry we don't have.
+        QQuickItem *it = qobject_cast<QQuickItem *>(obj);
+        const bool is_window = (obj == m_window);
+        QRectF r;
+        if(it)
+            r = it->mapRectToScene(QRectF(0, 0, it->width(), it->height()));
+        else if(is_window)
+            r = QRectF(0, 0, m_window->width(), m_window->height());
         const QPointF center = r.center();
-        QQuickItem *hit = hitTest(center);
-        const bool hit_ok = hit && isDescendantOrSelf(hit, it);
+
+        QQuickItem *hit = r.isNull() ? nullptr : hitTest(center);
+        const bool hit_ok = hit && it && isDescendantOrSelf(hit, it);
 
         bool ancestors_visible = true;
         for(QQuickItem *i = it; i; i = i->parentItem()) {
@@ -1030,13 +1224,20 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
         const bool in_scene =
             r.intersects(QRectF(0, 0, m_window->width(), m_window->height()));
 
-        out["ok"] = true;
-        out["exists"] = true;
-        out["visible"] = it->isVisible();
-        out["enabled"] = it->isEnabled();
-        out["opacity"] = it->opacity();
-        out["width"] = it->width();
-        out["height"] = it->height();
+        const bool visible = obj->property("visible").toBool();
+        const bool enabled = obj->property("enabled").toBool();
+        const double opacity = obj->property("opacity").toDouble();
+        const double w = it ? it->width()
+                            : (is_window ? m_window->width() : 0);
+        const double h = it ? it->height()
+                            : (is_window ? m_window->height() : 0);
+
+        out["is_item"] = it != nullptr;
+        out["visible"] = visible;
+        out["enabled"] = enabled;
+        out["opacity"] = opacity;
+        out["width"] = w;
+        out["height"] = h;
         out["ancestors_visible"] = ancestors_visible;
         out["in_scene"] = in_scene;
         out["hit_testable"] = hit_ok;
@@ -1046,12 +1247,9 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
                               : QString();
         out["scene_rect"] = QJsonArray{r.x(), r.y(), r.width(), r.height()};
         out["center"] = QJsonArray{center.x(), center.y()};
-
-        // the single boolean a test usually wants
-        out["interactable"] = it->isVisible() && it->isEnabled() &&
-                              it->opacity() > 0.0 &&
-                              it->width() > 0 && it->height() > 0 &&
-                              ancestors_visible && in_scene && hit_ok;
+        out["interactable"] = visible && enabled && opacity > 0.0 &&
+                              w > 0 && h > 0 && ancestors_visible &&
+                              in_scene && hit_ok;
         return out;
     }
 

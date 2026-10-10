@@ -121,6 +121,11 @@ public:
 
     PhooTestTelemetry *telemetry() const { return m_telemetry; }
 
+    QQuickWindow *window() const { return m_window; }
+
+    // debug: log every mouse event qt actually delivers to the window
+    void setInputTrace(bool on);
+
 private slots:
     void onNewConnection();
     void onReadyRead();
@@ -197,6 +202,7 @@ private:
     // telemetry
     QElapsedTimer m_clock;
     PhooTestTelemetry *m_telemetry = nullptr;
+    QObject *m_inputTracer = nullptr;
 
     // event loop lag, sampled by a 1ms timer. a delta much bigger than
     // the interval means the gui thread was blocked by something.
@@ -216,9 +222,14 @@ private:
     QPointF m_lastInputPos;
     bool m_lastInputValid = false;
     qint64 m_lastInputPosMs = 0;
+    // which buttons the injector currently believes are held, so the
+    // synthesised events carry a correct button state
+    Qt::MouseButtons m_buttons = Qt::NoButton;
 
     // ---- recorder ----
     bool m_recording = false;
+    // true while a stop is draining: status still reports recording
+    bool m_stopping = false;
     QString m_recDir;
     QTimer *m_recTimer = nullptr;
     QThread *m_recThread = nullptr;

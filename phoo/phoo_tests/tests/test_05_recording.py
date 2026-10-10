@@ -48,11 +48,9 @@ def test_recording_captures_frames_and_writes_meta(phoo, agent, on_convlist):
     rec = agent.record(phoo.profile_dir / "rec-basic", fps=15)
     rec.start()
     try:
-        agent.click(CONVLIST_DRAWER_BTN)
-        agent.wait_prop(DRAWER, "opened", True, timeout=5)
+        agent.open_drawer()
         time.sleep(0.4)
-        agent.click(CONVLIST_DRAWER_BTN)
-        agent.wait_prop(DRAWER, "opened", False, timeout=5)
+        agent.close_drawer()
         time.sleep(0.3)
 
         mid = agent.record_status()
@@ -86,8 +84,7 @@ def test_recording_captures_the_click_and_its_latency(phoo, agent, on_convlist):
     rec = agent.record(phoo.profile_dir / "rec-events", fps=15)
     rec.start()
     try:
-        agent.click(CONVLIST_DRAWER_BTN)
-        agent.wait_prop(DRAWER, "opened", True, timeout=5)
+        agent.open_drawer()
         time.sleep(0.5)
     finally:
         res = rec.stop()
@@ -153,6 +150,13 @@ def test_max_ms_auto_stops_the_recorder(phoo, agent, on_convlist):
         timeout=6, msg="max_ms never auto-stopped the recorder")
     res = rec.stop()
     assert res.frames > 2, "auto-stopped recording wrote no frames"
+    # the drain must have completed, otherwise the last queued frames are
+    # still sitting in the writer thread when meta.json is written
+    on_disk = list((rec.path / "frames").glob("*.png"))
+    assert len(on_disk) == res.frames, (
+        f"{len(on_disk)} frames on disk but agent reported {res.frames}; "
+        "the writer queue was not drained"
+    )
 
 
 def test_recording_context_manager_drains_on_exception(phoo, agent, on_convlist):
@@ -172,8 +176,7 @@ def test_encode_produces_a_playable_mp4(phoo, agent, on_convlist):
     rec = agent.record(phoo.profile_dir / "rec-mp4", fps=15)
     rec.start()
     try:
-        agent.click(CONVLIST_DRAWER_BTN)
-        agent.wait_prop(DRAWER, "opened", True, timeout=5)
+        agent.open_drawer()
         time.sleep(0.6)
     finally:
         rec.stop()
@@ -208,10 +211,8 @@ def test_journey_records_a_scripted_sequence(phoo, agent, on_convlist):
     res = agent.journey(
         phoo.profile_dir / "rec-journey",
         [
-            lambda a: a.click(CONVLIST_DRAWER_BTN),
-            lambda a: a.wait_prop(DRAWER, "opened", True, timeout=5),
-            lambda a: a.click(CONVLIST_DRAWER_BTN),
-            lambda a: a.wait_prop(DRAWER, "opened", False, timeout=5),
+            lambda a: a.open_drawer(),
+            lambda a: a.close_drawer(),
         ],
         fps=15,
     )
@@ -257,15 +258,20 @@ def test_recording_does_not_wedge_the_app(phoo, agent, on_convlist):
 
 def test_latency_buckets_are_separate(phoo, agent, on_convlist):
     """Tests must not accidentally measure instrumented timings."""
-    clean = phoo.latency_clean
-    before_clean = len(clean.samples)
+    before_clean = len(phoo.latency_clean.samples)
     before_rec = len(phoo.latency_recorded.samples)
 
+    # while recording, `phoo.latency` hands out the recorded bucket, so a
+    # click made now lands there and NOT in the clean numbers
     phoo.latency_recording = True
     try:
-        agent.click(CONVLIST_DRAWER_BTN)
+        agent.click(CONVLIST_DRAWER_BTN, latency=phoo.latency)
         assert len(phoo.latency_recorded.samples) > before_rec, (
             "a click during recording should land in the recorded bucket"
         )
+        assert len(phoo.latency_clean.samples) == before_clean, (
+            "the clean bucket must not be polluted by a recorded click"
+        )
     finally:
         phoo.latency_recording = False
+        agent.close_drawer()

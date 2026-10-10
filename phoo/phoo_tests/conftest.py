@@ -48,6 +48,9 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
     setattr(item, "rep_" + rep.when, rep)
+
+
+def pytest_configure(config):
     config.addinivalue_line("markers", "live: needs the real network; opt in with PHOO_TEST_LIVE=1")
     config.addinivalue_line("markers", "x11: needs a real X display and xdotool")
 
@@ -202,21 +205,17 @@ def home(phoo, agent):
     if agent.exists(PIN) and agent.get(PIN, "visible"):
         agent.set(PIN, "visible", False)
 
-    # walk the stack back to the bottom
+    # walk the stack back to the bottom, one back-button at a time
     for _ in range(8):
-        depth = agent.get(STACK, "depth")
-        if depth <= 1:
+        if agent.get(STACK, "depth") <= 1:
             break
-        if agent.exists(CHAT_BACK) and agent.get(CHAT_BACK, "visible"):
-            agent.click(CHAT_BACK)
-        else:
-            agent.set(STACK, "depth", 1)
+        agent.back()
         agent.wait_settled(max_ms=2000)
-    agent.wait_prop(STACK, "depth", 1, timeout=5)
 
-    # close the drawer if it got left open
+    # close the drawer if it got left open. not by clicking the hamburger
+    # again -- the open drawer covers that button.
     if agent.get(DRAWER, "opened"):
-        agent.click(CONVLIST_DRAWER_BTN)
+        agent.close_drawer()
 
     agent.wait_settled(max_ms=3000)
     return phoo
@@ -231,7 +230,9 @@ def on_convlist(phoo, agent, home):
     """
     # flip the view toggle to the list (see below) with real clicks
     try:
-        if agent.get(CONVLIST_GRID_TOGGLE, "checked"):
+        # the named object is the GridToggle wrapper; the checkbox state is
+        # exposed through its grid_checked alias
+        if agent.get(CONVLIST_GRID_TOGGLE, "grid_checked"):
             agent.click(CONVLIST_GRID_TOGGLE)
             agent.wait_settled(max_ms=2000)
     except (AgentError, AgentTimeout):

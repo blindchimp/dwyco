@@ -53,13 +53,12 @@ def test_ui_keeps_rendering(agent):
     """
     before = agent.ping()
     agent.cmd("mark", label="render-check")
-    agent.click(CONVLIST_DRAWER_BTN)
-    agent.wait_prop(DRAWER, "opened", True, timeout=5)
+    agent.open_drawer()
     agent.wait_until(lambda: agent.ping().frame_count > before.frame_count,
                      timeout=5, msg="no frame was produced after a click")
     after = agent.ping()
     assert after.frame_count > before.frame_count
-    assert after.last_frame_age_ms < 2000
+    agent.close_drawer()
 
 
 def test_event_loop_is_not_blocking(agent, phoo):
@@ -67,10 +66,8 @@ def test_event_loop_is_not_blocking(agent, phoo):
     synchronous network call would show up as a big event loop lag."""
     agent.ping()  # reset nothing, just read the running max
     for _ in range(3):
-        agent.click(CONVLIST_DRAWER_BTN)
-        agent.wait_prop(DRAWER, "opened", True, timeout=5)
-        agent.click(CONVLIST_DRAWER_BTN)
-        agent.wait_prop(DRAWER, "opened", False, timeout=5)
+        agent.open_drawer()
+        agent.close_drawer()
     # the drawer slide is a few hundred ms of animation; anything much
     # beyond that means we were blocked rather than busy
     lag = agent.ping().eventloop_max_lag_ms
@@ -132,10 +129,10 @@ def test_empty_contact_list_is_shown(agent, on_convlist):
 
 def test_drawer_opens_and_closes(phoo, agent, on_convlist):
     assert agent.get(DRAWER, "opened") is False
-    agent.click(CONVLIST_DRAWER_BTN, latency=phoo.latency)
-    agent.wait_prop(DRAWER, "opened", True, timeout=5)
+    agent.open_drawer(latency=phoo.latency)
     agent.wait_settled(max_ms=3000)
     p = agent.probe("phoo.drawer.form")
     assert p.visible
-    agent.click(CONVLIST_DRAWER_BTN)
-    agent.wait_prop(DRAWER, "opened", False, timeout=5)
+    # the open drawer covers the hamburger, so close it the way a user
+    # would (escape / scrim) rather than clicking a covered button
+    agent.close_drawer()
