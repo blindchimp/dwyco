@@ -1,4 +1,4 @@
-#define LOCAL_SERVERS
+
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
