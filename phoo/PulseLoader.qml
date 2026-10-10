@@ -63,6 +63,11 @@ Item {
                 }
 
                 function playAnimation() {
+                    // under test this bar pulses forever, which would make
+                    // any region containing it look like it never settles
+                    if (root.test_mode)
+                        return;
+
                     if (anim.running == false) {
                         anim.running = true;
                     }

@@ -138,6 +138,7 @@ Page {
 
                 TipButton {
                     id: back_button
+                    objectName: "phoo.chat.back"
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_arrow_back_black_24dp.png")                      
@@ -250,7 +251,7 @@ Page {
                         id: bgblink4
                         ParallelAnimation {
                             loops: Animation.Infinite
-                            running: cancel_req_button.visible
+                            running: cancel_req_button.visible && !test_mode
                             ColorAnimation {
                                 target: bgblink4
                                 property: "color"
@@ -292,7 +293,7 @@ Page {
                         id: bgblink
                         ParallelAnimation {
                             loops: Animation.Infinite
-                            running: call_accept_button.visible
+                            running: call_accept_button.visible && !test_mode
                             ColorAnimation {
                                 target: bgblink
                                 property: "color"
@@ -315,7 +316,7 @@ Page {
                         id: bgblink2
                         ParallelAnimation {
                             loops: Animation.Infinite
-                            running: call_send_accept_button.visible
+                            running: call_send_accept_button.visible && !test_mode
                             ColorAnimation {
                                 target: bgblink2
                                 property: "color"
@@ -338,7 +339,7 @@ Page {
                         id: bgblink3
                         ParallelAnimation {
                             loops: Animation.Infinite
-                            running: call_reject_button.visible
+                            running: call_reject_button.visible && !test_mode
                             ColorAnimation {
                                 target: bgblink3
                                 property: "color"
@@ -697,6 +698,7 @@ Page {
 
         ListView {
             id: listView1
+            objectName: "phoo.chat.messages"
             Layout.fillHeight: true
             Layout.fillWidth: true
             delegate: msglist_delegate
@@ -743,6 +745,7 @@ Page {
 
         Rectangle {
             id: ditem
+            objectName: "phoo.chat.message." + index
 
             radius: 6
             height: clayout.height + 20
@@ -1049,6 +1052,7 @@ Page {
 
     TextField {
         id: textField1
+        objectName: "phoo.chat.input"
 
         anchors.right: toolButton1.left
         anchors.rightMargin: 1
@@ -1136,6 +1140,7 @@ Page {
         property int but_width
         property int but_height
         id: toolButton1
+        objectName: "phoo.chat.send"
         height: but_height
         width: but_width
         
@@ -1301,6 +1306,7 @@ Page {
 
     BusyIndicator {
         id: busy1
+        objectName: "phoo.chat.busy"
 
         visible: {!listView1.visible}
         anchors.horizontalCenter: parent.horizontalCenter
@@ -1318,6 +1324,7 @@ Page {
 
     Text {
         id: failed_msg
+        objectName: "phoo.chat.failed_toast"
         text: "Failed..."
         font.bold: true
         anchors.centerIn: parent
@@ -1358,6 +1365,7 @@ Page {
 
     PulseLoader {
         id: typing_thing
+        objectName: "phoo.chat.typing"
         barCount: 5
         color: "deeppink"
         opacity: .7

@@ -191,6 +191,7 @@ ApplicationWindow {
     }
 
     id: applicationWindow1
+    objectName: "phoo.window"
     visible: true
     // android will override this and go full screen, which is
     // what we want. for desktop versions, not sure what might be
@@ -323,6 +324,7 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
+        objectName: "phoo.drawer"
         interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
         width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
         height: applicationWindow1.height
@@ -720,6 +722,7 @@ ApplicationWindow {
 
     PINDialog {
         id: pwdialog
+        objectName: "phoo.pin"
         property int allow_access
         property int password_expired
         property int pw_expire_time: 0
@@ -911,6 +914,7 @@ ApplicationWindow {
     
     StackView {
         id: stack
+        objectName: "phoo.stack"
         //initialItem: userlist
         anchors.fill: parent
         anchors.topMargin: safeTop
@@ -1150,6 +1154,7 @@ ApplicationWindow {
 
     Rectangle {
         id: blank_page
+        objectName: "phoo.blank_page"
         visible: false
         color: "green"
         BusyIndicator {

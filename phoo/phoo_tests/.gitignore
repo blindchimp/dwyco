@@ -1,0 +1,16 @@
+# local test venv
+.venv/
+
+# pytest scratch
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# phoo profiles and artifacts created by the harness. each run makes a
+# temp dir with the seeded profile, the agent socket, the app's stderr
+# log and any failure screenshots.
+phoo-profile-*/
+agent.sock
+*.png
+!icons/*.png
+!images/*.png

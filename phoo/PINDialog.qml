@@ -98,6 +98,7 @@ Rectangle {
 
             CheckBox {
                 id: show
+                objectName: "phoo.pin.show"
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Show"
@@ -124,6 +125,7 @@ Rectangle {
                 model: 8
 
                 RoundButton {
+                    objectName: "phoo.pin.digit." + index
                     contentItem: Text {
                         anchors.centerIn: parent
                         text: index + 1
@@ -149,6 +151,7 @@ Rectangle {
             }
             RoundButton {
                 //text: "x"
+                objectName: "phoo.pin.backspace"
                 enabled: { pw.length > 0 }
                 contentItem: Text {
                     anchors.centerIn: parent
@@ -184,6 +187,7 @@ Rectangle {
 
             Button {
                 id: exit_button
+                objectName: "phoo.pin.cancel"
                 text: qsTr("Cancel")
 
             }

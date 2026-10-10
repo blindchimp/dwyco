@@ -98,6 +98,7 @@ set(SRCS
     dwyco_new_msg.cpp 
     joinlogmodel.cpp 
     pfx.cpp 
+    testagent.cpp 
 
     msgpv.cpp 
     simpledirmodel.cpp 
@@ -153,6 +154,20 @@ endif()
 if(ANDROID)
     add_dependencies(phoo androidjava)
 endif()
+
+# The GUI test agent injects mouse/keyboard events through
+# <QtGui/qpa/qwindowsysteminterface.h>, which is a private QtGui header.
+# Qt6::Gui doesn't export the private include dir, so add the conventional
+# versioned layout by hand rather than depending on the Qt6GuiPrivate
+# package, which isn't always installed. The dir we add is the parent of
+# the "QtGui" folder, so the canonical <QtGui/qpa/...> spelling resolves.
+get_target_property(PHOO_GUI_INCLUDES Qt6::Gui INTERFACE_INCLUDE_DIRECTORIES)
+foreach(_inc IN LISTS PHOO_GUI_INCLUDES)
+    if(EXISTS "${_inc}/${QT_VERSION}/QtGui/qpa/qwindowsysteminterface.h")
+        target_include_directories(phoo PRIVATE "${_inc}/${QT_VERSION}")
+        break()
+    endif()
+endforeach()
 
 #qt_add_ios_ffmpeg_libraries(phoo)
 

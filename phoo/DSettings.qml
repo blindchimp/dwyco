@@ -13,6 +13,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Page {
+    objectName: "phoo.settings"
     property int inh_content_warning: 1
     property bool show_warning : false
 
@@ -97,6 +98,7 @@ Page {
 
         CheckBox {
             id: cb_pin_expire
+            objectName: "phoo.settings.pin_expire"
             text: "Ask for PIN 30 minutes after close"
             onCheckedChanged: {
                 var d
@@ -115,6 +117,7 @@ Page {
 
         CheckBox {
             id: unreviewed
+            objectName: "phoo.settings.unreviewed"
             text: "Show all profiles\n(WARNING: shows explicit content)"
             visible: !corporate_censorship
             onCheckedChanged: {
@@ -139,6 +142,7 @@ Page {
         }
         CheckBox {
             id: show_hidden_msgs
+            objectName: "phoo.settings.show_hidden"
             text: "Show hidden messages"
             onCheckedChanged: {
                 core.set_local_setting("show_hidden", checked ? "1" : "0")
@@ -150,6 +154,7 @@ Page {
 
         CheckBox {
             id: show_archived
+            objectName: "phoo.settings.show_archived"
             text: { "Show archived users (" + core.total_users.toString() + ")" }
             onCheckedChanged: {
                 core.use_archived = checked
@@ -161,6 +166,7 @@ Page {
 
         ItemDelegate {
             id: block_list_button
+            objectName: "phoo.settings.block_list"
             text: qsTr("Block List")
             onClicked: {
                     stack.push(iglist_dialog)
@@ -170,6 +176,7 @@ Page {
 
         ItemDelegate {
             id: pin_lock_button
+            objectName: "phoo.settings.pin_lock"
             text: qsTr("PIN Lock Setup")
             onClicked: {
                 stack.push(pwchange_dialog)
@@ -180,6 +187,7 @@ Page {
 
         ItemDelegate {
             id: trash_button
+            objectName: "phoo.settings.trash"
             text: qsTr("View Trash")
             onClicked: {
                 stack.push(trash_browse)
@@ -190,6 +198,7 @@ Page {
 
         ItemDelegate {
             id: load_backup_button
+            objectName: "phoo.settings.load_backup"
             text: qsTr("Load backup\n(quits Phoo, restarting finishes load.)")
             onClicked: {
                 stack.push(restore_auto_backup)
@@ -203,6 +212,7 @@ Page {
 
         ItemDelegate {
             id: about_button
+            objectName: "phoo.settings.about"
             text: qsTr("About")
             onClicked: {
                     stack.push(about_dialog)

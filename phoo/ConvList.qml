@@ -96,11 +96,13 @@ Page {
         width: parent.width
         MultiSelectToolbar {
             id: multi_toolbar
+            objectName: "phoo.convlist.multi_toolbar"
             visible: multiselect_mode
             extras: extras_button
         }
         ToolBar {
             id: regular_toolbar
+            objectName: "phoo.convlist.toolbar"
             background: Rectangle {
                 color: accent
             }
@@ -116,6 +118,7 @@ Page {
                 //spacing: mm(5)
 
                 ToolButton {
+                    objectName: "phoo.convlist.drawer_button"
                     contentItem: Image {
                         source: mi("ic_menu_black_24dp.png")
                         anchors.centerIn: parent
@@ -131,6 +134,7 @@ Page {
 
                 GridToggle {
                     id: show_grid
+                    objectName: "phoo.convlist.grid_toggle"
                     Layout.fillHeight: true
                 }
                 Item {
@@ -142,6 +146,7 @@ Page {
                 ToolButton {
 
                     id: trivia
+                    objectName: "phoo.convlist.trivia"
                     text: "Trivia"
                     background: Rectangle {
                         color: primary_dark
@@ -178,6 +183,7 @@ Page {
                 ToolButton {
 
                     id: dir_button
+                    objectName: "phoo.convlist.directory_button"
                     contentItem: Image {
                         source:  mi("ic_public_black_24dp.png")
                         anchors.centerIn: parent
@@ -195,6 +201,7 @@ Page {
                 ToolButton {
 
                     id: clist_button
+                    objectName: "phoo.convlist.contacts_button"
                     contentItem: Image {
                         source:  mi("ic_people_black_24dp.png")
                         anchors.centerIn: parent
@@ -215,6 +222,7 @@ Page {
        id: convlist_delegate
 
        Rectangle {
+           objectName: "phoo.convlist.item." + index
            height: vh(pct)
            width: ListView.view.width
            opacity: {multiselect_mode && selected ? 0.5 : 1.0}
@@ -381,6 +389,7 @@ Page {
    
    ListView {
        id: listView2
+       objectName: "phoo.convlist.list"
        anchors.fill:parent
 
        visible: !show_grid.grid_checked
@@ -403,6 +412,7 @@ Page {
 
        Rectangle {
            id: bgrec
+           objectName: "phoo.convlist.griditem." + index
            height: gridView1.cellHeight
            width: gridView1.cellWidth
 
@@ -539,6 +549,7 @@ Page {
 
    GridView {
        id: gridView1
+       objectName: "phoo.convlist.grid"
        anchors.fill:parent
        cellWidth: 80 ; cellHeight: 80
 
@@ -569,6 +580,7 @@ Page {
 
    Label {
        id: empty_help
+       objectName: "phoo.convlist.empty_help"
        anchors.fill: parent
 
        anchors.margins: mm(3)

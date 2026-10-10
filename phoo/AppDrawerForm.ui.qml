@@ -11,6 +11,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Pane {
+    objectName: "phoo.drawer.form"
     //width: 400
     //height: 400
     property alias vid_preview_button: vid_preview_button
@@ -106,6 +107,7 @@ Pane {
 
         ItemDelegate {
             id: lock_and_exit_button
+            objectName: "phoo.drawer.lock_and_exit"
             text: qsTr("Lock and exit")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -116,6 +118,7 @@ Pane {
 
         ItemDelegate {
             id: browse_tags_button
+            objectName: "phoo.drawer.browse_favs"
             text: qsTr("Browse Favs")
             padding: ctrl_pad
             Layout.fillWidth: true
@@ -123,6 +126,7 @@ Pane {
 
         ItemDelegate {
             id: browse_hidden_button
+            objectName: "phoo.drawer.browse_hidden"
             text: qsTr("Browse Hidden")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -132,6 +136,7 @@ Pane {
 
         ItemDelegate {
             id: profile_button
+            objectName: "phoo.drawer.update_profile"
             text: qsTr("Update profile...")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -141,6 +146,7 @@ Pane {
 
         SwitchDelegate {
             id: quiet_switch
+            objectName: "phoo.drawer.quiet"
             text: qsTr("Quiet")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -150,6 +156,7 @@ Pane {
 
         SwitchDelegate {
             id: invisible_switch
+            objectName: "phoo.drawer.invisible"
             text: qsTr("Invisible")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -170,6 +177,7 @@ Pane {
         //        }
         ItemDelegate {
             id: settings_button
+            objectName: "phoo.drawer.settings"
             text: qsTr("Settings")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -184,6 +192,7 @@ Pane {
         //        }
         ItemDelegate {
             id: link_dev_button
+            objectName: "phoo.drawer.link_device"
             text: qsTr("Link other device")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
@@ -193,6 +202,7 @@ Pane {
         }
         ItemDelegate {
             id: vid_preview_button
+            objectName: "phoo.drawer.vid_preview"
             text: qsTr("Preview")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad

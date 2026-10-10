@@ -13,8 +13,10 @@
 #include <QSettings>
 #include <QHostInfo>
 #include <QQuickStyle>
+#include <QQuickWindow>
 #include <QDebug>
 #include <QQmlFileSelector>
+#include "testagent.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include <QJniObject>
@@ -42,6 +44,36 @@ myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString
 
 }
 
+// Pulls the GUI test agent's own flags out of argv before the
+// application object is built. This has to happen up front: Qt copies
+// argc/argv into QGuiApplication::arguments(), and setup_locations()
+// (dwyco_top.cpp:1366) treats argv[1] as the profile directory, so any
+// extra flag we leave in there would be mistaken for the profile path.
+// Rewriting argv in place means `phoo /tmp/prof --test-agent /tmp/sock`
+// and `phoo --test-agent /tmp/sock /tmp/prof` both work.
+static
+void
+phoo_extract_test_args(int &argc, char **argv, QString &sock, bool &seed, bool &enabled)
+{
+    int out = 1;
+    for(int i = 1; i < argc; ++i) {
+        const QByteArray a(argv[i]);
+        if(a == "--test-agent") {
+            enabled = true;
+            if(i + 1 < argc)
+                sock = QString::fromLocal8Bit(argv[++i]);
+            continue;
+        }
+        if(a == "--test-no-seed") {
+            seed = false;
+            continue;
+        }
+        argv[out++] = argv[i];
+    }
+    argv[out] = nullptr;
+    argc = out;
+}
+
 #if 0
 #include <mutex>
 int Go;
@@ -55,6 +87,11 @@ int main(int argc, char *argv[])
 #if 0 && defined(DWYCO_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
+
+    QString test_socket;
+    bool test_seed = true;
+    bool test_agent = false;
+    phoo_extract_test_args(argc, argv, test_socket, test_seed, test_agent);
 
 #ifdef ANDROID
 //    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -137,6 +174,21 @@ int main(int argc, char *argv[])
 #else
     engine.rootContext()->setContextProperty("dwyco_debug", false);
 #endif
+
+    // GUI test agent. It has to be built after dwyco_register_qml() and
+    // before engine.load(): setup_locations() -> settings_load() runs
+    // inside dwyco_register_qml(), so by this point the settings map that
+    // the startup gates read from is already loaded and can be seeded.
+    // Without --test-agent none of this exists and test_mode is false.
+    PhooTestAgent *agent = nullptr;
+    if(test_agent && !test_socket.isEmpty()) {
+        agent = new PhooTestAgent(test_socket, &engine);
+        if(test_seed)
+            agent->seedTestProfile();
+        engine.rootContext()->setContextProperty("testTelemetry", agent->telemetry());
+    }
+    engine.rootContext()->setContextProperty("test_mode", agent != nullptr);
+
     QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 

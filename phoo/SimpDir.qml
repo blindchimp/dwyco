@@ -19,6 +19,7 @@ import QtQuick.Layouts
 // can update its contents piecemeal
 Page {
     id: simpdir_top
+    objectName: "phoo.directory"
     //anchors.fill: parent
 
     signal uid_selected(string uid, string action)
@@ -157,6 +158,7 @@ Page {
 
     ListView {
         id: listView1
+        objectName: "phoo.directory.list"
          anchors.fill: parent
          model: SimpleDirectoryList
          visible: !toolbar.grid_checked
@@ -283,6 +285,7 @@ Page {
 
     BusyIndicator {
         id: busy1
+        objectName: "phoo.directory.busy"
 
         running: {core.directory_fetching}
         anchors.horizontalCenter: parent.horizontalCenter
