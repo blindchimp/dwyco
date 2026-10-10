@@ -103,4 +103,26 @@ int toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum);
 
 int toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out);
 
+// read a tox save without starting a network instance, and report the parts a
+// person actually recognizes about it. used to tell the user what genuinely
+// differs between the save on disk and the copy on their other devices.
+//
+// data is a tox save, optionally toxencryptsave-wrapped; pw decrypts it (a
+// wrapped save with no/wrong pw fails). the result is a vc map:
+//   "pubkey"      hex of the identity's public key (not binary -- this is a
+//                 display/comparison value, unlike the rest of this api)
+//   "nospam"      nospam value, as a decimal string
+//   "name"        profile name
+//   "status"      status message
+//   "encrypted"   1 if the data was password protected, 0 if not
+//   "friends"     vector of { "pubkey": hex, "alias": string }, sorted by
+//                 pubkey so that reordering can't look like a change
+//
+// returns 0 if the data isn't a valid save, or is encrypted and pw doesn't
+// open it. callers use this to say "these two really are different" rather
+// than guessing from timestamps: a save carries connection state that shifts
+// on its own, but these fields only move when the user moves them.
+int toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
+                      vc &summary_out);
+
 #endif

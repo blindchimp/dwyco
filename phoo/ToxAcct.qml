@@ -59,18 +59,6 @@ Page {
         refreshAllSaves()
     }
 
-    function refreshAllSaves() {
-        allSavesList = core.tox_list_all_saves()
-        sharedSaves = allSavesList.filter(function(r) { return r.local !== true })
-        // keep the current selection across a refresh if that row still exists,
-        // otherwise fall back to the first row.
-        if(selectedKey !== "" && indexOfKey(selectedKey) < 0)
-            selectedKey = ""
-        if(selectedKey === "" && allSavesList.length > 0)
-            selectedKey = allSavesList[0].key
-        syncSelected()
-    }
-
     function indexOfKey(k) {
         for(var i = 0; i < allSavesList.length; ++i) {
             if(allSavesList[i].key === k)
@@ -125,6 +113,23 @@ Page {
             return h + (h === 1 ? " hour ago" : " hours ago")
         var m = Math.max(1, Math.floor(secs / 60))
         return m + (m === 1 ? " min ago" : " min ago")
+    }
+
+    // the comparison itself (state code, wording, per-difference sentences) lives
+    // on tox_state in main.qml, because the tox page shows it too and the two
+    // must not disagree. read tox_state.diffState / diffHeadline() /
+    // diffLine() there.
+
+    function refreshAllSaves() {
+        allSavesList = core.tox_list_all_saves()
+        sharedSaves = allSavesList.filter(function(r) { return r.local !== true })
+        // keep the current selection across a refresh if that row still exists,
+        // otherwise fall back to the first row.
+        if(selectedKey !== "" && indexOfKey(selectedKey) < 0)
+            selectedKey = ""
+        if(selectedKey === "" && allSavesList.length > 0)
+            selectedKey = allSavesList[0].key
+        syncSelected()
     }
 
     // small helper for the local save's title. no row object exists for it,
@@ -672,6 +677,63 @@ function doUnshare(row) {
                         }
                     }
 
+                    // how this device's save actually differs from the copy on the
+                    // other devices. this lists the real differences rather
+                    // than inferring which copy is newer, so the user can see
+                    // what they'd be giving up either way before picking one
+                    // of the two copy buttons.
+                    ColumnLayout {
+                        visible: tox_state.state !== "empty"
+                              && tox_state.diffHeadline(tox_state.diffState) !== ""
+                        Layout.fillWidth: true
+                        spacing: mm(0.25)
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: mm(0.75)
+
+                            Rectangle {
+                                Layout.preferredWidth: mm(1.75)
+                                Layout.preferredHeight: mm(1.75)
+                                radius: width / 2
+                                color: tox_state.diffColor(tox_state.diffState)
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: tox_state.diffHeadline(tox_state.diffState)
+                                font.pixelSize: dp(11)
+                                font.bold: true
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        // the differences, one per line. only shown when
+                        // there are any, since the headline already says
+                        // "same" when there aren't.
+                        Repeater {
+                            model: tox_state.differences
+                            delegate: Label {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.leftMargin: mm(2.5)
+                                text: "• " + tox_state.diffLine(modelData)
+                                font.pixelSize: dp(10)
+                                color: secondary_text
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            Layout.leftMargin: mm(2.5)
+                            text: tox_state.diffDetail(tox_state.diffState)
+                            font.pixelSize: dp(10)
+                            color: secondary_text
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+
                     // password entry, only when a save is loaded but locked
                     RowLayout {
                         visible: tox_state.state === "locked"
@@ -944,6 +1006,80 @@ function doUnshare(row) {
                                         sourceSize.height: mm(4)
                                     }
 
+                                    // the identity on this device shows up in
+                                    // this list too (once it's been shared), so
+                                    // it needs saying: without this the same
+                                    // tox-id appears twice with nothing to
+                                    // connect the two.
+                                    Rectangle {
+                                        visible: modelData.is_current === true
+                                        Layout.preferredWidth: badgeRow.implicitWidth + mm(1.5)
+                                        Layout.preferredHeight: mm(4.5)
+                                        radius: mm(2.25)
+                                        color: "#e6f0e6"
+
+                                        RowLayout {
+                                            id: badgeRow
+                                            anchors.centerIn: parent
+                                            spacing: mm(0.5)
+
+                                            Rectangle {
+                                                Layout.preferredWidth: mm(1.5)
+                                                Layout.preferredHeight: mm(1.5)
+                                                radius: width / 2
+                                                color: "#3a8"
+                                            }
+
+                                            Text {
+                                                text: "this device"
+                                                color: "#2a6"
+                                                font.pixelSize: dp(10)
+                                            }
+                                        }
+
+                                        ToolTip.visible: badgeHover.hovered
+                                        ToolTip.text: "This is the tox-id on this device"
+                                        HoverHandler { id: badgeHover }
+                                    }
+
+                                    // this row is the published copy of the identity that
+                                    // is on this device, and the two genuinely
+                                    // differ. flag it here as well as in the
+                                    // hero card, or the row looks like just
+                                    // another shared identity.
+                                    Rectangle {
+                                        visible: modelData.is_current === true
+                                                 && tox_state.diffState === 1
+                                        Layout.preferredWidth: newerRow.implicitWidth + mm(1.5)
+                                        Layout.preferredHeight: mm(4.5)
+                                        radius: mm(2.25)
+                                        color: "#fdf0dc"
+
+                                        RowLayout {
+                                            id: newerRow
+                                            anchors.centerIn: parent
+                                            spacing: mm(0.5)
+
+                                            Rectangle {
+                                                Layout.preferredWidth: mm(1.5)
+                                                Layout.preferredHeight: mm(1.5)
+                                                radius: width / 2
+                                                color: "#c80"
+                                            }
+
+                                            Text {
+                                                text: "differs"
+                                                color: "#a60"
+                                                font.pixelSize: dp(10)
+                                            }
+                                        }
+
+                                        ToolTip.visible: newerHover.hovered
+                                        ToolTip.text: "This shared copy differs from "
+                                                      + "the save on this device"
+                                        HoverHandler { id: newerHover }
+                                    }
+
                                     // unpublish. drop this tox-id from every
                                     // device's shared list; nobody is signed
                                     // out and no settings change.
@@ -1022,8 +1158,24 @@ function doUnshare(row) {
                         Button {
                             text: "Use this tox-id"
                             enabled: tox_acct.selectedSharedRow() !== null
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Copies this shared save over the save "
+                                          + "on this device"
                             onClicked: tox_acct.doSignIn(tox_acct.selectedSharedRow())
                         }
+                    }
+
+                    // spell out the direction of both copy buttons. they write
+                    // the same file in opposite directions, and the labels
+                    // alone don't make that obvious.
+                    Label {
+                        visible: sharedSavesListView.count > 0
+                        Layout.fillWidth: true
+                        Layout.topMargin: mm(0.5)
+                        text: tox_state.copyDirectionNote()
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: dp(10)
+                        color: secondary_text
                     }
                 }
             }
@@ -1058,9 +1210,18 @@ function doUnshare(row) {
                     text: "Share with my devices"
                     flat: true
                     enabled: tox_state.state === "signedin"
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Copies this device's Tox save (tox_save.tox) "
+                                  + "out to your other devices"
                     onClicked: {
-                        if (core.tox_publish_save())
+                        if (core.tox_publish_save()) {
                             showBanner("Shared with your other devices.")
+                            // publishing is what changes the sync state, so the
+                            // indicator has to be re-read or it still reads
+                            // "this device is newer" right after it stopped
+                            // being true.
+                            doRefresh()
+                        }
                         else
                             showBanner("Could not share. Sign in to your Tox save first.", true)
                     }
@@ -1105,8 +1266,11 @@ function doUnshare(row) {
 
             Label {
                 text: "Export writes a .tox file you can import on another device. "
-                      + "Sharing publishes this tox-id to the other devices in your "
-                      + "group. Password protecting the save also protects every .tox "
+                      + "Sharing copies this device's tox_save.tox out to the "
+                      + "other devices in your group; using a shared tox-id copies "
+                      + "one back in over tox_save.tox here. Neither happens on its "
+                      + "own, so the save on this device is always the one that runs. "
+                      + "Password protecting the save also protects every .tox "
                       + "file you export from it. Deleting removes it from this device "
                       + "only — your messages, contacts and Dwyco account are not "
                       + "affected, and a copy is saved to disk first."

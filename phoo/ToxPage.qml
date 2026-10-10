@@ -66,15 +66,18 @@ Page {
 
     function refreshShared() {
         sharedList = core.tox_list_saves()
-        // find the identity currently on disk, if the group knows about it
-        var pk = core.tox_get_self_public_key()
+        // the identity on disk, if the group knows about it and someone else
+        // is the one running it.
+        //
+        // note this asks the list's own is_current rather than re-deriving the
+        // pubkey here. is_current is computed against the save on disk rather
+        // than the running instance, which is what makes this work while
+        // signed out -- and that is exactly when this banner is relevant.
         remoteRow = null
-        if (pk.length > 0) {
-            for (var i = 0; i < sharedList.length; ++i) {
-                if (sharedList[i].mid === pk && !sharedList[i].held_by_me) {
-                    remoteRow = sharedList[i]
-                    break
-                }
+        for (var i = 0; i < sharedList.length; ++i) {
+            if (sharedList[i].is_current === true && !sharedList[i].held_by_me) {
+                remoteRow = sharedList[i]
+                break
             }
         }
     }
@@ -443,6 +446,59 @@ Page {
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
                         font.pixelSize: dp(11)
+                    }
+
+                    // what actually differs between the save on this device and the copy
+                    // on the user's other devices. same wording as the tox save
+                    // page, which is where the copy buttons live.
+                    ColumnLayout {
+                        visible: tox_state.diffHeadline(tox_state.diffState) !== ""
+                        Layout.fillWidth: true
+                        Layout.leftMargin: mm(1)
+                        spacing: mm(0.25)
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: mm(0.75)
+
+                            Rectangle {
+                                Layout.preferredWidth: mm(1.75)
+                                Layout.preferredHeight: mm(1.75)
+                                radius: width / 2
+                                color: tox_state.diffColor(tox_state.diffState)
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: tox_state.diffHeadline(tox_state.diffState)
+                                font.pixelSize: dp(11)
+                                font.bold: true
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Repeater {
+                            model: tox_state.differences
+                            delegate: Label {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.leftMargin: mm(2.5)
+                                text: "• " + tox_state.diffLine(modelData)
+                                font.pixelSize: dp(10)
+                                color: "#666"
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        Label {
+                            visible: tox_state.differences.length === 0
+                            Layout.fillWidth: true
+                            Layout.leftMargin: mm(2.5)
+                            text: tox_state.diffDetail(tox_state.diffState)
+                            font.pixelSize: dp(10)
+                            color: "#666"
+                            wrapMode: Text.WordWrap
+                        }
                     }
 
                     RowLayout {

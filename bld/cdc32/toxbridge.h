@@ -88,6 +88,37 @@ void tox_bridge_poll();
 vc tox_bridge_get_address();
 vc tox_bridge_get_pubkey();
 
+// what actually differs between the save on disk and the group's published
+// copy of the same identity. see tox_bridge_compare_saves().
+//
+// note "same" means the same in the fields a person recognizes (profile name,
+// status, nospam, friend list, password protection). it does NOT mean the two
+// saves are byte identical: a tox save also carries connection state that
+// shifts on its own, and reporting that as a change would be noise.
+//
+// this describes the CURRENT identity only -- other published identities have
+// no local counterpart to compare against.
+enum {
+    // the two copies match in every field we look at
+    TOX_DIFF_SAME = 0,
+    // they differ, and the difference list says how
+    TOX_DIFF_DIFFERENT,
+    // this identity has never been published, so there is nothing to compare
+    // against. a normal state, not a problem.
+    TOX_DIFF_NOT_SHARED,
+    // one of the two copies could not be opened, so no comparison was
+    // possible. happens when the save is password protected and either tox
+    // is stopped (no password to hand) or the published copy was encrypted
+    // under a different password.
+    TOX_DIFF_UNREADABLE,
+    // the published copy belongs to a different tox-id than the save on
+    // disk. shouldn't be reachable (the tag mid is the pubkey, and
+    // tox_bridge_select_save refuses a mismatched payload), but a comparison
+    // across two identities would be meaningless, so it gets its own state
+    // instead of a bogus diff.
+    TOX_DIFF_DIFFERENT_ID
+};
+
 // group-shared tox identities.
 //
 // a tox save is published as a crdt tag payload so the whole device group
@@ -114,6 +145,27 @@ vc tox_bridge_name_for_pubkey_hex(const vc &pub_hex);
 // one row per published identity: mid_hex, time, size, encrypted, name.
 // name may be nil.
 vc tox_bridge_list_saves();
+// compare the save on disk against the group's published copy of that same
+// identity and report what actually differs -- friend list, profile name,
+// status, nospam, password protection. purely advisory: this never adopts
+// anything and never writes the save file. returns nil when there is no local
+// save, else a 3 element vector:
+//   0: state       - one of the TOX_DIFF_* codes above
+//   1: differences - vector of rows, each [kind, who, detail]. empty when the
+//                    state is SAME. kinds are:
+//                      friend_added    who=friend pubkey hex, detail=alias
+//                      friend_removed  who=friend pubkey hex, detail=alias
+//                      friend_renamed  who=friend pubkey hex, detail=new alias
+//                      name_changed    detail=this device's name
+//                      status_changed  detail=this device's status message
+//                      nospam_changed  detail=this device's nospam
+//                      password_changed detail=1 if this device's save is
+//                                         password protected, 0 if not
+//   2: mid         - ascii hex pubkey, nil when it couldn't be determined
+// note "same" means the same in those fields, not byte identical: a tox save
+// carries connection state that changes on its own, and that is deliberately
+// not reported.
+vc tox_bridge_compare_saves();
 // adopt the published save for mid_hex (hex pubkey) as the identity this
 // device runs. leaves tox stopped; the user signs in explicitly afterwards,
 // which is what writes the '_tox_active' claim.

@@ -400,6 +400,15 @@ public:
     Q_INVOKABLE bool tox_publish_save();
     Q_INVOKABLE QVariantList tox_list_saves();
     Q_INVOKABLE QVariantList tox_list_all_saves();
+// what actually differs between the save on disk and the group's published
+    // copy of it. keys: state (int, TOX_DIFF_*), mid, differences (a list of
+    // {kind, who, detail}). empty map when there's no local save.
+// advisory only -- nothing is adopted or written.
+Q_INVOKABLE QVariantMap tox_compare_saves();
+    // hex pubkey of the save on disk, or "" when there is none. peeks at the
+    // file so it answers while signed out, falling back to the running
+    // instance for a password protected save.
+    Q_INVOKABLE QString tox_local_save_pubkey();
     // dwyco-side name for a hex tox pubkey. works for encrypted saves.
     Q_INVOKABLE QString tox_name_for_pubkey(const QString& pubHex);
     Q_INVOKABLE QString tox_select_save(const QString& mid);

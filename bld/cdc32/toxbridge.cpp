@@ -1222,6 +1222,235 @@ tox_bridge_list_saves()
     return out;
 }
 
+// pull a field out of a summary map, as a plain string. note vc::find is
+// non-const, hence the by-value summary.
+static vc
+sum_get(vc sum, const char *key)
+{
+    vc out;
+    if(!sum.find(key, out))
+        return vcnil;
+    return out;
+}
+
+// one row of a diff: [kind, who, detail]
+//   kind   one of the diff_* codes below
+//   who    a friend pubkey hex, for the friend_* kinds; nil otherwise
+//   detail the alias involved, or the old/new value for a scalar change
+static vc
+make_diff(const char *kind, const vc &who, const vc &detail)
+{
+    vc row(VC_VECTOR);
+    row.append(vc(kind));
+    row.append(who);
+    row.append(detail);
+    return row;
+}
+
+// compare the save on disk against the group's published copy of the same
+// identity, and report what actually differs between them.
+//
+// this replaced a timestamp-based "which copy is newer" report, which was
+// noisy (toxcore rewrites connection state constantly) and undecidable for
+// password protected saves (a fresh random nonce on every write means the
+// bytes never match, and signing out rewrites the file without changing
+// anything). diffing the interpreted saves instead answers the question a
+// person actually has -- "is my friend list different?" -- and answers it
+// exactly, for password protected saves as well as plain ones.
+//
+// advisory only. nothing is read into a running instance and nothing is
+// written.
+//
+// returns nil if there is no save on disk. otherwise a 3 element vector:
+//   0: state       - one of the TOX_DIFF_* codes in toxbridge.h
+//   1: differences - vector of rows, each [kind, who, detail]. empty when
+//                    the state says they match.
+//   2: mid         - ascii hex pubkey, or nil when it couldn't be determined
+vc
+tox_bridge_compare_saves()
+{
+    if(!tox_bridge_save_exists())
+        return vcnil;
+    // the group half of the comparison needs the tag store, which isn't up
+    // until dwyco_init has run. the tox ui is reachable before that.
+    if(!sql_is_initialized())
+        return vcnil;
+    ensure_save_file();
+    DwString save_path = newfn(Save_file.c_str());
+    vc local_bytes = read_whole_file(save_path, TOX_SAVE_MAX_PUBLISH);
+    if(local_bytes.is_nil())
+        return vcnil;
+
+    // the pubkey the tag row is filed under. the file peek is tried first
+    // because it works while signed out; it refuses a password protected
+    // save, so fall back to the running instance, which knows its own pubkey
+    // once we're signed in. (see tox_bridge_peek_pubkey_from_file for why the
+    // peek doesn't just use the remembered password.)
+    vc pk;
+    if(!tox_bridge_peek_pubkey_from_file(0, NULL, 0, pk) || pk.is_nil())
+        pk = tox_bridge_get_pubkey();
+    vc mid = pk.is_nil() ? vcnil : to_hex(pk);
+
+    // the password we remember belongs to the identity on disk, so it is
+    // exactly what is needed to open both sides of this comparison. nil when
+    // signed out on an encrypted save, which is the one case we can't read.
+    const uint8_t *pw = Active_password;
+    int pw_len = Active_password_len;
+
+    vc local_sum;
+    int have_local = toxp_save_summary((const char *)local_bytes, (int)local_bytes.len(),
+                                      pw, pw_len, local_sum);
+
+    vc shared_bytes;
+    if(!mid.is_nil())
+    {
+        vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
+        if(win.num_elems() >= 3)
+            shared_bytes = win[2];
+    }
+
+    vc shared_sum;
+    int have_shared = !shared_bytes.is_nil()
+                      && toxp_save_summary((const char *)shared_bytes,
+                                           (int)shared_bytes.len(), pw, pw_len,
+                                           shared_sum);
+
+    int state;
+    vc diffs(VC_VECTOR);
+    vc local_id, shared_id;
+    if(!have_local)
+    {
+        // can't read the save on disk. shouldn't happen (we just read the
+        // file), but don't claim a match if we couldn't parse it.
+        state = TOX_DIFF_UNREADABLE;
+    }
+    else if(mid.is_nil() || shared_bytes.is_nil())
+    {
+        // nothing published for this identity, so there is nothing to compare
+        // against. distinct from UNREADABLE: this is a normal state.
+        state = TOX_DIFF_NOT_SHARED;
+    }
+    else if(!have_shared)
+    {
+        // there is a published copy but we can't open it -- most likely a
+        // password protected save compared against a different password.
+        // say so rather than guessing at a difference we can't see.
+        state = TOX_DIFF_UNREADABLE;
+    }
+    // the two summaries must describe the same identity, or a diff between
+    // them would be meaningless.
+    else if((local_id = sum_get(local_sum, "pubkey")).is_nil()
+            || (shared_id = sum_get(shared_sum, "pubkey")).is_nil()
+            || local_id != shared_id)
+    {
+        // different identities entirely. shouldn't be reachable via the tag
+        // mid, and tox_bridge_select_save refuses such a payload, but a
+        // report that compared two different tox-ids would be nonsense.
+        state = TOX_DIFF_DIFFERENT_ID;
+    }
+    else
+    {
+        // profile fields first, then the friend list, since those read more
+        // naturally in that order to a person.
+        static const char *scalar_fields[] = {"name", "status", "nospam"};
+        for(int i = 0; i < 3; ++i)
+        {
+            vc a = sum_get(local_sum, scalar_fields[i]);
+            vc b = sum_get(shared_sum, scalar_fields[i]);
+            if(a.is_nil() || b.is_nil())
+                continue;
+            if(a != b)
+            {
+                const char *kind = "name_changed";
+                if(i == 1)
+                    kind = "status_changed";
+                else if(i == 2)
+                    kind = "nospam_changed";
+                // report this device's value; the ui can say what changed if
+                // it wants the other one too.
+                diffs.append(make_diff(kind, vcnil, a));
+            }
+        }
+
+        // whether each copy is password protected is part of "which save is
+        // this" from the user's point of view, and they can disagree: one
+        // device can add or remove a password and publish without the other
+        // noticing, which matters when the next device tries to sign in.
+        vc le = sum_get(local_sum, "encrypted");
+        vc se = sum_get(shared_sum, "encrypted");
+        if(!le.is_nil() && !se.is_nil() && le != se)
+            diffs.append(make_diff("password_changed", vcnil, le));
+
+        // friend list. both sides are sorted by pubkey and have no
+        // duplicates, so a single merge walk finds every addition, removal
+        // and rename in one pass.
+        vc lf = sum_get(local_sum, "friends");
+        vc sf = sum_get(shared_sum, "friends");
+        if(!lf.is_nil() && !sf.is_nil())
+        {
+            int i = 0, j = 0;
+            int ln = lf.num_elems();
+            int sn = sf.num_elems();
+            while(i < ln || j < sn)
+            {
+                int c;
+                if(i >= ln)
+                    c = 1;
+                else if(j >= sn)
+                    c = -1;
+                else
+                {
+                    vc lp, sp;
+                    lf[i].find("pubkey", lp);
+                    sf[j].find("pubkey", sp);
+                    c = strcmp((const char *)lp, (const char *)sp);
+                }
+
+                if(c < 0)
+                {
+                    // here but not in the shared copy
+                    vc pk2, al;
+                    lf[i].find("pubkey", pk2);
+                    lf[i].find("alias", al);
+                    diffs.append(make_diff("friend_added", pk2, al));
+                    ++i;
+                }
+                else if(c > 0)
+                {
+                    // in the shared copy but not here
+                    vc pk2, al;
+                    sf[j].find("pubkey", pk2);
+                    sf[j].find("alias", al);
+                    diffs.append(make_diff("friend_removed", pk2, al));
+                    ++j;
+                }
+                else
+                {
+                    vc la, sa;
+                    lf[i].find("alias", la);
+                    sf[j].find("alias", sa);
+                    if(!la.is_nil() && !sa.is_nil() && la != sa)
+                    {
+                        vc pk2;
+                        lf[i].find("pubkey", pk2);
+                        diffs.append(make_diff("friend_renamed", pk2, la));
+                    }
+                    ++i;
+                    ++j;
+                }
+            }
+        }
+
+        state = diffs.num_elems() == 0 ? TOX_DIFF_SAME : TOX_DIFF_DIFFERENT;
+    }
+
+    vc ret(VC_VECTOR);
+    ret.append(vc((long)state));
+    ret.append(diffs);
+    ret.append(mid);
+    return ret;
+}
+
 // who currently owns the identity with the given hex pubkey, as a 1 element
 // vector holding hex(uid), or nil if nobody has claimed it.
 vc
@@ -1704,7 +1933,12 @@ tox_bridge_peek_pubkey_from_file(const char *path, const uint8_t *pw, int pw_len
     // tox save, so handing it to tox_new below would just fail. say so
     // explicitly instead -- the caller shows "Password protected" and the user
     // types the password. we deliberately do not peek with the remembered
-    // active password here.
+    // active password here: deriving the key is deliberately expensive
+    // (scrypt) and this runs on ui refreshes.
+    //
+    // callers that need a pubkey for an encrypted save while tox is stopped
+    // can't get one, but they can ask tox_bridge_get_pubkey() once signed in.
+    // see tox_bridge_sync_status for the pattern.
     if(toxp_data_is_encrypted((const char *)bytes, (int)bytes.len()))
         return 0;
     return tox_bridge_peek_pubkey_from_bytes(bytes, pubkey_out);

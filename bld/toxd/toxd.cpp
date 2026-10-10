@@ -35,6 +35,7 @@
 #endif
 #include <sodium.h>
 #include <vector>
+#include <algorithm>
 
 #include "vc.h"
 #include "vccomp.h"
@@ -950,6 +951,171 @@ toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out)
     return 1;
 }
 
+// hex helper, so the summary reports public keys in the same form the ui and
+// the tag mids use everywhere else.
+static vc
+hex_of(const uint8_t *b, int len)
+{
+    static const char *digits = "0123456789abcdef";
+    char *out = new char[(size_t)len * 2 + 1];
+    for(int i = 0; i < len; ++i)
+    {
+        out[2 * i] = digits[(b[i] >> 4) & 0xf];
+        out[2 * i + 1] = digits[b[i] & 0xf];
+    }
+    vc ret(VC_BSTRING, out, (long)len * 2);
+    delete [] out;
+    return ret;
+}
+
+// compare friend entries by pubkey, so the summary is order independent.
+// note vc::find is non-const, hence the by-value parameters (an entry is two
+// short strings, so the copies are cheap).
+static bool
+friend_less(vc a, vc b)
+{
+    vc apk, bpk;
+    if(!a.find("pubkey", apk) || !b.find("pubkey", bpk))
+        return false;
+    // both are hex of a fixed-width key, so a plain string compare orders
+    // them consistently with the binary compare
+    return strcmp((const char *)apk, (const char *)bpk) < 0;
+}
+
+int
+toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
+                 vc &summary_out)
+{
+    if(!data || len <= 0)
+        return 0;
+
+    // decrypt first if needed. this is the one expensive part of the whole
+    // comparison (scrypt, deliberately), so it only happens for a password
+    // protected save -- and only once per comparison, not per ui repaint.
+    const uint8_t *plain = (const uint8_t *)data;
+    size_t plain_len = (size_t)len;
+    uint8_t *decrypted = NULL;
+    bool encrypted = tox_is_data_encrypted((const uint8_t *)data);
+    if(encrypted)
+    {
+        if(!pw || pw_len <= 0)
+            return 0;
+        if((size_t)len <= TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+            return 0;
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt((const uint8_t *)data, salt, NULL))
+            return 0;
+        Tox_Err_Key_Derivation kerr;
+        Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len,
+                                                          salt, &kerr);
+        if(!key)
+            return 0;
+        plain_len = (size_t)len - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        decrypted = (uint8_t *)malloc(plain_len);
+        Tox_Err_Decryption derr;
+        int ok = tox_pass_key_decrypt(key, (const uint8_t *)data, (size_t)len,
+                                      decrypted, &derr);
+        tox_pass_key_free(key);
+        if(!ok)
+        {
+            free(decrypted);
+            return 0;
+        }
+        plain = decrypted;
+    }
+
+    // load it offline. udp and dns are off so nothing here touches the
+    // network; we only want the stored fields.
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, plain, plain_len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+    {
+        free(decrypted);
+        return 0;
+    }
+
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_self_get_public_key(tmp, pubkey);
+
+    char name_buf[TOX_MAX_NAME_LENGTH + 1];
+    size_t name_len = tox_self_get_name_size(tmp);
+    if(name_len > TOX_MAX_NAME_LENGTH)
+        name_len = TOX_MAX_NAME_LENGTH;
+    tox_self_get_name(tmp, (uint8_t *)name_buf);
+    name_buf[name_len] = 0;
+
+    char status_buf[TOX_MAX_STATUS_MESSAGE_LENGTH + 1];
+    size_t status_len = tox_self_get_status_message_size(tmp);
+    if(status_len > TOX_MAX_STATUS_MESSAGE_LENGTH)
+        status_len = TOX_MAX_STATUS_MESSAGE_LENGTH;
+    tox_self_get_status_message(tmp, (uint8_t *)status_buf);
+    status_buf[status_len] = 0;
+
+    // friend pubkey + alias. deliberately NOT the connection status, last
+    // seen, or per-friend user status: those move on their own as the
+    // network runs, and reporting them would make every save look changed.
+    std::vector<vc> friends;
+    uint32_t n = tox_self_get_friend_list_size(tmp);
+    if(n > 0)
+    {
+        std::vector<uint32_t> list(n);
+        tox_self_get_friend_list(tmp, list.data());
+        for(uint32_t i = 0; i < n; ++i)
+        {
+            uint32_t fn = list[i];
+            uint8_t fpk[TOX_PUBLIC_KEY_SIZE];
+            if(!tox_friend_get_public_key(tmp, fn, fpk, NULL))
+                continue;
+            vc entry(VC_MAP, "", 2);
+            entry.add_kv("pubkey", hex_of(fpk, TOX_PUBLIC_KEY_SIZE));
+            char alias[TOX_MAX_NAME_LENGTH + 1];
+            size_t alias_len = tox_friend_get_name_size(tmp, fn, NULL);
+            if(alias_len > TOX_MAX_NAME_LENGTH)
+                alias_len = TOX_MAX_NAME_LENGTH;
+            if(alias_len > 0)
+            {
+                tox_friend_get_name(tmp, fn, (uint8_t *)alias, NULL);
+                alias[alias_len] = 0;
+                entry.add_kv("alias", vc(VC_BSTRING, alias, (long)alias_len));
+            }
+            else
+                entry.add_kv("alias", vc(""));
+            friends.push_back(entry);
+        }
+    }
+    // sort so two saves with the same friends compare equal regardless of the
+    // order toxcore happens to list them in.
+    std::sort(friends.begin(), friends.end(), friend_less);
+
+    uint32_t nospam = tox_self_get_nospam(tmp);
+    tox_kill(tmp);
+    free(decrypted);
+
+    vc ret(VC_MAP, "", 6);
+    ret.add_kv("pubkey", hex_of(pubkey, TOX_PUBLIC_KEY_SIZE));
+    // note: nospam is reported as a decimal string rather than a vc int,
+    // because this map is compared field by field and a string keeps that
+    // working regardless of how vc formats large numbers.
+    ret.add_kv("nospam", vc(DwString::fromInt((long)nospam)));
+    ret.add_kv("name", vc(VC_BSTRING, name_buf, (long)name_len));
+    ret.add_kv("status", vc(VC_BSTRING, status_buf, (long)status_len));
+    ret.add_kv("encrypted", vc(encrypted ? 1 : 0));
+    vc fv(VC_VECTOR);
+    for(size_t i = 0; i < friends.size(); ++i)
+        fv.append(friends[i]);
+    ret.add_kv("friends", fv);
+    summary_out = ret;
+    return 1;
+}
+
 int
 toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
 {
@@ -1754,6 +1920,18 @@ toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out)
     (void)p;
     (void)data;
     (void)hash_out;
+    return 0;
+}
+
+int
+toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
+                 vc &summary_out)
+{
+    (void)data;
+    (void)len;
+    (void)pw;
+    (void)pw_len;
+    (void)summary_out;
     return 0;
 }
 

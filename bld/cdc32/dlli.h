@@ -2307,6 +2307,30 @@ int DWYCOEXPORT dwyco_tox_publish_save();
 //   "003" encrypted- 1 if the save is password protected (int)
 int DWYCOEXPORT dwyco_tox_list_saves(DWYCO_LIST *list_out);
 
+// compare the save on disk against the group's published copy of that same
+// identity and report what actually differs: friend list, profile name,
+// status, nospam, password protection. this answers "is my other device's copy
+// different from mine?" directly, rather than guessing from timestamps.
+//
+// purely advisory: it never adopts anything and never writes the save file.
+// returns 1 and fills list_out with a single row:
+//   "000" state        - int, see TOX_DIFF_* in bld/cdc32/toxbridge.h
+//   "001" differences  - column count of the differences list (int)
+//   "002" mid          - ascii hex pubkey compared against, empty if unknown
+// then one column per difference, "100" onward, each three values:
+//   kind, who, detail
+// where kind is one of friend_added, friend_removed, friend_renamed,
+// name_changed, status_changed, nospam_changed, password_changed; who is a
+// friend pubkey hex for the friend_* kinds and empty otherwise; detail is the
+// alias for friend_*, or this device's value for the scalar kinds.
+//
+// note "same" means the same in those fields, not byte identical. a tox save
+// also carries connection state that changes on its own, and that is
+// deliberately not reported as a difference. returns 0 when there is no local
+// save. a password protected save reports "unreadable" when tox is stopped or
+// the published copy uses a different password, since neither can be opened.
+int DWYCOEXPORT dwyco_tox_compare_saves(DWYCO_LIST *list_out);
+
 // adopt the published identity whose mid is mid_hex (ascii hex pubkey) as the
 // identity this device will run. leaves tox stopped: the caller should present
 // the normal "sign in" flow afterwards, and that sign-in is what claims the

@@ -9830,6 +9830,40 @@ dwyco_tox_list_saves(DWYCO_LIST *list_out)
 
 DWYCOEXPORT
 int
+dwyco_tox_compare_saves(DWYCO_LIST *list_out)
+{
+    if(!list_out)
+        return 0;
+    vc st = dwyco::tox_bridge_compare_saves();
+    if(st.is_nil())
+        return 0;
+    // flatten the difference list into columns. the vector api has no nested
+    // rows, so each difference becomes three columns (kind, who, detail) after
+    // the fixed header columns. empty values keep the column count aligned
+    // with the difference count.
+    int ndiffs = 0;
+    if(st.num_elems() >= 2)
+        ndiffs = st[1].num_elems();
+
+    vc row(VC_VECTOR);
+    row.append(st[0]);                       // state
+    row.append(vc((long)ndiffs));            // difference count
+    row.append(st.num_elems() >= 3 ? st[2] : vcnil);   // mid
+    for(int i = 0; i < ndiffs; ++i)
+    {
+        const vc &d = st[1][i];
+        row.append(d.num_elems() > 0 ? d[0] : vcnil);
+        row.append(d.num_elems() > 1 ? d[1] : vcnil);
+        row.append(d.num_elems() > 2 ? d[2] : vcnil);
+    }
+    vc v(VC_VECTOR);
+    v.append(row);
+    *list_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_name_for_pubkey(const char *pub_hex, int pub_hex_len,
                           char **name_out, int *name_len_out)
 {

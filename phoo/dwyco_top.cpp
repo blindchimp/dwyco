@@ -3407,6 +3407,28 @@ DwycoCore::tox_publish_save()
     return true;
 }
 
+// the hex pubkey of the save on disk, or "" when there is none.
+//
+// note this deliberately does NOT just ask the running instance. tox is stopped
+// whenever the user is picking between saves, which is exactly when the ui
+// needs to know which identity is on disk in order to mark it. peeking at the
+// file works while stopped, and fails only for a password protected save --
+// in which case the running instance is the only thing that could answer, so
+// fall back to it.
+QString
+DwycoCore::tox_local_save_pubkey()
+{
+    char *pk = 0;
+    int pk_len = 0;
+    if(dwyco_tox_peek_pubkey_from_file(0, 0, 0, &pk, &pk_len) && pk && pk_len > 0)
+    {
+        QByteArray pubkey(pk, pk_len);
+        dwyco_free_array(pk);
+        return QString::fromLatin1(pubkey.toHex());
+    }
+    return tox_get_self_public_key();
+}
+
 QVariantList
 DwycoCore::tox_list_saves()
 {
@@ -3417,7 +3439,7 @@ DwycoCore::tox_list_saves()
     simple_scoped l(saves);
     // which identity is on disk right now, so the ui can mark it. compare on
     // the ascii hex pubkey, which is exactly what the list reports.
-    QString cur_pub = tox_get_self_public_key();
+    QString cur_pub = tox_local_save_pubkey();
     const char *my_uid = nullptr;
     int my_uid_len = 0;
     dwyco_get_my_uid(&my_uid, &my_uid_len);
@@ -3522,16 +3544,16 @@ DwycoCore::tox_list_all_saves()
         m["encrypted"] = tox_save_is_encrypted();
         m["is_current"] = true;
 
-        char *pk = 0;
-        int pk_len = 0;
-        if(dwyco_tox_peek_pubkey_from_file(0, 0, 0, &pk, &pk_len) && pk && pk_len > 0)
+        // same helper the shared rows use to find the current identity, so the
+        // local row and the matching shared row can't disagree about which
+        // pubkey is on disk.
+        QString lpk = tox_local_save_pubkey();
+        if(lpk.length() > 0)
         {
-            QByteArray pubkey(pk, pk_len);
-            dwyco_free_array(pk);
-            m["pubkey"] = pubkey.toHex();
+            m["pubkey"] = lpk;
             // same dwyco-side name lookup the shared rows use, so an encrypted
             // local save still gets a label.
-            m["name"] = tox_name_for_pubkey(pubkey.toHex());
+            m["name"] = tox_name_for_pubkey(lpk);
         }
         out.append(m);
     }
@@ -3548,6 +3570,48 @@ DwycoCore::tox_list_all_saves()
     }
 
     return out;
+}
+
+QVariantMap
+DwycoCore::tox_compare_saves()
+{
+    QVariantMap m;
+    DWYCO_LIST l = 0;
+    // note: returns 0 only when there is no save on disk at all. every other
+    // outcome is a real state, including "unreadable" for a password
+    // protected save we can't open -- the ui needs to say that rather than
+    // show nothing.
+    if(!dwyco_tox_compare_saves(&l))
+        return m;
+    simple_scoped sc(l);
+    m["state"] = (int)sc.get_long(0, "000");
+    QByteArray mid = sc.get<QByteArray>(0, "002");
+    m["mid"] = mid.isEmpty() ? QString() : QString::fromLatin1(mid);
+
+    // the differences arrive as three columns per entry, starting after the
+    // three header columns. the header carries the count, so the loop doesn't
+    // have to trust the column count.
+    long n = sc.get_long(0, "001");
+    QVariantList diffs;
+    for(long i = 0; i < n; ++i)
+    {
+        // format each column index separately. the list api walks a column
+        // name digit by digit, so they have to be zero padded and there is no
+        // way to get to a later column by advancing a pointer.
+        char c_kind[8], c_who[8], c_detail[8];
+        snprintf(c_kind, sizeof(c_kind), "%03d", 3 + (int)(i * 3));
+        snprintf(c_who, sizeof(c_who), "%03d", 4 + (int)(i * 3));
+        snprintf(c_detail, sizeof(c_detail), "%03d", 5 + (int)(i * 3));
+        QVariantMap d;
+        d["kind"] = QString::fromLatin1(sc.get<QByteArray>(0, c_kind));
+        d["who"] = QString::fromLatin1(sc.get<QByteArray>(0, c_who));
+        // detail is raw bytes for some kinds (a name or an alias can hold any
+        // bytes), so hand it over as a QByteArray and let qml decode it.
+        d["detail"] = sc.get<QByteArray>(0, c_detail);
+        diffs.append(d);
+    }
+    m["differences"] = diffs;
+    return m;
 }
 
 QString

@@ -180,6 +180,136 @@ ApplicationWindow {
             return "red"
         }
 
+        // ---- how the save on disk compares to the copy on your devices ----
+        //
+        // this reports the actual differences between the two copies -- friend
+        // list, profile name, status, nospam, password protection -- instead
+        // of inferring which is "newer" from timestamps. that was both noisy
+        // (toxcore rewrites connection state constantly, so the two saves
+        // rarely matched byte for byte) and undecidable for a password
+        // protected save, where a fresh encryption nonce on every write meant
+        // the bytes could never match at all.
+        //
+        // lives here rather than on either page because both the tox page and
+        // the tox save page show it, and they must never disagree.
+        //
+        // the codes mirror TOX_DIFF_* in bld/cdc32/toxbridge.h:
+        //   0 same, 1 different, 2 not shared, 3 unreadable, 4 different id
+        property var diff: ({})
+        readonly property int diffState:
+            diff.state !== undefined ? Number(diff.state) : 0
+        readonly property var differences:
+            diff.differences !== undefined ? diff.differences : []
+
+        // the backend hands names and aliases over as raw bytes, since a tox
+        // name can hold anything.
+        function asText(v) {
+            if (v === undefined || v === null)
+                return ""
+            if (v instanceof ArrayBuffer)
+                return String.fromUtf8(new Uint8Array(v))
+            if (v instanceof Uint8Array)
+                return String.fromUtf8(v)
+            if (v instanceof Array)
+                return String.fromUtf8(new Uint8Array(v))
+            return String(v)
+        }
+
+        // identify a friend by the name the user gave them, falling back to a
+        // short slice of the tox-id so the line still says who.
+        function friendLabel(d) {
+            var alias = asText(d.detail)
+            if (alias.length > 0)
+                return alias
+            var pk = d.who !== undefined ? String(d.who) : ""
+            if (pk.length > 12)
+                return pk.substring(0, 12) + "\u2026"
+            return pk.length > 0 ? pk : "a contact"
+        }
+
+        // one sentence per difference, in the order the backend reports them
+        // (profile fields first, then the friend list).
+        function diffLine(d) {
+            switch (d.kind) {
+            case "friend_added":
+                return friendLabel(d) + " is on your other devices, not here"
+            case "friend_removed":
+                return friendLabel(d) + " is here, not on your other devices"
+            case "friend_renamed":
+                return friendLabel(d) + " is named differently on your other devices"
+            case "name_changed":
+                return "profile name is \"" + asText(d.detail) + "\" here"
+            case "status_changed":
+                return "status message is \"" + asText(d.detail) + "\" here"
+            case "nospam_changed":
+                return "your tox-id number is different here"
+            case "password_changed":
+                return asText(d.detail) === "1"
+                       ? "this device's save is password protected, theirs isn't"
+                       : "their save is password protected, this device's isn't"
+            }
+            return "something differs"
+        }
+
+        function diffLines() {
+            var out = []
+            for (var i = 0; i < differences.length; ++i)
+                out.push(diffLine(differences[i]))
+            return out
+        }
+
+        // headline above the list
+        function diffHeadline(s) {
+            switch (s) {
+            case 0: return "This device and your devices have the same Tox save"
+            case 1: return "Your Tox save is different on your other devices"
+            case 2: return "Not shared with your devices yet"
+            case 3: return "Can't compare with your devices"
+            case 4: return "Can't compare with your devices"
+            }
+            return ""
+        }
+
+        function diffDetail(s) {
+            switch (s) {
+            case 0:
+                return "Friend list, name, status and tox-id all match."
+            case 1:
+                return "Nothing changes on its own. Share this device's copy, or "
+                       + "use the copy from your devices."
+            case 2:
+                return "Only this device has a copy of this Tox save."
+            case 3:
+                return "This Tox save is password protected. Sign in to compare it "
+                       + "with the copy on your devices."
+            case 4:
+                return "The shared copy belongs to a different tox-id, so it can't "
+                       + "be compared with the save on this device."
+            }
+            return ""
+        }
+
+        function diffColor(s) {
+            switch (s) {
+            case 0: return "#3a8"  // same
+            case 1: return "#c80"  // real differences
+            case 2: return "#999"  // not shared
+            case 3: return "#999"  // can't compare
+            case 4: return "#999"  // can't compare
+            }
+            return "transparent"
+        }
+
+        // both copy buttons write tox_save.tox, in opposite directions, and
+        // neither label says so. this is the one place that spells it out.
+        function copyDirectionNote() {
+            return "\"Share with my devices\" copies this device's Tox save "
+                   + "(tox_save.tox) out to your other devices. "
+                   + "\"Use this tox-id\" copies a shared save in over tox_save.tox "
+                   + "on this device, replacing whatever is there. "
+                   + "Neither happens on its own."
+        }
+
         function refresh() {
             present = core.tox_save_exists()
             encrypted = core.tox_save_is_encrypted()
@@ -188,6 +318,7 @@ ApplicationWindow {
             connected = core.tox_connected !== 0
             selfAddress = core.tox_self_address
             selfName = core.tox_get_name()
+            diff = core.tox_compare_saves()
 
             if (!present)
                 state = "empty"
@@ -242,6 +373,10 @@ ApplicationWindow {
         // save-related values have no notify, so this list is maintained
         // by hand; any operation that changes them without emitting one
         // of these must call tox_state.refresh() explicitly.
+        // note these also drive the sync state sampled in tox_state.refresh():
+        // tox_saves_changed covers publish, adopt, unshare and inbound tag
+        // churn, and the rest cover signing in and out. both tox pages already
+        // hang their own list refreshes off these same signals.
         function onTox_enabledChanged() { tox_state.refresh() }
         function onTox_connectedChanged() { tox_state.refresh() }
         function onTox_connection_status_changed(connected) { tox_state.refresh() }
