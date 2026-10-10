@@ -783,11 +783,6 @@ configform::showEvent(QShowEvent *ev)
 {
     QDialog::showEvent(ev);
 
-#ifdef DWYCO_TOXCORE
-    if(ui.tabWidget->indexOf(ui.tab_tox) >= 0)
-        refresh_tox_tab();
-#endif
-
     DWYCO_LIST gs;
     if(!dwyco_get_group_status(&gs))
         return;
@@ -815,6 +810,11 @@ configform::showEvent(QShowEvent *ev)
     }
 
     ui.sync_enable->setText("Enable device linking (" + QString::number(percent) + "% synced, " + QString::number(c) + "/" + QString::number(n) + " active)");
+
+#ifdef DWYCO_TOXCORE
+    if(ui.tabWidget->indexOf(ui.tab_tox) >= 0)
+        refresh_tox_tab();
+#endif
 }
 
 
