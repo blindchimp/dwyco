@@ -1,9 +1,7 @@
 set(DWYCO_APP "cdcx")
 set(DWYCOBG 0)
-# Tox integration is permanently disabled. The UI-level composer/chatbox
-# integration for tox UIDs does not work correctly and is not worth fixing.
-set(DWYCO_TOXCORE OFF)
-#add_compile_definitions(DWYCO_TOXCORE)
+set(DWYCO_TOXCORE ON)
+add_compile_definitions(DWYCO_TOXCORE)
 add_compile_definitions(DWYCO_APP_NICENAME="CDC-X")
 
 add_compile_definitions(VCCFG_FILE)

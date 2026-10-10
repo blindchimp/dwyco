@@ -154,13 +154,12 @@ target_link_libraries(CDC-X PRIVATE
     -ldl
     -pthread
 )
-    # Tox linking disabled -- see conf.cmake
-    #if(DWYCO_TOXCORE)
-    #target_link_libraries(CDC-X PRIVATE
-    #   /home/dwight/git/c-toxcore/build/libtoxcore.a
-    #   -lsodium
-    #)
-    #endif()
+    if(DWYCO_TOXCORE)
+    target_link_libraries(CDC-X PRIVATE
+       /home/dwight/git/c-toxcore/build/libtoxcore.a
+       -lsodium
+    )
+    endif()
 elseif(APPLE)
     add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
     find_library(CF CoreFoundation)
@@ -172,13 +171,12 @@ elseif(APPLE)
         ${CF}
         ${COCOA}
     )
-    # Tox linking disabled -- see conf.cmake
-    #if(DWYCO_TOXCORE)
-    #target_link_libraries(CDC-X PRIVATE
-    #    /opt/homebrew/lib/libtoxcore.a
-    #    /opt/homebrew/lib/libsodium.a
-    #)
-    #endif()
+    if(DWYCO_TOXCORE)
+    target_link_libraries(CDC-X PRIVATE
+        /opt/homebrew/lib/libtoxcore.a
+        /opt/homebrew/lib/libsodium.a
+    )
+    endif()
 elseif(WIN32)
 
 add_compile_definitions(  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32)

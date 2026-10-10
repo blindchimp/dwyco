@@ -81,9 +81,7 @@ static QPixmap make_tox_badge(int size, QColor color)
 
 configform::configform(QDialog *parent)
     : QDialog(parent)
-#if defined(DWYCO_TOXCORE)
     , tox_refresh_timer(0)
-#endif
 {
     ui.setupUi(this);
     // this is handled automatically now
