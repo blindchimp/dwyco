@@ -10,7 +10,6 @@
 #define config_h
 
 #include <QWidget>
-#include <QTimer>
 #include "ui_config.h"
 
 class configform : public QDialog
@@ -21,17 +20,8 @@ public:
     configform(QDialog *parent = 0);
 
     void load();
-#ifdef DWYCO_TOXCORE
-    void refresh_tox_tab();
-#endif
 private:
     void load_untrash_button();
-#ifdef DWYCO_TOXCORE
-    void refresh_tox_tab();
-    void refresh_tox_friend_list();
-    void update_tox_status_indicator();
-    void set_tox_widgets_enabled(bool enabled);
-#endif
 
 private slots:
     void on_CDC_call_acceptance__max_audio_textChanged(QString );
@@ -60,16 +50,6 @@ private slots:
 
     void on_sync_refresh_button_clicked();
 
-#ifdef DWYCO_TOXCORE
-    void on_tox_enable_toggled(bool checked);
-    void on_tox_update_name_clicked();
-    void on_tox_copy_id_clicked();
-    void on_tox_add_friend_clicked();
-    void on_tox_delete_friend_clicked();
-    void on_tox_user_status_changed(int index);
-    void on_tox_friend_list_doubleClicked(const QModelIndex &index);
-#endif
-
 signals:
     void content_filter_event(int);
     void pals_only(int);
@@ -79,9 +59,6 @@ protected:
 
 public:
     Ui::config_dialog ui;
-#ifdef DWYCO_TOXCORE
-    QTimer *tox_refresh_timer;
-#endif
 };
 
 extern configform *TheConfigForm;

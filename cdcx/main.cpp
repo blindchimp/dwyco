@@ -1,4 +1,4 @@
-#define LOCAL_SERVERS
+
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -893,17 +893,6 @@ int main(int argc, char *argv[])
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
     mainwin.show();
     setup_emergency_servers();
-
-    // Auto-enable tox if the setting was previously enabled
-    {
-        DwOString tox_val;
-        if(setting_get("tox_enabled", tox_val) && !tox_val.eq("0"))
-        {
-#ifdef DWYCO_TOXCORE
-            dwyco_enable_tox("tox_save.tox");
-#endif
-        }
-    }
 
     int i = app.exec();
     // this is more or less an emergency where the system state may be
