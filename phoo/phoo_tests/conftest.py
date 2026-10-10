@@ -29,9 +29,25 @@ from phoo_driver import (  # noqa: E402
 )
 
 LIVE_ENV = "PHOO_TEST_LIVE"
+VIDEO_ENV = "PHOO_VIDEO"          # off | on-failure | always
+VIDEO_FPS_ENV = "PHOO_VIDEO_FPS"
 
 
-def pytest_configure(config):
+def video_mode() -> str:
+    """off (default) | on-failure | always."""
+    return os.environ.get(VIDEO_ENV, "off").lower()
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    """Stash the per-phase report on the item.
+
+    The teardown fixture needs to know whether the test body already
+    failed, so it can decide whether to keep the recorded video.
+    """
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, "rep_" + rep.when, rep)
     config.addinivalue_line("markers", "live: needs the real network; opt in with PHOO_TEST_LIVE=1")
     config.addinivalue_line("markers", "x11: needs a real X display and xdotool")
 
@@ -50,8 +66,15 @@ def pytest_report_header(config):
     binary = os.environ.get("PHOO_BIN", "(default build path)")
     lines.append(f"phoo binary: {binary}")
     lines.append(f"qt platform: {os.environ.get('PHOO_PLATFORM', '(inherit)')}")
+    mode = video_mode()
+    if mode != "off":
+        lines.append(
+            f"video recording: {mode} @ {os.environ.get(VIDEO_FPS_ENV, '10')}fps"
+        )
     if os.environ.get(LIVE_ENV) != "1":
         lines.append(f"live tests: skipped (set {LIVE_ENV}=1 to enable)")
+    if not shutil.which("ffmpeg"):
+        lines.append("ffmpeg: NOT installed, video tests will skip")
     if not shutil.which("xdotool"):
         lines.append("xdotool: not installed, x11 tests will skip")
     return lines
@@ -83,32 +106,88 @@ def agent(phoo):
 
 
 @pytest.fixture(autouse=True)
-def guard(phoo, agent):
-    """Before and after every test: the app must be alive and responsive.
+def guard_before(phoo, agent):
+    """The app must be responsive before any test runs.
 
-    A test that leaves the gui thread wedged or the app dead fails the
-    *next* test with a clear message instead of hanging it.
+    A test that left the gui thread wedged fails here with a clear
+    message instead of hanging the next one.
     """
     try:
-        ping = agent.assert_responsive()
+        agent.assert_responsive()
     except (AgentTimeout, AssertionError) as e:
         pytest.fail(
             f"app was not responsive before the test started: {e}\n"
             f"{phoo.diagnostics()}"
         )
-    yield
+
+
+@pytest.fixture(autouse=True)
+def guard_after(request, phoo, agent):
+    """After every test: still responsive, still alive, video encoded.
+
+    This is deliberately a separate fixture from guard_before. pytest
+    reports a teardown error and a test failure independently, so a
+    failing assertion in the test body is not replaced by a teardown
+    complaint.
+    """
+    mode = video_mode()
+    rec = None
+    if mode in ("on-failure", "always"):
+        fps = int(os.environ.get(VIDEO_FPS_ENV, "10"))
+        # recording perturbs the timings, so route samples into the
+        # recorded bucket and leave phoo.latency (the clean one) alone
+        phoo.latency_recording = True
+        label = request.node.name.replace("/", "_")[:60]
+        rec = agent.record(phoo.profile_dir / f"video-{label}", fps=fps)
+        try:
+            rec.start()
+        except Exception as e:
+            rec = None
+            print(f"\n[video] could not start recording: {e}")
+
+    failed = False
     try:
-        after = agent.assert_responsive()
-    except (AgentTimeout, AssertionError) as e:
-        phoo.screenshot("after-test")
-        pytest.fail(
-            f"app stopped responding during the test: {e}\n"
-            f"frames {ping.frame_count} -> after\n{phoo.diagnostics()}"
-        )
-    # catch a click that blew the gui thread up entirely
-    if phoo.proc and phoo.proc.poll() is not None:
-        phoo.screenshot("crashed")
-        pytest.fail(f"phoo died during the test\n{phoo.diagnostics()}")
+        yield
+    finally:
+        phoo.latency_recording = False
+
+        # if the test body itself raised, keep its video, but never raise
+        # over the top of its own failure
+        rep = getattr(request.node, "rep_call", None)
+        failed = bool(rep and rep.failed)
+
+        problems = []
+        try:
+            after = agent.assert_responsive()
+        except (AgentTimeout, AssertionError) as e:
+            problems.append(f"app stopped responding: {e}")
+            after = None
+
+        dead = phoo.proc is not None and phoo.proc.poll() is not None
+        if dead:
+            problems.append(f"phoo died (exit {phoo.proc.returncode})")
+
+        if rec is not None:
+            try:
+                res = rec.stop()
+                out = phoo.profile_dir / f"video-{label}.mp4"
+                if res.frames > 1:
+                    rec.encode(out)
+                    phoo.artifacts.append(out)
+                    print(f"\n[video] {res.summary()}")
+                    if mode == "always" or failed or problems:
+                        print(f"[video] ARTIFACT: {out}")
+                    else:
+                        out.unlink(missing_ok=True)   # test passed; don't keep it
+            except Exception as e:
+                problems.append(f"video encode failed: {e}")
+
+        if problems:
+            try:
+                phoo.screenshot("after-test")
+            except Exception:
+                pass
+            pytest.fail("\n".join(problems) + "\n" + str(phoo.diagnostics()))
 
 
 @pytest.fixture

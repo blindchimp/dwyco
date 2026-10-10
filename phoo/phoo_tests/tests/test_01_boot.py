@@ -5,6 +5,8 @@ interacted with" checks against a freshly seeded profile.
 """
 from __future__ import annotations
 
+import time
+
 from phoo_driver import (
     BLANK_PAGE,
     CONVLIST_DRAWER_BTN,
@@ -26,6 +28,16 @@ def test_window_exists_and_is_exposed(agent):
     )
 
 
+def test_gui_thread_is_turning(agent):
+    """The heartbeat advances on every event loop turn. Unlike frame_count
+    this does not depend on the scene being dirty, so it is the reliable
+    liveness signal."""
+    before = agent.ping().heartbeat_count
+    time.sleep(0.25)
+    after = agent.ping().heartbeat_count
+    assert after > before, f"event loop stalled: {before} -> {after} over 250ms"
+
+
 def test_window_is_interactable(agent):
     p = agent.probe(WINDOW)
     assert p.exists
@@ -34,13 +46,19 @@ def test_window_is_interactable(agent):
 
 
 def test_ui_keeps_rendering(agent):
-    """The render loop is not dead. service_timer alone keeps it turning,
-    but a wedged gui thread stops it even though qml is "loaded"."""
+    """The app is painting and able to repaint on demand.
+
+    frame_count only moves when the scene is dirty, so this nudges the ui
+    (open the drawer) and checks a frame actually comes back out.
+    """
     before = agent.ping()
     agent.cmd("mark", label="render-check")
-    agent.wait_until(lambda: agent.ping().frame_count > before.frame_count + 3,
-                     timeout=5, msg="frame counter never advanced")
+    agent.click(CONVLIST_DRAWER_BTN)
+    agent.wait_prop(DRAWER, "opened", True, timeout=5)
+    agent.wait_until(lambda: agent.ping().frame_count > before.frame_count,
+                     timeout=5, msg="no frame was produced after a click")
     after = agent.ping()
+    assert after.frame_count > before.frame_count
     assert after.last_frame_age_ms < 2000
 
 

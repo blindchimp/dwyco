@@ -12,6 +12,8 @@
 #include <QDir>
 #include <QEvent>
 #include <QEventLoop>
+#include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QJsonDocument>
 #include <QJsonParseError>
@@ -19,8 +21,12 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QMetaMethod>
+#include <QPainter>
+#include <QPen>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QSaveFile>
+#include <QThread>
 #include <QTimer>
 #include <QVariant>
 
@@ -37,6 +43,36 @@ bool
 PhooTestAgent::test_mode_enabled()
 {
     return g_test_mode;
+}
+
+// ---------------------------------------------------------------------------
+// frame writer (worker thread)
+// ---------------------------------------------------------------------------
+
+PhooFrameWriter::PhooFrameWriter(QString dir, QObject *parent)
+    : QObject(parent), m_dir(std::move(dir))
+{}
+
+void
+PhooFrameWriter::writeFrame(int seq, const QImage &img)
+{
+    if(img.isNull())
+        return;
+    // QSaveFile so a killed process can't leave a half written frame that
+    // ffmpeg then chokes on.
+    const QString path =
+        QStringLiteral("%1/frames/%2.png").arg(m_dir).arg(seq, 6, 10, QLatin1Char('0'));
+    QSaveFile f(path);
+    if(!f.open(QIODevice::WriteOnly))
+        return;
+    if(img.save(&f, "PNG"))
+        f.commit();
+}
+
+void
+PhooFrameWriter::flush()
+{
+    emit done();
 }
 
 // ---------------------------------------------------------------------------
@@ -81,6 +117,10 @@ PhooTestAgent::PhooTestAgent(const QString &socket_path, QObject *parent)
 
 PhooTestAgent::~PhooTestAgent()
 {
+    if(m_recording)
+        recordStop();
+    else
+        cleanupRecorder();
     if(m_server) {
         m_server->close();
         QLocalServer::removeServer(m_socketPath);
@@ -222,16 +262,25 @@ PhooTestAgent::onFrameSwapped()
     if(m_inputStampMs >= 0) {
         m_lastInputLatencyMs = m_telemetry->m_lastFrameAgeMs - m_inputStampMs;
         m_inputStampMs = -1;
-        if(!m_inputLabel.isEmpty()) {
-            QJsonObject ev;
-            ev["seq"] = m_eventSeq++;
-            ev["t"] = m_telemetry->m_lastFrameAgeMs;
-            ev["event"] = "paint";
-            ev["for"] = m_inputLabel;
-            ev["latency_ms"] = m_lastInputLatencyMs;
-            m_events.append(ev);
-            m_inputLabel.clear();
-        }
+
+        // annotate the most recent input event with the frame that
+        // actually showed the result, so a recording can mark both ends
+        auto annotate = [this](QJsonArray &arr) {
+            for(int i = arr.size() - 1; i >= 0; --i) {
+                QJsonObject o = arr.at(i).toObject();
+                if(o["event"].toString() == "input" &&
+                   !o.contains("paint_frame")) {
+                    o["paint_frame"] = m_recording ? m_recFrameIndex : -1;
+                    o["latency_ms"] = m_lastInputLatencyMs;
+                    arr.replace(i, o);
+                    return true;
+                }
+            }
+            return false;
+        };
+        annotate(m_events);
+        if(m_recording)
+            annotate(m_recEvents);
     }
 }
 
@@ -241,6 +290,7 @@ PhooTestAgent::onHeartbeat()
     qint64 now = m_clock.elapsed();
     qint64 delta = now - m_lastTickMs;
     m_lastTickMs = now;
+    m_heartbeatCount++;
     if(delta > m_telemetry->m_maxLagMs)
         m_telemetry->m_maxLagMs = delta;
     m_lagSamples.append(delta);
@@ -534,6 +584,12 @@ PhooTestAgent::ping()
     o["ok"] = true;
     o["uptime_ms"] = m_clock.elapsed();
     o["frame_count"] = m_telemetry->m_frameCount;
+    // frame_count only moves when the scene actually repaints, so on a
+    // static screen it stays at 0 even though the app is perfectly
+    // healthy. heartbeat_count is the rendering-independent liveness
+    // signal: it advances on every event loop turn unless the gui thread
+    // is blocked.
+    o["heartbeat_count"] = m_heartbeatCount;
     o["last_frame_age_ms"] = m_telemetry->m_lastFrameAgeMs;
     o["eventloop_max_lag_ms"] = m_telemetry->m_maxLagMs;
 
@@ -553,6 +609,319 @@ PhooTestAgent::ping()
     o["last_input_latency_ms"] = m_lastInputLatencyMs;
     o["client_count"] = m_socks.size();
     return o;
+}
+
+// ---------------------------------------------------------------------------
+// recording
+// ---------------------------------------------------------------------------
+
+namespace {
+// how many frames may be waiting on the writer before we start dropping.
+// grabWindow() stalls the gui thread, so if encoding can't keep up the
+// right answer is to lose frames and say so, not to slow the app down
+// until the test times out.
+constexpr int kMaxPendingFrames = 8;
+// the click ring fades out over this long, so the moment of the click is
+// visible when scrubbing the video
+constexpr qint64 kCursorFlashMs = 400;
+}
+
+QJsonObject
+PhooTestAgent::recordCmd(const QJsonObject &req)
+{
+    const QString sub = req["sub"].toString();
+    if(sub == "start")
+        return recordStart(req);
+    if(sub == "stop")
+        return recordStop();
+    if(sub == "status") {
+        QJsonObject o;
+        o["ok"] = true;
+        o["recording"] = m_recording;
+        o["frames"] = m_recFrameIndex;
+        o["dropped"] = qint64(m_recDropped);
+        o["dir"] = m_recDir;
+        o["elapsed_ms"] = m_recording ? (m_clock.elapsed() - m_recStartMs) : 0;
+        o["pending"] = int(m_recPending.load());
+        return o;
+    }
+    QJsonObject o;
+    o["ok"] = false;
+    o["error"] = "record needs sub = start|stop|status";
+    return o;
+}
+
+QJsonObject
+PhooTestAgent::recordStart(const QJsonObject &req)
+{
+    QJsonObject o;
+    if(m_recording) {
+        o["ok"] = false;
+        o["error"] = "already recording";
+        return o;
+    }
+    if(!m_window) {
+        o["ok"] = false;
+        o["error"] = "no window bound yet";
+        return o;
+    }
+
+    const QString dir = req["path"].toString();
+    if(dir.isEmpty()) {
+        o["ok"] = false;
+        o["error"] = "record start needs a path";
+        return o;
+    }
+
+    const int fps = qBound(1, req["fps"].toInt(15), 120);
+    m_recMaxMs = req["max_ms"].toInt(15000);
+    m_recCursor = req.value("cursor").toBool(true);
+
+    if(!QDir().mkpath(dir + "/frames")) {
+        o["ok"] = false;
+        o["error"] = "cannot create " + dir + "/frames";
+        return o;
+    }
+
+    m_recDir = dir;
+    m_recFrameIndex = 0;
+    m_recDropped = 0;
+    m_recFrameLog = QJsonArray();
+    m_recEvents = QJsonArray();
+    m_recStartMs = m_clock.elapsed();
+    m_recPending.store(0);
+
+    m_recWriter = new PhooFrameWriter(m_recDir);
+    m_recThread = new QThread(this);
+    m_recWriter->moveToThread(m_recThread);
+    connect(m_recThread, &QThread::finished, m_recWriter, &QObject::deleteLater);
+    m_recThread->start();
+
+    m_recTimer = new QTimer(this);
+    m_recTimer->setTimerType(Qt::PreciseTimer);
+    m_recTimer->setInterval(1000 / fps);
+    connect(m_recTimer, &QTimer::timeout, this, &PhooTestAgent::onRecordTick);
+    m_recTimer->start();
+    m_recording = true;
+
+    qInfo() << "[testagent] recording to" << m_recDir
+            << "at" << fps << "fps for" << m_recMaxMs << "ms";
+
+    o["ok"] = true;
+    o["path"] = m_recDir;
+    o["fps"] = fps;
+    o["max_ms"] = m_recMaxMs;
+    o["width"] = m_window->width();
+    o["height"] = m_window->height();
+    return o;
+}
+
+bool
+PhooTestAgent::captureFrame()
+{
+    if(!m_window)
+        return false;
+    const QRect roi(0, 0, m_window->width(), m_window->height());
+    QImage img = grabRoi(roi);
+    if(img.isNull())
+        return false;
+
+    if(m_recCursor && m_lastInputValid) {
+        paintCursor(img, m_lastInputPos, m_clock.elapsed() - m_lastInputPosMs);
+    }
+
+    // bound the queue
+    if(m_recPending.load() >= kMaxPendingFrames) {
+        m_recDropped++;
+        return false;
+    }
+
+    m_recPending.fetch_add(1);
+    // the worker decrements after writing; do it via a lambda on the
+    // writer so we don't need a second signal just for the counter
+    QImage copy = img;
+    QMetaObject::invokeMethod(
+        m_recWriter, [this, seq = m_recFrameIndex, copy]() {
+            m_recWriter->writeFrame(seq, copy);
+            m_recPending.fetch_sub(1);
+        }, Qt::QueuedConnection);
+
+    m_recFrameLog.append(QJsonArray{m_recFrameIndex, m_clock.elapsed() - m_recStartMs,
+                                    qint64(m_recDropped)});
+    m_recFrameIndex++;
+    return true;
+}
+
+void
+PhooTestAgent::onRecordTick()
+{
+    if(!m_recording)
+        return;
+    captureFrame();
+    if(m_recMaxMs > 0 && m_clock.elapsed() - m_recStartMs >= m_recMaxMs)
+        recordStop(); // auto-stop; the harness's "record stop" is then a no-op-ish read
+}
+
+void
+PhooTestAgent::paintCursor(QImage &img, const QPointF &pos, qint64 ms_since_click)
+{
+    if(img.format() != QImage::Format_ARGB32)
+        img = img.convertToFormat(QImage::Format_ARGB32);
+    QPainter p(&img);
+    p.setRenderHint(QPainter::Antialiasing, true);
+
+    const qreal x = pos.x();
+    const qreal y = pos.y();
+
+    // persistent thin crosshair, so you can always see where the last
+    // injected input landed
+    p.setPen(QPen(QColor(0, 255, 255, 220), 1));
+    p.drawLine(QPointF(x - 14, y), QPointF(x + 14, y));
+    p.drawLine(QPointF(x, y - 14), QPointF(x, y + 14));
+    p.setPen(QPen(QColor(0, 255, 255, 255), 1));
+    p.drawEllipse(QPointF(x, y), 7, 7);
+
+    // transient filled ring right after a click
+    if(ms_since_click >= 0 && ms_since_click < kCursorFlashMs) {
+        const qreal t = qreal(ms_since_click) / qreal(kCursorFlashMs);
+        const int alpha = int(230 * (1.0 - t));
+        p.setPen(QPen(QColor(255, 80, 80, alpha), 3));
+        p.setBrush(QColor(255, 60, 60, alpha / 3));
+        p.drawEllipse(QPointF(x, y), 18, 18);
+    }
+    p.end();
+}
+
+void
+PhooTestAgent::noteInputEvent(const QString &cmd, const QString &name,
+                              const QPointF &p)
+{
+    m_lastInputPos = p;
+    m_lastInputValid = true;
+    m_lastInputPosMs = m_clock.elapsed();
+
+    QJsonObject ev;
+    ev["seq"] = m_eventSeq++;
+    ev["t"] = m_clock.elapsed();
+    ev["event"] = "input";
+    ev["cmd"] = cmd;
+    ev["name"] = name;
+    ev["x"] = p.x();
+    ev["y"] = p.y();
+    ev["frame"] = m_recording ? m_recFrameIndex : -1;
+    m_events.append(ev);
+
+    if(m_recording)
+        m_recEvents.append(ev);
+}
+
+QJsonObject
+PhooTestAgent::recordStop()
+{
+    QJsonObject o;
+    if(!m_recording) {
+        o["ok"] = true;
+        o["frames"] = 0;
+        o["note"] = "was not recording";
+        return o;
+    }
+
+    m_recording = false;
+    if(m_recTimer) {
+        m_recTimer->stop();
+        m_recTimer->deleteLater();
+        m_recTimer = nullptr;
+    }
+
+    // drain: flush is queued behind every writeFrame, so once done()
+    // fires the whole queue is on disk. bounded so a wedged writer can't
+    // hang the harness.
+    bool flushed = false;
+    if(m_recThread && m_recWriter) {
+        connect(m_recWriter, &PhooFrameWriter::done, this, [&flushed]() {
+            flushed = true;
+        }, Qt::DirectConnection);
+        QMetaObject::invokeMethod(m_recWriter, "flush", Qt::QueuedConnection);
+        const qint64 deadline = m_clock.elapsed() + 5000;
+        while(!flushed && m_clock.elapsed() < deadline) {
+            QEventLoop loop;
+            QTimer::singleShot(10, &loop, &QEventLoop::quit);
+            loop.exec();
+        }
+        m_recThread->quit();
+        m_recThread->wait(2000);
+        m_recWriter = nullptr;
+        m_recThread = nullptr;
+    }
+
+    const qint64 duration = m_clock.elapsed() - m_recStartMs;
+
+    // An input with no paint_frame never caused a repaint: the click
+    // landed on something inert. That is a real and useful distinction
+    // (the ui did not respond because there was nothing to change), so
+    // make it explicit rather than leaving it as a missing key.
+    for(int i = 0; i < m_recEvents.size(); ++i) {
+        QJsonObject e = m_recEvents.at(i).toObject();
+        if(e["event"].toString() != "input")
+            continue;
+        const bool painted = e.contains("paint_frame") &&
+                             e["paint_frame"].toInt(-1) >= 0;
+        e["painted"] = painted;
+        if(!painted) {
+            e["paint_frame"] = -1;
+            e["latency_ms"] = -1;
+        }
+        m_recEvents.replace(i, e);
+    }
+
+    QJsonObject meta;
+    meta["frames"] = m_recFrameIndex;
+    meta["dropped"] = qint64(m_recDropped);
+    meta["duration_ms"] = duration;
+    meta["width"] = m_window ? m_window->width() : 0;
+    meta["height"] = m_window ? m_window->height() : 0;
+    meta["frame_log"] = m_recFrameLog;
+    meta["events"] = m_recEvents;
+    meta["flushed"] = flushed;
+
+    // atomic write so a reader never sees half a meta.json
+    QSaveFile f(m_recDir + "/meta.json");
+    if(f.open(QIODevice::WriteOnly)) {
+        f.write(QJsonDocument(meta).toJson(QJsonDocument::Indented));
+        f.commit();
+    }
+
+    cleanupRecorder();
+
+    o["ok"] = true;
+    o["frames"] = meta["frames"];
+    o["dropped"] = meta["dropped"];
+    o["duration_ms"] = duration;
+    o["dir"] = m_recDir;
+    o["meta"] = m_recDir + "/meta.json";
+    o["events"] = m_recEvents;
+    return o;
+}
+
+void
+PhooTestAgent::cleanupRecorder()
+{
+    m_recording = false;
+    if(m_recTimer) {
+        m_recTimer->stop();
+        m_recTimer->deleteLater();
+        m_recTimer = nullptr;
+    }
+    if(m_recThread) {
+        m_recThread->quit();
+        m_recThread->wait(2000);
+        m_recThread->deleteLater();
+        m_recThread = nullptr;
+    }
+    m_recWriter = nullptr;
+    m_recFrameLog = QJsonArray();
+    m_recEvents = QJsonArray();
+    m_recDir.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -592,9 +961,14 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
         ev["event"] = "mark";
         ev["label"] = req["label"].toString();
         m_events.append(ev);
+        if(m_recording)
+            m_recEvents.append(ev);
         out["ok"] = true;
         return out;
     }
+
+    if(cmd == "record")
+        return recordCmd(req);
 
     // Commands that need a window. Anything not in this list is rejected
     // first so a typo reports "unknown cmd" rather than "no window yet".
@@ -890,6 +1264,7 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
         if(req["ctrl"].toBool())  mods |= Qt::ControlModifier;
         if(req["alt"].toBool())   mods |= Qt::AltModifier;
 
+        noteInputEvent(cmd, req["name"].toString(), p);
         m_inputStampMs = m_clock.elapsed();
         m_inputLabel = cmd + ":" + req["name"].toString();
 
@@ -929,6 +1304,9 @@ PhooTestAgent::dispatch(const QJsonObject &req, QLocalSocket *sock)
             return out;
         }
         const int ms = req["ms"].toInt(800);
+        QPointF p2;
+        resolvePoint(req, &p2);
+        noteInputEvent(cmd, req["name"].toString(), p2);
         m_inputStampMs = m_clock.elapsed();
         m_inputLabel = "presshold:" + req["name"].toString();
         injectMouse(p, Qt::LeftButton, Qt::NoModifier, QEvent::MouseButtonPress);

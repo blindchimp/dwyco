@@ -50,11 +50,41 @@
 #include <QSet>
 #include <QString>
 
+#include <atomic>
+
 class QLocalServer;
 class QLocalSocket;
 class QQuickItem;
 class QQuickWindow;
+class QThread;
 class QTimer;
+
+// PNG-encodes and writes recorded frames, off the gui thread.
+//
+// grabWindow() has to happen on the gui thread because it is a scene
+// graph operation, but PNG encoding is the larger half of the cost and
+// has no business running there -- it would show up directly as event
+// loop lag and would inflate the very input->paint numbers the harness
+// is trying to measure.
+//
+// call order matters: flush() is queued behind every previously queued
+// writeFrame(), so when its done() fires the whole queue is on disk.
+class PhooFrameWriter : public QObject
+{
+    Q_OBJECT
+public:
+    PhooFrameWriter(QString dir, QObject *parent = nullptr);
+
+public slots:
+    void writeFrame(int seq, const QImage &img);
+    void flush();
+
+signals:
+    void done();
+
+private:
+    QString m_dir;
+};
 
 // the little object QML can see, so a binding or a test can ask "how many
 // frames have we drawn and how janky were they" from inside the scene.
@@ -97,6 +127,7 @@ private slots:
     void onFrameSwapped();
     void onHeartbeat();
     void onWindowPoll();
+    void onRecordTick();
 
 private:
     // ---- request dispatch ----
@@ -140,6 +171,21 @@ private:
     void write(const QJsonObject &obj, QLocalSocket *sock);
     QJsonObject ping();
 
+    // ---- recording ----
+    QJsonObject recordCmd(const QJsonObject &req);
+    QJsonObject recordStart(const QJsonObject &req);
+    QJsonObject recordStop();
+    // grabs one frame, paints the synthetic cursor on it, and hands it to
+    // the writer thread. returns false if the frame should be counted as
+    // dropped.
+    bool captureFrame();
+    void noteInputEvent(const QString &cmd, const QString &name, const QPointF &p);
+    // paints the synthetic crosshair. in-process injection never moves the
+    // real pointer, so without this a recording shows the ui reacting to
+    // clicks with no visible cursor at all.
+    static void paintCursor(QImage &img, const QPointF &pos, qint64 ms_since_click);
+    void cleanupRecorder();
+
     QString m_socketPath;
 
     QLocalServer *m_server = nullptr;
@@ -156,6 +202,7 @@ private:
     // the interval means the gui thread was blocked by something.
     QTimer *m_heartbeat = nullptr;
     qint64 m_lastTickMs = 0;
+    qint64 m_heartbeatCount = 0;
     QList<qint64> m_lagSamples;
 
     // input -> paint latency, measured from injection to the frame swap
@@ -163,6 +210,27 @@ private:
     qint64 m_inputStampMs = -1;
     QString m_inputLabel;
     qint64 m_lastInputLatencyMs = -1;
+
+    // last injected position, for the synthetic cursor. a click also
+    // flashes a ring for kCursorFlashMs so the moment is visible.
+    QPointF m_lastInputPos;
+    bool m_lastInputValid = false;
+    qint64 m_lastInputPosMs = 0;
+
+    // ---- recorder ----
+    bool m_recording = false;
+    QString m_recDir;
+    QTimer *m_recTimer = nullptr;
+    QThread *m_recThread = nullptr;
+    PhooFrameWriter *m_recWriter = nullptr;
+    std::atomic<int> m_recPending{0};
+    int m_recFrameIndex = 0;
+    qint64 m_recDropped = 0;
+    qint64 m_recStartMs = 0;
+    qint64 m_recMaxMs = 15000;
+    bool m_recCursor = true;
+    QJsonArray m_recFrameLog;   // [{frame, t, dropped_so_far}]
+    QJsonArray m_recEvents;     // input events, with paint_frame + latency
 
     // things the harness asked us to remember
     QJsonArray m_events;

@@ -99,6 +99,7 @@ class Ping:
     frame_count: int
     last_frame_age_ms: int
     eventloop_max_lag_ms: int
+    heartbeat_count: int = 0
     eventloop_p99_lag_ms: int | None = None
     eventloop_median_lag_ms: int | None = None
     window_bound: bool = False
@@ -111,8 +112,8 @@ class Ping:
 
     @property
     def alive(self) -> bool:
-        """The render loop is still turning."""
-        return self.frame_count > 0 and self.last_frame_age_ms >= 0
+        """The gui thread is turning."""
+        return self.heartbeat_count > 0
 
 
 @dataclass
@@ -271,6 +272,7 @@ class Agent:
             frame_count=p["frame_count"],
             last_frame_age_ms=p["last_frame_age_ms"],
             eventloop_max_lag_ms=p["eventloop_max_lag_ms"],
+            heartbeat_count=p.get("heartbeat_count", 0),
             eventloop_p99_lag_ms=p.get("eventloop_p99_lag_ms"),
             eventloop_median_lag_ms=p.get("eventloop_median_lag_ms"),
             window_bound=p.get("window_bound", False),
@@ -283,34 +285,51 @@ class Agent:
         )
 
     def wait_alive(self, timeout: float = 30.0) -> Ping:
-        """Block until the window exists and at least one frame is out."""
+        """Block until the window exists and the gui thread is turning.
+
+        Deliberately does not wait for frames: QQuickWindow only renders
+        when something in the scene is dirty, so frame_count legitimately
+        sits at 0 on a static screen. heartbeat_count is the signal that
+        works regardless.
+        """
         end = time.monotonic() + timeout
         p = self.ping()
         while time.monotonic() < end:
-            if p.window_bound and p.frame_count > 0:
+            if p.window_bound and p.heartbeat_count > 0:
                 return p
             time.sleep(0.05)
             p = self.ping()
         raise AgentTimeout(f"app never became alive: {p}")
 
     def assert_responsive(self, max_frame_age_ms: int = 2000) -> Ping:
-        """The ui thread is not wedged and the render loop is turning.
+        """The ui thread is not wedged.
 
-        This is the check that catches a blocking core.init(), a deadlock,
-        or a synchronous network call on the gui thread.
+        The heartbeat check is the real assertion: it advances on every
+        event loop turn, so a blocking core.init(), a deadlock or a
+        synchronous network call stops it dead. The frame check is
+        secondary and only applies once the app has painted something --
+        on a static screen frames legitimately stop.
         """
         before = self.ping()
         time.sleep(0.25)
         after = self.ping()
-        assert after.frame_count > before.frame_count, (
-            f"render loop stalled: frame_count went "
-            f"{before.frame_count} -> {after.frame_count}"
+
+        assert after.heartbeat_count > before.heartbeat_count, (
+            f"gui thread stopped turning: heartbeat went "
+            f"{before.heartbeat_count} -> {after.heartbeat_count} over 250ms. "
+            "Something is blocking the event loop."
         )
         assert after.window_bound, "no window bound"
-        assert after.last_frame_age_ms < max_frame_age_ms, (
-            f"last frame was {after.last_frame_age_ms}ms ago "
-            f"(limit {max_frame_age_ms}ms); gui thread is likely blocked"
-        )
+
+        if before.frame_count > 0:
+            assert after.frame_count >= before.frame_count, (
+                f"frame counter went backwards: "
+                f"{before.frame_count} -> {after.frame_count}"
+            )
+            assert after.last_frame_age_ms < max_frame_age_ms, (
+                f"last frame was {after.last_frame_age_ms}ms ago "
+                f"(limit {max_frame_age_ms}ms)"
+            )
         return after
 
     def max_lag_since(self, mark: Ping) -> int:
@@ -509,6 +528,288 @@ class Agent:
         except (OSError, AgentTimeout):
             pass
 
+    # ---- recording ----
+
+    def record(self, path: "Path | str", fps: int = 15, max_ms: int = 0,
+               cursor: bool = True) -> "Recording":
+        """Start an in-app recording. Use as a context manager."""
+        return Recording(self, path, fps=fps, max_ms=max_ms, cursor=cursor)
+
+    def record_status(self) -> dict:
+        return self.cmd("record", sub="status")
+
+    def journey(self, path: "Path | str", steps, fps: int = 15,
+                settle_between: bool = True) -> RecordResult:
+        """Record a scripted sequence and return the result.
+
+        `steps` is any iterable of callables taking this agent, so a
+        journey reads like the user story it is:
+
+            agent.journey(out, [
+                lambda a: a.click("phoo.convlist.drawer_button"),
+                lambda a: a.wait_prop(DRAWER, "opened", True, timeout=5),
+                lambda a: a.click("phoo.drawer.settings"),
+            ])
+        """
+        rec = Recording(self, path, fps=fps)
+        rec.start()
+        try:
+            for step in steps:
+                step(self)
+                if settle_between:
+                    self.settle(max_ms=1500)
+        finally:
+            result = rec.stop()
+        return result
+
+
+# ---------------------------------------------------------------------------
+# recording
+# ---------------------------------------------------------------------------
+
+DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+
+@dataclass
+class RecordResult:
+    dir: Path
+    frames: int
+    dropped: int
+    duration_ms: int
+    events: list[dict]
+    meta: dict
+
+    @property
+    def painted_events(self) -> list[dict]:
+        """Inputs that actually caused a repaint.
+
+        An input with painted=False landed on something inert -- the ui
+        genuinely did not respond. That distinction is the most useful
+        thing in the log, so it gets its own accessor.
+        """
+        return [e for e in self.events if e.get("event") == "input" and e.get("painted")]
+
+    @property
+    def inert_events(self) -> list[dict]:
+        return [e for e in self.events if e.get("event") == "input" and not e.get("painted")]
+
+    def latencies(self) -> list[int]:
+        return [e["latency_ms"] for e in self.painted_events if e.get("latency_ms", -1) >= 0]
+
+    def summary(self) -> str:
+        lat = self.latencies()
+        return (
+            f"{self.frames} frames, {self.dropped} dropped, "
+            f"{self.duration_ms}ms, {len(self.painted_events)} painted / "
+            f"{len(self.inert_events)} inert inputs"
+            + (f", latency {lat}" if lat else "")
+        )
+
+
+def encode_video(
+    recording: "Recording | Path | str",
+    out: "Path | str | None" = None,
+    *,
+    fmt: str = "mp4",
+    highlights: bool = True,
+    clock: bool = True,
+    font: str = DEFAULT_FONT,
+    scale: "int | None" = None,
+    crf: int = 20,
+    timeout: int = 300,
+) -> Path:
+    """Turn a recording's frames into a playable video.
+
+    Uses the concat demuxer with a per-frame duration taken from the
+    recording's real timestamps, so a 400ms pause actually shows up as
+    400ms of still video instead of being flattened to a constant frame
+    interval. That is the whole point -- a constant-rate encode would
+    hide exactly the sluggishness you're trying to see.
+    """
+    rec_dir = Path(recording.dir if isinstance(recording, Recording) else recording)
+    meta = json.loads((rec_dir / "meta.json").read_text())
+    frame_log = meta["frame_log"]
+    if not frame_log:
+        raise AgentTimeout(f"recording in {rec_dir} has no frames")
+
+    out = Path(out) if out else rec_dir.with_suffix(f".{ 'gif' if fmt=='gif' else fmt}")
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    # --- concat manifest with real per-frame durations ---
+    concat = rec_dir / "frames.ffconcat"
+    lines = ["ffconcat version 1.0"]
+    n = len(frame_log)
+    for i, entry in enumerate(frame_log):
+        lines.append(f"file '{rec_dir / 'frames' / f'{i:06d}.png'}'")
+        if i + 1 < n:
+            dur = max(frame_log[i + 1][1] - entry[1], 1) / 1000.0
+        else:
+            # last frame: hold it briefly so the final state is visible
+            dur = 0.1
+        lines.append(f"duration {dur:.4f}")
+    # concat needs the last file repeated, or the final duration is ignored
+    lines.append(f"file '{rec_dir / 'frames' / f'{n - 1:06d}.png'}'")
+    concat.write_text("\n".join(lines) + "\n")
+
+    # --- filters ---
+    vf: list[str] = []
+
+    # flash a border across each click->paint window, so you can see the
+    # measured latency in the video rather than having to trust the log
+    if highlights:
+        for e in meta.get("events", []):
+            if e.get("event") != "input" or not e.get("painted"):
+                continue
+            start = int(e.get("frame", 0))
+            end = int(e.get("paint_frame", start))
+            vf.append(
+                f"drawbox=x=0:y=0:w=iw:h=ih:color=orange@0.55:t=5:"
+                f"enable='between(n,{start},{max(end, start)})'"
+            )
+            # and a marker at the input frame itself
+            vf.append(
+                f"drawbox=x=iw-6:y=0:w=6:h=ih:color=red@0.8:t=fill:"
+                f"enable='eq(n,{start})'"
+            )
+
+    if clock and Path(font).exists():
+        # NOTE the escaped colon: inside a filtergraph arg, %{pts\:hms}
+        # must be written with a backslash or ffmpeg refuses the filter.
+        vf.append(
+            f"drawtext=fontfile={font}:text='t\\=%{{pts\\:hms}}':"
+            f"x=8:y=6:fontsize=13:fontcolor=white:box=1:boxcolor=black@0.45:"
+            f"boxborderw=4"
+        )
+
+    if scale:
+        vf.append(f"scale={scale}:-1:flags=lanczos")
+
+    if fmt == "gif":
+        vf.append("fps=12")
+        vf.append("scale=640:-1:flags=lanczos")
+        vf.append("split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse")
+    else:
+        # yuv420p needs even dimensions; force rather than hope
+        vf.append("scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p")
+
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
+           "-i", str(concat)]
+    if vf:
+        cmd += ["-vf", ",".join(vf)]
+    if fmt == "mp4":
+        cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", str(crf),
+                "-movflags", "+faststart"]
+    elif fmt == "webm":
+        cmd += ["-c:v", "libvpx-vp9", "-b:v", "0", "-crf", str(crf)]
+    elif fmt == "apng":
+        cmd += ["-plays", "0"]
+    cmd.append(str(out))
+
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if r.returncode != 0 or not out.exists():
+        raise AgentError("ffmpeg", {"error": r.stderr.strip()[:500], "cmd": " ".join(cmd)})
+    return out
+
+
+def ffprobe(path: "Path | str") -> dict:
+    """Stream facts about an encoded video, for tests to assert on."""
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=nb_frames,width,height,avg_frame_rate,duration",
+         "-of", "json", str(path)],
+        capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        raise AgentError("ffprobe", {"error": r.stderr.strip()})
+    data = json.loads(r.stdout)
+    return data.get("streams", [{}])[0]
+
+
+class Recording:
+    """An in-app recording. Use as a context manager, then encode()."""
+
+    def __init__(
+        self,
+        agent: Agent,
+        path: "Path | str",
+        fps: int = 15,
+        max_ms: int = 0,
+        cursor: bool = True,
+    ):
+        self.agent = agent
+        self.path = Path(path)
+        self.fps = fps
+        self.max_ms = max_ms
+        self.cursor = cursor
+        self.result: RecordResult | None = None
+        self.started = False
+
+    def start(self) -> "Recording":
+        r = self.agent.cmd(
+            "record", sub="start", path=str(self.path), fps=self.fps,
+            max_ms=self.max_ms, cursor=self.cursor,
+        )
+        self.started = True
+        return self
+
+    def stop(self) -> RecordResult:
+        r = self.agent.cmd("record", sub="stop")
+        meta = json.loads((self.path / "meta.json").read_text())
+        self.result = RecordResult(
+            dir=self.path,
+            frames=r.get("frames", 0),
+            dropped=r.get("dropped", 0),
+            duration_ms=r.get("duration_ms", 0),
+            events=meta.get("events", []),
+            meta=meta,
+        )
+        return self.result
+
+    def encode(self, out=None, **kw) -> Path:
+        if self.result is None:
+            self.stop()
+        return encode_video(self.path, out, **kw)
+
+    def __enter__(self) -> "Recording":
+        return self.start()
+
+    def __exit__(self, *exc) -> None:
+        # always drain, even if the body raised, or the writer thread and
+        # the recording directory are left dangling
+        if self.started and self.result is None:
+            try:
+                self.stop()
+            except Exception:
+                pass
+
+
+def x11_record(
+    out: "Path | str",
+    width: int,
+    height: int,
+    x: int = 0,
+    y: int = 0,
+    fps: int = 15,
+    display: str | None = None,
+) -> subprocess.Popen:
+    """Capture the real X server with ffmpeg.
+
+    Unlike the in-process recorder this does not perturb the app at all --
+    it reads what the X server is putting on screen. The cost is that it
+    needs a real display and captures whatever else happens to be visible.
+    """
+    cmd = [
+        "ffmpeg", "-y", "-loglevel", "error",
+        "-f", "x11grab",
+        "-video_size", f"{width}x{height}",
+        "-framerate", str(fps),
+    ]
+    if display:
+        cmd += ["-display", display]
+    else:
+        cmd += ["-i", os.environ.get("DISPLAY", ":0")]
+    cmd += ["-x", str(x), "-y", str(y), str(out)]
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 
 class Phoo:
     """A running phoo under test: process + agent + artifact capture."""
@@ -536,10 +837,22 @@ class Phoo:
         self.extra_env = env or {}
         self.proc: subprocess.Popen | None = None
         self.agent: Agent | None = None
-        self.latency = LatencyReport()
+        # Two buckets, because recording perturbs the very numbers we
+        # measure. `latency` is always the clean one, so tests that pass
+        # `phoo.latency` to click() get untainted timings even when the
+        # test happens to be recording.
+        self.latency_clean = LatencyReport()
+        self.latency_recorded = LatencyReport()
+        self.latency_recording = False
         self.artifacts: list[Path] = []
         self._screenshot_n = 0
         self._stderr_path = self.profile_dir / "phoo-stderr.log"
+
+    @property
+    def latency(self) -> LatencyReport:
+        """Clean input->paint samples. Flipped to the recorded bucket
+        while a recording is in progress."""
+        return self.latency_recorded if self.latency_recording else self.latency_clean
 
     # ---- lifecycle ----
 
@@ -613,8 +926,10 @@ class Phoo:
         d: dict[str, Any] = {
             "profile_dir": str(self.profile_dir),
             "stderr": str(self._stderr_path),
-            "latency": self.latency.format(),
+            "latency_clean": self.latency_clean.format(),
         }
+        if self.latency_recorded.samples:
+            d["latency_under_recording"] = self.latency_recorded.format()
         if self.agent:
             try:
                 d["ping"] = vars(self.agent.ping())
