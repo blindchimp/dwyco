@@ -1,7 +1,5 @@
 set(DWYCO_APP "cdcx")
 set(DWYCOBG 0)
-set(DWYCO_TOXCORE ON)
-add_compile_definitions(DWYCO_TOXCORE)
 add_compile_definitions(DWYCO_APP_NICENAME="CDC-X")
 
 add_compile_definitions(VCCFG_FILE)
