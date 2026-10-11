@@ -2265,6 +2265,9 @@ int DWYCOEXPORT dwyco_tox_is_tox_uid(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg);
 int DWYCOEXPORT dwyco_tox_get_friend_list(DWYCO_LIST *list_out);
 int DWYCOEXPORT dwyco_tox_delete_friend(const char *pubkey, int pubkey_len);
+// same as dwyco_tox_delete_friend, but identifies the friend by their pseudo
+// uid instead of their tox pubkey. use when only a uid is on hand.
+int DWYCOEXPORT dwyco_tox_delete_friend_by_uid(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing);
 int DWYCOEXPORT dwyco_tox_set_name(const char *name, int name_len);
 int DWYCOEXPORT dwyco_tox_set_status_message(const char *msg, int msg_len);

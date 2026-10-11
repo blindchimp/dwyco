@@ -10069,6 +10069,14 @@ dwyco_tox_delete_friend(const char *pubkey, int pubkey_len)
 
 DWYCOEXPORT
 int
+dwyco_tox_delete_friend_by_uid(const char *uid, int len_uid)
+{
+    vc puid(VC_BSTRING, uid, (long)len_uid);
+    return dwyco::tox_bridge_friend_delete_by_uid(puid);
+}
+
+DWYCOEXPORT
+int
 dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing)
 {
     vc puid(VC_BSTRING, pseudo_uid, (long)pseudo_uid_len);

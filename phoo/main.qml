@@ -725,8 +725,17 @@ ApplicationWindow {
         MenuItem {
             text: "Block and Delete user"
             onTriggered: {
-                confirm_block_delete.text = "Delete ALL messages from " + core.uid_to_name(chatbox.to_uid) + " and BLOCK them?"
-                confirm_block_delete.visible = true
+                // a tox friend is handled by the tox block dialog, which
+                // offers the message removal itself. asking here first would
+                // put two confirms in a row.
+                if(!core.is_tox_friend(chatbox.to_uid)) {
+                    confirm_block_delete.text = "Delete ALL messages from " + core.uid_to_name(chatbox.to_uid) + " and BLOCK them?"
+                    confirm_block_delete.visible = true
+                }
+                else {
+                    core.set_ignore(chatbox.to_uid, 1)
+                    stack.pop()
+                }
             }
             MessageYN {
                 id: confirm_block_delete
@@ -735,7 +744,7 @@ ApplicationWindow {
                 text: "Delete ALL messages from user and BLOCK them?"
                 informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                 onYesClicked: {
-                    core.set_ignore(chatbox.to_uid, 1)
+                    core.set_ignore_now(chatbox.to_uid, 1)
                     core.delete_user(chatbox.to_uid)
                     themsglist.reload_model()
                     stack.pop()
@@ -1245,6 +1254,97 @@ ApplicationWindow {
     ProfileUpdateDialog {
         id: profile_update_dialog
         visible: false
+    }
+
+    // raised when the user blocks somebody who is a friend on the running
+    // tox identity. a tox contact has to come off the tox friend list before
+    // the block means anything -- while they're still a friend they keep
+    // reaching us over tox -- so this is not optional. their messages stay
+    // unless the user asks for them to go too.
+    Dialog {
+        id: toxBlockDialog
+        property var pendingUids: []
+        property string who: ""
+
+        anchors.centerIn: Overlay.overlay
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        standardButtons: Dialog.Cancel | Dialog.Yes
+        title: "Ignore Tox contact?"
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: toxBlockDialog.pendingUids.length === 1
+                      ? "In order to ignore " + toxBlockDialog.who + ", they must be removed from your Tox friend list."
+                      : "In order to ignore " + toxBlockDialog.pendingUids.length + " Tox contacts, they must be removed from your Tox friend list."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "Their messages will be kept unless you choose to remove them too."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            CheckBox {
+                id: alsoDeleteMsgs
+                text: "Also remove all messages"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
+                color: "#a00"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                visible: alsoDeleteMsgs.checked
+            }
+        }
+
+        onAccepted: {
+            for(var i = 0; i < pendingUids.length; i++) {
+                var u = pendingUids[i]
+                // set_ignore_now, not set_ignore: the prompt for this very
+                // dialog has already happened, and going back through
+                // set_ignore would raise it again.
+                core.set_ignore_now(u, 1)
+                core.tox_delete_friend_by_uid(u)
+                if(alsoDeleteMsgs.checked) {
+                    core.delete_user(u)
+                    themsglist.reload_model()
+                }
+            }
+            reset()
+        }
+        onRejected: reset()
+
+        function reset() {
+            alsoDeleteMsgs.checked = false
+            pendingUids = []
+            who = ""
+        }
+
+        function askFor(uids) {
+            pendingUids = uids
+            var n = uids.length === 1 ? core.uid_to_name(uids[0]) : ""
+            if(n.length === 0 || n === uids[0])
+                n = "this person"
+            who = n
+            open()
+        }
+    }
+
+    // one connection covers every place a block can start: the chat menus,
+    // the abuse report page, and the conv list's multi-select block.
+    Connections {
+        target: core
+        function onTox_ignore_prompt(uids) {
+            toxBlockDialog.askFor(uids)
+        }
     }
 
     Loader {

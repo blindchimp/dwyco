@@ -192,6 +192,10 @@ int tox_bridge_friend_add(const vc &address, const vc &message);
 int tox_bridge_friend_add_norequest(const vc &pubkey);
 int tox_bridge_friend_delete(uint32_t friend_number);
 int tox_bridge_friend_delete_by_pubkey(const vc &pubkey);
+// delete a friend identified by their pseudo uid (the uid the rest of dwyco
+// knows them by). use this instead of the pubkey variant when all we have is
+// a uid, eg. from the ignore list. 0 if they aren't a friend right now.
+int tox_bridge_friend_delete_by_uid(const vc &pseudo_uid);
 
 // messaging
 int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0, int *tox_error_out = 0);

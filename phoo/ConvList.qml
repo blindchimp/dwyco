@@ -59,7 +59,9 @@ Page {
                 MenuItem {
                     text: "Block"
                     onTriggered: {
-                        ConvListModel.block_all_selected()
+                        // prompts once for any selected tox friends, to take
+                        // them off the tox friend list
+                        ConvListModel.block_all_selected(true)
                         multiselect_mode = false
 
                     }
@@ -68,6 +70,14 @@ Page {
                 MenuItem {
                     text: "Block and delete"
                     onTriggered: {
+                        if(ConvListModel.selected_has_tox_friend()) {
+                            // the tox block dialog covers the whole thing --
+                            // it already offers removing the messages, so
+                            // asking here first would double up the confirms.
+                            ConvListModel.block_all_selected(true)
+                            multiselect_mode = false
+                            return
+                        }
                         confirm_delete.text = "Delete ALL messages from " + ConvListModel.selected_display_names() + " and BLOCK them?"
                         confirm_delete.visible = true
                     }
@@ -77,7 +87,10 @@ Page {
                         text: "Delete ALL messages from selected users?"
                         informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                         onYesClicked: {
-                            ConvListModel.block_all_selected()
+                            // messages are going away in this path, so no
+                            // prompt_tox -- the tox dialog's "also remove
+                            // messages" option would be redundant here
+                            ConvListModel.block_all_selected(false)
                             ConvListModel.obliterate_all_selected()
                             multiselect_mode = false
                             close()

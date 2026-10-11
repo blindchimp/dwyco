@@ -80,10 +80,11 @@ public:
     void obliterate_all_selected();
     void trash_all_selected();
     void pal_all_selected(bool);
-    void block_all_selected();
+    void block_all_selected(bool prompt_tox);
     bool at_least_one_selected();
     int selected_count() const;
     QString selected_display_names(int max_n = 3) const;
+    bool selected_has_tox_friend() const;
 
 signals:
 
@@ -125,10 +126,11 @@ public:
     Q_INVOKABLE void obliterate_all_selected();
     Q_INVOKABLE void trash_all_selected();
     Q_INVOKABLE void pal_all_selected(bool);
-    Q_INVOKABLE void block_all_selected();
+    Q_INVOKABLE void block_all_selected(bool prompt_tox);
     Q_INVOKABLE bool at_least_one_selected();
     Q_INVOKABLE int get_selected_count();
     Q_INVOKABLE QString selected_display_names();
+    Q_INVOKABLE bool selected_has_tox_friend();
     // bogus, fix me XXX this is for reloading when _trash tags change, which
     // should be handled in the client, not so much in the api
     Q_INVOKABLE void reload_convlist();

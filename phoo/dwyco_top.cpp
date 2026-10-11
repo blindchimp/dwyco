@@ -220,6 +220,23 @@ reload_conv_list_since(long time)
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
 
+// free function so convmodel.cpp can reach it without including dwyco_top.h.
+// filters uids down to the ones that are tox friends on the running identity
+// and asks the ui to deal with them. silent no-op when none of them are.
+void
+prompt_tox_ignore(const QStringList& uids)
+{
+    if(!TheDwycoCore)
+        return;
+    QStringList tox_uids;
+    for(int i = 0; i < uids.size(); ++i)
+        if(TheDwycoCore->is_tox_friend(uids[i]))
+            tox_uids.append(uids[i]);
+    if(tox_uids.isEmpty())
+        return;
+    emit TheDwycoCore->tox_ignore_prompt(tox_uids);
+}
+
 static
 void
 reload_ignore_list()
@@ -687,6 +704,12 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         break;
     }
     case DWYCO_SE_TOX_FRIEND_REQUEST:
+        // uid here is the tox pseudo uid (se.cpp), which is the same key the
+        // ignore list uses. an ignored contact's request is auto rejected:
+        // toxcore has no explicit reject, so not accepting it is the
+        // rejection, and we do it silently.
+        if(uid && len_uid > 0 && dwyco_is_ignored(uid, len_uid))
+            break;
         dwyco_tox_accept_friend_request(val, len_val);
         reload_conv_list();
         break;
@@ -2808,6 +2831,25 @@ DwycoCore::set_ignore(QString uid, int is_ignored)
     if(uid == HTheMan)
         return;
 
+    if(is_ignored && is_tox_friend(uid))
+    {
+        // a tox contact has to come off the tox friend list before they can
+        // be ignored -- while they're still a friend they'd keep reaching us
+        // over tox, bypassing the block. defer to the ui, which asks whether
+        // their messages go too, then calls set_ignore_now().
+        emit tox_ignore_prompt(QStringList() << uid);
+        return;
+    }
+    set_ignore_now(uid, is_ignored);
+}
+
+void
+DwycoCore::set_ignore_now(QString uid, int is_ignored)
+{
+    // let's just avoid this from the outset
+    if(uid == HTheMan)
+        return;
+
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     if(is_ignored)
     {
@@ -2816,6 +2858,9 @@ DwycoCore::set_ignore(QString uid, int is_ignored)
     }
     else
     {
+        // note: unignoring is deliberately just dropping the tag. we do not
+        // put back anything the block removed, so someone taken off the tox
+        // friend list stays off it.
         dwyco_unignore(buid.constData(), buid.length());
         TheIgnoreListModel->remove_uid_from_model(buid);
     }
@@ -3089,6 +3134,21 @@ DwycoCore::tox_delete_friend(const QString& pubkey)
     return ret;
 }
 
+int
+DwycoCore::tox_delete_friend_by_uid(const QString& uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    int ret = dwyco_tox_delete_friend_by_uid(buid.constData(), buid.length());
+    if(ret)
+    {
+        // the friend list changed, so both the conv list decorations and the
+        // cached "who is a tox friend" set are stale now.
+        ConvListModel::refresh_tox_friend_cache();
+        reload_conv_list();
+    }
+    return ret;
+}
+
 void
 DwycoCore::tox_set_typing(const QString& uid, int typing)
 {
@@ -3207,6 +3267,32 @@ DwycoCore::is_tox_uid(const QString& uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     return dwyco_tox_is_tox_uid(buid.constData(), buid.length()) != 0;
+}
+
+bool
+DwycoCore::is_tox_friend(const QString& uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.isEmpty())
+        return false;
+    if(!dwyco_tox_is_tox_uid(buid.constData(), buid.length()))
+        return false;
+    // note: ask the live tox friend list rather than dwyco_uid_is_tox_friend().
+    // that one tests the "_tox_friend" crdt tag, which is never removed when a
+    // friend is deleted, so it says yes to people we already dropped.
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(!dwyco_tox_get_friends_model(&fl))
+        return false;
+    simple_scoped qfl(fl);
+    QByteArray want = buid.toHex();
+    for(int i = 0; i < qfl.rows(); ++i)
+    {
+        QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+        // the pseudo uid is the first 10 bytes of the pubkey
+        if(pk.toHex().startsWith(want))
+            return true;
+    }
+    return false;
 }
 
 QString

@@ -20,6 +20,8 @@
 
 void hack_unread_count();
 void reload_conv_list();
+// defined in dwyco_top.cpp. convmodel.cpp can't include dwyco_top.h.
+void prompt_tox_ignore(const QStringList& uids);
 
 ConvListModel *TheConvListModel;
 static QSet<QByteArray> s_tox_friend_prefixes;
@@ -168,6 +170,21 @@ ConvListModel::selected_display_names(int max_n) const
     return out;
 }
 
+bool
+ConvListModel::selected_has_tox_friend() const
+{
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(!c->get_selected())
+            continue;
+        if(is_uid_tox_friend(QByteArray::fromHex(c->get_uid().toLatin1())))
+            return true;
+    }
+    return false;
+}
+
 int
 ConvListModel::selected_count() const
 {
@@ -309,8 +326,9 @@ ConvListModel::pal_all_selected(bool b)
 }
 
 void
-ConvListModel::block_all_selected()
+ConvListModel::block_all_selected(bool prompt_tox)
 {
+    QStringList selected_uids;
     int n = count();
     for(int i = 0; i < n; ++i)
     {
@@ -322,8 +340,15 @@ ConvListModel::block_all_selected()
             dwyco_ignore(buid.constData(), buid.length());
             TheIgnoreListModel->add_uid_to_model(buid);
             c->update_is_blocked(true);
+            selected_uids.append(c->get_uid());
         }
     }
+    // anyone we just blocked who is still a tox friend needs to come off the
+    // tox friend list. one prompt for the whole batch, not one per contact.
+    // callers that are about to delete the messages anyway pass prompt_tox
+    // false, since the dialog's "also remove messages" option would be a lie.
+    if(prompt_tox)
+        ::prompt_tox_ignore(selected_uids);
 }
 
 void
@@ -590,12 +615,12 @@ ConvSortFilterModel::trash_all_selected()
 }
 
 void
-ConvSortFilterModel::block_all_selected()
+ConvSortFilterModel::block_all_selected(bool prompt_tox)
 {
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->block_all_selected();
+    m->block_all_selected(prompt_tox);
 
 }
 
@@ -626,6 +651,15 @@ ConvSortFilterModel::selected_display_names()
     if(!m)
         ::abort();
     return m->selected_display_names();
+}
+
+bool
+ConvSortFilterModel::selected_has_tox_friend()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_has_tox_friend();
 }
 
 int

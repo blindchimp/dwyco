@@ -18,6 +18,7 @@
 #include <QThread>
 #include <QEvent>
 #include <QSet>
+#include <QStringList>
 #include <QTimer>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
@@ -245,6 +246,10 @@ public:
     Q_INVOKABLE int get_pal(QString uid);
 
     Q_INVOKABLE void set_ignore(QString uid, int is_ignored);
+    // set_ignore() with no tox friend-list prompt. use this only from ui
+    // that has already dealt with the prompt itself, eg. the tox block
+    // dialog, or where the caller knows the target isn't a tox friend.
+    Q_INVOKABLE void set_ignore_now(QString uid, int is_ignored);
     Q_INVOKABLE int get_ignore(QString uid);
     Q_INVOKABLE void clear_ignore_list();
 
@@ -362,6 +367,7 @@ public:
     Q_INVOKABLE void disable_tox();
     Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
     Q_INVOKABLE int tox_delete_friend(const QString& pubkey);
+    Q_INVOKABLE int tox_delete_friend_by_uid(const QString& uid);
     Q_INVOKABLE void tox_set_typing(const QString& uid, int typing);
     Q_INVOKABLE int tox_set_name(const QString& name);
     Q_INVOKABLE int tox_set_status_message(const QString& msg);
@@ -372,6 +378,11 @@ public:
     Q_INVOKABLE QString tox_get_name();
     Q_INVOKABLE QString tox_get_status_message();
     Q_INVOKABLE bool is_tox_uid(const QString& uid);
+    // true when uid is currently a friend on the running tox identity.
+    // unlike dwyco_uid_is_tox_friend() (which tests the "_tox_friend" crdt
+    // tag) this asks the live friend list, so it goes false once they have
+    // actually been removed from tox.
+    Q_INVOKABLE bool is_tox_friend(const QString& uid);
     Q_INVOKABLE QString tox_get_self_public_key();
     Q_INVOKABLE QString tox_get_self_address();
     Q_INVOKABLE bool tox_needs_password();
@@ -438,6 +449,12 @@ signals:
     void profile_update(int success);
     void pal_event(const QString& uid);
     void ignore_event(QString uid);
+    // emitted instead of ignoring outright when the target is a friend on
+    // the running tox identity. a tox contact has to come off the tox
+    // friend list before they can be ignored, so the ui asks what to do
+    // and then calls set_ignore_now()/tox_delete_friend_by_uid().
+    // uids are hex uid's, one entry per contact to remove.
+    void tox_ignore_prompt(QStringList uids);
     void video_display(int ui_id, int frame_number, QString img_path);
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
