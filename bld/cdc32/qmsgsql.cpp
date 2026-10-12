@@ -1159,7 +1159,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
             // table at some point.
             vals.append(1);
             vals.append(huid);
-            vc user_exists = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", to_hex(vals[12]));
+            vc user_exists = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", vals[12]);
             DwString sargs = make_sql_args(vals.num_elems());
             VCArglist a;
             a.set_size(vals.num_elems() + 1);
@@ -1174,7 +1174,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
             uid = vals[12];
             mid = vals[1];
             if(res.num_elems() > 0 && user_exists.num_elems() == 0)
-                se_emit(SE_USER_ADD, uid);
+                se_emit(SE_USER_ADD, from_hex(uid));
         }
         else if(op == vc("d"))
         {
