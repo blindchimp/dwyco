@@ -154,8 +154,14 @@ vc tox_bridge_list_saves();
 //   1: differences - vector of rows, each [kind, who, detail]. empty when the
 //                    state is SAME. kinds are:
 //                      friend_added    who=friend pubkey hex, detail=alias
+//                                         from the save on disk. the friend is
+//                                         here and NOT in the published copy
 //                      friend_removed  who=friend pubkey hex, detail=alias
-//                      friend_renamed  who=friend pubkey hex, detail=new alias
+//                                         from the published copy. the friend is
+//                                         there and NOT in the save on disk
+//                      friend_renamed  who=friend pubkey hex, detail=this
+//                                         device's alias (both sides are
+//                                         present, only the aliases differ)
 //                      name_changed    detail=this device's name
 //                      status_changed  detail=this device's status message
 //                      nospam_changed  detail=this device's nospam

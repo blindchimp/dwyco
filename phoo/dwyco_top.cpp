@@ -3693,8 +3693,13 @@ DwycoCore::tox_compare_saves()
         d["kind"] = QString::fromLatin1(sc.get<QByteArray>(0, c_kind));
         d["who"] = QString::fromLatin1(sc.get<QByteArray>(0, c_who));
         // detail is raw bytes for some kinds (a name or an alias can hold any
-        // bytes), so hand it over as a QByteArray and let qml decode it.
-        d["detail"] = sc.get<QByteArray>(0, c_detail);
+        // bytes), so decode it here rather than handing qml a byte array.
+        // qt 6's qml engine has no String.fromUtf8, so a byte array arriving in
+        // qml throws and silently blanks every line that quotes a name -- the
+        // headline still renders because nothing on that path decodes, which
+        // makes it look like the text is just empty rather than broken. invalid
+        // utf-8 decodes to replacement characters, which is fine for display.
+        d["detail"] = QString::fromUtf8(sc.get<QByteArray>(0, c_detail));
         diffs.append(d);
     }
     m["differences"] = diffs;

@@ -115,10 +115,11 @@ Page {
         return m + (m === 1 ? " min ago" : " min ago")
     }
 
-    // the comparison itself (state code, wording, per-difference sentences) lives
-    // on tox_state in main.qml, because the tox page shows it too and the two
-    // must not disagree. read tox_state.diffState / diffHeadline() /
-    // diffLine() there.
+    // the comparison itself (state code, wording, per-difference sentences, the
+    // plain-language summary, the bullet cap) lives on tox_state in main.qml,
+    // because the tox page shows it too and the two must not disagree. read
+    // tox_state.diffState / diffHeadline() / diffSummary() / diffLine() /
+    // diffOverflow() there.
 
     function refreshAllSaves() {
         allSavesList = core.tox_list_all_saves()
@@ -708,13 +709,29 @@ function doUnshare(row) {
                             }
                         }
 
-                        // the differences, one per line. only shown when
-                        // there are any, since the headline already says
-                        // "same" when there aren't.
+                        // the plain-language summary of the difference, so the
+                        // user can tell at a glance whether this is 1 contact
+                        // or 40 without counting the bullets under it.
+                        Label {
+                            visible: text !== ""
+                            Layout.fillWidth: true
+                            Layout.leftMargin: mm(2.5)
+                            text: tox_state.diffSummary()
+                            font.pixelSize: dp(10)
+                            color: secondary_text
+                            wrapMode: Text.WordWrap
+                        }
+
+                        // the differences, one per line. capped per-delegate rather
+                        // than by slicing the model -- see diffBulletCap on
+                        // tox_state. invisible rows cost a ColumnLayout no
+                        // space, so the tail drops out cleanly.
                         Repeater {
                             model: tox_state.differences
                             delegate: Label {
                                 required property var modelData
+                                required property int index
+                                visible: index < tox_state.diffBulletCap
                                 Layout.fillWidth: true
                                 Layout.leftMargin: mm(2.5)
                                 text: "• " + tox_state.diffLine(modelData)
@@ -722,6 +739,16 @@ function doUnshare(row) {
                                 color: secondary_text
                                 wrapMode: Text.WordWrap
                             }
+                        }
+
+                        Label {
+                            visible: tox_state.diffOverflow !== ""
+                            Layout.fillWidth: true
+                            Layout.leftMargin: mm(2.5)
+                            text: tox_state.diffOverflow
+                            font.pixelSize: dp(10)
+                            color: secondary_text
+                            wrapMode: Text.WordWrap
                         }
 
                         Label {
@@ -1049,7 +1076,7 @@ function doUnshare(row) {
                                     // another shared identity.
                                     Rectangle {
                                         visible: modelData.is_current === true
-                                                 && tox_state.diffState === 1
+                                                 && tox_state.diffState === tox_state.diffDifferent
                                         Layout.preferredWidth: newerRow.implicitWidth + mm(1.5)
                                         Layout.preferredHeight: mm(4.5)
                                         radius: mm(2.25)

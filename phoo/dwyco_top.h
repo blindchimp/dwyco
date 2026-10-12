@@ -414,7 +414,11 @@ public:
 // what actually differs between the save on disk and the group's published
     // copy of it. keys: state (int, TOX_DIFF_*), mid, differences (a list of
     // {kind, who, detail}). empty map when there's no local save.
-// advisory only -- nothing is adopted or written.
+    // advisory only -- nothing is adopted or written.
+    //
+    // all three fields cross as QString, never as QByteArray: qt 6's qml engine
+    // has no way to decode a byte array, so handing qml raw bytes blanks every
+    // label that quotes one instead of failing loudly.
 Q_INVOKABLE QVariantMap tox_compare_saves();
     // hex pubkey of the save on disk, or "" when there is none. peeks at the
     // file so it answers while signed out, falling back to the running

@@ -477,10 +477,25 @@ Page {
                             }
                         }
 
+                        // the plain-language summary, same wording as the
+                        // tox save page. visible only when there are real
+                        // differences to characterize.
+                        Label {
+                            visible: text !== ""
+                            Layout.fillWidth: true
+                            Layout.leftMargin: mm(2.5)
+                            text: tox_state.diffSummary()
+                            font.pixelSize: dp(10)
+                            color: "#666"
+                            wrapMode: Text.WordWrap
+                        }
+
                         Repeater {
                             model: tox_state.differences
                             delegate: Label {
                                 required property var modelData
+                                required property int index
+                                visible: index < tox_state.diffBulletCap
                                 Layout.fillWidth: true
                                 Layout.leftMargin: mm(2.5)
                                 text: "• " + tox_state.diffLine(modelData)
@@ -491,7 +506,20 @@ Page {
                         }
 
                         Label {
-                            visible: tox_state.differences.length === 0
+                            visible: tox_state.diffOverflow !== ""
+                            Layout.fillWidth: true
+                            Layout.leftMargin: mm(2.5)
+                            text: tox_state.diffOverflow
+                            font.pixelSize: dp(10)
+                            color: "#666"
+                            wrapMode: Text.WordWrap
+                        }
+
+                        // the detail line is page-neutral, so it shows here
+                        // unconditionally too -- it used to be hidden whenever
+                        // there were differences, which made this panel and the
+                        // tox save panel disagree about what they say.
+                        Label {
                             Layout.fillWidth: true
                             Layout.leftMargin: mm(2.5)
                             text: tox_state.diffDetail(tox_state.diffState)

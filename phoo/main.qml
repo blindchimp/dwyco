@@ -193,25 +193,29 @@ ApplicationWindow {
         // lives here rather than on either page because both the tox page and
         // the tox save page show it, and they must never disagree.
         //
-        // the codes mirror TOX_DIFF_* in bld/cdc32/toxbridge.h:
-        //   0 same, 1 different, 2 not shared, 3 unreadable, 4 different id
+        // named so the switches below don't read as a table of magic numbers.
+        // these mirror TOX_DIFF_* in bld/cdc32/toxbridge.h and must stay in step
+        // with it.
+        readonly property int diffSame: 0
+        readonly property int diffDifferent: 1
+        readonly property int diffNotShared: 2
+        readonly property int diffUnreadable: 3
+        readonly property int diffDifferentId: 4
+
         property var diff: ({})
         readonly property int diffState:
-            diff.state !== undefined ? Number(diff.state) : 0
+            diff.state !== undefined ? Number(diff.state) : diffSame
         readonly property var differences:
             diff.differences !== undefined ? diff.differences : []
 
-        // the backend hands names and aliases over as raw bytes, since a tox
-        // name can hold anything.
+        // the backend decodes names and aliases to QString before handing them over,
+        // so this arrives as a plain string already. the byte branches that used
+        // to be here called String.fromUtf8(), which is a qt 4/qtscript thing
+        // that does not exist in qt 6 -- it threw a TypeError and blanked every
+        // diff line that quoted a name.
         function asText(v) {
             if (v === undefined || v === null)
                 return ""
-            if (v instanceof ArrayBuffer)
-                return String.fromUtf8(new Uint8Array(v))
-            if (v instanceof Uint8Array)
-                return String.fromUtf8(v)
-            if (v instanceof Array)
-                return String.fromUtf8(new Uint8Array(v))
             return String(v)
         }
 
@@ -229,73 +233,178 @@ ApplicationWindow {
 
         // one sentence per difference, in the order the backend reports them
         // (profile fields first, then the friend list).
+        //
+        // which side of the comparison a friend difference points at is decided
+        // by the merge walk in tox_bridge_compare_saves():
+        //   friend_added   -- in the save on disk, missing from the shared copy,
+        //                     and detail is the alias from the save on disk
+        //   friend_removed -- in the shared copy, missing from the save on disk,
+        //                     and detail is the alias from the shared copy
+        // so each of the three below names the side its own label came from.
         function diffLine(d) {
             switch (d.kind) {
             case "friend_added":
-                return friendLabel(d) + " is on your other devices, not here"
+                return friendLabel(d) + " is on this device, not on your other devices"
             case "friend_removed":
-                return friendLabel(d) + " is here, not on your other devices"
+                return friendLabel(d) + " is on your other devices, not on this device"
             case "friend_renamed":
-                return friendLabel(d) + " is named differently on your other devices"
+                // detail is this device's alias, so quote it as ours rather
+                // than letting the name read as the one your other devices use.
+                return "named \"" + friendLabel(d) + "\" on this device, "
+                       + "differently on your other devices"
             case "name_changed":
-                return "profile name is \"" + asText(d.detail) + "\" here"
+                // detail is this device's value. say whose it is, since only
+                // one side is being quoted.
+                return "this device's profile name is \"" + asText(d.detail) + "\""
             case "status_changed":
-                return "status message is \"" + asText(d.detail) + "\" here"
+                return "this device's status message is \"" + asText(d.detail) + "\""
             case "nospam_changed":
-                return "your tox-id number is different here"
+                // the backend reports nospam as a decimal string while the
+                // tox-id on screen is hex, so naming the number would invite a
+                // wrong comparison. just say which side it differs on.
+                return "the number at the end of your tox-id is different "
+                       + "on this device"
             case "password_changed":
                 return asText(d.detail) === "1"
-                       ? "this device's save is password protected, theirs isn't"
-                       : "their save is password protected, this device's isn't"
+                       ? "this device's save is password protected, "
+                         + "your other devices' is not"
+                       : "your other devices' save is password protected, "
+                         + "this device's is not"
             }
             return "something differs"
         }
 
-        function diffLines() {
-            var out = []
+        // the bullet list is capped, so a big friend diff doesn't push the save
+        // page around. the summary below carries the counts, so the tail lines
+        // it stands in for are the ones that repeat the least.
+        //
+        // the repeaters bind straight to `differences` and drop the tail with
+        // `visible: index < diffBulletCap` in the delegate. a sliced array
+        // handed to a repeater's model would work too, but an invisible
+        // delegate is cheaper to reason about and costs the ColumnLayout no
+        // space either way.
+        readonly property int diffBulletCap: 5
+        readonly property int diffHidden:
+            Math.max(0, differences.length - diffBulletCap)
+        readonly property string diffOverflow:
+            diffHidden > 0
+            ? "• and " + diffHidden + " more difference"
+              + (diffHidden === 1 ? "" : "s")
+            : ""
+
+        // tally the differences by kind. a plain counter rather than anything
+        // cleverer, so it can't drift out of step with the bullets above.
+        function diffCounts() {
+            var c = { added: 0, removed: 0, renamed: 0, name: 0,
+                      status: 0, nospam: 0, password: 0 }
             for (var i = 0; i < differences.length; ++i)
-                out.push(diffLine(differences[i]))
-            return out
+            {
+                switch (differences[i].kind) {
+                case "friend_added":     ++c.added;    break
+                case "friend_removed":   ++c.removed;  break
+                case "friend_renamed":   ++c.renamed;  break
+                case "name_changed":     ++c.name;     break
+                case "status_changed":   ++c.status;   break
+                case "nospam_changed":   ++c.nospam;   break
+                case "password_changed": ++c.password; break
+                }
+            }
+            return c
+        }
+
+        function countPhrase(n, one, many) {
+            return n + " " + (n === 1 ? one : many)
+        }
+
+        // one plain sentence saying how the two copies differ in size and kind,
+        // above the per-item bullets. "2 contacts only on this device, 1 only
+        // on your other devices" tells the user more at a glance than a wall of
+        // bullets does, and costs nothing when they only wanted the count.
+        //
+        // keys off the counts, not off the state code. asking diffState for
+        // permission meant the summary silently vanished in every state except
+        // DIFFERENT, which is exactly the state where the headline already
+        // says there IS a difference and the bullets below are all the detail
+        // the user gets. counting the differences directly answers the same
+        // question without depending on the backend labelling the state.
+        function diffSummary() {
+            var c = diffCounts()
+            var bits = []
+            if (c.added > 0)
+                bits.push(countPhrase(c.added, "contact", "contacts")
+                           + " only on this device")
+            if (c.removed > 0)
+                bits.push(countPhrase(c.removed, "contact", "contacts")
+                           + " only on your other devices")
+            if (c.renamed > 0)
+                bits.push(countPhrase(c.renamed, "contact", "contacts")
+                           + " named differently")
+            if (c.name > 0)
+                bits.push("different profile name")
+            if (c.status > 0)
+                bits.push("different status message")
+            if (c.nospam > 0)
+                bits.push("different tox-id number")
+            if (c.password > 0)
+                bits.push("different password protection")
+            return bits.join(", ")
         }
 
         // headline above the list
+        //
+        // "your other devices" is the shared copy, and is used consistently
+        // across all three functions. say "your devices" instead and it reads
+        // as though it includes this one, which makes "this device and your
+        // devices match" close to meaningless.
         function diffHeadline(s) {
             switch (s) {
-            case 0: return "This device and your devices have the same Tox save"
-            case 1: return "Your Tox save is different on your other devices"
-            case 2: return "Not shared with your devices yet"
-            case 3: return "Can't compare with your devices"
-            case 4: return "Can't compare with your devices"
+            case diffSame:
+                return "This device's Tox save matches the one on your other devices"
+            case diffDifferent:
+                return "Your Tox save is different on your other devices"
+            case diffNotShared:
+                return "Not shared with your other devices yet"
+            // these two are unrelated causes, so they get their own headlines
+            // rather than sharing one and leaving the detail to explain which
+            // happened.
+            case diffUnreadable:
+                return "Can't compare — this Tox save is password protected"
+            case diffDifferentId:
+                return "Can't compare — the shared copy is a different tox-id"
             }
             return ""
         }
 
+        // one sentence of consequence under the list. deliberately doesn't name
+        // the copy buttons: this renders on both the tox page and the tox save
+        // page, and only the latter has those buttons. the tox save page spells
+        // out what each button does in copyDirectionNote() below.
         function diffDetail(s) {
             switch (s) {
-            case 0:
-                return "Friend list, name, status and tox-id all match."
-            case 1:
-                return "Nothing changes on its own. Share this device's copy, or "
-                       + "use the copy from your devices."
-            case 2:
+            case diffSame:
+                return "Friend list, name, status, tox-id and password "
+                       + "protection all match."
+            case diffDifferent:
+                return "Nothing syncs by itself — you choose which copy wins."
+            case diffNotShared:
                 return "Only this device has a copy of this Tox save."
-            case 3:
-                return "This Tox save is password protected. Sign in to compare it "
-                       + "with the copy on your devices."
-            case 4:
-                return "The shared copy belongs to a different tox-id, so it can't "
-                       + "be compared with the save on this device."
+            case diffUnreadable:
+                return "Sign in to compare it with the copy on your "
+                       + "other devices."
+            case diffDifferentId:
+                return "The shared copy belongs to a different tox-id, so it "
+                       + "can't be compared with the save on this device."
             }
             return ""
         }
 
         function diffColor(s) {
             switch (s) {
-            case 0: return "#3a8"  // same
-            case 1: return "#c80"  // real differences
-            case 2: return "#999"  // not shared
-            case 3: return "#999"  // can't compare
-            case 4: return "#999"  // can't compare
+            case diffSame: return "#3a8"  // same
+            case diffDifferent: return "#c80"  // real differences
+            case diffNotShared: return "#999"  // not shared
+            case diffUnreadable: return "#999"  // can't compare
+            case diffDifferentId: return "#999"  // can't compare
             }
             return "transparent"
         }
