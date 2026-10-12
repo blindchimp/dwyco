@@ -27,6 +27,11 @@ Page {
     //property alias pick_pic: picture_picker.visible
     property bool android_hack: false
     property string android_img_filename
+    // set when the user picked a non-picture file with the android
+    // document picker. unlike pictures, there's nothing to preview, so it
+    // goes straight out.
+    property bool android_file_hack: false
+    property string android_file_filename
     property int ind_typing: 0
 
     function utf8len(s) {
@@ -473,6 +478,21 @@ Page {
                                 }
                             }
                         }
+                        MenuItem {
+                            text: "Send file..."
+                            onTriggered: {
+                                if(Qt.platform.os === "android") {
+                                    applicationWindow1.android_img_pick_hack = 0
+                                    applicationWindow1.android_img_pick_hack = 3
+                                    if(notificationClient.open_file() === 0) {
+                                        failed_msg.text = "Android blocked access to files."
+                                        animateOpacity.start()
+                                    }
+                                } else {
+                                    file_picker.visible = true
+                                }
+                            }
+                        }
                         Repeater {
                             model: core.is_tox_uid(to_uid) ? 0 : 1
                             MenuItem {
@@ -666,6 +686,19 @@ Page {
         }
     }
 
+    onAndroid_file_hackChanged: {
+        if(android_file_hack) {
+            console.log(android_file_filename)
+            if(android_file_filename.length > 0) {
+                core.simple_send_file(to_uid, "", android_file_filename)
+                themsglist.reload_model()
+                listView1.positionViewAtBeginning()
+            }
+            android_file_filename = ""
+            android_file_hack = false
+        }
+    }
+
     onTo_uidChanged: {
 
         /* Save the current draft for the old UID */
@@ -705,6 +738,7 @@ Page {
         sourceComponent: FileDialog {
 
             title: "Pick a picture"
+            nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp *.gif *.ppm *.pgm *.pbm *.ico *.tif *.tiff *.webp *.xbm *.xpm *.svg)", "All files (*)"]
             currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
             onAccepted: {
                 console.log("PICK ", selectedFile)
@@ -715,6 +749,31 @@ Page {
                 stack.push(chat_pic_preview)
             }
             onRejected: {picture_picker.visible = false}
+            Component.onCompleted: {visible = true}
+        }
+    }
+
+    Loader {
+        id: file_picker
+        active: visible
+        visible: false
+
+        sourceComponent: FileDialog {
+            // note: this one is deliberately permissive, it's for sending
+            // arbitrary files, not just pictures.
+            title: "Pick a file"
+            nameFilters: ["All files (*)"]
+            currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+            onAccepted: {
+                var p = core.url_to_filename(selectedFile)
+                if(p === "")
+                    return
+                core.simple_send_file(to_uid, "", p)
+                themsglist.reload_model()
+                listView1.positionViewAtBeginning()
+                file_picker.visible = false
+            }
+            onRejected: {file_picker.visible = false}
             Component.onCompleted: {visible = true}
         }
     }
@@ -812,6 +871,10 @@ Page {
 
         Rectangle {
             id: ditem
+
+            // an attachment we know how to render a preview for is not a
+            // "plain file", and gets a preview image instead of a FileChip.
+            property bool is_plain_file: IS_FILE === 1 && IS_IMAGE_FILE === 0
 
             radius: 6
             height: clayout.height + 20
@@ -961,7 +1024,7 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {HAS_ATTACHMENT}
+                    visible: {HAS_ATTACHMENT && !is_plain_file}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
@@ -987,6 +1050,16 @@ Page {
                         }
                     }
 
+                }
+
+                FileChip {
+                    id: plain_file
+                    visible: is_plain_file
+                    fileName: FILE_NAME
+                    fileSize: FILE_SIZE
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: (listView1.width * 3) / 4
+                    Layout.alignment: Qt.AlignHCenter
                 }
 
 
@@ -1083,8 +1156,11 @@ Page {
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
+                            themsgview.is_plain_file = model.IS_FILE === 1 && model.IS_IMAGE_FILE === 0
+                            themsgview.file_name = model.FILE_NAME
+                            themsgview.file_size = model.FILE_SIZE
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = (model.IS_IMAGE_FILE === 0 || model.PREVIEW_FILENAME === "") ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
 
                                 // PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
                                 stack.push(themsgview)

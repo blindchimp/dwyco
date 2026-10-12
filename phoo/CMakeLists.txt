@@ -211,6 +211,7 @@ qt_add_qml_module(phoo
         DSettings.qml
         FName.qml
         MsgReport.qml
+        FileChip.qml
         Warning.qml
         TextFieldX.qml
         VidCamPreview.qml

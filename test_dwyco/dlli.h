@@ -1494,6 +1494,12 @@ dwyco_copy_out_file_zap_buf2(const char *msg_id, const char **buf_out, int *buf_
 int DWYCOEXPORT
 dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
 
+int DWYCOEXPORT
+dwyco_file_zap_size(const char *msg_id, long *size_out);
+
+int DWYCOEXPORT
+dwyco_qd_file_zap_size(DWYCO_SAVED_MSG_LIST m, long *size_out);
+
 int DWYCOEXPORT dwyco_is_file_zap(int compid);
 
 int DWYCOEXPORT dwyco_is_forward_composition(int compid);

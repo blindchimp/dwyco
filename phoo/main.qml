@@ -503,6 +503,7 @@ ApplicationWindow {
 
     property int profile_bootstrapped : 0
     property bool server_account_created: false
+    // 1 = profile picture, 2 = chat picture, 3 = chat arbitrary file
     property int android_img_pick_hack: 0
 
     // this is set to true if the distributor requires user-generated content
@@ -1764,6 +1765,12 @@ ApplicationWindow {
                 chatbox.android_img_filename = fn
                 chatbox.android_hack = true
 
+            }
+            else if(applicationWindow1.android_img_pick_hack === 3)
+            {
+                console.log("file hack")
+                chatbox.android_file_filename = fn
+                chatbox.android_file_hack = true
             }
         }
 

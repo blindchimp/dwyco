@@ -338,6 +338,7 @@ public:
 
     Q_INVOKABLE int send_report(QString uid);
     Q_INVOKABLE QString export_attachment(QString mid);
+    Q_INVOKABLE int export_attachment_as(QString mid, QString dst_filename);
     Q_INVOKABLE QString export_conversation(QString uid, qint64 unix_time);
 #if 0
     // these are part of one-time migration

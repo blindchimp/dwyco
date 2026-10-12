@@ -5287,6 +5287,32 @@ dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
     return 1;
 }
 
+// note: the size of the local copy of a queued (not yet sent) file
+// attachment. this is just the info that is handy for displaying a
+// "this is a file, this is how big it is" placeholder. returns 0 and
+// sets size_out to 0 if we can't figure it out.
+DWYCOEXPORT
+int
+dwyco_qd_file_zap_size(DWYCO_SAVED_MSG_LIST m, long *size_out)
+{
+    if(size_out == 0)
+        return 0;
+    *size_out = 0;
+    vc& v = *(vc *)m;
+    vc body = v[0];
+    vc attachment = body[QM_BODY_ATTACHMENT];
+    if(attachment.is_nil())
+        return 0;
+    DwString a((const char *)attachment, 0, attachment.len());
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
+        return 0;
+    struct stat s;
+    if(stat(newfn(attachment).c_str(), &s) == -1)
+        return 0;
+    *size_out = (long)s.st_size;
+    return 1;
+}
+
 DWYCOEXPORT
 int
 dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
@@ -5344,6 +5370,50 @@ dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
         //DeleteFile(dst_filename);
         return 0;
     }
+    return 1;
+}
+
+// note: the size of the local copy of a saved message's file attachment.
+// this is just the info that is handy for displaying a "this is a file,
+// this is how big it is" placeholder. returns 0 and sets size_out to 0
+// if we can't figure it out.
+DWYCOEXPORT
+int
+dwyco_file_zap_size(const char *msg_id, long *size_out)
+{
+    if(size_out == 0)
+        return 0;
+    *size_out = 0;
+    vc body;
+    vc attachment;
+    vc from;
+    vc iuid;
+
+    body = direct_to_body(msg_id, iuid);
+    if(body.is_nil())
+        return 0;
+
+    from = body[QM_BODY_FROM];
+    attachment = body[QM_BODY_ATTACHMENT];
+    if(attachment.is_nil())
+        return 0;
+    DwString a((const char *)attachment, 0, attachment.len());
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
+        return 0;
+
+    DwString s2;
+    if(body[QM_BODY_SENT].is_nil())
+        s2 = (const char *)to_hex(from);
+    else
+        s2 = (const char *)to_hex(iuid);
+
+    s2 += ".usr" DIRSEPSTR;
+    s2 += attachment;
+
+    struct stat s;
+    if(stat(newfn(s2).c_str(), &s) == -1)
+        return 0;
+    *size_out = (long)s.st_size;
     return 1;
 }
 

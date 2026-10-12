@@ -4565,6 +4565,29 @@ DwycoCore::export_attachment(QString mid)
 }
 #endif
 
+// save an attachment to a location the user picked with a save dialog.
+// unlike export_attachment(), we don't second-guess the name, because the
+// user chose both the name and where it goes.
+int
+DwycoCore::export_attachment_as(QString mid, QString dst_filename)
+{
+    QByteArray rmid = mid.toLatin1();
+    if(dst_filename.isEmpty())
+        return 0;
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+        return 0;
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+        return 0;
+    QByteArray lfn = QFile::encodeName(dst_filename);
+    if(lfn.length() == 0)
+        return 0;
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+        return 0;
+    return 1;
+}
+
 // display names come from the network, so they can be arbitrarily long
 // and can contain newlines (which would break the one-message-per-line
 // format). squash whitespace and clip to something reasonable.

@@ -63,6 +63,18 @@ is_supported_image_ext(const QByteArray& ext)
     return Supported_Image_Exts.contains(ext);
 }
 
+int
+msg_file_is_image(const QByteArray& user_fn)
+{
+    // note: the extension is whatever comes after the last "." in the name,
+    // which is the same thing preview_saved_msg derives.
+    int idx = user_fn.lastIndexOf(".");
+    if(idx == -1)
+        return 0;
+    QByteArray ext = user_fn.mid(idx);
+    return is_supported_image_ext(ext.toLower());
+}
+
 static
 int
 has_cached_preview(const QByteArray& cached_name, QByteArray& preview_fn)
@@ -260,4 +272,56 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
     dwyco_delete_zap_view(viewid);
 
     return ret;
+}
+
+int
+msg_body_file_info(DWYCO_SAVED_MSG_LIST qsm, QByteArray& user_fn, qint64& size, int& is_image)
+{
+    user_fn = "";
+    size = 0;
+    is_image = 0;
+
+    // note: the caller owns the list, so just wrap it, don't take ownership.
+    dwyco_list sm(qsm);
+
+    if(sm.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+        return 0;
+    if(sm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return 0;
+
+    user_fn = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    is_image = msg_file_is_image(user_fn);
+
+    long sz = 0;
+    if(dwyco_qd_file_zap_size(qsm, &sz) && sz > 0)
+        size = (qint64)sz;
+
+    return 1;
+}
+
+int
+msg_file_info(const QByteArray& mid, QByteArray& user_fn, qint64& size, int& is_image)
+{
+    user_fn = "";
+    size = 0;
+    is_image = 0;
+
+    DWYCO_SAVED_MSG_LIST qsm;
+    if(dwyco_get_saved_message3(&qsm, mid.constData()) != DWYCO_GSM_SUCCESS)
+        return 0;
+    simple_scoped sm(qsm);
+
+    if(sm.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+        return 0;
+    if(sm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return 0;
+
+    user_fn = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    is_image = msg_file_is_image(user_fn);
+
+    long sz = 0;
+    if(dwyco_file_zap_size(mid.constData(), &sz) && sz > 0)
+        size = (qint64)sz;
+
+    return 1;
 }

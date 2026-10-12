@@ -601,6 +601,14 @@ private File createImageFile() throws IOException {
         m_instance.dispatchOpenGallery();
     }
 
+    // like openAnImage(), but for sending arbitrary (non-picture) files.
+    // the result comes back through the same onActivityResult path, since
+    // all we do with it is hand the path to the native side.
+    public static void openAFile()
+    {
+        m_instance.dispatchOpenFiles();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
@@ -649,6 +657,15 @@ private File createImageFile() throws IOException {
     {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
+        startActivityForResult(intent, REQUEST_OPEN_IMAGE);
+    }
+
+    private void dispatchOpenFiles()
+    {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] { "*/*" });
         startActivityForResult(intent, REQUEST_OPEN_IMAGE);
     }
 

@@ -53,6 +53,9 @@ public:
         ASSOC_UID, // who the message is from (or to, if sent msg)
         IS_FAILED,
         TOX_MID_NAME, // display name of the tox account that handled this message
+        FILE_NAME, // original filename of a user file attachment, "" otherwise
+        FILE_SIZE, // size in bytes of the local copy of a user file attachment, 0 if unknown
+        IS_IMAGE_FILE, // 1 if FILE_NAME is a file type we know how to make a preview for
     };
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
@@ -96,6 +99,7 @@ private:
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;
+    int file_info(int row, QByteArray& user_fn, qint64& size, int& is_image) const;
 };
 
 extern msglist_raw *mlm;
