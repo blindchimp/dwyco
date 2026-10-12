@@ -23,7 +23,7 @@ Rectangle {
 
         FolderListModel {
             id: folderModel
-            nameFilters: ["*.ppm", "*.jpg"]
+            nameFilters: ["*.ppm", "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.pgm", "*.pbm", "*.ico", "*.tif", "*.tiff", "*.webp", "*.xbm", "*.xpm", "*.svg"]
         }
 
         Component {

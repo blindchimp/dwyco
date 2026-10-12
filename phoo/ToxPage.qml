@@ -854,7 +854,7 @@ Page {
     FileDialog {
         id: avatarFileDialog
         title: "Choose a profile picture"
-        nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp *.gif)", "All files (*)"]
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp *.gif *.ppm *.pgm *.pbm *.ico *.tif *.tiff *.webp *.xbm *.xpm *.svg)", "All files (*)"]
         currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
         onAccepted: {
             var p = core.url_to_filename(selectedFile)

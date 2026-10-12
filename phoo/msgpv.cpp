@@ -11,8 +11,10 @@
 #include <QPixmap>
 #include <QFile>
 #include <QImage>
+#include <QImageReader>
 #include <QFileDevice>
 #include <QMap>
+#include <QSet>
 #include <QDir>
 #include "pfx.h"
 #include "msgpv.h"
@@ -45,6 +47,37 @@ get_no_img()
     return add_pfx(User_pfx, "no_img.png");
 }
 
+static QSet<QByteArray> Supported_Image_Exts;
+
+void
+init_supported_image_exts()
+{
+    for(const QByteArray& fmt : QImageReader::supportedImageFormats())
+        Supported_Image_Exts.insert("." + fmt.toLower());
+}
+
+static
+int
+is_supported_image_ext(const QByteArray& ext)
+{
+    return Supported_Image_Exts.contains(ext);
+}
+
+static
+int
+has_cached_preview(const QByteArray& cached_name, QByteArray& preview_fn)
+{
+    for(const QByteArray& ext : Supported_Image_Exts)
+    {
+        if(QFile::exists(cached_name + ext))
+        {
+            preview_fn = cached_name + ext;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int
 preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
@@ -67,26 +100,8 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
     cached_name.replace(".dyc", "");
     cached_name.replace(".fle", "");
 
-    if(QFile::exists(cached_name + ".jpg"))
-    {
-        preview_fn = cached_name + ".jpg";
+    if(has_cached_preview(cached_name, preview_fn))
         return 1;
-    }
-    if(QFile::exists(cached_name + ".jpeg"))
-    {
-        preview_fn = cached_name + ".jpeg";
-        return 1;
-    }
-    if(QFile::exists(cached_name + ".ppm"))
-    {
-        preview_fn = cached_name + ".ppm";
-        return 1;
-    }
-    if(QFile::exists(cached_name + ".png"))
-    {
-        preview_fn = cached_name + ".png";
-        return 1;
-    }
 
     QByteArray fn;
     QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
@@ -96,16 +111,13 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
         try
         {
             file = 1;
-            // chop everything off except the extension, then add our random name on the
-            // front of it. tries to avoid problems with goofy filenames being sent in.
             int idx = user_filename.lastIndexOf(".");
             if(idx == -1)
                 throw 0;
             QByteArray rfn;
             user_filename.remove(0, idx);
             user_filename = user_filename.toLower();
-            // don't bother with weird images, it can cause qt to choke, esp if it is large
-            if(!(user_filename == ".jpg" || user_filename == ".jpeg" || user_filename == ".png" || user_filename == ".ppm"))
+            if(!is_supported_image_ext(user_filename))
                 throw 0;
             aname.replace(".fle", "");
             rfn = aname;
@@ -176,30 +188,9 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
     QByteArray cached_name = add_pfx(Tmp_pfx, aname);
     cached_name.replace(".dyc", "");
     cached_name.replace(".fle", "");
-    if(QFile::exists(cached_name + ".jpg"))
-    {
-        preview_fn = cached_name + ".jpg";
-
+    if(has_cached_preview(cached_name, preview_fn))
         return 1;
-    }
-    if(QFile::exists(cached_name + ".jpeg"))
-    {
-        preview_fn = cached_name + ".jpeg";
 
-        return 1;
-    }
-    if(QFile::exists(cached_name + ".ppm"))
-    {
-        preview_fn = cached_name + ".ppm";
-
-        return 1;
-    }
-    if(QFile::exists(cached_name + ".png"))
-    {
-        preview_fn = cached_name + ".png";
-
-        return 1;
-    }
     QByteArray fn;
     QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
@@ -209,14 +200,13 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
         {
             file = 1;
 
-            // chop everything off except the extension, then add our random name on the
-            // front of it. tries to avoid problems with goofy filenames being sent in.
             int idx = user_filename.lastIndexOf(".");
             if(idx == -1)
                 throw 0;
             QByteArray rfn;
             user_filename.remove(0, idx);
-            if(!(user_filename == ".jpg" || user_filename == ".jpeg" || user_filename == ".png" || user_filename == ".ppm"))
+            user_filename = user_filename.toLower();
+            if(!is_supported_image_ext(user_filename))
                 throw 0;
             aname.replace(".fle", "");
             rfn = aname;

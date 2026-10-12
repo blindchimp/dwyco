@@ -45,6 +45,7 @@ int unified_backup(const char *fn, int include_account_info, int max_size_mb);
 #include "getinfo.h"
 #include "msgrawmodel.h"
 #include "msgproxymodel.h"
+#include "msgpv.h"
 #include "pfx.h"
 #include "ssmap.h"
 #include "dwycoimageprovider.h"
@@ -4759,6 +4760,7 @@ dwyco_register_qml(QQmlContext *root)
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
+    init_supported_image_exts();
     Dwyco_video_provider = new DwycoImageProvider;
     root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
     root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);
