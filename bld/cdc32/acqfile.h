@@ -216,7 +216,7 @@ FileAcquire<T>::get_data(int& c, int& r, void*& y, void*& cb, void*& cr, int& fm
     if(preloaded)
     {
         T **g2 = (T **)ppm_allocarray(cols, rows);
-        bcopy(&g[0][0], &g2[0][0], cols * rows * sizeof(T));
+        memcpy(&g2[0][0],  &g[0][0], cols * rows * sizeof(T));
         g = g2;
         bump(current);
     }
