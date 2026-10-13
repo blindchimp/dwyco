@@ -16,6 +16,7 @@
 #include <QMap>
 #include <QSet>
 #include <QDir>
+#include <cstring>
 #include "pfx.h"
 #include "msgpv.h"
 #include "dwycolist2.h"
@@ -45,6 +46,51 @@ QByteArray
 get_no_img()
 {
     return add_pfx(User_pfx, "no_img.png");
+}
+
+// The sender-supplied filename arrives off the network, so it gets no trust
+// at all: it can carry a whole path (some clients send one, and we forward
+// it verbatim to our own peers), it can carry characters that have no
+// business in a filename, and it can be arbitrarily long. Keep the last path
+// component and scrub the rest. This mirrors suggested_name() in MsgView.qml,
+// but the ui can't be the only thing standing between the wire and a label --
+// preview_saved_msg() also builds real paths out of this string.
+static
+QByteArray
+sanitize_user_filename(const QByteArray& in)
+{
+    QByteArray n = in;
+    // note: check both separator flavors regardless of platform. a peer on the
+    // other side may have sent a windows path to a unix build.
+    int i = n.lastIndexOf('/');
+    if(i >= 0)
+        n = n.mid(i + 1);
+    i = n.lastIndexOf('\\');
+    if(i >= 0)
+        n = n.mid(i + 1);
+
+    for(char& c : n)
+    {
+        unsigned char u = (unsigned char)c;
+        // control chars and delete, plus the chars windows reserves
+        if(u < 0x20 || u == 0x7f || strchr("<>:\"|?*", c) != nullptr)
+            c = '_';
+    }
+
+    // leading/trailing dots and spaces are invisible and upset the fs
+    int s = 0;
+    while(s < n.size() && (n[s] == '.' || n[s] == ' '))
+        ++s;
+    int e = n.size();
+    while(e > s && (n[e - 1] == '.' || n[e - 1] == ' '))
+        --e;
+    n = n.mid(s, e - s);
+
+    if(n.isEmpty())
+        return "attachment";
+    if(n.size() > 80)
+        n.truncate(80);
+    return n;
 }
 
 static QSet<QByteArray> Supported_Image_Exts;
@@ -116,10 +162,14 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
         return 1;
 
     QByteArray fn;
-    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
-    int is_file = user_filename.length() > 0;
+    // note: is_file has to be answered by the raw name. sanitize_user_filename()
+    // substitutes a placeholder for an empty one, and using that here would
+    // make every unnamed attachment look like a file named "attachment".
+    QByteArray raw_fn = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    int is_file = raw_fn.length() > 0;
     if(is_file)
     {
+        QByteArray user_filename = sanitize_user_filename(raw_fn);
         try
         {
             file = 1;
@@ -204,10 +254,14 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
         return 1;
 
     QByteArray fn;
-    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
-    int is_file = user_filename.length() > 0;
+    // note: is_file has to be answered by the raw name. sanitize_user_filename()
+    // substitutes a placeholder for an empty one, and using that here would
+    // make every unnamed attachment look like a file named "attachment".
+    QByteArray raw_fn = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    int is_file = raw_fn.length() > 0;
     if(is_file)
     {
+        QByteArray user_filename = sanitize_user_filename(raw_fn);
         try
         {
             file = 1;
@@ -289,7 +343,7 @@ msg_body_file_info(DWYCO_SAVED_MSG_LIST qsm, QByteArray& user_fn, qint64& size, 
     if(sm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
         return 0;
 
-    user_fn = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    user_fn = sanitize_user_filename(sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT));
     is_image = msg_file_is_image(user_fn);
 
     long sz = 0;
@@ -316,7 +370,7 @@ msg_file_info(const QByteArray& mid, QByteArray& user_fn, qint64& size, int& is_
     if(sm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
         return 0;
 
-    user_fn = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    user_fn = sanitize_user_filename(sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT));
     is_image = msg_file_is_image(user_fn);
 
     long sz = 0;

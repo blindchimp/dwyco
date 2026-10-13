@@ -259,7 +259,20 @@ DwString
 dwbasename(const DwString& name)
 {
     DwString f(name);
-    auto b = f.rfind(DIRSEPSTR);
+    // Cut at the last separator of either flavor. DIRSEPSTR is whichever one
+    // this platform prefers, but that alone isn't enough: paths reach us from
+    // qt (QUrl::toLocalFile() uses forward slashes on every platform, including
+    // windows) and off the network (a windows peer sends backslashes). Missing
+    // one flavor means rfind() returns npos and we hand the whole path off as
+    // if it were a basename, which is exactly what a receiver must never see:
+    // it shows up verbatim in file lists, and other clients forward it as-is.
+    int b = f.rfind(DIRSEPSTR);
+    int s = f.rfind("/");
+    if(s != DwString::npos && (b == DwString::npos || s > b))
+        b = s;
+    s = f.rfind("\\");
+    if(s != DwString::npos && (b == DwString::npos || s > b))
+        b = s;
     if(b == DwString::npos)
         return f;
     f.erase(0, b + 1);

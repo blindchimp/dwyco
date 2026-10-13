@@ -121,7 +121,7 @@ Page {
     // same name, but short enough to live on a button label.
     function short_name(n) {
         if(n.length > 40)
-            return n.substring(0, 39) + "\\u2026"
+            return n.substring(0, 39) + "\u2026"
         return n
     }
 
