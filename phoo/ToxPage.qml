@@ -726,59 +726,6 @@ Page {
             }
         }
 
-        Label {
-            text: "FRIENDS"
-            font.pixelSize: dp(10)
-            font.bold: true
-            font.letterSpacing: dp(1)
-            color: amber_dark
-            Layout.topMargin: mm(1)
-        }
-
-        Pane {
-            Layout.fillWidth: true
-            padding: mm(1.5)
-            background: Rectangle {
-                color: "white"
-                radius: mm(1)
-                border.color: "#e6ddc6"
-            }
-
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: mm(1)
-
-                RowLayout {
-                    spacing: mm(1)
-
-                    TextFieldX {
-                        id: toxIdInput
-                        enabled: tox_state.state === "signedin"
-                        placeholder_text: "Paste Tox ID here..."
-                        validator: RegularExpressionValidator { regularExpression: /[0-9a-fA-F]{0,76}/ }
-                        Layout.fillWidth: true
-                    }
-
-                    Button {
-                        id: addFriendButton
-                        text: "Add"
-                        enabled: tox_state.state === "signedin" && isValidToxId(toxIdInput.text_input)
-                        onClicked: {
-                            core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
-                            toxIdInput.text_input = ""
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Delete selected friend"
-                    enabled: friendList.currentIndex >= 0
-                    Layout.fillWidth: true
-                    onClicked: deleteFriendDialog.open()
-                }
-            }
-        }
-
         Pane {
             Layout.fillWidth: true
             padding: mm(1.5)
@@ -838,6 +785,50 @@ Page {
                 Button {
                     text: "Remove"
                     onClicked: core.tox_clear_avatar()
+                }
+            }
+        }
+
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: mm(1)
+
+                RowLayout {
+                    spacing: mm(1)
+
+                    TextFieldX {
+                        id: toxIdInput
+                        enabled: tox_state.state === "signedin"
+                        placeholder_text: "Paste Tox ID here..."
+                        validator: RegularExpressionValidator { regularExpression: /[0-9a-fA-F]{0,76}/ }
+                        Layout.fillWidth: true
+                    }
+
+                    Button {
+                        id: addFriendButton
+                        text: "Add"
+                        enabled: tox_state.state === "signedin" && isValidToxId(toxIdInput.text_input)
+                        onClicked: {
+                            core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
+                            toxIdInput.text_input = ""
+                        }
+                    }
+                }
+
+                Button {
+                    text: "Delete selected friend"
+                    enabled: friendList.currentIndex >= 0
+                    Layout.fillWidth: true
+                    onClicked: deleteFriendDialog.open()
                 }
             }
         }
