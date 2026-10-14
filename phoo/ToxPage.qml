@@ -16,7 +16,13 @@ import QtCore
 Page {
     anchors.fill: parent
     header: SimpleToolbar {
-
+        extras: Label {
+            text: "Tox"
+            color: "white"
+            font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+        }
     }
     background: Rectangle {
         color: amber_light
@@ -275,61 +281,83 @@ Page {
         onTriggered: ToxFriendModel.load_friends()
     }
 
-    ColumnLayout {
+    ScrollView {
+        id: tox_scroll
         anchors.fill: parent
         anchors.margins: mm(2)
-        spacing: mm(1)
+        clip: true
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-        RowLayout {
+        ColumnLayout {
+            width: tox_scroll.availableWidth
             spacing: mm(1)
 
-            Rectangle {
-                id: statusIndicator
-                width: 16
-                height: 16
-                radius: 8
-                color: tox_state.dotColor
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
             }
 
-            Label {
-                text: connStatusText
-            }
+            RowLayout {
+                anchors.fill: parent
+                spacing: mm(1)
 
-            Label {
-                text: "Status:"
-                enabled: tox_state.state === "signedin"
-            }
+                Rectangle {
+                    id: statusIndicator
+                    Layout.preferredWidth: dp(12)
+                    Layout.preferredHeight: dp(12)
+                    radius: width / 2
+                    color: tox_state.dotColor
+                }
 
-            ComboBox {
-                id: userStatusCombo
-                model: ["Available", "Away", "Busy"]
-                enabled: tox_state.state === "signedin"
-                onActivated: {
-                    var map = ["none", "away", "busy"]
-                    core.tox_set_user_status(map[currentIndex])
+                Label {
+                    text: connStatusText
+                    font.bold: true
+                    font.pixelSize: dp(13)
+                    color: primary_text
+                }
+
+                Label {
+                    text: "Status:"
+                    enabled: tox_state.state === "signedin"
+                    color: secondary_text
+                    font.pixelSize: dp(11)
+                }
+
+                ComboBox {
+                    id: userStatusCombo
+                    model: ["Available", "Away", "Busy"]
+                    enabled: tox_state.state === "signedin"
+                    onActivated: {
+                        var map = ["none", "away", "busy"]
+                        core.tox_set_user_status(map[currentIndex])
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: "Tox save…"
+                    onClicked: stack.push(tox_acct)
                 }
             }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            Button {
-                text: "Tox save…"
-                onClicked: stack.push(tox_acct)
-            }
         }
-
         Pane {
             visible: showSignInBanner
             Layout.fillWidth: true
             padding: mm(2)
             background: Rectangle {
                 color: "white"
-                radius: mm(1)
-                border.color: "#ddd"
+                radius: mm(1.5)
+                border.color: "#e6ddc6"
             }
-            Layout.topMargin: mm(2)
+            Layout.topMargin: mm(1)
 
             ColumnLayout {
                 width: parent.width
@@ -340,6 +368,7 @@ Page {
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                     font.pixelSize: dp(14)
+                    color: primary_text
                 }
 
                 ColumnLayout {
@@ -354,6 +383,7 @@ Page {
                         Label {
                             text: "Tox save"
                             font.bold: true
+                            color: primary_text
                         }
 
                         Label {
@@ -361,6 +391,7 @@ Page {
                             text: "Password protected"
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
+                            color: secondary_text
                         }
 
                         Label {
@@ -375,15 +406,17 @@ Page {
                             }
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
+                            color: primary_text
                         }
 
                         Label {
                             visible: !tox_state.encrypted
                                      && tox_state.cachedAddress.length > 0
                             font.family: "monospace"
-                            font.pixelSize: 10
+                            font.pixelSize: dp(10)
                             text: tox_state.displayId
                             verticalAlignment: Text.AlignVCenter
+                            color: secondary_text
                         }
 
                         Button {
@@ -410,8 +443,6 @@ Page {
                     }
                 }
 
-                // the identity on this device is currently signed in on
-                // another device in the group. signing in here takes it over.
                 ColumnLayout {
                     visible: identityInUseElsewhere
                     Layout.fillWidth: true
@@ -434,7 +465,7 @@ Page {
                               : ""
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
-                        color: "#666"
+                        color: secondary_text
                         font.pixelSize: dp(11)
                     }
 
@@ -448,9 +479,6 @@ Page {
                         font.pixelSize: dp(11)
                     }
 
-                    // what actually differs between the save on this device and the copy
-                    // on the user's other devices. same wording as the tox save
-                    // page, which is where the copy buttons live.
                     ColumnLayout {
                         visible: tox_state.diffHeadline(tox_state.diffState) !== ""
                         Layout.fillWidth: true
@@ -474,19 +502,17 @@ Page {
                                 font.pixelSize: dp(11)
                                 font.bold: true
                                 elide: Text.ElideRight
+                                color: primary_text
                             }
                         }
 
-                        // the plain-language summary, same wording as the
-                        // tox save page. visible only when there are real
-                        // differences to characterize.
                         Label {
                             visible: text !== ""
                             Layout.fillWidth: true
                             Layout.leftMargin: mm(2.5)
                             text: tox_state.diffSummary()
                             font.pixelSize: dp(10)
-                            color: "#666"
+                            color: secondary_text
                             wrapMode: Text.WordWrap
                         }
 
@@ -500,7 +526,7 @@ Page {
                                 Layout.leftMargin: mm(2.5)
                                 text: "• " + tox_state.diffLine(modelData)
                                 font.pixelSize: dp(10)
-                                color: "#666"
+                                color: secondary_text
                                 wrapMode: Text.WordWrap
                             }
                         }
@@ -511,20 +537,16 @@ Page {
                             Layout.leftMargin: mm(2.5)
                             text: tox_state.diffOverflow
                             font.pixelSize: dp(10)
-                            color: "#666"
+                            color: secondary_text
                             wrapMode: Text.WordWrap
                         }
 
-                        // the detail line is page-neutral, so it shows here
-                        // unconditionally too -- it used to be hidden whenever
-                        // there were differences, which made this panel and the
-                        // tox save panel disagree about what they say.
                         Label {
                             Layout.fillWidth: true
                             Layout.leftMargin: mm(2.5)
                             text: tox_state.diffDetail(tox_state.diffState)
                             font.pixelSize: dp(10)
-                            color: "#666"
+                            color: secondary_text
                             wrapMode: Text.WordWrap
                         }
                     }
@@ -548,19 +570,30 @@ Page {
             }
         }
 
-        RowLayout {
-            spacing: mm(1)
-
-            CheckBox {
-                id: toxAutoLoginCb
-                text: "Login to tox automatically"
-                onCheckedChanged: {
-                    core.set_local_setting("tox_auto_login", checked ? "1" : "0")
-                }
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
             }
 
-            Item {
-                Layout.fillWidth: true
+            RowLayout {
+                anchors.fill: parent
+                spacing: mm(1)
+
+                CheckBox {
+                    id: toxAutoLoginCb
+                    text: "Login to tox automatically"
+                    onCheckedChanged: {
+                        core.set_local_setting("tox_auto_login", checked ? "1" : "0")
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
             }
         }
 
@@ -568,233 +601,321 @@ Page {
         // account page (see ToxAcct.qml), next to the shared list itself.
         // this page only reports who is holding the identity.
 
-        RowLayout {
-            enabled: tox_state.state === "signedin"
-            spacing: mm(1)
-
-            CheckBox {
-                id: autoAwayCb
-                text: "Auto-away on inactivity"
-                checked: core.auto_away_enabled
-                onCheckedChanged: {
-                    core.auto_away_enabled = checked
-                    core.set_local_setting("auto_away_enabled", checked ? "1" : "0")
-                    if (checked)
-                        core.start_auto_away()
-                    else
-                        core.stop_auto_away()
-                }
-            }
-
-            ComboBox {
-                id: autoAwayTimeout
-                model: ["1 min", "2 min", "5 min", "10 min", "15 min", "30 min"]
-                enabled: tox_state.state === "signedin" && autoAwayCb.checked
-                onActivated: {
-                    var values = [60, 120, 300, 600, 900, 1800]
-                    core.auto_away_timeout = values[currentIndex]
-                    core.set_local_setting("auto_away_timeout", values[currentIndex].toString())
-                }
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-        }
-
-        RowLayout {
-            enabled: tox_state.state === "signedin"
-            visible: tox_state.state === "signedin"
-            spacing: mm(1)
-
-            TextFieldX {
-                id: toxNameInput
-                placeholder_text: "Enter client name..."
-                Layout.fillWidth: true
-            }
-
-            TextFieldX {
-                id: toxStatusInput
-                placeholder_text: "Enter status message..."
-                Layout.fillWidth: true
-            }
-
-            Button {
-                text: "Update"
-                enabled: tox_state.state === "signedin" && (toxNameInput.text_input !== origName || toxStatusInput.text_input !== origStatus)
-                onClicked: {
-                    core.tox_set_name(toxNameInput.text_input)
-                    core.tox_set_status_message(toxStatusInput.text_input)
-                    origName = toxNameInput.text_input
-                    origStatus = toxStatusInput.text_input
-                }
-            }
-        }
-
-        RowLayout {
-            enabled: tox_state.state === "signedin"
-            visible: tox_state.state === "signedin"
-            spacing: mm(1)
-
-            Button {
-                text: "Copy Tox ID"
-                onClicked: core.copy_to_clipboard(core.tox_self_address)
-            }
-
-            Label {
-                text: core.tox_self_address.substring(0, 8)
-                font.family: "monospace"
-                font.pixelSize: 10
-                Layout.fillWidth: true
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-
-        Label {
-            text: "Add Friend"
-            enabled: tox_state.state === "signedin"
-            font.bold: true
-            Layout.topMargin: mm(2)
-        }
-
-        TextFieldX {
-            id: toxIdInput
-            enabled: tox_state.state === "signedin"
-            placeholder_text: "Paste Tox ID here..."
-            validator: RegularExpressionValidator { regularExpression: /[0-9a-fA-F]{0,76}/ }
+        Pane {
             Layout.fillWidth: true
-        }
-
-        Button {
-            id: addFriendButton
-            text: "Add Friend"
-            enabled: tox_state.state === "signedin" && isValidToxId(toxIdInput.text_input)
-            onClicked: {
-                core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
-                toxIdInput.text_input = ""
-            }
-            Layout.fillWidth: true
-        }
-
-        Button {
-            text: "Delete Friend"
-            enabled: friendList.currentIndex >= 0
-            Layout.fillWidth: true
-            onClicked: deleteFriendDialog.open()
-        }
-
-        Label {
-            text: "Profile"
-            enabled: tox_state.state === "signedin"
+            padding: mm(1.5)
             visible: tox_state.state === "signedin"
-            font.bold: true
-            Layout.topMargin: mm(2)
-        }
-
-        RowLayout {
-            enabled: tox_state.state === "signedin"
-            visible: tox_state.state === "signedin"
-            spacing: mm(1)
-
-            Image {
-                id: toxAvatarImg
-                fillMode: Image.PreserveAspectCrop
-                Layout.alignment: Qt.AlignVCenter
-                Layout.minimumWidth: parent.height
-                Layout.maximumWidth: parent.height
-                Layout.minimumHeight: parent.height
-                Layout.maximumHeight: parent.height
-                sourceSize.width: 256
-                sourceSize.height: 256
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
             }
 
-            Button {
-                text: "Set Picture..."
-                onClicked: avatarFileDialog.open()
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            Button {
-                text: "Remove Picture"
-                onClicked: core.tox_clear_avatar()
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-        }
-
-        Label {
-            text: "Friends"
-            enabled: tox_state.state === "signedin"
-            font.bold: true
-            Layout.topMargin: mm(2)
-            visible: tox_state.state === "signedin"
-        }
-
-        Item {
-            enabled: tox_state.state === "signedin"
-            visible: tox_state.state === "signedin"
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            implicitHeight: mm(40)
-
-            ListView {
-                id: friendList
+            RowLayout {
                 anchors.fill: parent
-                clip: true
+                enabled: tox_state.state === "signedin"
                 spacing: mm(1)
-                model: ToxFriendModel
-                currentIndex: -1
-                highlight: Rectangle {
-                    color: amber_accent
-                    opacity: 0.3
+
+                CheckBox {
+                    id: autoAwayCb
+                    text: "Auto-away on inactivity"
+                    checked: core.auto_away_enabled
+                    onCheckedChanged: {
+                        core.auto_away_enabled = checked
+                        core.set_local_setting("auto_away_enabled", checked ? "1" : "0")
+                        if (checked)
+                            core.start_auto_away()
+                        else
+                            core.stop_auto_away()
+                    }
                 }
-                highlightMoveDuration: 200
-                ScrollBar.vertical: ScrollBar { }
 
-                delegate: Item {
-                    width: ListView.view.width
-                    height: mm(9)
+                ComboBox {
+                    id: autoAwayTimeout
+                    model: ["1 min", "2 min", "5 min", "10 min", "15 min", "30 min"]
+                    enabled: tox_state.state === "signedin" && autoAwayCb.checked
+                    onActivated: {
+                        var values = [60, 120, 300, 600, 900, 1800]
+                        core.auto_away_timeout = values[currentIndex]
+                        core.set_local_setting("auto_away_timeout", values[currentIndex].toString())
+                    }
+                }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: friendList.currentIndex = index
-                        onDoubleClicked: {
-                            var pseudo_uid = pubkey.substring(0, 20)
-                            top_dispatch.uid_selected(pseudo_uid, "clicked")
-                        }
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            visible: tox_state.state === "signedin"
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: mm(1)
+
+                RowLayout {
+                    spacing: mm(1)
+
+                    TextFieldX {
+                        id: toxNameInput
+                        placeholder_text: "Enter client name..."
+                        Layout.fillWidth: true
                     }
 
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        color: "transparent"
+                    TextFieldX {
+                        id: toxStatusInput
+                        placeholder_text: "Enter status message..."
+                        Layout.fillWidth: true
+                    }
 
-                        ColumnLayout {
+                    Button {
+                        text: "Update"
+                        enabled: tox_state.state === "signedin" && (toxNameInput.text_input !== origName || toxStatusInput.text_input !== origStatus)
+                        onClicked: {
+                            core.tox_set_name(toxNameInput.text_input)
+                            core.tox_set_status_message(toxStatusInput.text_input)
+                            origName = toxNameInput.text_input
+                            origStatus = toxStatusInput.text_input
+                        }
+                    }
+                }
+            }
+        }
+
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            visible: tox_state.state === "signedin"
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                spacing: mm(1)
+
+                Label {
+                    text: "Tox ID"
+                    font.bold: true
+                    color: primary_text
+                }
+
+                Label {
+                    text: core.tox_self_address.substring(0, 8) + "…"
+                    font.family: "monospace"
+                    font.pixelSize: dp(11)
+                    color: secondary_text
+                    Layout.fillWidth: true
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Button {
+                    text: "Copy"
+                    onClicked: core.copy_to_clipboard(core.tox_self_address)
+                }
+            }
+        }
+
+        Label {
+            text: "FRIENDS"
+            font.pixelSize: dp(10)
+            font.bold: true
+            font.letterSpacing: dp(1)
+            color: amber_dark
+            Layout.topMargin: mm(1)
+        }
+
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: mm(1)
+
+                RowLayout {
+                    spacing: mm(1)
+
+                    TextFieldX {
+                        id: toxIdInput
+                        enabled: tox_state.state === "signedin"
+                        placeholder_text: "Paste Tox ID here..."
+                        validator: RegularExpressionValidator { regularExpression: /[0-9a-fA-F]{0,76}/ }
+                        Layout.fillWidth: true
+                    }
+
+                    Button {
+                        id: addFriendButton
+                        text: "Add"
+                        enabled: tox_state.state === "signedin" && isValidToxId(toxIdInput.text_input)
+                        onClicked: {
+                            core.tox_add_friend(toxIdInput.text_input, "Hello from Phoo!")
+                            toxIdInput.text_input = ""
+                        }
+                    }
+                }
+
+                Button {
+                    text: "Delete selected friend"
+                    enabled: friendList.currentIndex >= 0
+                    Layout.fillWidth: true
+                    onClicked: deleteFriendDialog.open()
+                }
+            }
+        }
+
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1.5)
+            visible: tox_state.state === "signedin"
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                enabled: tox_state.state === "signedin"
+                visible: tox_state.state === "signedin"
+                spacing: mm(1)
+
+                Rectangle {
+                    Layout.preferredWidth: mm(16)
+                    Layout.preferredHeight: mm(16)
+                    radius: width / 2
+                    color: amber_light
+                    clip: true
+
+                    Image {
+                        id: toxAvatarImg
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectCrop
+                        sourceSize.width: 256
+                        sourceSize.height: 256
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    Label {
+                        text: "Profile picture"
+                        font.bold: true
+                        color: primary_text
+                    }
+
+                    Label {
+                        text: "Choose an image to show to your friends."
+                        color: secondary_text
+                        font.pixelSize: dp(10)
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                }
+
+                Button {
+                    text: "Set…"
+                    onClicked: avatarFileDialog.open()
+                }
+
+                Button {
+                    text: "Remove"
+                    onClicked: core.tox_clear_avatar()
+                }
+            }
+        }
+
+        Label {
+            text: "FRIENDS"
+            font.pixelSize: dp(10)
+            font.bold: true
+            font.letterSpacing: dp(1)
+            color: amber_dark
+            Layout.topMargin: mm(1)
+        }
+
+        Pane {
+            Layout.fillWidth: true
+            padding: mm(1)
+            visible: tox_state.state === "signedin"
+            background: Rectangle {
+                color: "white"
+                radius: mm(1)
+                border.color: "#e6ddc6"
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: mm(1)
+
+                ListView {
+                    id: friendList
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.min(contentHeight, mm(40))
+                    clip: true
+                    spacing: mm(1)
+                    model: ToxFriendModel
+                    currentIndex: -1
+                    ScrollBar.vertical: ScrollBar { }
+
+                    delegate: Item {
+                        width: ListView.view.width
+                        height: mm(11)
+
+                        Rectangle {
                             anchors.fill: parent
-                            anchors.margins: mm(1)
-                            spacing: mm(0.5)
+                            anchors.margins: mm(0.5)
+                            radius: mm(1)
+                            color: friendList.currentIndex === index ? "#fdf3d8" : "transparent"
+                            border.color: friendList.currentIndex === index ? amber_dark : "transparent"
+                            border.width: friendList.currentIndex === index ? 1 : 0
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: friendList.currentIndex = index
+                                onDoubleClicked: {
+                                    var pseudo_uid = pubkey.substring(0, 20)
+                                    top_dispatch.uid_selected(pseudo_uid, "clicked")
+                                }
+                            }
 
                             RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: mm(1)
                                 spacing: mm(1)
-                                Layout.fillWidth: true
 
                                 ToxBadge {
                                     friendUid: pubkey.substring(0, 20)
-                                    width: 14
-                                    height: 14
-                                    Layout.alignment: Qt.AlignTop
+                                    width: dp(14)
+                                    height: dp(14)
                                 }
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: mm(0.3)
+                                    spacing: mm(0.2)
 
                                     Text {
                                         text: name
                                         font.bold: true
+                                        font.pixelSize: dp(12)
+                                        color: primary_text
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
@@ -802,8 +923,9 @@ Page {
                                     Text {
                                         text: pubkey.substring(0, 8)
                                         font.family: "monospace"
-                                        font.pixelSize: 9
-                                        color: "#666"
+                                        font.pixelSize: dp(10)
+                                        color: secondary_text
+                                        elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
                                 }
@@ -811,14 +933,18 @@ Page {
                         }
                     }
                 }
-            }
 
-            Label {
-                anchors.centerIn: parent
-                visible: ToxFriendModel.count === 0
-                text: qsTr("(No friends yet. Add one above.)")
+                Label {
+                    visible: ToxFriendModel.count === 0
+                    text: qsTr("(No friends yet. Add one above.)")
+                    color: secondary_text
+                    font.pixelSize: dp(11)
+                    Layout.alignment: Qt.AlignHCenter
+                }
             }
         }
+
+    }
     }
 
     Dialog {
