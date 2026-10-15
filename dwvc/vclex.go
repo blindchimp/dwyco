@@ -76,6 +76,8 @@ type Lexer struct {
 
 	// Character tracking for state machine
 	curChar byte // last safe character read
+
+	errOut io.Writer
 }
 
 // lexerSource is the interface replacing the C++ pure-virtual get_chars/put_back/no_more_available.
@@ -528,7 +530,6 @@ func (l *Lexer) get_symatom() bool {
 // and returns true if a token was recognised, false otherwise.
 // This is the Go port of C++ VcLexer::get_toplev().
 func (l *Lexer) getToplev() bool {
-	c := byte(0)
 	state := 0 // 0=EAT_WHITE, 1=START, 2=S1, 3=S2, 4=S3, 5=S4, 6=S5, 7=S6, 8=S7
 
 	if !l.get_safe_char() {
@@ -538,7 +539,7 @@ func (l *Lexer) getToplev() bool {
 	for {
 		switch state {
 		case 0: // EAT_WHITE
-			if l.isTerminator(l.curChar) {
+			if l.isTerminator(l.curChar) && !l.isSpecial(l.curChar) {
 				if !l.get_safe_char() {
 					return false
 				}
@@ -569,14 +570,7 @@ func (l *Lexer) getToplev() bool {
 				continue
 			}
 			if l.curChar == '|' {
-				// get_literal()
-				l.atype = AtomString
-				l.token = TokAtom
-				// read past the literal
-				if !l.get_safe_char() {
-					return false
-				}
-				return true
+				return l.get_literal()
 			}
 			if l.curChar == '+' || l.curChar == '-' {
 				l.appendTook([]byte{l.curChar}, 1)
@@ -602,10 +596,7 @@ func (l *Lexer) getToplev() bool {
 				l.token = TokAtom
 				return true
 			}
-			// get_symatom()
-			l.atype = AtomString
-			l.token = TokAtom
-			return true
+			return l.get_symatom()
 
 		case 2: // ESCAPE (simplified)
 			// In real implementation, this would handle backslash sequences
@@ -616,7 +607,7 @@ func (l *Lexer) getToplev() bool {
 
 		case 3: // S2 - after sign
 			// term_state check
-			if l.term_state(true, l.curChar, AtomString, AtomString) {
+			if l.term_state(true, l.curChar, TokAtom, AtomString) {
 				return true
 			}
 			if l.curChar == '.' {
@@ -651,7 +642,7 @@ func (l *Lexer) getToplev() bool {
 			return true
 
 		case 5: // S4 - integer after potential sign
-			if l.term_state(true, l.curChar, AtomInteger, AtomInteger) {
+			if l.term_state(true, l.curChar, TokAtom, AtomInteger) {
 				return true
 			}
 			if l.curChar == '.' {
@@ -682,7 +673,7 @@ func (l *Lexer) getToplev() bool {
 			return true
 
 		case 7: // S7 - after dot in float
-			if l.term_state(true, l.curChar, AtomFloat, AtomFloat) {
+			if l.term_state(true, l.curChar, TokAtom, AtomFloat) {
 				return true
 			}
 			if l.curChar == 'e' || l.curChar == 'E' {
@@ -713,12 +704,14 @@ func (l *Lexer) getToplev() bool {
 // lex_error records a lexical error.
 func (l *Lexer) lexError(s string) {
 	l.LexicalError = true
-	l.errOut.Write([]byte("lexical error: " + s + "\n"))
+	if l.errOut != nil {
+		l.errOut.Write([]byte("lexical error: " + s + "\n"))
+	}
 }
 
 // lex_warning records a lexical warning if enabled.
 func (l *Lexer) lexWarning(s string) {
-	if l.EmitLexicalWarnings {
+	if l.EmitLexicalWarnings && l.errOut != nil {
 		l.errOut.Write([]byte("lexical warning (near line " + string(rune(l.linesRead+1)) + "): " + s + " (token probably recognized as symbolic atom)\n"))
 	}
 }
@@ -742,26 +735,33 @@ func (l *Lexer) setBeginningOfScan() {
 
 type stringSource struct {
 	str []byte // the full input string; never modified
+	pos int
 }
 
 func (s *stringSource) getChars(want int) []byte {
-	if len(s.str) == 0 {
+	if s.pos >= len(s.str) {
 		return nil
 	}
-	if want > len(s.str) {
-		want = len(s.str)
+	avail := len(s.str) - s.pos
+	if want > avail {
+		want = avail
 	}
-	out := s.str[:want]
+	out := s.str[s.pos : s.pos+want]
+	s.pos += want
 	return out
 }
 
 func (s *stringSource) putBack(b []byte) {
-	// for a static string source, pushback is a no-op since we can't modify the original
-	_ = b
+	n := len(b)
+	if n > s.pos {
+		s.pos = 0
+	} else {
+		s.pos -= n
+	}
 }
 
 func (s *stringSource) noMoreAvailable() bool {
-	return false // static string never exhausts until consumer stops
+	return s.pos >= len(s.str)
 }
 
 type readerSource struct {
