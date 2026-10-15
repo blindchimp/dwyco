@@ -326,6 +326,23 @@ ConvListModel::pal_all_selected(bool b)
 }
 
 void
+ConvListModel::set_pal_uid(const QString &uid, bool b)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.length() != 10)
+        return;
+    if(b)
+        dwyco_pal_add(buid.constData(), buid.length());
+    else
+        dwyco_pal_delete(buid.constData(), buid.length());
+    // the uid isn't necessarily in the model, eg. this menu can be opened
+    // from the directory search list, which has its own model.
+    Conversation *c = getByUid(uid);
+    if(c)
+        c->update_pal(b);
+}
+
+void
 ConvListModel::block_all_selected(bool prompt_tox)
 {
     QStringList selected_uids;
@@ -632,6 +649,19 @@ ConvSortFilterModel::pal_all_selected(bool b)
         ::abort();
     m->pal_all_selected(b);
 
+}
+
+void
+ConvSortFilterModel::set_pal_uid(const QString &uid, bool b)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    m->set_pal_uid(uid, b);
+    // lessThan() puts pals at the top of their group, but a change to the
+    // pal role alone doesn't make the proxy re-sort, so the row would stay
+    // where it was until something else forced a sort.
+    sort(0);
 }
 
 bool

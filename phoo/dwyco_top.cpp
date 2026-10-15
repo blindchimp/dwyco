@@ -2786,6 +2786,8 @@ int
 DwycoCore::get_pal(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.length() != 10)
+        return 0;
     return dwyco_is_pal(buid.constData(), buid.length());
 }
 
@@ -2893,6 +2895,8 @@ int
 DwycoCore::get_ignore(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.length() != 10)
+        return 0;
     return dwyco_is_ignored(buid.constData(), buid.length());
 }
 
