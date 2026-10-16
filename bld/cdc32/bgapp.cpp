@@ -856,8 +856,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 spin || // service_channels wants us to spin
                 Response_q.num_elems() > 0 || // we have items that need processing now
                 MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
-                dwyco::sproto::any_quick_transitions() ||
-                dwyco::tox_bridge_is_active()
+                dwyco::sproto::any_quick_transitions()
+#ifndef ANDROID
+                || dwyco::tox_bridge_is_active() // on android, tox socket readiness wakes the loop instead
+#endif
                 //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
                 )
         {
@@ -880,6 +882,53 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             // things done, and don't want to spin too fast.
             snooze = 100;
         }
+#ifdef ANDROID
+        // on android, don't fast-poll on a timer just because tox is
+        // active. instead, wake up as soon as a tox socket has data
+        // pending. the actual processing happens at the top of the loop
+        // via dwyco_service_channels -> tox_bridge_poll -> tox_iterate.
+        {
+            int tox_fds[16];
+            int tox_next_ms = 0;
+            const int tox_fd_count = tox_bridge_get_poll_fds(tox_fds, 16, &tox_next_ms);
+            const int poll_fd_count = tox_fd_count > 16 ? 16 : tox_fd_count;
+
+            int wait_ms = snooze;
+            if(poll_fd_count > 0 && tox_next_ms < wait_ms)
+                wait_ms = tox_next_ms;
+
+            if(poll_fd_count > 0 && wait_ms > 0)
+            {
+                struct pollfd pfds[16];
+                for(int i = 0; i < poll_fd_count; ++i)
+                {
+                    pfds[i].fd = tox_fds[i];
+                    pfds[i].events = POLLIN;
+                    pfds[i].revents = 0;
+                }
+
+                const auto poll_t0 = std::chrono::steady_clock::now();
+                const int n = poll(pfds, poll_fd_count, wait_ms);
+                const auto poll_t1 = std::chrono::steady_clock::now();
+                const int elapsed = (int)std::chrono::duration_cast<std::chrono::milliseconds>(poll_t1 - poll_t0).count();
+
+                if(n > 0)
+                    continue;
+                if(n < 0)
+                {
+                    if(errno == EINTR)
+                        continue;
+                    return 1;
+                }
+
+                // tox fds were idle for the whole wait; give the remaining
+                // time to the dwyco socket poll below.
+                snooze -= elapsed;
+                if(snooze < 0)
+                    snooze = 0;
+            }
+        }
+#endif
 #ifndef DWYCO_CDC_LIBUV
         Socketvec res;
 

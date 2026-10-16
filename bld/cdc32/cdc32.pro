@@ -24,6 +24,7 @@ $${VCCFG_COMP} \
 ../miniupnp/miniupnp-master/miniupnpc
 
 linux-*: INCLUDEPATH += ../v4lcap
+linux-*: INCLUDEPATH += /home/dwight/git/c-toxcore/toxcore
 
 DEFINES += \
 	VCCFG_FILE \

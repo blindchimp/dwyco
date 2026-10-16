@@ -43,6 +43,7 @@ static inline ssize_t pwrite_compat(int fd, const void *buf, size_t count, long 
 
 #include "toxbridge.h"
 #include "toxd_plugin.h"
+#include "loop.h"
 #include "qauth.h"
 #include "dwrtlog.h"
 #include "se.h"
@@ -2157,6 +2158,33 @@ tox_bridge_poll()
                            "AND created_at < strftime('%s','now') - 30");
 
     tox_bridge_send_queued();
+}
+
+int
+tox_bridge_get_poll_fds(int *fds, int max_fds, int *next_event_ms)
+{
+    if(next_event_ms)
+        *next_event_ms = 0;
+
+    if(!Started || !Tox_plugin || toxp_get_loop(Tox_plugin) == nullptr)
+        return 0;
+
+    Tox_Loop *loop = toxp_get_loop(Tox_plugin);
+
+    const uint32_t count = tox_loop_get_socket_count(loop);
+
+    if(next_event_ms)
+        *next_event_ms = (int)tox_loop_next_event_time(loop);
+
+    if(fds == nullptr || max_fds <= 0 || count == 0)
+        return (int)count;
+
+    const uint32_t n = count < (uint32_t)max_fds ? count : (uint32_t)max_fds;
+
+    for(uint32_t i = 0; i < n; ++i)
+        fds[i] = tox_loop_get_socket_fd(loop, i);
+
+    return (int)n;
 }
 
 vc

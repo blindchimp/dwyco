@@ -84,6 +84,12 @@ int tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_l
 // polling — call from dwyco timer loop
 void tox_bridge_poll();
 
+// socket readiness — for external event loops. fills up to max_fds with the
+// native descriptors of the tox sockets, and sets *next_event_ms to the
+// number of milliseconds until the core next needs to run (tox_iterate).
+// returns the number of fds written (0 if the tox bridge isn't running).
+int tox_bridge_get_poll_fds(int *fds, int max_fds, int *next_event_ms);
+
 // identity
 vc tox_bridge_get_address();
 vc tox_bridge_get_pubkey();

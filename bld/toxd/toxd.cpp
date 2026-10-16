@@ -28,6 +28,7 @@
 #include <errno.h>
 #ifdef LOCAL_TOXCORE
 #include <tox.h>
+#include <loop.h>
 #include <toxencryptsave.h>
 #else
 #include <tox/tox.h>
@@ -72,6 +73,7 @@ static const char *bootstrap_nodes[] =
 struct ToxPlugin
 {
     Tox *tox{};
+    Tox_Loop *loop{};
     DwString save_file{};
     FILE *log_file{};
     int bootstrapped{};
@@ -513,7 +515,8 @@ load_or_create_tox(ToxPlugin *p, int *status_out)
     }
 
     Tox_Err_New err;
-    p->tox = tox_new(&opts, &err);
+    p->loop = tox_loop_new(&opts, &err);
+    p->tox = p->loop != nullptr ? (Tox *)tox_loop_get_tox(p->loop) : nullptr;
     if(savedata)
         free(savedata);
     if(!p->tox)
@@ -540,7 +543,8 @@ load_or_create_tox(ToxPlugin *p, int *status_out)
         tox_options_set_udp_enabled(&opts, false);
         tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_NONE);
 
-        p->tox = tox_new(&opts, &err);
+        p->loop = tox_loop_new(&opts, &err);
+        p->tox = p->loop != nullptr ? (Tox *)tox_loop_get_tox(p->loop) : nullptr;
     }
 
     tox_options_free(&opts);
@@ -644,7 +648,9 @@ toxp_shutdown(ToxPlugin *p)
     if(!p)
         return;
     save_tox_state(p);
-    tox_kill(p->tox);
+    tox_loop_kill(p->loop);
+    p->loop = nullptr;
+    p->tox = nullptr;
 #if 0
     if(p->lock_fd >= 0)
     {
@@ -1246,6 +1252,12 @@ toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
     return ret;
 }
 
+struct Tox_Loop *
+toxp_get_loop(ToxPlugin *p)
+{
+    return p->loop;
+}
+
 void
 toxp_iterate(ToxPlugin *p)
 {
@@ -1758,6 +1770,13 @@ toxp_set_password_on_file(const char *save_file,
     if(err_buf && err_buf_len > 0)
         snprintf(err_buf, (size_t)err_buf_len, "tox is not supported");
     return 0;
+}
+
+struct Tox_Loop *
+toxp_get_loop(ToxPlugin *p)
+{
+    (void)p;
+    return nullptr;
 }
 
 void
