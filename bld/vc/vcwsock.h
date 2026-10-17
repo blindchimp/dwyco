@@ -44,7 +44,9 @@ private:
 	// if the static is referenced directly.
 	//static Socketvec *get_poll_results();
         static int poll_impl(int whatfor, int sec, int usec, Socketvec& res);
-        static int poll2_impl(int whatfor, int sec, int usec, Socketvec& res);
+        static int poll2_impl(int whatfor, int sec, int usec, Socketvec& res,
+                              const int *extra_fds, int extra_count,
+                              short *extra_revents);
 
 	vcxstream vcxr;
 	vcxstream vcxs;
@@ -108,7 +110,26 @@ public:
 	static int have_net;
 
 	static int poll_all(int what_for, Socketvec&, int sec = 0, int usec = 0);
-	static int poll_sets(int what_for, Socketvec&, int sec = 0, int usec = 0);
+	// whatfor & VC_SOCK_READ polls every live socket for read, and the
+	// write set for write (see poll2_impl).
+	//
+	// extra_fds/extra_count add caller-supplied descriptors to the same
+	// wait, so an external subsystem (eg. a library with its own sockets)
+	// can be serviced by one poll instead of one poll per subsystem.
+	// these descriptors are only waited on: they are never read from,
+	// never added to any set, and never closed. if extra_revents is
+	// non-null, extra_revents[i] receives the poll result of
+	// extra_fds[i] when the call returns. any non-zero result means
+	// "something happened, go look at it" (the exact bits are whatever
+	// the platform poll reports, except on select-based builds where
+	// read/error/hangup all come back the same, and a descriptor that
+	// can't be waited on reports the same value POLLNVAL has).
+	// they are deliberately not reported in the Socketvec, since vc
+	// doesn't own them, so a caller must check extra_revents (the
+	// Socketvec can be empty while some extra fired).
+	static int poll_sets(int what_for, Socketvec&, int sec = 0, int usec = 0,
+	                     const int *extra_fds = 0, int extra_count = 0,
+	                     short *extra_revents = 0);
 	static void close_all_but(SOCKET);
     static void set_async_error(SOCKET s, int err);
 

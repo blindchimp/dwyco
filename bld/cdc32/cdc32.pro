@@ -25,6 +25,10 @@ $${VCCFG_COMP} \
 
 linux-*: INCLUDEPATH += ../v4lcap
 linux-*: INCLUDEPATH += /home/dwight/git/c-toxcore/toxcore
+# note: toxbridge.cpp is always compiled, and it uses the toxcore loop api
+# unconditionally. DWYCO_TOXCORE is what makes dwyco_tox_available() (dlli.cpp)
+# report that tox is really in this build.
+linux-*: DEFINES += DWYCO_TOXCORE
 
 DEFINES += \
 	VCCFG_FILE \

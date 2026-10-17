@@ -108,6 +108,16 @@ unsigned long hash(vc_winsock *a)
 #endif
 #include <cstddef>
 
+// reported through poll_sets' extra_revents when an extra descriptor is
+// ready (data, error or hangup pending). on builds that use ::poll this is
+// the raw revents, so it is never just this value, and any non-zero value
+// means "something happened, go look at it".
+#define VC_EXTRA_POLL_READY 0x0001
+// reported through poll_sets' extra_revents when an extra descriptor
+// can't be waited on at all (out of range for the poll mechanism).
+// same value POLLNVAL has, so callers can test for it either way.
+#define VC_EXTRA_POLL_NVAL 0x0020
+
 #ifndef USE_WINSOCK
 #include "vcberk.h"
 
@@ -247,8 +257,13 @@ vc_winsock::poll_impl(int whatfor, int sec, int usec, Socketvec& res)
 // whatfor & VC_SOCK_ERR = poll all for error
 // otherwise, use the read/write sets to figure out what to
 // poll for.
+//
+// extra_fds/extra_count are descriptors vc doesn't own (see poll_sets).
+// they are waited on for read and their results are reported through
+// extra_revents, if provided.
 int
-vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
+vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res,
+                       const int *extra_fds, int extra_count, short *extra_revents)
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex());
@@ -260,6 +275,12 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 	FD_ZERO(&rset);
 	FD_ZERO(&wset);
 	FD_ZERO(&eset);
+
+	if(extra_revents && extra_count > 0)
+	{
+		for(int i = 0; i < extra_count; ++i)
+			extra_revents[i] = 0;
+	}
 
 	int dont_block = 0;
     SocketSetIter dhi(All_socks);
@@ -331,6 +352,29 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 		}
 	}
 
+	if(extra_fds && extra_count > 0)
+	{
+		// load up the caller-supplied descriptors. note: a select() based
+		// poll can only see the first FD_SETSIZE descriptors, so anything
+		// past that is reported back as "can't be waited on" instead of
+		// being silently dropped (which would look to the caller like
+		// "nothing to wait for").
+		for(int i = 0; i < extra_count; ++i)
+		{
+			SOCKET s = extra_fds[i];
+			// note: SOCKET is unsigned on windows, so a bogus negative
+			// descriptor shows up here as a huge value. comparing the
+			// unsigned value covers both spellings.
+			if((unsigned long long)s >= (unsigned long long)FD_SETSIZE)
+			{
+				if(extra_revents)
+					extra_revents[i] = VC_EXTRA_POLL_NVAL;
+			}
+			else
+				FD_SET(s, &rset);
+		}
+	}
+
 	if(dont_block)
 	{
 		sec = 0;
@@ -357,7 +401,19 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 		FD_ZERO(&wset);
 		FD_ZERO(&eset);
 	}
-		
+
+	if(extra_fds && extra_count > 0 && extra_revents)
+	{
+		for(int i = 0; i < extra_count; ++i)
+		{
+			SOCKET s = extra_fds[i];
+			if((unsigned long long)s >= (unsigned long long)FD_SETSIZE)
+				continue;
+			if(FD_ISSET(s, &rset))
+				extra_revents[i] = VC_EXTRA_POLL_READY;
+		}
+	}
+
 	for(dhi.rewind(); !dhi.eol(); dhi.forward())
 	{
         vc_winsock *vcsockp = (vc_winsock *)dhi.get();
@@ -520,17 +576,30 @@ vc_winsock::poll_impl(int whatfor, int sec, int usec, Socketvec& res)
 // whatfor & VC_SOCK_WRITE_NOT_READ = poll all sockets for
 // write except for the ones in the read set.
 //
+// extra_fds/extra_count are descriptors vc doesn't own (see poll_sets).
+// they are waited on for read and their results are reported through
+// extra_revents, if provided.
 int
-vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
+vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res,
+                       const int *extra_fds, int extra_count, short *extra_revents)
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex());
 #endif
     int nfds = All_socks->num_elems();
-	// note: can't really tell ahead, so just allocate big
-    DwVec<struct pollfd> pfds(nfds == 0 ? 1 : nfds * 3);
+	int n_extras = (extra_fds && extra_count > 0) ? extra_count : 0;
+	// note: can't really tell ahead, so just allocate big. the extras are
+	// appended after every socket, so they need their own room on top of
+	// the (nfds * 3) worst case for the sockets.
+    DwVec<struct pollfd> pfds(nfds == 0 && n_extras == 0 ? 1 : nfds * 3 + n_extras);
 	//struct pollfd *pfds = new struct pollfd[nfds * 3];
 	int pfd_count = 0;
+
+	if(extra_revents && n_extras > 0)
+	{
+		for(int i = 0; i < n_extras; ++i)
+			extra_revents[i] = 0;
+	}
 
 	int dont_block = 0;
     SocketSetIter dhi(All_socks);
@@ -651,6 +720,21 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 	{
 		sec = 0;
 		usec = 0;
+	}
+
+	// append the caller-supplied descriptors after every socket, so the
+	// index bookkeeping below (which walks the socket entries in the same
+	// order they were added) stays untouched.
+	int extra_base = pfd_count;
+	if(n_extras > 0)
+	{
+		for(int i = 0; i < n_extras; ++i)
+		{
+			pfds[extra_base + i].fd = extra_fds[i];
+			pfds[extra_base + i].events = POLLIN;
+			pfds[extra_base + i].revents = 0;
+		}
+		pfd_count += n_extras;
 	}
 
 	int num = ::poll(&pfds[0], pfd_count, sec * 1000 + usec / 1000);
@@ -776,6 +860,11 @@ vc_winsock::poll2_impl(int whatfor, int sec, int usec, Socketvec& res)
 				++pfd_count;
 			}
 		}
+	}
+	if(n_extras > 0 && extra_revents)
+	{
+		for(int i = 0; i < n_extras; ++i)
+			extra_revents[i] = pfds[extra_base + i].revents;
 	}
 	return res.num_elems();
 }
@@ -968,13 +1057,14 @@ vc_winsock::poll_all(int whatfor, Socketvec& out, int sec, int usec)
 }
 
 int
-vc_winsock::poll_sets(int whatfor, Socketvec& out, int sec, int usec)
+vc_winsock::poll_sets(int whatfor, Socketvec& out, int sec, int usec,
+                      const int *extra_fds, int extra_count, short *extra_revents)
 {
 #ifdef DWYCO_VC_MT_SOCKET
 	std::lock_guard<std::recursive_mutex> lock(global_mutex());
 #endif
 	out.set_size(0);
-	int num = poll2_impl(whatfor, sec, usec, out);
+	int num = poll2_impl(whatfor, sec, usec, out, extra_fds, extra_count, extra_revents);
 	if(num < 0)
 		num = -1;
 	return num;

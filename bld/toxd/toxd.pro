@@ -27,9 +27,16 @@ $${D}/jenkins/libjenkins.a \
 }
 
 linux-* {
-DEFINES += LOCAL_TOXCORE #TOXD_STANDALONE
+# note: DWYCO_TOXCORE is what actually turns on the real plugin in toxd.cpp
+# (the whole implementation is inside that ifdef). LOCAL_TOXCORE only picks
+# the header layout (tox/tox.h vs tox.h).
+DEFINES += DWYCO_TOXCORE LOCAL_TOXCORE #TOXD_STANDALONE
 INCLUDEPATH += /home/dwight/git/c-toxcore/toxcore
+# toxencryptsave.h lives in the sibling dir, not in toxcore/
+INCLUDEPATH += /home/dwight/git/c-toxcore/toxencryptsave
 D = $${OUT_PWD}/..
+# note: qmake ignores LIBS in a staticlib project. this is here to document
+# what the app that links this has to link, nothing more.
 LIBS += \
 $${D}/vc/libvc.a \
 $${D}/dwcls/libdwcls.a \

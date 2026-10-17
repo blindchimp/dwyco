@@ -87,7 +87,17 @@ void tox_bridge_poll();
 // socket readiness — for external event loops. fills up to max_fds with the
 // native descriptors of the tox sockets, and sets *next_event_ms to the
 // number of milliseconds until the core next needs to run (tox_iterate).
-// returns the number of fds written (0 if the tox bridge isn't running).
+// returns the number of fds written, which is capped at max_fds: pass
+// TOX_BRIDGE_MAX_POLL_FDS so that gets you the whole set, since anything
+// beyond max_fds is silently not waited on (and the core then doesn't get
+// serviced for whatever it is waiting on). returns 0 fds if the tox bridge
+// isn't running, which is not the same as "tox has nothing to do" — the
+// *next_event_ms value is still valid and should be honored either way.
+enum {
+    // toxcore's TOX_LOOP_MAX_SOCKETS is MAX_TCP_CONNECTIONS (64) + 8, so
+    // this has slack over the theoretical worst case on purpose.
+    TOX_BRIDGE_MAX_POLL_FDS = 80
+};
 int tox_bridge_get_poll_fds(int *fds, int max_fds, int *next_event_ms);
 
 // identity

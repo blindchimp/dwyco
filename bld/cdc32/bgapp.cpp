@@ -857,8 +857,12 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 Response_q.num_elems() > 0 || // we have items that need processing now
                 MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
                 dwyco::sproto::any_quick_transitions()
-#ifndef ANDROID
-                || dwyco::tox_bridge_is_active() // on android, tox socket readiness wakes the loop instead
+#ifdef DWYCO_CDC_LIBUV
+                // with libuv, the wait below is a uv timer + uv_run, which
+                // can't see the tox sockets, so tox still needs a timer.
+                // everywhere else, the tox sockets are in the same poll as
+                // the dwyco ones, so they wake the loop by themselves.
+                || dwyco::tox_bridge_is_active()
 #endif
                 //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
                 )
@@ -882,55 +886,23 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             // things done, and don't want to spin too fast.
             snooze = 100;
         }
-#ifdef ANDROID
-        // on android, don't fast-poll on a timer just because tox is
-        // active. instead, wake up as soon as a tox socket has data
-        // pending. the actual processing happens at the top of the loop
-        // via dwyco_service_channels -> tox_bridge_poll -> tox_iterate.
-        {
-            int tox_fds[16];
-            int tox_next_ms = 0;
-            const int tox_fd_count = tox_bridge_get_poll_fds(tox_fds, 16, &tox_next_ms);
-            const int poll_fd_count = tox_fd_count > 16 ? 16 : tox_fd_count;
-
-            int wait_ms = snooze;
-            if(poll_fd_count > 0 && tox_next_ms < wait_ms)
-                wait_ms = tox_next_ms;
-
-            if(poll_fd_count > 0 && wait_ms > 0)
-            {
-                struct pollfd pfds[16];
-                for(int i = 0; i < poll_fd_count; ++i)
-                {
-                    pfds[i].fd = tox_fds[i];
-                    pfds[i].events = POLLIN;
-                    pfds[i].revents = 0;
-                }
-
-                const auto poll_t0 = std::chrono::steady_clock::now();
-                const int n = poll(pfds, poll_fd_count, wait_ms);
-                const auto poll_t1 = std::chrono::steady_clock::now();
-                const int elapsed = (int)std::chrono::duration_cast<std::chrono::milliseconds>(poll_t1 - poll_t0).count();
-
-                if(n > 0)
-                    continue;
-                if(n < 0)
-                {
-                    if(errno == EINTR)
-                        continue;
-                    return 1;
-                }
-
-                // tox fds were idle for the whole wait; give the remaining
-                // time to the dwyco socket poll below.
-                snooze -= elapsed;
-                if(snooze < 0)
-                    snooze = 0;
-            }
-        }
-#endif
 #ifndef DWYCO_CDC_LIBUV
         Socketvec res;
+
+        // the tox sockets belong in the same wait as the dwyco sockets,
+        // otherwise either one has to wait for the other to time out. the
+        // tox core also has internal timers (relay pings, friend
+        // keepalives, lan discovery) that can't wait for a dwyco timer to
+        // expire, so the timeout is the sooner of the two.
+        //
+        // note: this has to come after the snooze clamp above, since that
+        // one raises a short snooze back up to 100.
+        int tox_fds[TOX_BRIDGE_MAX_POLL_FDS];
+        short tox_revents[TOX_BRIDGE_MAX_POLL_FDS];
+        int tox_next_ms = 0;
+        const int tox_fd_count = tox_bridge_get_poll_fds(tox_fds, TOX_BRIDGE_MAX_POLL_FDS, &tox_next_ms);
+        if(tox_fd_count > 0 && tox_next_ms >= 0 && tox_next_ms < snooze)
+            snooze = tox_next_ms;
 
         int secs = snooze / 1000;
         // avoid problems with overflow, there is nothing here
@@ -942,12 +914,25 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         if(w > 0)
             ALOGI("write set %d", w);
         // this polls everything for read, and just the few other sockets
-        // waiting for write (usually wait for connect)
-        int n = vc_winsock::poll_sets(VC_SOCK_READ, res, secs, usecs);
-        GRTLOG("wakeup %d", n, 0);
-        ALOGI("wakeup %d", n);
+        // waiting for write (usually wait for connect), plus the tox
+        // sockets. the tox descriptors are only waited on, never read
+        // (vc doesn't own them): if any of them fires, all we do is go
+        // around the loop again so dwyco_service_channels ->
+        // tox_bridge_poll -> tox_iterate can deal with it.
+        int n = vc_winsock::poll_sets(VC_SOCK_READ, res, secs, usecs,
+                                      tox_fds, tox_fd_count, tox_revents);
+        // note: n only counts dwyco sockets, so it can be 0 even though a
+        // tox socket is what woke us up. don't branch on it.
+        int tox_ready = 0;
         if(n < 0)
             return 1;
+        for(int i = 0; i < tox_fd_count; ++i)
+        {
+            if(tox_revents[i] != 0)
+                ++tox_ready;
+        }
+        GRTLOG("wakeup %d %d", n, tox_ready);
+        ALOGI("wakeup %d", n);
 
         for(int i = 0; i < res.num_elems(); ++i)
         {

@@ -11,6 +11,11 @@ SOURCES += \
 
 linux-* {
 D = $${OUT_PWD}/../bld
+# toxd and cdc32 are built with the toxcore headers on linux, so this has
+# to link the toxcore library too. see the contains(DWYCO_TOXCORE) block at
+# the bottom -- the libs go there, after all the .a's, because static
+# archives only satisfy references that come later on the command line.
+DEFINES += DWYCO_TOXCORE
 
 LIBS += \
 $${D}/cdc32/libcdc32.a \
