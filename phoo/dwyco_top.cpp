@@ -26,6 +26,7 @@
 //#include <QtAndroid>
 #endif
 #include <QFile>
+#include <QFileInfo>
 #include <QDateTime>
 #include <QTextStream>
 #include <QStandardPaths>
@@ -288,7 +289,9 @@ void
 start_desktop_background()
 {
 #if !defined(ANDROID) && !defined(DWYCO_IOS)
-    QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+    QFileInfo exe(QCoreApplication::applicationFilePath());
+    const QString exe_dir = exe.canonicalPath();
+    QProcess::startDetached(exe_dir + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
 #endif
 }
 
