@@ -63,8 +63,12 @@
 #endif
 
 // Define this if you want to disable all OS-dependent features,
-// such as sockets and OS-provided random number generators
+// such as sockets and OS-provided random number generators.
+// They are enabled by default. Emscripten has no OS-provided random
+// source, so keep OS-dependent features disabled there.
+#ifdef __EMSCRIPTEN__
 #define NO_OS_DEPENDENCE
+#endif
 
 // Define this to use features provided by Microsoft's CryptoAPI.
 // Currently the only feature used is Windows random number generation.
