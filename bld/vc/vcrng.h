@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include "randpool.h"
+#include "vc.h"
 
 #if !defined(NO_OS_DEPENDENCE) && defined(OS_RNG_AVAILABLE)
 #include "osrng.h"
@@ -78,8 +79,22 @@ make_rng(const void *seed = 0, size_t seed_len = 0)
 inline void
 rng_add(CryptoPP::RandomPool *rng, const void *data, size_t len)
 {
-    if(rng && data && len)
-        rng->IncorporateEntropy((const CryptoPP::byte *)data, len);
+    if(!rng)
+    {
+        user_warning("rng_add: null random pool");
+        return;
+    }
+    if(!data)
+    {
+        user_warning("rng_add: null entropy pointer");
+        return;
+    }
+    if(len == 0)
+    {
+        user_warning("rng_add: zero length entropy");
+        return;
+    }
+    rng->IncorporateEntropy((const CryptoPP::byte *)data, len);
 }
 
 }

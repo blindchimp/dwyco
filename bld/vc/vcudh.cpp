@@ -55,8 +55,8 @@ init_rng(vc entropy)
     {
         // keep the existing pool instead of throwing away everything
         // it has accumulated across udh_init() calls.
-        if(e)
-            Rng->IncorporateEntropy((const byte *)e, elen);
+        if(e && elen > 0)
+            dwyco::rng_add(Rng, e, elen);
         return;
     }
     Rng = dwyco::make_rng(e, elen);
@@ -108,9 +108,9 @@ udh_new_static(vc entropy)
 
     SecByteBlock static_priv(UDH->StaticPrivateKeyLength());
     SecByteBlock static_pub(UDH->StaticPublicKeyLength());
-    if(entropy.type() == VC_STRING)
+    if(entropy.type() == VC_STRING && entropy.len() > 0)
     {
-        Rng->IncorporateEntropy((const byte *)(const char *)entropy, entropy.len());
+        dwyco::rng_add(Rng, (const char *)entropy, entropy.len());
     }
     UDH->GenerateStaticKeyPair(*Rng, static_priv, static_pub);
     vc DH_static = vc(VC_VECTOR);
@@ -133,9 +133,9 @@ udh_gen_keys(vc DH_static, vc entropy)
 {
     SecByteBlock eph_priv(UDH->EphemeralPrivateKeyLength());
     SecByteBlock eph_pub(UDH->EphemeralPublicKeyLength());
-    if(entropy.type() == VC_STRING)
+    if(entropy.type() == VC_STRING && entropy.len() > 0)
     {
-        Rng->IncorporateEntropy((const byte *)(const char *)entropy, entropy.len());
+        dwyco::rng_add(Rng, (const char *)entropy, entropy.len());
     }
 
     UDH->GenerateEphemeralKeyPair(*Rng, eph_priv, eph_pub);
