@@ -80,7 +80,7 @@
 // including desktop apps and store apps. Currently the only feature
 // used is Windows random number generation.
 // This macro will be ignored if NO_OS_DEPENDENCE is defined.
-// #define USE_MS_CNGAPI
+#define USE_MS_CNGAPI
 
 // If the user did not make a choice, then select CryptoNG if
 // targeting Windows 8 or above.
