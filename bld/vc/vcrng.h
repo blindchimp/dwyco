@@ -63,7 +63,8 @@ make_rng(const void *seed = 0, size_t seed_len = 0)
             unsigned int r1;
             unsigned int r2;
         } noise;
-        std::memset(&noise, 0, sizeof(noise));
+        // if there is padding that is uninitialized, the more the merrier
+        //std::memset(&noise, 0, sizeof(noise));
         noise.clock = (std::uint64_t)
                       std::chrono::high_resolution_clock::now().time_since_epoch().count();
         noise.time = std::time(0);
