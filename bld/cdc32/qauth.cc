@@ -16,6 +16,7 @@
 #include "dwrtlog.h"
 #include "xinfo.h"
 #include "dwyco_rand.h"
+#include "randpool.h"
 #include "vcrng.h"
 
 using namespace dwyco;

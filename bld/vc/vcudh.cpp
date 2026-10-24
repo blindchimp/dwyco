@@ -19,6 +19,7 @@
 #include "dh.h"
 #include "dh2.h"
 #include "hex.h"
+#include "randpool.h"
 #include "vcudh.h"
 #include "vcrng.h"
 #include "aes.h"

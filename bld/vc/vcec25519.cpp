@@ -16,6 +16,7 @@
 #include "secblock.h"
 #include "algparam.h"
 #include "argnames.h"
+#include "randpool.h"
 #include "vcec25519.h"
 #include "vcrng.h"
 
