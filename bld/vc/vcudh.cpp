@@ -16,19 +16,12 @@
 #include "vc.h"
 #include "vcmap.h"
 #ifndef NO_VCCRYPTO
-#include <time.h>
-#ifdef LINUX
-#include <unistd.h>
-#include <fcntl.h>
-#else
-#include <io.h>
-#include <fcntl.h>
-#endif
 #include "dh.h"
 #include "dh2.h"
 #include "hex.h"
-#include "vcudh.h"
 #include "randpool.h"
+#include "vcudh.h"
+#include "vcrng.h"
 #include "aes.h"
 #include "modes.h"
 
@@ -48,57 +41,26 @@ static DH2 *UDH;
 
 static RandomPool *Rng;
 
-// XXX this really needs to be beefed up on windows... if we have access
-// to our little entropy pool, we should use it.
 static void
 init_rng(vc entropy)
 {
-    // seed, don't bother with it, just use
-    // whatever rubbish is on the stack.
-    // but, this bothers valgrind, so init it.
-#define N 8
-    byte a[N];
-    byte k[N];
-    memset(a, 0, sizeof(a));
-    memset(k, 0, sizeof(k));
-    int fd = open("/dev/urandom", O_RDONLY);
-    if(fd == -1 ||
-            read(fd, k, sizeof(k)) != sizeof(k) ||
-            read(fd, a, sizeof(a)) != sizeof(a)
-      )
+    const char *e = 0;
+    long elen = 0;
+    if(entropy.type() == VC_STRING && entropy.len() > 0)
     {
-        if(entropy.type() == VC_STRING && entropy.len() >= sizeof(a) + sizeof(k))
-        {
-            const char *e = (const char *)entropy;
-            for(size_t i = 0; i < sizeof(a); ++i)
-            {
-                a[i] = e[i];
-                k[i] = e[sizeof(a) + i];
-            }
+        e = (const char *)entropy;
+        elen = entropy.len();
+    }
 
-        }
-        else
-        {
-            srand(time(0));
-            for(size_t i = 0; i < sizeof(a); ++i)
-            {
-                a[i] = rand();
-                k[i] = rand();
-            }
-        }
-    }
-    else
-    {
-        close(fd);
-    }
     if(Rng)
     {
-        delete Rng;
-        Rng = 0;
+        // keep the existing pool instead of throwing away everything
+        // it has accumulated across udh_init() calls.
+        if(e && elen > 0)
+            dwyco::rng_add(Rng, e, elen);
+        return;
     }
-    Rng = new RandomPool;
-    Rng->IncorporateEntropy(a, sizeof(a));
-    Rng->IncorporateEntropy(k, sizeof(k));
+    Rng = dwyco::make_rng(e, elen);
 }
 
 static vc
@@ -147,9 +109,9 @@ udh_new_static(vc entropy)
 
     SecByteBlock static_priv(UDH->StaticPrivateKeyLength());
     SecByteBlock static_pub(UDH->StaticPublicKeyLength());
-    if(entropy.type() == VC_STRING)
+    if(entropy.type() == VC_STRING && entropy.len() > 0)
     {
-        Rng->IncorporateEntropy((const byte *)(const char *)entropy, entropy.len());
+        dwyco::rng_add(Rng, (const char *)entropy, entropy.len());
     }
     UDH->GenerateStaticKeyPair(*Rng, static_priv, static_pub);
     vc DH_static = vc(VC_VECTOR);
@@ -172,9 +134,9 @@ udh_gen_keys(vc DH_static, vc entropy)
 {
     SecByteBlock eph_priv(UDH->EphemeralPrivateKeyLength());
     SecByteBlock eph_pub(UDH->EphemeralPublicKeyLength());
-    if(entropy.type() == VC_STRING)
+    if(entropy.type() == VC_STRING && entropy.len() > 0)
     {
-        Rng->IncorporateEntropy((const byte *)(const char *)entropy, entropy.len());
+        dwyco::rng_add(Rng, (const char *)entropy, entropy.len());
     }
 
     UDH->GenerateEphemeralKeyPair(*Rng, eph_priv, eph_pub);

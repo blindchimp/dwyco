@@ -9,23 +9,15 @@
 // $Header: g:/dwight/repo/cdc32/rcs/qauth.cc 1.9 1999/01/10 16:09:50 dwight Checkpoint $
 
 #include <time.h>
-#ifdef _Windows
-#include <io.h>
-#include <fcntl.h>
-#endif
-#include <windows.h>
 #include "vc.h"
 #include "dwtimer.h"
 #include "qauth.h"
 #include "asshole.h"
-#ifdef LINUX
-#include <netdb.h>
-#include <unistd.h>
-#include <fcntl.h>
-#endif
 #include "dwrtlog.h"
 #include "xinfo.h"
 #include "dwyco_rand.h"
+#include "randpool.h"
+#include "vcrng.h"
 
 using namespace dwyco;
 
@@ -37,11 +29,10 @@ vc My_UID;
 vc My_MID;
 vc My_server_key;
 extern vc Myhostname;
-static vc Entropy;
+static CryptoPP::RandomPool *Entropy_rng;
 int Send_auth;
 int Create_new_account;
 int Auth_remote;
-int Entropy_charge;
 void (*Entropy_display_callback)(int);
 
 
@@ -111,117 +102,73 @@ gen_pass(vc phrase, vc& salt)
     return hash;
 }
 
-void
-init_entropy()
+static void
+mix_startup_noise(CryptoPP::RandomPool *rng)
 {
-    if(!load_info(Entropy, "entropy") || Entropy.type() != VC_STRING)
-    {
-        Entropy = vclh_sha("hmmm");
-        Entropy_charge = ECHARGE;
-    }
-    else
-    {
-        // give it a little more in case we crashed last
-        // time, don't want to get the same numbers by accident.
-        // we know it is a string, so just normalize and keep going
-        Entropy = vclh_sha(Entropy);
-        DWORD t = timeGetTime();
-        add_entropy((char *)&t, sizeof(t));
-    }
-    // first time init of entropy pool...
-
     unsigned long t0 = DwTimer::time_now();
     time_t t1 = time(0);
     int s = dwyco_rand();
-    DwString a;
-    a += DwString((const char *)&s, 0, sizeof(s));
-    a += DwString((const char *)&t0, 0, sizeof(t0));
-    a += DwString((const char *)&t1, 0, sizeof(t1));
+    rng->IncorporateEntropy((const CryptoPP::byte *)&t0, sizeof(t0));
+    rng->IncorporateEntropy((const CryptoPP::byte *)&t1, sizeof(t1));
+    rng->IncorporateEntropy((const CryptoPP::byte *)&s, sizeof(s));
     // note: we know hostname won't be more than 1024, see doinit.cc
-    a += DwString((const char *)Myhostname, 0, Myhostname.len());
+    if(Myhostname.type() == VC_STRING && Myhostname.len() > 0)
+        rng->IncorporateEntropy((const CryptoPP::byte *)(const char *)Myhostname,
+                                Myhostname.len());
+}
 
-#if 1
-    // NOTE: ca 2021, this appears to take a significant amount of time
-    // on some platforms sometimes (when it can't find the hostname).
-    //
-    // try to get an IP address, but it may not work...
-    // oh well, if not, then at least we get some rubbish from
-    // the stack.
-    struct hostent *h = gethostbyname((const char *)Myhostname);
-    if(h)
-    {
-        a += DwString((const char *)h, 0, sizeof(*h));
-        for(int i = 0; h->h_addr_list[i]; ++i)
-        {
-            a += DwString((const char *)h->h_addr_list[i], 0, h->h_length);
-        }
-    }
-#endif
-#ifdef _Windows
-    DWORD w = GetCurrentProcessId();
-    a += DwString((const char *)&w, 0, sizeof(w));
-    w = GetCurrentThreadId();
-    a += DwString((const char *)&w, 0, sizeof(w));
-    HW_PROFILE_INFO hwp;
-    GetCurrentHwProfile(&hwp);
-    // if it fails, no biggie
-    a += DwString((const char *)&hwp, 0, sizeof(hwp));
+void
+init_entropy()
+{
+    if(Entropy_rng)
+        return;
 
-#endif
-    // add some from /dev/urandom
-    int fd = open("/dev/urandom", O_RDONLY);
-    char p[8];
-    if(fd != -1)
-    {
-        read(fd, p, sizeof(p));
-        close(fd);
-    }
+    vc seed;
+    int have_seed = load_info(seed, "entropy") && seed.type() == VC_STRING;
+
+    if(have_seed)
+        Entropy_rng = make_rng((const CryptoPP::byte *)(const char *)seed, seed.len());
     else
-    {
-        // thwart clever optimizers that might think
-        // accessing p results in undefined behavior
-        for(int i = 0; i < sizeof(p); ++i)
-            p[i] = dwyco_rand();
-    }
+        Entropy_rng = make_rng();
 
-    a += DwString(p, 0, sizeof(p));
-    a += DwString((const char *)Entropy, 0, Entropy.len());
-    vc s2(VC_BSTRING, a.c_str(), a.length());
-    Entropy = vclh_sha(s2);
-    save_info(vclh_sha(Entropy), "entropy");
+    mix_startup_noise(Entropy_rng);
+    save_entropy();
 }
 
 void
 save_entropy()
 {
-    if(Entropy.is_nil())
+    if(!Entropy_rng)
         init_entropy();
-    save_info(vclh_sha(Entropy), "entropy");
+
+    CryptoPP::byte seed[32];
+    Entropy_rng->GenerateBlock(seed, sizeof(seed));
+    vc s(VC_BSTRING, (const char *)seed, sizeof(seed));
+    memset(seed, 0, sizeof(seed));
+    save_info(s, "entropy");
 }
 
 vc
 get_entropy()
 {
-    if(Entropy.is_nil())
+    if(!Entropy_rng)
         init_entropy();
-    DWORD t = timeGetTime();
-    add_entropy((char *)&t, sizeof(t));
-    vc ret = vclh_sha(Entropy);
+
+    CryptoPP::byte buf[20];
+    Entropy_rng->GenerateBlock(buf, sizeof(buf));
+    vc ret(VC_BSTRING, (const char *)buf, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
     return ret;
 }
 
 void
 add_entropy(const char *astr, int alen)
 {
-    if(Entropy.is_nil())
+    if(alen <= 0 || !astr)
+        return;
+    if(!Entropy_rng)
         init_entropy();
-    int len = Entropy.len();
-    char *a = new char[len + alen];
-    memcpy(a, (const char *)Entropy, len);
-    memcpy(a + len, astr, alen);
-    vc r(VC_BSTRING, a, len + alen);
-    Entropy = vclh_sha(r);
-    delete [] a;
+    rng_add(Entropy_rng, astr, alen);
 }
 
 void
@@ -232,22 +179,16 @@ add_entropy_timer(const char *astr, int alen)
     static int been_here;
     if(!been_here)
     {
+        // take some noise from the first event immediately, then
+        // rate-limit further mixing so a busy event stream does not
+        // spend all its time stirring the pool.
+        been_here = 1;
+        add_entropy(astr, alen);
         timer.start(DwTimer::REPEATING, 60 * 1000, 60 * 1000);
 
         // used to be 15 seconds, but this caused too much
         // thrashing on laptops and things like dropbox
         save_timer.start(DwTimer::REPEATING, 2 * 3600 * 1000, 2 * 3600 * 1000);
-
-        been_here = 1;
-    }
-    if(Entropy_charge)
-    {
-        --Entropy_charge;
-        add_entropy(astr, alen);
-        if(!Entropy_charge)
-            save_info(vclh_sha(Entropy), "entropy");
-        if(Entropy_display_callback)
-            (*Entropy_display_callback)((int)(100 - ((double)Entropy_charge / ECHARGE) * 100));
         return;
     }
     if(timer.is_expired())
@@ -258,7 +199,7 @@ add_entropy_timer(const char *astr, int alen)
     if(save_timer.is_expired())
     {
         save_timer.ack_expire();
-        save_info(vclh_sha(Entropy), "entropy");
+        save_entropy();
     }
 }
 
