@@ -51,6 +51,7 @@ vcfile.cpp \
 vcsfile.cpp  \
 enc.cpp \
 vccrypt2.cpp \
+vcrng.cpp \
 zcomp.cpp \
 vcio.cpp \
 vcuvsock.cpp \
