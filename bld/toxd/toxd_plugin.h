@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+struct Tox;
+
 struct ToxPlugin;
 
 typedef void (*ToxpEventCB)(const char *type, const vc &args, void *userdata);
@@ -32,7 +34,7 @@ ToxPlugin *toxp_init(const char *save_file, const uint8_t *password, int passwor
 void toxp_shutdown(ToxPlugin *p);
 void toxp_save(ToxPlugin *p);
 void toxp_iterate(ToxPlugin *p);
-struct Tox_Loop *toxp_get_loop(ToxPlugin *p);
+struct Tox *toxp_get_tox(ToxPlugin *p);
 
 // import / password support
 // read a tox save file, decrypt it if needed (src_pw), and verify it is a
