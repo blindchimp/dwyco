@@ -138,7 +138,7 @@ QMsgSql::init_schema_fav()
     {
         start_transaction();
         const vc& res = sql_simple("pragma mt.user_version");
-        if((int)res[0][0] == 2)
+        if((int)res[0][0] == 3)
             throw 0;
 #ifdef DWYCO_DBG_SCHEMA
         if((int)res[0][0] != 0)
@@ -172,7 +172,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
         sql_simple("drop table mt.msg_tags2");
-        sql_simple("pragma mt.user_version = 2");
+        sql_simple("pragma mt.user_version = 3");
 
         commit_transaction();
     }
@@ -1019,6 +1019,17 @@ remove_sync_state()
 // the operation is stored, and is pretty much reflected in the data
 // until a client themselves leaves the group.
 //
+static
+bool
+tag_requires_payload(const vc& tag)
+{
+    static const vc tox_save("_tox_save");
+    static const vc tox_active("_tox_active");
+    static const vc tox_friend("_tox_friend");
+    static const vc tox_mid("_tox_mid");
+    return tag == tox_save || tag == tox_active || tag == tox_friend || tag == tox_mid;
+}
+
 int
 import_remote_mi(const vc& remote_uid)
 {
@@ -1102,7 +1113,22 @@ import_remote_mi(const vc& remote_uid)
             update_tags = true;
         if(!update_tags)
             c = s.sql_simple("select count(*) from mt.gmt");
-        s.sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from mi2.msg_tags2", huid);
+        // note: only dumps from newer clients have a msg_payload table. old dumps
+        // are imported as before, just without payloads.
+        const vc haspl = s.sql_simple("select 1 from mi2.sqlite_master where type = 'table' and name = 'msg_payload'");
+        if(haspl.num_elems() > 0)
+        {
+            s.sql_simple("insert or ignore into mt.gmt "
+                         "select mt2.mid, mt2.tag, mt2.time, ?1, mt2.guid from mi2.msg_tags2 as mt2 "
+                         "where mt2.tag not in ('_tox_save', '_tox_active', '_tox_friend', '_tox_mid') "
+                         "or exists (select 1 from mi2.msg_payload as gp where gp.guid = mt2.guid and gp.payload is not null)", huid);
+        }
+        else
+        {
+            s.sql_simple("insert or ignore into mt.gmt "
+                         "select mid, tag, time, ?1, guid from mi2.msg_tags2 "
+                         "where tag not in ('_tox_save', '_tox_active', '_tox_friend', '_tox_mid')", huid);
+        }
         if(!update_tags)
             c2 = s.sql_simple("select count(*) from mt.gmt");
         if(c[0][0] != c2[0][0])
@@ -1120,9 +1146,6 @@ import_remote_mi(const vc& remote_uid)
         // tag row anywhere, so its payload is unreachable.
         s.sql_simple("delete from mt.gmt_payload where guid in (select guid from mt.gtomb)");
 
-        // note: only dumps from newer clients have a msg_payload table. old dumps
-        // are imported as before, just without payloads.
-        const vc haspl = s.sql_simple("select 1 from mi2.sqlite_master where type = 'table' and name = 'msg_payload'");
         if(haspl.num_elems() > 0)
         {
             s.sql_simple("insert or ignore into mt.gmt_payload(guid, mid, payload) "
@@ -1359,16 +1382,35 @@ import_remote_tupdate(const vc& remote_uid, const vc& vals)
             if(vals.num_elems() >= 6)
                 payload = vals[4];
 
+            if(payload.is_nil() && tag_requires_payload(tag))
+            {
+                // the reject can probably be removed once the local upgrade and
+                // schema version gate is installed.
+                sql_simple("insert into current_clients values(?1)", huid);
+                sql_commit_transaction();
+                return;
+            }
+
             // note: we only keep the payload if the tag row was actually inserted
-            // (first writer wins for a given guid).
+            // (first writer wins for a given guid), but attach a missing payload
+            // to an existing live row.
             const vc ins = sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid) returning 1", mid, tag, tm, huid, guid);
-            if(ins.num_elems() > 0 && !payload.is_nil())
+            if(!payload.is_nil())
             {
                 // note: wrap in a ("blob", value) vector so embedded 0's survive.
                 vc b(VC_VECTOR);
                 b[0] = "blob";
                 b[1] = payload;
-                sql_simple("insert or replace into mt.gmt_payload (guid, mid, payload) values(?1, ?2, ?3)", guid, mid, b);
+                if(ins.num_elems() > 0)
+                {
+                    sql_simple("insert or replace into mt.gmt_payload (guid, mid, payload) values(?1, ?2, ?3)", guid, mid, b);
+                }
+                else
+                {
+                    const vc hasrow = sql_simple("select 1 from mt.gmt where guid = ?1 and not exists (select 1 from mt.gtomb where guid = ?1) limit 1", guid);
+                    if(hasrow.num_elems() > 0)
+                        sql_simple("insert or ignore into mt.gmt_payload (guid, mid, payload) values(?1, ?2, ?3)", guid, mid, b);
+                }
             }
             vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
@@ -1769,6 +1811,14 @@ init_qmsg_sql()
     sql_simple("delete from mt.gmt where (tag = '_tox_friend' or tag = '_tox_mid' or tag = '_tox_save' or tag = '_tox_active') and instr(mid, '_') > 0");
 
     sql_commit_transaction();
+    const vc delta_reset = sql_simple("select 1 from schema_sections where name = 'delta_reset_v3' limit 1");
+    if(delta_reset.num_elems() == 0)
+    {
+        sql_start_transaction();
+        sql_simple("insert into schema_sections(name, val) values('delta_reset_v3', 1)");
+        sql_simple("delete from deltas");
+        sql_commit_transaction();
+    }
     // this happens one time, the sql file names are changed and old
     // files are deleted. we try to bring in tags from really old
     // databases, not sure if this will work all the time though.

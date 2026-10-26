@@ -263,7 +263,7 @@ write_save_bytes(const vc &bytes)
     if(bytes.is_nil() || bytes.len() <= 0)
         return 0;
     ensure_save_file();
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     DwString tmp_path = save_path + ".new";
     FILE *f = fopen(tmp_path.c_str(), "wb");
     if(!f)
@@ -1116,7 +1116,7 @@ tox_bridge_publish_save()
     // what we publish is exactly what a fresh sign-in on another device
     // would load.
     toxp_save(Tox_plugin);
-    vc bytes = read_whole_file(newfn(Save_file.c_str()), TOX_SAVE_MAX_PUBLISH);
+    vc bytes = read_whole_file(newfn(Save_file), TOX_SAVE_MAX_PUBLISH);
     if(bytes.is_nil())
     {
         GRTLOG("tox: publish save failed, could not read %s", Save_file.c_str(), 0);
@@ -1277,7 +1277,7 @@ tox_bridge_compare_saves()
     if(!sql_is_initialized())
         return vcnil;
     ensure_save_file();
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     vc local_bytes = read_whole_file(save_path, TOX_SAVE_MAX_PUBLISH);
     if(local_bytes.is_nil())
         return vcnil;
@@ -1530,7 +1530,7 @@ tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
     // very first thing the user does), so don't rely on tox_bridge_init having
     // set Save_file -- newfn("") panics.
     ensure_save_file();
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     DwString backup_path;
     int have_backup = 0;
     if(file_exists(save_path))
@@ -1769,7 +1769,7 @@ tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
     // first entering its password. note the save file may not have been
     // resolved yet if tox has never been started in this session.
     ensure_save_file();
-    DwString src = newfn(Save_file.c_str());
+    DwString src = newfn(Save_file);
     if(!file_exists(src))
     {
         snprintf(err_buf, (size_t)err_buf_len, "no tox save to export");
@@ -1814,7 +1814,7 @@ tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_p
         return 0;
     }
     ensure_save_file();
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     DwString backup_path;
     int have_backup = 0;
     if(make_backup && file_exists(save_path))
@@ -1872,7 +1872,7 @@ tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
     }
 
     ensure_save_file();
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     DwString backup_path;
     int have_backup = 0;
     if(make_backup && file_exists(save_path))
@@ -1927,7 +1927,7 @@ tox_bridge_peek_pubkey_from_file(const char *path, const uint8_t *pw, int pw_len
     if(!tox_bridge_save_exists())
         return 0;
     ensure_save_file();
-    vc bytes = read_whole_file(newfn(Save_file.c_str()), TOX_SAVE_MAX_PUBLISH);
+    vc bytes = read_whole_file(newfn(Save_file), TOX_SAVE_MAX_PUBLISH);
     if(bytes.is_nil())
         return 0;
     // note: an encrypted save on disk is toxencryptsave-wrapped, not a plain
@@ -1966,7 +1966,7 @@ tox_bridge_reset_identity(char *err_buf, int err_buf_len)
     // backup below captures the most recent profile.
     tox_bridge_shutdown();
 
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     DwString backup_path;
     int have_backup = 0;
     if(file_exists(save_path))
@@ -2022,7 +2022,7 @@ tox_bridge_factory_reset(char *err_buf, int err_buf_len)
     // we are deleting the save anyway).
     tox_bridge_shutdown();
 
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     if(file_exists(save_path))
     {
         remove(save_path.c_str());
@@ -2068,7 +2068,7 @@ tox_bridge_set_file_password(const uint8_t *old_pw, int old_pw_len,
         snprintf(err_buf, (size_t)err_buf_len, "sign out of tox before changing encryption");
         return 0;
     }
-    DwString save_path = newfn(Save_file.c_str());
+    DwString save_path = newfn(Save_file);
     if(!file_exists(save_path))
     {
         snprintf(err_buf, (size_t)err_buf_len, "no tox save to change");

@@ -33,10 +33,7 @@
 #include "randpool.h"
 #include "sha3.h"
 #include "keccak.h"
-#ifdef LINUX
-#include <unistd.h>
-#include <fcntl.h>
-#endif
+#include "vcrng.h"
 
 
 using namespace CryptoPP;
@@ -365,37 +362,7 @@ static vc MyDH_pvt;
 static void
 init_rng()
 {
-	// seed, don't bother with it, just use
-	// whatever rubbish is on the stack.
-	// this bothers valgrind, so init it.
-	byte a[8];
-	byte k[8];
-	memset(a, 0, sizeof(a));
-	memset(k, 0, sizeof(k));
-#ifndef UNIX
-	*(int *)&k[0] = rand();
-	*(int *)&k[4] = rand();
-	*(int *)&a[0] = rand();
-	*(int *)&a[4] = rand();
-#else
-	int fd = open("/dev/urandom", O_RDONLY);
-	if(fd < 0)
-	{
-		*(int *)&k[0] = rand();
-		*(int *)&k[4] = rand();
-		*(int *)&a[0] = rand();
-		*(int *)&a[4] = rand();
-	}
-	else
-	{
-		read(fd, k, sizeof(k));
-		read(fd, a, sizeof(a));
-		close(fd);
-	}
-#endif
-	Rng = new RandomPool;
-	Rng->IncorporateEntropy(a, sizeof(a));
-	Rng->IncorporateEntropy(k, sizeof(k));
+	Rng = dwyco::make_rng();
 }
 
 vc
