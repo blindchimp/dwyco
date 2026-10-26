@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <stdarg.h>
 #ifdef _WIN32
 #include <io.h>
@@ -75,6 +76,7 @@ struct ToxPlugin
     DwString save_file{};
     FILE *log_file{};
     int bootstrapped{};
+    time_t last_bootstrap{};
     Tox_Pass_Key *pass_key{};
     uint8_t *password{};
     int password_len{};
@@ -1257,10 +1259,20 @@ void
 toxp_iterate(ToxPlugin *p)
 {
     tox_iterate(p->tox, p);
+    time_t now = time(nullptr);
     if(!p->bootstrapped)
     {
         tox_bootstrap(p->tox);
         p->bootstrapped = 1;
+        p->last_bootstrap = now;
+    }
+    else if(tox_self_get_connection_status(p->tox) == TOX_CONNECTION_NONE)
+    {
+        if(p->last_bootstrap == 0 || now - p->last_bootstrap >= 30)
+        {
+            tox_bootstrap(p->tox);
+            p->last_bootstrap = now;
+        }
     }
 }
 
