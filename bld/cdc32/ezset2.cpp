@@ -94,6 +94,7 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
     // this is "recent" mode, by default
     DWUIDECLVAL(VC_INT, sync/eager, "", 2),
+    DWUIDECLVAL(VC_BSTRING, tox/enabled, "1", 0),
 
     DWUIDECLVAL(VC_INT, server/invis, "", 0),
 

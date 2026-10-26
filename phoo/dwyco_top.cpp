@@ -2181,6 +2181,7 @@ DwycoCore::init()
         } else {
             set_tox_enabled(true);
             dwyco_enable_tox("tox_save.tox");
+            dwyco_set_setting("tox/enabled", "1");
             set_user_status_impl(QStringLiteral("none"));
             update_tox_self_address(tox_get_self_address());
             update_tox_self_name(tox_get_name());
@@ -3099,6 +3100,7 @@ DwycoCore::enable_tox()
         return;
     set_tox_enabled(true);
     dwyco_enable_tox("tox_save.tox");
+    dwyco_set_setting("tox/enabled", "1");
     set_user_status_impl(QStringLiteral("none"));
     update_tox_self_address(tox_get_self_address());
     update_tox_self_name(tox_get_name());
@@ -3113,6 +3115,7 @@ DwycoCore::disable_tox()
         return;
     stop_auto_away();
     dwyco_disable_tox();
+    dwyco_set_setting("tox/enabled", "0");
     set_tox_enabled(false);
     update_tox_connected(0);
     update_tox_self_address("");
@@ -3430,6 +3433,7 @@ DwycoCore::tox_reset_identity()
         // early-returns when the flag is already false, so the shutdown does
         // not depend on flag ordering.
         dwyco_disable_tox();
+        dwyco_set_setting("tox/enabled", "0");
         set_tox_enabled(false);
         update_tox_connected(0);
         update_tox_self_address("");

@@ -453,6 +453,28 @@ bail_out()
     exit(0);
 }
 
+// enable tox in the background when a passwordless (unencrypted) save
+// exists and the user has not explicitly disabled it. mirrors the
+// passwordless startup path in phoo (DwycoCore::enable_tox).
+static
+void
+maybe_enable_tox_in_background()
+{
+    const char *val = 0;
+    int len = 0;
+    int tp = 0;
+    if (dwyco_get_setting("tox/enabled", &val, &len, &tp))
+    {
+        if (tp == DWYCO_TYPE_STRING && val && len == 1 && val[0] == '0')
+            return;
+    }
+    if (!dwyco_tox_save_exists())
+        return;
+    if (dwyco_tox_save_is_encrypted())
+        return;
+    dwyco_enable_tox("tox_save.tox");
+}
+
 // need this in case a join was initiated in the UI and
 // it is completed in the background. we need to exit immediately
 // and let it re-initialize with the new group member.
@@ -670,6 +692,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
+    maybe_enable_tox_in_background();
     }
 
 
@@ -901,8 +924,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         short tox_revents[TOX_BRIDGE_MAX_POLL_FDS];
         int tox_next_ms = 0;
         const int tox_fd_count = tox_bridge_get_poll_fds(tox_fds, TOX_BRIDGE_MAX_POLL_FDS, &tox_next_ms);
-        if(tox_fd_count > 0 && tox_next_ms >= 0 && tox_next_ms < snooze)
+        // only let tox's short (50ms) interval hurry us up when there is
+        // active work; otherwise keep the slower idle polling.
+        const bool bg_active = spin || Response_q.num_elems() > 0 ||
+            MMChannel::any_ctrl_q_pending() || dwyco::sproto::any_quick_transitions();
+        if(bg_active && tox_fd_count > 0 && tox_next_ms >= 0 && tox_next_ms < snooze)
             snooze = tox_next_ms;
+        // idle: don't poll faster than once per second.
+        if(!bg_active && snooze > 1000)
+            snooze = 1000;
 
         int secs = snooze / 1000;
         // avoid problems with overflow, there is nothing here
@@ -1227,8 +1257,8 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     // the service loop and process direct connections. once the
     // server is contacted you'll get proper offline messaging and so on.
     dwyco_finish_startup();
+    maybe_enable_tox_in_background();
 
-    //int comsock = -1;
     vc asock = vc(VC_SOCKET_STREAM);
     asock.socket_init(s, vctrue);
     dwyco_signal_msg_cond();
