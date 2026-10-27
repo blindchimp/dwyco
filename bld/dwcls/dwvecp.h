@@ -45,6 +45,7 @@ public:
     DwVecP& operator=(DwVecP&& s) noexcept {
         return (DwVecP&)DwVec<void *>::operator=(std::move(s));
     }
+    DwVecP(const DwVecP& v) : DwVec<void *>::DwVec<void *>(v) {}
     DwVecP(DwVecP&& v) noexcept : DwVec<void *>::DwVec<void *>(std::move(v)) {}
 
     ~DwVecP() {}
