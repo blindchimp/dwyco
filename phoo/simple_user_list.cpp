@@ -210,6 +210,28 @@ SimpleUserModel::load_users_to_model()
             add_uid_to_model(uid);
         }
     }
+
+    // tox friends are not in the dwyco user index unless they have
+    // messages, so add them explicitly (mirrors ConvListModel).
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(dwyco_tox_get_friends_model(&fl))
+    {
+        simple_scoped qfl(fl);
+        int nf = qfl.rows();
+        for(int i = 0; i < nf; ++i)
+        {
+            QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+            if(pk.length() < 10)
+                continue;
+            QByteArray pseudo = pk.left(10);
+            if(pseudo.length() == 0)
+                continue;
+            if(!dwyco_is_ignored(pseudo.constData(), pseudo.length()))
+            {
+                add_uid_to_model(pseudo);
+            }
+        }
+    }
 }
 
 template<class T>
