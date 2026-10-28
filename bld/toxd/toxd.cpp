@@ -137,7 +137,7 @@ toxd_on_friend_request(Tox *tox, const uint8_t *pubkey, const uint8_t *msg,
     log_printf(p->log_file, "[cb] friend_request msg=%.*s", (int)len, (const char *)msg);
     vc args(VC_VECTOR);
     args.append(pubkey_to_vc(pubkey));
-    args.append(vc(VC_STRING, (const char *)msg, (long)len));
+    args.append(vc(VC_BSTRING, (const char *)msg, (long)len));
     p->event_cb("friend_request", args, p->event_userdata);
 }
 
@@ -155,7 +155,7 @@ toxd_on_friend_message(Tox *tox, uint32_t fn, Tox_Message_Type type,
     vc args(VC_VECTOR);
     args.append(vc((int)fn));
     args.append(pubkey_to_vc(pubkey));
-    args.append(vc(VC_STRING, (const char *)msg, (long)len));
+    args.append(vc(VC_BSTRING, (const char *)msg, (long)len));
     args.append(vc(type == TOX_MESSAGE_TYPE_ACTION ? "action" : "normal"));
     p->event_cb("message", args, p->event_userdata);
 }
@@ -283,7 +283,7 @@ toxd_on_friend_name(Tox *tox, uint32_t fn, const uint8_t *name, size_t len, void
     vc args(VC_VECTOR);
     args.append(vc((int)fn));
     args.append(pubkey_to_vc(pubkey));
-    args.append(vc(VC_STRING, (const char *)name, (long)len));
+    args.append(vc(VC_BSTRING, (const char *)name, (long)len));
     p->event_cb("friend_name", args, p->event_userdata);
 }
 
@@ -298,7 +298,7 @@ toxd_on_friend_status_message(Tox *tox, uint32_t fn, const uint8_t *msg,
     vc args(VC_VECTOR);
     args.append(vc((int)fn));
     args.append(pubkey_to_vc(pubkey));
-    args.append(vc(VC_STRING, (const char *)msg, (long)len));
+    args.append(vc(VC_BSTRING, (const char *)msg, (long)len));
     p->event_cb("friend_status_message", args, p->event_userdata);
 }
 
@@ -399,7 +399,13 @@ load_or_create_tox(ToxPlugin *p, int *status_out)
     DwString save_path = dwyco::newfn(p->save_file);
 
     Tox_Err_Options_New new_err;
-    struct Tox_Options &opts = *tox_options_new(&new_err);
+    Tox_Options *opts_ptr = tox_options_new(&new_err);
+    if(!opts_ptr)
+    {
+        *status_out = TOXP_STATUS_FAILED;
+        return;
+    }
+    struct Tox_Options &opts = *opts_ptr;
     tox_options_default(&opts);
     tox_options_set_experimental_disable_dns(&opts, true);
     tox_options_set_udp_enabled(&opts, false);
@@ -913,6 +919,8 @@ toxp_validate_save(const uint8_t *data, size_t len)
         return 0;
     Tox_Err_Options_New new_err;
     Tox_Options *opts = tox_options_new(&new_err);
+    if(!opts)
+        return 0;
     tox_options_default(opts);
     tox_options_set_experimental_disable_dns(opts, true);
     tox_options_set_udp_enabled(opts, false);
@@ -934,6 +942,8 @@ toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out)
         return 0;
     Tox_Err_Options_New new_err;
     Tox_Options *opts = tox_options_new(&new_err);
+    if(!opts)
+        return 0;
     tox_options_default(opts);
     tox_options_set_experimental_disable_dns(opts, true);
     tox_options_set_udp_enabled(opts, false);
@@ -1028,6 +1038,11 @@ toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
     // network; we only want the stored fields.
     Tox_Err_Options_New new_err;
     Tox_Options *opts = tox_options_new(&new_err);
+    if(!opts)
+    {
+        free(decrypted);
+        return 0;
+    }
     tox_options_default(opts);
     tox_options_set_experimental_disable_dns(opts, true);
     tox_options_set_udp_enabled(opts, false);
@@ -1119,18 +1134,22 @@ toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
 int
 toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
 {
+    if(!p)
+        return 0;
+    Tox_Pass_Key *new_key = NULL;
+    if(pw && pw_len > 0)
+    {
+        Tox_Err_Key_Derivation kerr;
+        new_key = tox_pass_key_derive(pw, (size_t)pw_len, &kerr);
+        if(!new_key)
+            return 0;
+    }
     if(p->pass_key)
     {
         tox_pass_key_free(p->pass_key);
         p->pass_key = NULL;
     }
-    if(pw && pw_len > 0)
-    {
-        Tox_Err_Key_Derivation kerr;
-        p->pass_key = tox_pass_key_derive(pw, (size_t)pw_len, &kerr);
-        if(!p->pass_key)
-            return 0;
-    }
+    p->pass_key = new_key;
     if(p->tox)
         save_tox_state(p);
     return 1;
@@ -1601,7 +1620,8 @@ main(int argc, char **argv)
     (void)argc;
     (void)argv;
     StandaloneCtx ctx = {};
-    ToxPlugin *p = toxp_init(NULL, standalone_on_event, &ctx);
+    int status = TOXP_STATUS_FAILED;
+    ToxPlugin *p = toxp_init("tox.save", NULL, 0, standalone_on_event, &ctx, &status);
     if(!p)
         return 1;
     ctx.plugin = p;
@@ -1609,6 +1629,7 @@ main(int argc, char **argv)
     while(1)
     {
         toxp_iterate(p);
+        usleep(tox_iteration_interval(p->tox) * 1000);
     }
     toxp_shutdown(p);
     return 0;
