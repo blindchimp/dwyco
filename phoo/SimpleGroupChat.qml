@@ -798,6 +798,8 @@ Page {
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
+                                    if(themsgview.view_id !== -1)
+                                        core.delete_zap_view(themsgview.view_id)
                                     var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
 

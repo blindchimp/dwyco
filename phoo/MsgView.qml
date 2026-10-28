@@ -52,12 +52,9 @@ Page {
         {
             if(view_id !== -1) {
             core.stop_zap_view(view_id)
-            core.delete_zap_view(view_id)
             }
             is_trash = false
             is_plain_file = false
-            view_id = -1
-            view_source = ""
         }
         else
         {
