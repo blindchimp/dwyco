@@ -1,0 +1,11 @@
+;
+; crash: UDH-sf-get-key before UDH-init must crash, not return a bogus value
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; dereferences the null EphDH at vcudh.cpp:383. The pack needs 2 elements to
+; get past the num_elems() early-out at vcudh.cpp:380 first.
+lbind(pack vector(0123456789abcdef fedcba9876543210))
+lbind(ours vector(0123456789abcdef fedcba9876543210))
+UDH-sf-get-key(<pack> <ours>)
+printl(THIS-SHOULD-NEVER-PRINT)

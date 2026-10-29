@@ -1,0 +1,10 @@
+;
+; negative: UDH-sf-material with an out-of-range recipient public must return nil
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+lbind(bad-pub from-hex(ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff))
+UDH-init(nil)
+; the first arg is indexed at [0], so pass a (public) pair
+lbind(r UDH-sf-material(vector(<bad-pub>) sk))
+if(<r> prog(printl(neg-udh-sf-material-badpub-returned-a-value) printl(FAILED))) prog(printl(NEG-OK))

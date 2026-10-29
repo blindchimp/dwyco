@@ -1,0 +1,12 @@
+;
+; negative: UDH-sf-get-key with an out-of-range pack public must return nil
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+lbind(bad-pub from-hex(ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff))
+UDH-init(nil)
+lbind(s UDH-new-static(nil))
+lbind(pack UDH-sf-material(<s> sk))
+lbind(p vector(<pack>[0] <bad-pub>))
+lbind(r UDH-sf-get-key(<p> <s>))
+if(<r> prog(printl(neg-udh-sf-get-key-badpub-returned-a-value) printl(FAILED))) prog(printl(NEG-OK))

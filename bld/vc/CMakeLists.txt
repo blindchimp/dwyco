@@ -79,12 +79,14 @@ set(SRCS
     vcsfile.cpp  
     enc.cpp 
     vccrypt2.cpp 
+    vcrng.cpp 
     zcomp.cpp 
     vcio.cpp 
     vcuvsock.cpp 
     lhuvsock.cpp 
     vctrans.cpp 
     vcudh.cpp 
+    vcec25519.cpp 
     reobj.cpp 
     vctsock.cpp
     vclhnet.cpp

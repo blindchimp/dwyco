@@ -1,0 +1,95 @@
+;
+; UDH (vcudh.cpp) LH known-answer tests.
+;
+; Run with the interpreter binary built by vccmd/build.sh:
+;   vccmd -c <this dir> udh_kat.lh
+;
+; These vectors are the SAME constants the C++ test pins in
+; udh_cpp_test.cpp, so the two suites must agree. They were captured with
+;   udh_cpp_test --gen-kat
+; and they are stable because the 2048-bit DH group is compiled into
+; udh_init() in vcudh.cpp. Regenerate both if that group ever changes.
+;
+; A note on the private key: it has a long run of leading zero bytes. That
+; is expected, not corruption. Crypto++ caps the exponent at
+; 2^(2*DiscreteLogWorkFactor(bits)) = 2^226 for a 2048-bit prime
+; (DL_GroupParameters_IntegerBased::GetMaxExponent), and the key is then
+; encoded into a 256-byte buffer sized from the 2047-bit subgroup order.
+;
+; The legacy store-and-forward pack is fully deterministic, so
+; UDH-sf-get-key on it must return exactly the captured session key. The
+; multi-recipient material2/get_key2 vectors have no LH builtin and are
+; therefore only checked by the C++ test.
+;
+; Each failure prints "<label>" followed by "FAILED".
+; A clean run prints UDH-KAT-COMPLETE with no FAILED lines.
+;
+
+; printl/nl normally come from lhlib/common.lh loaded via $HOME/lhlib/load.lh
+; by the interpreter; define them locally so the tests are self-contained
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+
+; records a failure when <b> is nil (nil is the only falsy value here)
+gcompile(expect name b `if(<b> nil prog(printl(<name>) printl(FAILED)))')
+
+; records a failure when <v> is NOT nil, i.e. when we wanted a nil back
+gcompile(expect-nil name v `if(<v> prog(printl(<name>) printl(FAILED)))')
+
+; 256 bytes of 0xFF: correctly sized but >= the group prime, so
+; DH2::Agree returns false (no throw) and the call yields nil.
+lbind(bad-pub from-hex(ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff))
+
+lbind(kat-priv from-hex(000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d04d4f3e647ab2f0e23ed7c1693867ed0b7481ad2778f52d0f74548d))
+lbind(kat-pub from-hex(d23fc16d803951992de136eab0ffae8904c93cb9a9e13dabcc9557eeaee16b368328ec21d9654263905300689bda1fc7a4945eebf72c9982177fe759c55bf008383a1efb45931b9aa337587f1c4cf54349f68eb5c919528d1cc1683b4cf3b0fe2a270c86a6e72f238e08cd102a83bca707ae4c9445a0baf5549a2e1167c3c8b6fdc3d700b507d24233f10d7c48cce79bc2004460be339d4950265b12a1b534113d975e5fb0d477d243c3f1b2decf4589930c0f72bdc65294322bc20dc3529171ce55a13885717045a143c43bd0ce63556f8a521c2a8a0b57e7b82d3d1ba7674ac485197f36d96088c4bec00a68e8a3ff90d6efe53b13779f297984f7bfa4bbb2))
+expect(kat-priv-len eq(strlen(<kat-priv>) 256))
+expect(kat-pub-len eq(strlen(<kat-pub>) 256))
+
+UDH-init(nil)
+
+; the static key vector is (public private) -- DH_STATIC_PUBLIC is 0 and
+; DH_STATIC_PRIVATE is 1
+lbind(kat-static vector(<kat-pub> <kat-priv>))
+
+; udh_gen_keys must carry the static half through untouched
+lbind(kg UDH-gen-keys(<kat-static> nil))
+expect(kat-genkeys-priv eq(<kg>[2] <kat-priv>))
+expect(kat-genkeys-pub eq(<kg>[3] <kat-pub>))
+expect(kat-genkeys-eph-priv-len eq(strlen(<kg>[0]) 256))
+expect(kat-genkeys-eph-pub-len eq(strlen(<kg>[1]) 256))
+
+; the captured legacy pack: (encrypted-key our-public-DH-value)
+lbind(kat-pack vector(from-hex(50db5ebc3df21f69173d5cfe0c9db42e) from-hex(949357027c5f2e210adb5232d359f2de111068a014a32fab0ed12b6f6a183cc736535d891596f70a830abb05fe4f6da72d82927667488e89a37a646070208aa1e89489dbb10a96101b968c1cee20f5afa5ca3cee8ff3c481f9a48942bd2e38b91c90fa2050c738132e5695c672bc9fd3afc7f1d8271d9f1ffd98903f5eaea86ee86bb60883b136e552594ffa5c6c1d43edda87dc276705d31e42133a253ce3f0dccad31ea39c52703c25784215ec7afdfefef7579fe27f2aea65f5972c6591dfd1008dba8e050ee0fcdc707d46f6bf984d88c954409fa5a688a5847f315889db9d7ad13ebc15f6c348930b3f03d97eb69b4ecc0b88a5a2a96039b5b4aa19d041)))
+lbind(kat-key from-hex(f33f05eb41bdc69b1e289bacc6e14d30))
+
+; the real known answer: this exact pack must yield this exact key
+expect(kat-sf-get-key eq(UDH-sf-get-key(<kat-pack> <kat-static>) <kat-key>))
+; and it must be repeatable
+expect(kat-sf-get-key-repeatable eq(UDH-sf-get-key(<kat-pack> <kat-static>) <kat-key>))
+
+; a round trip through UDH-sf-material must produce a pack this same static
+; can open, and a fresh key each time (it carries a new ephemeral value)
+lbind(sk nil)
+lbind(fresh UDH-sf-material(<kat-static> sk))
+expect(kat-sf-material-pairs eq(numelems(<fresh>) 2))
+expect(kat-sf-material-keylen eq(strlen(<fresh>[0]) 16))
+expect(kat-sf-material-publen eq(strlen(<fresh>[1]) 256))
+expect(kat-sf-material-bound eq(strlen(<sk>) 16))
+expect(kat-roundtrip eq(UDH-sf-get-key(<fresh> <kat-static>) <sk>))
+lbind(sk2 nil)
+lbind(fresh2 UDH-sf-material(<kat-static> sk2))
+expect(kat-sf-material-fresh-ephemeral not(eq(<fresh>[1] <fresh2>[1])))
+expect(kat-sf-material-fresh-key not(eq(<sk> <sk2>)))
+
+; the wrong static must not reproduce the captured key. Note it returns a
+; different key rather than nil: this legacy pack has no integrity check,
+; so a wrong key is only caught by the AES/GCM MAC one layer up.
+lbind(other UDH-new-static(nil))
+expect(kat-sf-get-key-wrong-static not(eq(UDH-sf-get-key(<kat-pack> <other>) <kat-key>)))
+
+; an invalid public value in the pack makes the agreement fail, which does
+; return nil
+lbind(kat-badpack vector(<kat-key> <bad-pub>))
+expect-nil(kat-sf-get-key-invalid-pub UDH-sf-get-key(<kat-badpack> <kat-static>))
+
+printl(UDH-KAT-COMPLETE)

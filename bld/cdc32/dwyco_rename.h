@@ -3,6 +3,7 @@
 #define dwyco_random_string2 _real_dwyco_random_string2 
 #define dwyco_eze2 _real_dwyco_eze2 
 #define dwyco_ezd2 _real_dwyco_ezd2 
+#define dwyco_load_file_e _real_dwyco_load_file_e 
 #define dwyco_set_fn_prefixes _real_dwyco_set_fn_prefixes 
 #define dwyco_get_suspend_state _real_dwyco_get_suspend_state 
 #define dwyco_suspend _real_dwyco_suspend 
@@ -138,6 +139,7 @@
 #define dwyco_get_profile_to_viewer_sync _real_dwyco_get_profile_to_viewer_sync 
 #define dwyco_name_to_uid _real_dwyco_name_to_uid 
 #define dwyco_map_uid_to_representative _real_dwyco_map_uid_to_representative 
+#define dwyco_map_uid_to_uids _real_dwyco_map_uid_to_uids 
 #define dwyco_create_bootstrap_profile _real_dwyco_create_bootstrap_profile 
 #define dwyco_make_profile_pack _real_dwyco_make_profile_pack 
 #define dwyco_set_setting _real_dwyco_set_setting 

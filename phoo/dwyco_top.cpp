@@ -23,12 +23,19 @@
 #ifdef ANDROID
 //#include <QtAndroid>
 #endif
+#include <QFile>
+#include <QFileInfo>
+#include <QDateTime>
+#include <QTextStream>
+#include <QStandardPaths>
+#include <QRegularExpression>
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "msgrawmodel.h"
 #include "msgproxymodel.h"
+#include "msgpv.h"
 #include "pfx.h"
 #include "ssmap.h"
 #include "dwycoimageprovider.h"
@@ -252,7 +259,9 @@ void
 start_desktop_background()
 {
 #if !defined(ANDROID) && !defined(DWYCO_IOS)
-    QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+    QFileInfo exe(QCoreApplication::applicationFilePath());
+    const QString exe_dir = exe.canonicalPath();
+    QProcess::startDetached(exe_dir + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
 #endif
 }
 
@@ -3520,6 +3529,7 @@ dwyco_register_qml(QQmlContext *root)
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
+    init_supported_image_exts();
     Dwyco_video_provider = new DwycoImageProvider;
     root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
     root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);

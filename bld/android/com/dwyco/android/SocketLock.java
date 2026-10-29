@@ -30,6 +30,9 @@ public class SocketLock {
                     return true;
                 } catch (IOException e) {
                     // ignore the exception
+                } catch (IllegalStateException e) {
+                    // the lock is already held (could be by this same
+                    // instance momentarily), just retry.
                 }
                 Thread.sleep(10, 0);
             } catch (InterruptedException e) {
@@ -46,6 +49,9 @@ public class SocketLock {
                     return;
                 } catch (IOException e) {
                     // ignore the exception
+                } catch (IllegalStateException e) {
+                    // the lock is already held (could be by this same
+                    // instance momentarily), just retry.
                 }
                 Thread.sleep(10, 0);
             } catch (InterruptedException e) {

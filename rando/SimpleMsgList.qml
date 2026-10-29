@@ -237,7 +237,7 @@ Page {
             anchors.right: ListView.view.contentItem.right
 
             height: {
-                if(IS_UNFETCHED || click_to_fetch)
+                if(IS_UNFETCHED || click_to_fetch || IS_QD === 1)
                     return width
                 return (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
             }

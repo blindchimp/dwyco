@@ -1,0 +1,13 @@
+;
+; negative: UDH-agree with an out-of-range peer public must return nil, not crash
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; 256 bytes of 0xFF: correctly sized, but >= the group prime, so
+; DH2::Agree returns false and udh_agree_auth returns nil
+lbind(bad-pub from-hex(ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff))
+UDH-init(nil)
+lbind(ka UDH-gen-keys(UDH-new-static(nil) nil))
+lbind(bad vector(nil <bad-pub> nil <bad-pub>))
+lbind(r UDH-agree(<ka> <bad>))
+if(<r> prog(printl(neg-udh-agree-badpub-returned-a-value) printl(FAILED))) prog(printl(NEG-OK))

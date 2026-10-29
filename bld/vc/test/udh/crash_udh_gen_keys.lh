@@ -1,0 +1,9 @@
+;
+; crash: UDH-gen-keys before UDH-init must crash, not return a bogus value
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; dereferences the null UDH at vcudh.cpp:173
+lbind(s vector(0123456789abcdef fedcba9876543210))
+UDH-gen-keys(<s> nil)
+printl(THIS-SHOULD-NEVER-PRINT)

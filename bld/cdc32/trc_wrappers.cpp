@@ -23,6 +23,7 @@ DWYCOEXPORT void _real_dwyco_debug_dump();
 DWYCOEXPORT void _real_dwyco_random_string2(char **str_out, int len);
 DWYCOEXPORT void _real_dwyco_eze2(const char *str, int len_str, char **str_out, int *len_out);
 DWYCOEXPORT void _real_dwyco_ezd2(const char *str, int len_str, char **str_out, int *len_out);
+DWYCOEXPORT int _real_dwyco_load_file_e(const char *fn, char **str_out, int *len_out);
 DWYCOEXPORT void _real_dwyco_set_fn_prefixes( const char *sys_pfx, const char *user_pfx, const char *tmp_pfx);
 DWYCOEXPORT int _real_dwyco_get_suspend_state();
 DWYCOEXPORT void _real_dwyco_suspend();
@@ -158,6 +159,7 @@ DWYCOEXPORT int _real_dwyco_get_profile_to_viewer(const char *uid, int len_uid, 
 DWYCOEXPORT int _real_dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
 DWYCOEXPORT void _real_dwyco_name_to_uid(const char *handle, int len_handle);
 DWYCOEXPORT int _real_dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out);
+DWYCOEXPORT int _real_dwyco_map_uid_to_uids(const char *uid, int len_uid, DWYCO_LIST *list_out);
 DWYCOEXPORT int _real_dwyco_create_bootstrap_profile(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email);
 DWYCOEXPORT int _real_dwyco_make_profile_pack(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email, const char **str_out, int *len_str_out);
 DWYCOEXPORT int _real_dwyco_set_setting(const char *name, const char *value);
@@ -648,6 +650,20 @@ printarg(" int *", "len_out",len_out);
 _real_dwyco_ezd2(str,len_str,str_out,len_out);
 printargout(" char **", "str_out",str_out, " int *", "len_out", len_out);
 printret();
+}
+
+DWYCOEXPORT
+int
+dwyco_load_file_e(const char *fn, char **str_out, int *len_out)
+{
+printfunname("dwyco_load_file_e");
+printarg("const char *", "fn",fn);
+printarg(" char **", "str_out",str_out);
+printarg(" int *", "len_out",len_out);
+int _ret = _real_dwyco_load_file_e(fn,str_out,len_out);
+printargout(" char **", "str_out",str_out, " int *", "len_out", len_out);
+printretval(_ret);
+return(_ret);
 }
 
 DWYCOEXPORT
@@ -2201,6 +2217,19 @@ printfunname("dwyco_map_uid_to_representative");
 printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
 printarg(" DWYCO_LIST *", "list_out",list_out);
 int _ret = _real_dwyco_map_uid_to_representative(uid,len_uid,list_out);
+printargout(" DWYCO_LIST *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_map_uid_to_uids(const char *uid, int len_uid, DWYCO_LIST *list_out)
+{
+printfunname("dwyco_map_uid_to_uids");
+printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" DWYCO_LIST *", "list_out",list_out);
+int _ret = _real_dwyco_map_uid_to_uids(uid,len_uid,list_out);
 printargout(" DWYCO_LIST *", "list_out",list_out);
 printretval(_ret);
 return(_ret);

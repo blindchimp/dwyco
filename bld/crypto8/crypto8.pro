@@ -68,7 +68,10 @@ keccak.cpp \
 keccak_core.cpp \
 ecp.cpp \
 ec2n.cpp \
-primetab.cpp
+primetab.cpp \
+xed25519.cpp \
+donna_32.cpp \
+donna_64.cpp
 
 #cryptlib.cpp \
 #cpu.cpp \

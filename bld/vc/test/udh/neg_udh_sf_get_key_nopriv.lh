@@ -1,0 +1,11 @@
+;
+; negative: UDH-sf-get-key with a material that has no private key must return nil
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+UDH-init(nil)
+lbind(s UDH-new-static(nil))
+lbind(pack UDH-sf-material(<s> sk))
+lbind(our vector(<s>[0] nil))
+lbind(r UDH-sf-get-key(<pack> <our>))
+if(<r> prog(printl(neg-udh-sf-get-key-nopriv-returned-a-value) printl(FAILED))) prog(printl(NEG-OK))

@@ -1,0 +1,10 @@
+;
+; negative: UDH-sf-get-key with a pack of fewer than 2 elements must return nil
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; deliberately NO UDH-init: this pins that the num_elems() early-out at
+; vcudh.cpp:380 runs BEFORE the EphDH->AgreedValueLength() deref, so this
+; call is safe even when the globals are still null
+lbind(r UDH-sf-get-key(vector(1) vector(2 3)))
+if(<r> prog(printl(neg-udh-sf-get-key-shortpack-returned-a-value) printl(FAILED))) prog(printl(NEG-OK))

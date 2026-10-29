@@ -39,7 +39,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Materia
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
 # strings. so we just hard code it for now.
 if(ANDROID)
-   set(QT_VERSION "6.11.1")
+   set(QT_VERSION "6.11.2")
 else()
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()

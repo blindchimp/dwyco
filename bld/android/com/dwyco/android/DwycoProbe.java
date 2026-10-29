@@ -69,54 +69,120 @@ public class DwycoProbe extends Worker {
     }
 
     public void onStopped() {
-        //System.exit(0);
-        prefs_lock.lock();
-        SharedPreferences sp;
-        int port;
-        sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
-        port = sp.getInt("lockport", 4500);
-        prefs_lock.release();
+        // note: the worker is being stopped, usually because the battery
+        // saver has come on or the OS is reclaiming resources. in that
+        // situation the native worker thread can be stuck holding all the
+        // mutexes and the singleton lock socket. we can't reliably signal
+        // it to exit (the battery saver interferes even with local socket
+        // connects), so if it doesn't yield we kill the whole process.
+        // leaving a zombie background process behind means the foreground
+        // hangs forever in dwyco_request_singleton_lock() on the next start.
         stop_poller = true;
         catchLog("wtf " + String.valueOf(wtf));
-        try
+        if(trySignalBackgroundThread())
         {
-            // don't use "getLoopback" in here, as it will try to use
-            // ipv6 despite ipv4address being specified
-            //Socket s = new Socket(); 
-            //InetSocketAddress address=new InetSocketAddress(Inet4Address.getByName("127.0.0.1"), port);
-            //s.connect(address, 1000);   
-
-            LocalSocket s = new LocalSocket();
-            LocalSocketAddress a = new LocalSocketAddress("dwyco" + port);
-            s.connect(a);
-            s.getInputStream().read();
-             
-        }
-        catch(SocketTimeoutException e)
-        {
-            catchLog("work stopped (timeout)");
-            catchLog(e.getMessage());
-            // note: this appears to happen when the battery saver
-            // comes on... the worker thread is stuck holding all the
-            // mutexs and other stuff, and we can't really do anything about
-            // it. so, it is time to die.
+            // the background thread is still alive and stuck holding the
+            // singleton lock socket. it will not exit on its own, and if
+            // we leave it behind the foreground will hang forever on the
+            // next start. kill the whole process so the OS reclaims the
+            // socket and the next startup is clean.
+            catchLog("work stopped - background stuck, exiting");
             System.exit(0);
         }
-        catch(IOException e)
+        else
         {
-            catchLog("work stopped (already dead)");
-            catchLog(e.getMessage());
+            // the background thread either exited cleanly or is already
+            // gone, so the singleton lock socket is (or will be shortly)
+            // free. no need to kill the process.
+            catchLog("work stopped - background clear");
+        }
+    }
+
+    private boolean trySignalBackgroundThread() {
+        final int[] port = new int[1];
+        if(!prefs_lock.timedLock(2000))
+        {
+            // couldn't get the prefs lock in time, treat the background
+            // as stuck so the caller kills the process.
+            catchLog("could not get prefs lock");
+            return true;
+        }
+        try
+        {
+            SharedPreferences sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
+            port[0] = sp.getInt("lockport", 4500);
+            catchLog(String.valueOf(port[0]));
         }
         catch(Exception e)
         {
-            catchLog("some exception");
             catchLog(e.getMessage());
+            return true;
         }
         finally
         {
-            catchLog("work stopped");
+            prefs_lock.release();
         }
-        
+        // give the native thread a chance to exit gracefully, but bound
+        // the wait so we never hang in here forever. if the background
+        // thread is stuck, we time out and the caller exits the process.
+        final boolean[] stuck = new boolean[1];
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                // don't use "getLoopback" in here, as it will try to use
+                // ipv6 despite ipv4address being specified
+                //Socket s = new Socket();
+                //InetSocketAddress address=new InetSocketAddress(Inet4Address.getByName("127.0.0.1"), port);
+                //s.connect(address, 1000);
+                try
+                {
+                    LocalSocket s = new LocalSocket();
+                    LocalSocketAddress a = new LocalSocketAddress("dwyco" + port[0]);
+                    s.connect(a);
+                    s.setSoTimeout(1000);
+                    // read() returns -1 (eof) once the background thread
+                    // closes the lock socket, i.e. it exited. if it never
+                    // closes, this times out and we consider it stuck.
+                    s.getInputStream().read();
+                }
+                catch(SocketTimeoutException e)
+                {
+                    catchLog("work stopped (timeout)");
+                    stuck[0] = true;
+                }
+                catch(IOException e)
+                {
+                    // no listener or connect failed: bg already gone
+                    catchLog("work stopped (already dead)");
+                    catchLog(e.getMessage());
+                }
+                catch(Exception e)
+                {
+                    catchLog("some exception");
+                    catchLog(e.getMessage());
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+        try
+        {
+            // wait long enough for a clean handoff, but don't hang
+            // forever in here.
+            t.join(5000);
+        }
+        catch(InterruptedException e)
+        {
+        }
+        if(t.isAlive())
+        {
+            // the signal thread is still blocked (likely the connect()
+            // hung because the battery saver interferes with even local
+            // sockets). treat the background as stuck.
+            catchLog("signal attempt did not complete");
+            stuck[0] = true;
+        }
+        catchLog("signal attempt done");
+        return stuck[0];
     }
 
     @Override

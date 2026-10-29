@@ -1,0 +1,20 @@
+;
+; crash: UDH-new-static before UDH-init must crash, not return a bogus value
+;
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+; vcudh.cpp has no initialization guards. udh_new_static dereferences the
+; null UDH at vcudh.cpp:148 (UDH->StaticPrivateKeyLength()), so this must
+; die by SIGSEGV. The point of the test is that a call like this must fail
+; LOUDLY -- if it ever returns a value instead, the caller has no way to
+; tell a real key from rubbish, and this test turns red.
+;
+; There is deliberately no try(* catch): a catchable USER_BOMB would mean
+; the crash is gone, which is also a failure.
+;
+; Note: a SIGSEGV'd interpreter writes no gcov data, so this script
+; contributes no line coverage. It is a behaviour check, not a coverage
+; source.
+;
+UDH-new-static(nil)
+printl(THIS-SHOULD-NEVER-PRINT)

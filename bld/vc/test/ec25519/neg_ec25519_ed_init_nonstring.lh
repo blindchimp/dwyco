@@ -1,0 +1,4 @@
+; negative: ED25519-init with a non-string arg must fail gracefully
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+try(ED25519-init(7) * prog(printl(NEG-OK)))

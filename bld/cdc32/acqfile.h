@@ -216,8 +216,8 @@ FileAcquire<T>::get_data(int& c, int& r, void*& y, void*& cb, void*& cr, int& fm
     if(g == 0) oopanic("fileaq bad get");
     if(preloaded)
     {
-        T **g2 = (T **)pm_allocarray(cols, rows, sizeof(T));
-        bcopy(&g[0][0], &g2[0][0], cols * rows * sizeof(T));
+        T **g2 = (T **)ppm_allocarray(cols, rows);
+        memcpy(&g2[0][0],  &g[0][0], cols * rows * sizeof(T));
         g = g2;
         bump(current);
     }
