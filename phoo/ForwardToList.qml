@@ -11,9 +11,26 @@ import QtQuick
 import dwyco
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Dialogs
 
 Page {
     id: forward_list
+
+    function showToast(msg) {
+        failed_msg.text = msg
+        animateOpacity.restart()
+        toastDialog.text = msg
+        toastDialog.open()
+    }
+
+    Connections {
+        target: core
+        function onMsg_send_status(status, recipient, pers_id) {
+            if (status === DwycoCore.MSG_SEND_FAIL) {
+                showToast("Tox message could not be sent.")
+            }
+        }
+    }
     //anchors.fill: parent
     property bool multiselect_mode : true
     //property string mid_to_forward
@@ -201,6 +218,21 @@ Page {
             // sort proxy doesn't play well since you have to forward stuff
             // out to the source model which is tedious.
             // instead, i just implement the send in c++ in the model
+            for (var i = 0; i < user_model.count; i++) {
+                if (user_model.at(i).selected) {
+                    var _uid = user_model.at(i).uid
+                    if (core.is_tox_uid(_uid)) {
+                        if (!core.tox_enabled) {
+                            showToast("Tox is not enabled. Message cannot be sent.")
+                            return
+                        }
+                        if (!core.is_tox_friend(_uid)) {
+                            showToast("Tox contact not in current friend list. Message cannot be delivered.")
+                            return
+                        }
+                    }
+                }
+            }
             user_model.send_forward_selected(mid_to_forward)
             themsglist.reload_model()
             chatbox.listview.positionViewAtBeginning()
@@ -210,5 +242,38 @@ Page {
 
     }
 
+
+    Rectangle {
+        anchors.fill: failed_msg
+        color: "black"
+        z: 9
+        opacity: failed_msg.opacity
+    }
+
+    Text {
+        id: failed_msg
+        text: "Failed..."
+        font.bold: true
+        anchors.centerIn: parent
+        z: 10
+        color: "white"
+
+        opacity: 0.0
+        NumberAnimation {
+               id: animateOpacity
+               target: failed_msg
+               properties: "opacity"
+               from: 1.0
+               to: 0.0
+               duration: 3000
+          }
+    }
+
+    MessageDialog {
+        id: toastDialog
+        title: "Cannot send"
+        text: ""
+        buttons: MessageDialog.Ok
+    }
 
 }

@@ -5745,7 +5745,40 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
             return 0;
         }
 
-        vc text_vc(VC_BSTRING, text, len_text);
+        // For forwarded messages, the composition already carries the
+        // flattened forwarded text in m->msg_text. the `text` argument is
+        // only any extra text supplied by the caller, so combine them so
+        // a tox recipient actually receives the forwarded content instead
+        // of an empty message.
+        DwString send_text;
+        if(m->forward && !m->body_to_forward.is_nil())
+        {
+            DwString s;
+            vc b = m->body_to_forward;
+            int first = 1;
+            while(!b.is_nil() && b.type() == VC_VECTOR)
+            {
+                if(!first)
+                    s += "\r\n---\r\n";
+                first = 0;
+                vc t = b[QM_BODY_NEW_TEXT];
+                if(!t.is_nil())
+                    s += t;
+                if(b[QM_BODY_FORWARDED_BODY].is_nil())
+                    break;
+                b = b[QM_BODY_FORWARDED_BODY];
+            }
+            send_text = s;
+        }
+        if(len_text > 0)
+        {
+            DwString add_text(text, 0, len_text);
+            if(send_text.length() > 0)
+                send_text = add_text + "\r\n---\r\n" + send_text;
+            else
+                send_text = add_text;
+        }
+        vc text_vc(VC_BSTRING, send_text.c_str(), send_text.length());
         int ret;
         if(m->actual_filename.length() > 0)
         {
@@ -5765,6 +5798,7 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
         }
         else
         {
+            m->composer = 0;
             ret = dwyco::tox_bridge_send_message_by_uid(vuid, text_vc, 0);
         }
         if(pers_id_out)

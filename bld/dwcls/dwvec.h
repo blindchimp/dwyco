@@ -496,7 +496,7 @@ DwVec<T>::insert(const T& t, long idx)
         append(t);
         return;
     }
-    if(idx < 0 || (count > 0 && idx >= count))
+    if(idx < 0 || idx >= count)
         oopanic("bad insert");
     set_size(count + 1); // note: set_size changes count
     for(long i = count - 2; i >= idx; --i)
@@ -510,7 +510,7 @@ DwVec<T>::spread(long idx, long cnt)
 {
     if(is_fixed)
         oopanic("spread on fixed vector");
-    if(idx < 0 || (count > 0 && idx >= count) || cnt < 0)
+    if(idx < 0 || idx > count || cnt < 0)
         oopanic("bad spread");
     set_size(count + cnt); // note: set_size changes count
     long i;
@@ -620,7 +620,7 @@ public:
     // compilers.
     void init() {
         cur = 0;
-        max = DwIter<DwVec<T>, T>::to_iterate->num_elems() - 1;
+        max = DwIter<DwVec<T>, T>::to_iterate->num_elems();
     }
     void rewind() {
         cur = 0;

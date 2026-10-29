@@ -15,100 +15,95 @@
 #include <utility>
 #undef index
 
-// class for vector of pointers... you can use
-// this class to save some space if you have
-// lots of these sorts of vectors since it only
-// relies on one instance of DwVec<void *>
-// note: iterating over this class is a bit
-// different from other classes: you need
-// to call "getp()" to get the properly cast
-// pointer from the vector. calling "get()"
-// gets you a void *...
+// class for vector of pointers. stores T* directly (not void*),
+// so there is no type punning / strict-aliasing issue.
 //
-
 template<class T> class DwVecPIter;
 
 template<class T>
-class DwVecP : private DwVec<void *>
+class DwVecP : private DwVec<T*>
 {
-
 public:
     typedef void (*Funcp)(T*&);
 
-    DwVecP(long i_cnt = 0, int is_fixed = 0, int auto_expand = 1, void (*ifun)(void *&) = 0)
-        : DwVec<void *>(i_cnt, is_fixed, auto_expand, DWVEC_DEFAULTBLOCKSIZE,
-                        (ifun == 0) ? vpnull : ifun) {}
+    static void pnull(T*& v) { v = nullptr; }
+
+    DwVecP(long i_cnt = 0, int is_fixed = 0, int auto_expand = 1,
+           void (*ifun)(T*&) = 0)
+        : DwVec<T*>(i_cnt, is_fixed, auto_expand, DWVEC_DEFAULTBLOCKSIZE,
+                    ifun ? ifun : &DwVecP<T>::pnull) {}
+
+    DwVecP(const DwVecP& v) : DwVec<T*>(v) {}
+    DwVecP(DwVecP&& v) noexcept : DwVec<T*>(std::move(v)) {}
 
     DwVecP& operator=(const DwVecP& s) {
-        return (DwVecP&)DwVec<void *>::operator=(s);
+        return (DwVecP&)DwVec<T*>::operator=(s);
     }
     DwVecP& operator=(DwVecP&& s) noexcept {
-        return (DwVecP&)DwVec<void *>::operator=(std::move(s));
+        return (DwVecP&)DwVec<T*>::operator=(std::move(s));
     }
-    DwVecP(DwVecP&& v) noexcept : DwVec<void *>::DwVec<void *>(std::move(v)) {}
 
     ~DwVecP() {}
+
     int operator==(const DwVecP& s) const {
-        return DwVec<void *>::operator==(s);
+        return DwVec<T*>::operator==(s);
     }
     int operator!=(const DwVecP& t) const {
         return !(*this == t);
     }
 
-    const T*& operator[](long idx) const {
-        return (const T*&)DwVec<void *>::operator[](idx);
-    }
     T*& operator[](long idx) {
-        return (T*&)DwVec<void *>::operator[](idx);
+        return DwVec<T*>::operator[](idx);
+    }
+    T* const & operator[](long idx) const {
+        return DwVec<T*>::operator[](idx);
     }
 
     long num_elems() const {
-        return DwVec<void *>::num_elems();
+        return DwVec<T*>::num_elems();
     }
     void set_size(long count) {
-        DwVec<void *>::set_size(count);
+        DwVec<T*>::set_size(count);
     }
     void append(const T* e) {
-        DwVec<void *>::append((void *)e);
+        T* p = const_cast<T*>(e);
+        DwVec<T*>::append(p);
     }
     void insert(const T* e, long i) {
-        DwVec<void *>::insert((void *)e, i);
+        T* p = const_cast<T*>(e);
+        DwVec<T*>::insert(p, i);
     }
     void spread(long idx, long cnt = 1) {
-        DwVec<void *>::spread(idx, cnt);
+        DwVec<T*>::spread(idx, cnt);
     }
     void del(long idx, long cnt = 1) {
-        DwVec<void *>::del(idx, cnt);
+        DwVec<T*>::del(idx, cnt);
     }
     long index(const T* e) const {
-        return DwVec<void *>::index((void *)e);
+        T* p = const_cast<T*>(e);
+        return DwVec<T*>::index(p);
     }
     int contains(const T* e) const {
-        return DwVec<void *>::contains((void *)e);
+        T* p = const_cast<T*>(e);
+        return DwVec<T*>::contains(p);
     }
     void apply(Funcp f) {
-        DwVec<void *>::apply((DwVec<void *>::Funcp)f);
+        DwVec<T*>::apply(f);
     }
 
-    void* get_by_iter(DwIter<DwVec<void *>, void *> *a) const {
-        return (T*)DwVec<void *>::get_by_iter(a);
+    T* get_by_iter(DwIter<DwVec<T*>, T*> *a) const {
+        return DwVec<T*>::get_by_iter(a);
     }
-#ifdef DWVEC_DOINIT
-    void init_value(void *&v) {
-        v = 0;
-    }
-#endif
 };
 
 template<class T>
-class DwVecPIter : public DwVecIter<void *>
+class DwVecPIter : public DwVecIter<T*>
 {
 public:
-    DwVecPIter(const DwVecP<T> *t) : DwVecIter<void *>((DwVec<void *> *)t) {}
+    DwVecPIter(const DwVecP<T> *t) : DwVecIter<T*>((DwVec<T*> *)t) {}
     T* getp() {
-        return (T*)to_iterate->get_by_iter(this);
+        return this->to_iterate->get_by_iter(this);
     }
 };
-
 
 #endif

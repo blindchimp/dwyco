@@ -18,6 +18,7 @@
 #include "dwtree2.h"
 #include "vcio.h"
 #include "dwgrows.h"
+#include "dwlista.h"
 
 class vc_uvsocket;
 #define Ready_q (*Ready_q_p)

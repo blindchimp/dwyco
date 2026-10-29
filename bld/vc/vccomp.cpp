@@ -55,29 +55,16 @@ bombvec(div, "division");
 bombvec(mod, "modulo");
 #undef bombvec
 
-#if 0
-DwListA<vc_composite *> vc_composite::Comp_list;
-#endif
-
 vc_composite::vc_composite() : vc_default(0)
 {
     //quoted = 0;
 	dont_map = 0;
 	visit = 0;
-#if 0
-	Comp_list.prepend(this);
-	Comp_list.rewind();
-    backptr = Comp_list.getpos();
-#endif
     err_callback = 0;
 }
 
 vc_composite::~vc_composite()
 {
-#if 0
-	Comp_list.setpos(backptr);
-    Comp_list.remove();
-#endif
 }
 
 int
@@ -107,28 +94,9 @@ vc_composite::new_dfs()
 	if(Visit_SN == 0)
 	{
 		oopanic("out of dfs");
-#if 0
-    	vc_composite *v;
-		dwlista_foreach(v, Comp_list)
-		{
-			v->visit = 0;
-		}
-#endif
 		Visit_SN = 1;
 	}
 }
-
-#if 0
-void
-vc_composite::flush_all_cache()
-{
-	vc_composite *v;
-	dwlista_foreach(v, Comp_list)
-	{
-		v->flush_cache();
-	}
-}
-#endif
 
 //
 // peeking at a composite gets you the stringrep for it.
