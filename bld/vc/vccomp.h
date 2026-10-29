@@ -12,7 +12,6 @@
 
 
 #include "vcdeflt.h"
-#include "dwlista.h"
 
 //
 // Base class for all composite vc's (vc's
@@ -31,13 +30,8 @@
 class vc_composite : public vc_default
 {
 private:
-        mutable long visit;
+    mutable long visit;
 	static long Visit_SN;
-
-#if 0
-	static DwListA<vc_composite *> Comp_list;
-	listelem<vc_composite *> *backptr;
-#endif
 
 protected:
     //int quoted;
