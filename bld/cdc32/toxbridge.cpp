@@ -250,7 +250,9 @@ read_whole_file(const DwString &path, long max_len)
         delete [] buf;
         return vcnil;
     }
-    return vc(VC_BSTRING, buf, sz);
+    vc tmp(VC_BSTRING, buf, sz);
+    delete[] buf;
+    return tmp;
 }
 
 // write bytes to the active save file atomically (tmp + rename), the same way
