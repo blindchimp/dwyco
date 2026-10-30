@@ -91,6 +91,32 @@ IOSCamera::IOSCamera(QObject *parent) : QObject(parent)
 
 void IOSCamera::takePicture()
 {
+#ifdef DWYCO_IOS_BG_TEST
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Test shim: pretend a large image was captured so the send takes
+        // long enough to background the app and exercise the iOS background path.
+        int w = 2560, h = 1920;
+        size_t bytesPerRow = w * 4;
+        unsigned char *pixels = (unsigned char *)malloc(bytesPerRow * h);
+        // Fill with high-entropy noise so the JPEG is large and slow to upload.
+        for (size_t i = 0; i < bytesPerRow * h; i++) {
+            pixels[i] = (unsigned char)(arc4random_uniform(256));
+        }
+        CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+        CGContextRef ctx = CGBitmapContextCreate(pixels, w, h, 8, bytesPerRow, cs, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+        CGImageRef cgImage = CGBitmapContextCreateImage(ctx);
+        UIImage *image = [UIImage imageWithCGImage:cgImage];
+        CGImageRelease(cgImage);
+        CGContextRelease(ctx);
+        CGColorSpaceRelease(cs);
+        free(pixels);
+        NSData *jpeg = UIImageJPEGRepresentation(image, 0.95);
+        NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"TEST_bg.jpg"];
+        [jpeg writeToFile:path atomically:YES];
+        dwyco_set_aux_string([path UTF8String]);
+    });
+    return;
+#endif
     dispatch_async(dispatch_get_main_queue(), ^{
         if (![UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
             dwyco_set_aux_string("");

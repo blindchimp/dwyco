@@ -73,6 +73,12 @@
 #endif
 #include "dwycolist2.h"
 #include "dwyco_top.h"
+#ifdef DWYCO_IOS
+#include "iosbackground.h"
+#include <thread>
+#include <dispatch/dispatch.h>
+#include <os/log.h>
+#endif
 //#include "callsm_objs.h"
 //#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 //#include "vgqt.h"
@@ -2085,6 +2091,12 @@ DwycoCore::load_contacts()
 #endif
 
 int DwycoCore::Suspended;
+#ifdef DWYCO_IOS
+static IOSBackground *iosBg = 0;
+static quint64 iosBgTaskId = 0;
+static std::thread iosBgThread;
+#endif
+
 void
 DwycoCore::app_state_change(Qt::ApplicationState as)
 {
@@ -2107,6 +2119,34 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
+#ifdef DWYCO_IOS
+        if (!iosBg) {
+            iosBg = new IOSBackground();
+            QObject::connect(iosBg, &IOSBackground::expired, []() {
+                if (iosBgTaskId != 0 && iosBg) {
+                    iosBg->end(iosBgTaskId);
+                    iosBgTaskId = 0;
+                }
+            });
+        }
+        iosBgTaskId = iosBg->begin();
+        if (iosBgThread.joinable()) {
+            iosBgThread.detach();
+        }
+        iosBgThread = std::thread([]() {
+            os_log(OS_LOG_DEFAULT, "[dwyco-bg] starting background processing");
+            dwyco_background_processing(BGLockPort, 3,
+                Sys_pfx.constData(), User_pfx.constData(), Tmp_pfx.constData(), 0);
+            os_log(OS_LOG_DEFAULT, "[dwyco-bg] finished background processing");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (iosBgTaskId != 0 && iosBg) {
+                    iosBg->end(iosBgTaskId);
+                    iosBgTaskId = 0;
+                }
+            });
+        });
+        iosBgThread.detach();
+#endif
 
         emit qt_app_state_change(1);
     }
@@ -2126,6 +2166,11 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         Suspended = 0;
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);
+#endif
+#ifdef DWYCO_IOS
+        // The background worker thread is stopped via takeover_from_background()
+        // (it breaks out of its accept() loop). It will end the background task
+        // itself when it finishes.
 #endif
         emit qt_app_state_change(0);
     }

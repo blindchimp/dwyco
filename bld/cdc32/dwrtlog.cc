@@ -25,6 +25,9 @@
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
 #include <android/log.h>
 #define DWRTLOG_TAG "dwyco-rtlog"
+#elif defined(DWYCO_IOS) && defined(DW_IOS_LOG)
+#include <os/log.h>
+#define DWRTLOG_TAG "dwyco-rtlog"
 #endif
 
 #ifdef _MSC_VER
@@ -39,7 +42,7 @@ void
 init_rtlog()
 {
     RTLogOn = vc(VC_VECTOR);
-#ifdef ANDROID
+#if defined(ANDROID) || defined(DWYCO_IOS)
     //RTLogOn.add("*");
     RTLogOn.add("dlli.cpp");
     RTLogOn.add("netcod.cc");
@@ -158,6 +161,9 @@ DwRTLog::log(const char *fmt, const char *file, int line,
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
     os->reset();
+#elif defined(DWYCO_IOS) && defined(DW_IOS_LOG)
+    os_log(OS_LOG_DEFAULT, "%{public}s", os->ref_str());
+    os->reset();
 #endif
     LeaveCriticalSection(&cs);
 }
@@ -189,6 +195,9 @@ DwRTLog::log(const char *fmt, const char *file, int line,
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#elif defined(DWYCO_IOS) && defined(DW_IOS_LOG)
+    os_log(OS_LOG_DEFAULT, "%{public}s", os->ref_str());
     os->reset();
 #endif
     LeaveCriticalSection(&cs);
@@ -225,6 +234,9 @@ DwRTLog::vlog(const char *fmt, const char *file, int line, ...)
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#elif defined(DWYCO_IOS) && defined(DW_IOS_LOG)
+    os_log(OS_LOG_DEFAULT, "%{public}s", os->ref_str());
     os->reset();
 #endif
     LeaveCriticalSection(&cs);
@@ -391,6 +403,9 @@ DwRTLog::log(const char *file, int line, vc v)
 #if defined(ANDROID) && defined(DW_ANDROID_LOG)
     (*os) << '\0';
     __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#elif defined(DWYCO_IOS) && defined(DW_IOS_LOG)
+    os_log(OS_LOG_DEFAULT, "%{public}s", os->ref_str());
     os->reset();
 #endif
     LeaveCriticalSection(&cs);

@@ -7,6 +7,16 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
+
+option(DWYCO_IOS_BG_TEST "Enable iOS background send test shim" OFF)
+if(DWYCO_IOS_BG_TEST)
+    add_compile_definitions(DWYCO_IOS_BG_TEST)
+endif()
+
+option(DW_IOS_LOG "Enable iOS debug logging" ON)
+if(DW_IOS_LOG)
+    add_compile_definitions(DW_IOS_LOG)
+endif()
 set(RANDO_VERSION "4.330")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
 set(RANDO_VERSION_CODE 3000191)
@@ -99,8 +109,9 @@ qt_add_resources(SRCS
     icons.qrc
 )
 if(IOS)
-    list(APPEND SRCS ioscamera.mm)
+    list(APPEND SRCS ioscamera.mm iosbackground.mm)
     set_source_files_properties(ioscamera.mm PROPERTIES LANGUAGE OBJCXX)
+    set_source_files_properties(iosbackground.mm PROPERTIES LANGUAGE OBJCXX)
 endif()
 
 qt_add_executable(rando
