@@ -2996,11 +2996,11 @@ DwycoCore::service_channels()
         mlm->invalidate_sent_to();
     }
     update_unread_count(total_unviewed_msgs_count());
-#ifdef ANDROID
+#if defined(ANDROID) || defined(DWYCO_IOS)
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.
-    const char *fn;
-    int len_fn;
+    const char *fn = 0;
+    int len_fn = 0;
     if(dwyco_get_aux_string(&fn, &len_fn))
     {
         if(len_fn > 0)

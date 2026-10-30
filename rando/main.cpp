@@ -20,6 +20,9 @@
 #include <QJniObject>
 typedef QJniObject QAndroidJniObject;
 #endif
+#ifdef DWYCO_IOS
+#include "ioscamera.h"
+#endif
 
 QQmlApplicationEngine *TheEngine;
 
@@ -98,6 +101,11 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QLatin1String("notificationClient"),
             notificationClient);
     notificationClient->set_allow_notification(0);
+#endif
+#ifdef DWYCO_IOS
+    IOSCamera *iosCamera = new IOSCamera(&engine);
+    engine.rootContext()->setContextProperty(QLatin1String("iosCamera"),
+            iosCamera);
 #endif
 
     dwyco_register_qml(engine.rootContext());

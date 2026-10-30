@@ -98,6 +98,11 @@ qt_add_resources(SRCS
     dwyco.qrc
     icons.qrc
 )
+if(IOS)
+    list(APPEND SRCS ioscamera.mm)
+    set_source_files_properties(ioscamera.mm PROPERTIES LANGUAGE OBJCXX)
+endif()
+
 qt_add_executable(rando
    ${SRCS}
 )
@@ -254,6 +259,8 @@ if(IOS)
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}
+       "-framework UIKit"
+       "-framework Foundation"
 
     )
 endif()
