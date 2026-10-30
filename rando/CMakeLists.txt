@@ -29,7 +29,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.8)
 find_package(Qt6  REQUIRED COMPONENTS Network)
-if(NOT ANDROID)
+if(NOT ANDROID AND NOT IOS)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 endif()
 
@@ -205,7 +205,6 @@ set(BASELIBS
     jhead
     Qt6::Quick
     Qt6::Network
-    Qt6::Multimedia
     Qt6::QuickControls2Material
     Qt6::Positioning
     Qt6::Location
@@ -229,10 +228,11 @@ if(ANDROID)
     )
 endif()
 
-if(UNIX AND NOT ANDROID)
+if(UNIX AND NOT ANDROID AND NOT IOS)
 target_link_libraries(rando
     PRIVATE
    ${BASELIBS}
+   Qt6::Multimedia
     -ldl
 )
 endif()
@@ -241,6 +241,7 @@ if(WIN32)
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}
+       Qt6::Multimedia
        winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
 target_link_options(rando PRIVATE binmode.obj)
@@ -248,7 +249,8 @@ endif()
 
 if(IOS)
     #message("FUCKFUCKFUCK")
-    qt_add_ios_ffmpeg_libraries(rando)
+    # QtMultimedia/FFmpeg is not used by rando and Qt's iOS FFmpeg
+    # xcframework has no arm64-simulator slice, so skip it entirely.
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}
