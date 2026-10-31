@@ -41,6 +41,7 @@ static inline ssize_t pwrite_compat(int fd, const void *buf, size_t count, long 
 #endif
 #include <map>
 
+#include "ezset.h"
 #include "toxbridge.h"
 #include "toxd_plugin.h"
 #include "qauth.h"
@@ -1558,10 +1559,12 @@ tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
     // that happens to share a password unlocks without the user being asked.
     // cleared unconditionally: for an unencrypted save toxp_init ignores it
     // anyway, so there's nothing to preserve and no reason to branch.
-    set_active_password(NULL, 0);
-    Needs_password = 0;
-    GRTLOG("tox bridge: selected synced identity (tox left stopped)", 0, 0);
-    return 1;
+set_active_password(NULL, 0);
+Needs_password = 0;
+set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+GRTLOG("tox bridge: selected synced identity (tox left stopped)", 0, 0);
+return 1;
 }
 
 // remove a shared identity from every group member's list of shared
@@ -1648,11 +1651,15 @@ tox_bridge_init(const char *save_file)
     if(Tox_q)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
-    tox_bridge_rebuild_friend_cache();
-    vc self_pseudo = self_tox_pseudo();
-    if(!self_pseudo.is_nil())
-        tox_uid_tag_add(self_pseudo);
-    safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
+tox_bridge_rebuild_friend_cache();
+vc self_pseudo = self_tox_pseudo();
+if(!self_pseudo.is_nil())
+{
+    tox_uid_tag_add(self_pseudo);
+    set_settings_value("tox/self_pseudo", self_pseudo);
+    set_settings_value("tox/self_name", tox_bridge_get_name());
+}
+safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     backfill_tox_mid_tags();
     publish_active_claim();
     // note: the identity is *not* published here. sharing is something the
@@ -1848,9 +1855,11 @@ tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_p
     // remember a password for it. the imported save keeps its own encryption
     // state, so an empty src_pw stores nothing and an encrypted one lets the
     // caller's immediate sign in proceed without a second prompt.
-    set_active_password(src_pw, src_pw_len);
-    GRTLOG("tox bridge: loaded profile from file", 0, 0);
-    return 1;
+set_active_password(src_pw, src_pw_len);
+set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+GRTLOG("tox bridge: loaded profile from file", 0, 0);
+return 1;
 }
 
 int
@@ -1904,9 +1913,11 @@ tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
     // bytes carry their own encryption state and the caller supplied no
     // password, so there is nothing to preserve: clear it so the next sign in
     // has to ask rather than trying the previous identity's password.
-    set_active_password(NULL, 0);
-    Needs_password = 0;
-    GRTLOG("tox bridge: loaded profile from bytes, %d bytes", (int)save_bytes.len(), 0);
+set_active_password(NULL, 0);
+Needs_password = 0;
+set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+GRTLOG("tox bridge: loaded profile from bytes, %d bytes", (int)save_bytes.len(), 0);
     return 1;
 }
 
@@ -2031,6 +2042,8 @@ tox_bridge_factory_reset(char *err_buf, int err_buf_len)
     }
     set_active_password(NULL, 0);
     Needs_password = 0;
+    set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+    set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
 
     // intentionally do NOT re-initialize: this restores the first-run state
     // where no tox save exists yet.
@@ -2564,7 +2577,10 @@ tox_bridge_set_name(const char *name, int name_len)
 {
     if(!Tox_plugin)
         return 0;
-    return toxp_set_name(Tox_plugin, name, name_len);
+    int ret = toxp_set_name(Tox_plugin, name, name_len);
+    if(ret)
+        set_settings_value("tox/self_name", vc(VC_BSTRING, name, name_len));
+    return ret;
 }
 
 int

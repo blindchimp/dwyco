@@ -8585,6 +8585,36 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
         }
     }
 
+    // Local tox self identity: resolve to its cached/live name instead of
+    // falling through to the profile DB / server lookup.
+    if(dwyco::tox_bridge_is_tox_uid(buid))
+    {
+        vc self_pseudo = dwyco::tox_bridge_get_pubkey();
+        if(!self_pseudo.is_nil())
+            self_pseudo = dwyco::tox_pubkey_to_pseudo_uid(self_pseudo);
+        else
+            self_pseudo = get_settings_value("tox/self_pseudo");
+        if(!self_pseudo.is_nil() && self_pseudo == buid)
+        {
+            vc name = dwyco::tox_bridge_get_name();
+            if(name.is_nil() || name == vc(""))
+                name = get_settings_value("tox/self_name");
+            if(name.is_nil() || name == vc(""))
+                name = to_hex(buid);
+            Session_infos.add_kv(buid, dwyco::make_tox_info_vec(buid, name));
+            vc v(VC_VECTOR);
+            v.append(name);
+            v.append("");
+            v.append("");
+            v.append(0);
+            v.append(0);
+            v.append("");
+            vc v1(VC_VECTOR);
+            v1[0] = v;
+            return dwyco_list_from_vc(v1);
+        }
+    }
+
     // Fallback for tox friend info synced via CRDT tags
     // (clients without tox enabled)
     {

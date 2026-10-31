@@ -65,6 +65,8 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_BSTRING, user/username, "", 0),
     DWUIDECLVAL(VC_BSTRING, user/email, "", 0),
     DWUIDECLVAL(VC_BSTRING, user/location, "", 0),
+DWUIDECLVAL(VC_BSTRING, tox/self_pseudo, "", 0),
+DWUIDECLVAL(VC_BSTRING, tox/self_name, "", 0),
     DWUIDECLVAL(VC_BSTRING, vid_input/device_name, "", 0),
     //DWUIDECLVAL(VC_INT, video_input/coded, "", 0),
     //DWUIDECLVAL(VC_INT, video_input/raw, "", 0),
