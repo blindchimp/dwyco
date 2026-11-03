@@ -7,6 +7,16 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR rando_cmake)
+
+option(DWYCO_IOS_BG_TEST "Enable iOS background send test shim" OFF)
+if(DWYCO_IOS_BG_TEST)
+    add_compile_definitions(DWYCO_IOS_BG_TEST)
+endif()
+
+option(DW_IOS_LOG "Enable iOS debug logging" ON)
+if(DW_IOS_LOG)
+    add_compile_definitions(DW_IOS_LOG)
+endif()
 set(RANDO_VERSION "4.330")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
 set(RANDO_VERSION_CODE 3000191)
@@ -29,7 +39,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.8)
 find_package(Qt6  REQUIRED COMPONENTS Network)
-if(NOT ANDROID)
+if(NOT ANDROID AND NOT IOS)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 endif()
 
@@ -98,6 +108,12 @@ qt_add_resources(SRCS
     dwyco.qrc
     icons.qrc
 )
+if(IOS)
+    list(APPEND SRCS ioscamera.mm iosbackground.mm)
+    set_source_files_properties(ioscamera.mm PROPERTIES LANGUAGE OBJCXX)
+    set_source_files_properties(iosbackground.mm PROPERTIES LANGUAGE OBJCXX)
+endif()
+
 qt_add_executable(rando
    ${SRCS}
 )
@@ -205,7 +221,6 @@ set(BASELIBS
     jhead
     Qt6::Quick
     Qt6::Network
-    Qt6::Multimedia
     Qt6::QuickControls2Material
     Qt6::Positioning
     Qt6::Location
@@ -229,10 +244,11 @@ if(ANDROID)
     )
 endif()
 
-if(UNIX AND NOT ANDROID)
+if(UNIX AND NOT ANDROID AND NOT IOS)
 target_link_libraries(rando
     PRIVATE
    ${BASELIBS}
+   Qt6::Multimedia
     -ldl
 )
 endif()
@@ -241,6 +257,7 @@ if(WIN32)
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}
+       Qt6::Multimedia
        winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
 target_link_options(rando PRIVATE binmode.obj)
@@ -248,10 +265,13 @@ endif()
 
 if(IOS)
     #message("FUCKFUCKFUCK")
-    qt_add_ios_ffmpeg_libraries(rando)
+    # QtMultimedia/FFmpeg is not used by rando and Qt's iOS FFmpeg
+    # xcframework has no arm64-simulator slice, so skip it entirely.
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}
+       "-framework UIKit"
+       "-framework Foundation"
 
     )
 endif()

@@ -68,6 +68,20 @@ static int New_msg;
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, (msg), __VA_ARGS__)
 #define ALOGE(msg, ...) \
     __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, (msg), __VA_ARGS__)
+#elif defined(DWYCO_IOS) && defined(DW_IOS_LOG)
+#include <os/log.h>
+#define LOG_TAG "dwyco-bg"
+#define ALOGI(msg, ...) do { \
+    char _albuf[2048]; \
+    snprintf(_albuf, sizeof(_albuf), msg, ##__VA_ARGS__); \
+    os_log(OS_LOG_DEFAULT, "%{public}s", _albuf); \
+} while (0)
+#define ALOGE(msg, ...) do { \
+    char _albuf[2048]; \
+    snprintf(_albuf, sizeof(_albuf), msg, ##__VA_ARGS__); \
+    os_log_error(OS_LOG_DEFAULT, "%{public}s", _albuf); \
+} while (0)
+#pragma clang diagnostic ignored "-Wformat-extra-args"
 #else
 #define ALOGI(msg, ...)
 #define ALOGE(msg, ...)
@@ -903,7 +917,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             if(asock.socket_local_addr() == res[i]->socket_local_addr())
             {
                 GRTLOG("req to exit", 0, 0);
-                ALOGI("post sleep exit", 0);
+                ALOGI("post sleep exit");
                 goto out;
             }
         }
@@ -982,7 +996,7 @@ out:
         dwyco_suspend();
 #endif
 
-        ALOGI("exit thread", 0);
+        ALOGI("exit thread");
     }
     else
     {
@@ -996,7 +1010,7 @@ out:
         dwyco_set_login_result_callback(0);
         dwyco_set_system_event_callback(0);
         dwyco_bg_exit();
-        ALOGI("exit proc", 0);
+        ALOGI("exit proc");
     }
 #ifndef ANDROID
     clean_cruft();

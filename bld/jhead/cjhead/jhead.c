@@ -1,3 +1,4 @@
+void ResetJpegState();
 //--------------------------------------------------------------------------
 // Program to pull the information out of various types of EXIF digital 
 // camera files and show it in a reasonably consistent way
@@ -718,7 +719,7 @@ static void DoFileRenaming(const char * FileName)
 //--------------------------------------------------------------------------
 static int DoAutoRotate(const char * FileName)
 {
-    if (ImageInfo.Orientation != 1){
+    if (ImageInfo.Orientation > 1){
         Rotation_found =  ClearOrientation();
         return TRUE;
 #if 0
@@ -821,6 +822,7 @@ static void ProcessFile(const char * FileName)
     FilesMatched = 1; 
     Rotation_found = 0;
     ResetJpgfile();
+    ResetExifOrientation();
 
     // Start with an empty image information structure.
     memset(&ImageInfo, 0, sizeof(ImageInfo));
@@ -871,8 +873,6 @@ static void ProcessFile(const char * FileName)
             return;
         }
 
-        DiscardAllButExif();
-
         if (AutoRotate){
             if (DoAutoRotate(FileName)){
                 Modified = TRUE;
@@ -888,6 +888,8 @@ static void ProcessFile(const char * FileName)
             }
             Modified = TRUE;
         }
+
+        DiscardAllButExif();
         ReadMode = READ_IMAGE;   // Don't re-read exif section again on next read.
     }
    
@@ -1461,6 +1463,7 @@ static time_t ParseCmdDate(char * DateSpecified)
 int do_jhead (const char *filename)
 {
 try{
+    ResetJpegState();
     int argn;
     char * arg;
     progname = "jhead";

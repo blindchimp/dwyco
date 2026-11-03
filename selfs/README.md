@@ -1,5 +1,4 @@
 Thu Aug  5 09:43:09 MDT 2021
-dwightm
 
 Selfs is a simple app to capture video from a camera and stream it to clients.
 
