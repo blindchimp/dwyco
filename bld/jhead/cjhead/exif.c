@@ -16,8 +16,20 @@ int MotorolaOrder = 0;
 
 // for fixing the rotation.
 static void * OrientationPtr[2];
+static void * OrientationBase[2];
+static unsigned OrientationLength[2];
 static int    OrientationNumFormat[2];
 int NumOrientations = 0;
+
+// Reset per-file orientation state.  The OrientationPtr/Base/Length/Format
+// entries point into the exif section buffer of the file being (or having
+// been) processed, which gets freed when the section data is discarded.
+// ClearOrientation() only reads them while NumOrientations > 0, so zeroing
+// the count here invalidates everything until process_EXIF repopulates it.
+void ResetExifOrientation(void)
+{
+    NumOrientations = 0;
+}
 
 typedef struct {
     unsigned short Tag;
@@ -747,6 +759,8 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                     break;
                 }
                 OrientationPtr[NumOrientations] = ValuePtr;
+                OrientationBase[NumOrientations] = OffsetBase;
+                OrientationLength[NumOrientations] = ExifLength;
                 OrientationNumFormat[NumOrientations] = Format;
                 if (NumOrientations == 0){
                     ImageInfo.Orientation = (int)ConvertAnyFormat(ValuePtr, Format);
@@ -1208,7 +1222,17 @@ int ClearOrientation(void)
     int a;
     if (NumOrientations == 0) return 0;
 
-    for (a=0;a<NumOrientations;a++){
+    // Only clear the main image orientation. Thumbnail orientation tags can
+    // point into EXIF data that was freed by DiscardAllButExif(), so touching
+    // them is unsafe.
+    for (a=0;a<NumOrientations && a < 1;a++){
+        if (!OrientationPtr[a] || !OrientationBase[a] ||
+            (char *)OrientationPtr[a] < (char *)OrientationBase[a] ||
+            (char *)OrientationPtr[a] + 4 > (char *)OrientationBase[a] + OrientationLength[a])
+        {
+            ErrNonfatal("Skipping unsafe orientation tag", 0, 0);
+            continue;
+        }
         switch(OrientationNumFormat[a]){
             case FMT_SBYTE:
             case FMT_BYTE:      
@@ -1231,7 +1255,8 @@ int ClearOrientation(void)
                 break;
 
             default:
-                return 0;
+                ErrNonfatal("Unsupported format for orientation tag %d", OrientationNumFormat[a], 0);
+                break;
         }
     }
 

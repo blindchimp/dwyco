@@ -20,6 +20,98 @@
 #include "pfx.h"
 #include "resizeimage.h"
 
+namespace jhead {
+int do_jhead(const char *);
+}
+
+static
+QImage
+transpose(const QImage& src)
+{
+    QImage dst(src.height(), src.width(), QImage::Format_RGB32);
+    for(int y = 0; y < src.height(); ++y)
+    {
+        for(int x = 0; x < src.width(); ++x)
+        {
+            dst.setPixel(y, x, src.pixel(x, y));
+        }
+    }
+    return dst;
+}
+
+static
+int
+jhead_rotate(const QString& filename, int rot)
+{
+    if(rot == 0)
+        return 1;
+
+    QImage s(filename);
+    if(s.isNull())
+        return 0;
+    switch(rot)
+    {
+    case 3: //180
+        s = s.mirrored(true, true);
+        break;
+    case 6: //90
+        s = transpose(s);
+        s = s.mirrored(true, false);
+        break;
+    case 8: //270
+        s = s.mirrored(true, false);
+        s = transpose(s);
+        break;
+    }
+
+    if(!s.save(filename))
+        return 0;
+
+    return 1;
+}
+
+static
+QString
+strip_jpeg_exif(const QString& fn)
+{
+    QImage tst(fn, "JPG");
+    if(tst.isNull())
+        return QString();
+
+    char *rs = 0;
+    dwyco_random_string2(&rs, 4);
+    QByteArray rsb(rs, 4);
+    dwyco_free_array(rs);
+    rsb = rsb.toHex();
+
+    DwOString rfn = DwOString(rsb.constData(), 0, rsb.length());
+    rfn += ".jpg";
+    rfn = add_pfx(Tmp_pfx, rfn);
+
+    QFile f(fn);
+    if(!f.copy(rfn.c_str()))
+        return QString();
+
+    {
+        QFile cpy(rfn.c_str());
+        cpy.setPermissions(cpy.permissions()|QFileDevice::WriteOwner|QFileDevice::WriteUser|
+                           QFileDevice::ReadOwner|QFileDevice::ReadUser);
+    }
+
+    int rot = jhead::do_jhead(rfn.c_str());
+    if(rot & 1)
+    {
+        QFile::remove(rfn.c_str());
+        return QString();
+    }
+    if(!jhead_rotate(QString::fromLatin1(rfn.c_str()), rot >> 1))
+    {
+        QFile::remove(rfn.c_str());
+        return QString();
+    }
+    return QString::fromLatin1(rfn.c_str());
+}
+
 //note: the ifdef ALLOW_MULTIPLE_CLIPS is intended to make the controls
 // work in a way where a user could hit record-stop-record etc. multiple times
 // for one message. this was implemented years ago in cdc32 using a simpler codec
@@ -1051,8 +1143,12 @@ composer::on_actionRecord_Picture_triggered(bool new_state)
         QString fn = get_a_filename("Images (*.jpg *.jpeg *.png *.bmp *.gif *.ppm);;All files (*)");
         if(fn.length() > 0)
         {
+            QString input_fn = fn;
+            QString stripped_fn = strip_jpeg_exif(fn);
+            if(!stripped_fn.isEmpty())
+                input_fn = stripped_fn;
             QString out_fn;
-            if(!load_and_resize(fn, out_fn, 65000))
+            if(!load_and_resize(input_fn, out_fn, 65000))
             {
                 ui.statusbar->showMessage("Can't load image, either unknown type or it may be too big.");
                 ui.actionRecord_Picture->setChecked(0);
@@ -1191,13 +1287,17 @@ composer_profile::dwyco_profile_composer_fetch_done(int succ, const char *reason
     {
         // profile is a jpg in the filename
         c->ui.label->setVisible(1);
-        QImage img(filename);
+        QString qfn = QString::fromLatin1(filename);
+        QString stripped_fn = strip_jpeg_exif(qfn);
+        QString use_fn = stripped_fn.isEmpty() ? qfn : stripped_fn;
+        QImage img(use_fn);
         c->ui.label->setPixmap(QPixmap::fromImage(img));
         c->ui.actionPlay->setEnabled(0);
         c->ui.actionStop->setEnabled(0);
         c->ui.actionStart_over->setEnabled(1);
         c->ui.statusbar->showMessage("Image");
-        int fcomp = dwyco_make_file_zap_composition(filename, strlen(filename));
+        QByteArray use_ba = use_fn.toLatin1();
+        int fcomp = dwyco_make_file_zap_composition(use_ba.constData(), use_ba.length());
         dwyco_delete_zap_composition(c->compid);
         c->compid = fcomp;
 
@@ -1739,7 +1839,12 @@ composer_file::composer_file(QString fn, QWidget *par, Qt::WindowFlags f) :
 int
 composer_file::get_composition()
 {
-    int cid = dwyco_make_file_zap_composition(filename.toAscii().constData(), filename.toAscii().length());
+    QString use_fn = filename;
+    QString stripped_fn = strip_jpeg_exif(filename);
+    if(!stripped_fn.isEmpty())
+        use_fn = stripped_fn;
+    QByteArray use_ba = use_fn.toAscii();
+    int cid = dwyco_make_file_zap_composition(use_ba.constData(), use_ba.length());
     return cid;
 }
 

@@ -766,3 +766,10 @@ void ResetJpgfile(void)
     SectionsRead = 0;
     HaveAll = 0;
 }
+
+
+void ResetJpegState(void)
+{
+    DiscardData();
+    memset(&ImageInfo, 0, sizeof(ImageInfo));
+}

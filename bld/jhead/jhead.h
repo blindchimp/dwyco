@@ -163,6 +163,7 @@ void process_EXIF (unsigned char * CharBuf, unsigned int length);
 void ShowImageInfo(int ShowFileInfo);
 void ShowConciseImageInfo(void);
 int ClearOrientation(void);
+void ResetExifOrientation(void);
 void PrintFormatNumber(void * ValuePtr, int Format, int ByteCount);
 double ConvertAnyFormat(void * ValuePtr, int Format);
 int Get16u(void * Short);

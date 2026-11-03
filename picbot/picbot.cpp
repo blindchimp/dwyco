@@ -147,6 +147,23 @@ add_mapped_uids(const QByteArray& uid, QSet<QByteArray>& set)
     }
 }
 
+static bool
+group_in_set(const QByteArray& uid, const QSet<QByteArray>& set)
+{
+    DWYCO_LIST ulist;
+    if(dwyco_map_uid_to_uids(uid.constData(), uid.length(), &ulist))
+    {
+        simple_scoped qulist(ulist);
+        int n = qulist.rows();
+        for(int i = 0; i < n; ++i)
+        {
+            if(set.contains(qulist.get<QByteArray>(i)))
+                return true;
+        }
+    }
+    return set.contains(uid);
+}
+
 
 void
 send_reply_to(const QByteArray& uid, const char *msg)
@@ -218,12 +235,10 @@ load_pic_names(QString dirname)
 int
 send_pic(QByteArray buid)
 {
-    if(!Subscribers.contains(map_uid(buid)))
+    if(!group_in_set(buid, Subscribers))
         return 0;
-    if(Sent.contains(buid) || Sent.contains(map_uid(buid)))
+    if(group_in_set(buid, Sent))
         return 0;
-    Sent.insert(buid);
-    Sent.insert(map_uid(buid));
     add_mapped_uids(buid, Sent);
     save_it(Sent, "sent.qds");
 
@@ -321,7 +336,12 @@ main(int argc, char *argv[])
 
     load_pic_names(argv[3]);
     load_it(Subscribers, "subscribers.qds");
-    Subscribers = map_uids(Subscribers);
+    {
+        QSet<QByteArray> expanded;
+        for (const QByteArray &u : Subscribers)
+            add_mapped_uids(u, expanded);
+        Subscribers = expanded;
+    }
     if(!load_it(Sent_age, "sent_age.qds"))
     {
         Sent_age = time(0);
@@ -331,6 +351,10 @@ main(int argc, char *argv[])
     else
     {
         load_it(Sent, "sent.qds");
+        QSet<QByteArray> expanded;
+        for (const QByteArray &u : Sent)
+            add_mapped_uids(u, expanded);
+        Sent = expanded;
     }
 
     int was_online = 0;
@@ -397,7 +421,16 @@ main(int argc, char *argv[])
             txt = txt.toLower();
             if(txt.contains("yes"))
             {
-                if(Subscribers.contains(map_uid(uid)))
+                if(group_in_set(uid, Subscribers))
+                {
+                    send_reply_to(uid, QByteArray("You are already subscribed. ") + ts);
+                }
+                else
+                {
+                    add_mapped_uids(uid, Subscribers);
+                    save_it(Subscribers, "subscribers.qds");
+                    send_reply_to(uid, "I'll send you random pics every day you visit Dwyco. To stop me, send me a zap containing the word \"stop\".");
+                    if(!send_pic(uid))
                     {
                         send_reply_to(uid, QByteArray("You are already subscribed. ") + ts);
                     }
@@ -415,7 +448,7 @@ main(int argc, char *argv[])
             }
             else if(txt.contains("stop"))
             {
-                Subscribers.remove(map_uid(uid));
+                remove_mapped_uids(uid, Subscribers);
                 save_it(Subscribers, "subscribers.qds");
                 send_reply_to(uid, "Ok, no more pic of the day. Thanks!");
             }

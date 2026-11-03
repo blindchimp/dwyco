@@ -704,6 +704,8 @@ scrolling in the listview or doesn't recognizing the swipe.
             if(Qt.platform.os == "android") {
                 notificationClient.log_event2("camclick", "regular")
                 notificationClient.takePicture()
+            } else if(Qt.platform.os == "ios") {
+                iosCamera.takePicture()
             }
             //stack.push(cam)
         }

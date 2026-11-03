@@ -136,6 +136,7 @@ set(BASELIBS
     uv
     miniupnpc
     Qt6::Widgets
+    jhead
 Qt6::Network
 Qt6::Multimedia
 Qt6::WebEngineCore
