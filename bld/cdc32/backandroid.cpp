@@ -86,6 +86,10 @@ struct backup_sql : public SimpleSql
                    "uid text not null, "
                    "guid text not null collate nocase, "
                    "unique(mid, tag, uid, guid) on conflict ignore)");
+        sql_simple("create table if not exists tags_payload("
+                   "guid text not null collate nocase primary key on conflict replace, "
+                   "mid text, "
+                   "payload blob)");
     }
 };
 
@@ -116,6 +120,8 @@ sql_rollback_transaction()
 }
 using namespace dwyco::backandroid;
 
+static int backup_account_info(const char *dbn);
+
 static
 vc
 blob(vc m)
@@ -125,6 +131,17 @@ blob(vc m)
     ret.append(m);
     return ret;
 }
+
+// a tombstoned tag row is a *deleted* tag: a '_fav' means un-favorite, a
+// '_pal' means un-pal. the backup carries no tombstones (deleted rows are
+// simply omitted), so every read of mt.gmt below has to skip them itself --
+// otherwise deleted content gets backed up, or prioritized ahead of content
+// the user actually kept, as if it were live.
+// note: a macro, not a const char*, so it composes with the surrounding
+// string literals. use with an explicit "and"/"where" in front of it. the
+// inner column is left bare to match the existing repo idiom of correlating
+// on the outer table (see sql_mid_has_tag in qmsgsql.cpp).
+#define GTOMB_LIVE "not exists (select 1 from mt.gtomb where guid = gmt.guid)"
 
 static
 void
@@ -320,149 +337,161 @@ android_set_backup_state(int i)
     return ret;
 }
 
-// note: this should probably be updated to allow newer messages to
-// be loaded into the backup, erasing older ones. for now it is ok, but
-// this will be more useful if it has the latest information in it i think.
-
-void
-android_backup()
+int
+unified_backup(const char *fn, int include_account_info, int max_size_mb)
 {
     if(Db)
-        return;
-    // since this is a small backup, just delete and do it from scratch
-    DeleteFile(newfn("aback.sql").c_str());
-    Db = new backup_sql;
-    if(!Db->init())
-    {
-        delete Db;
-        return;
-        oopanic("can't init backup");
-    }
-    Db->sync_off();
-    Db->optimize();
-    Db->attach(newfn(MSG_IDX_DB), "mi");
-    Db->attach(newfn(TAG_DB), "mt");
+        return 0;
+    DeleteFile(newfn(fn).c_str());
+    Db = new backup_sql(fn);
+    bool redo_backup = false;
 
     try
     {
+        if(!Db->init())
+        {
+            throw -1;
+        }
+        Db->sync_off();
+        Db->optimize();
+        Db->attach(newfn(MSG_IDX_DB), "mi");
+        Db->attach(newfn(TAG_DB), "mt");
 
         sql_start_transaction();
-        //sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
-        //sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
-        //sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
-        //sql("delete from main.tags");
         sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
         sql_commit_transaction();
         Db->vacuum();
-        // android autobackup limit
-        Db->set_max_size(24);
+        if(max_size_mb > 0)
+            Db->set_max_size(max_size_mb);
 
-        // these tags are user-generated and usually pretty small
-        // since we don't allow backups to be loaded in group mode,
-        // only store data that would be used in non-group mode
+        // tags: filtered subset for non-group restore
         try
         {
             sql_start_transaction();
+            // XXX fix this: not exactly sure why this table is here. if we are initialized, there is
+            // a temp table with this info. maybe need to promote it to actual table
+            // so we can reference it properly
             sql("create temp table static_uid_tags(tag text not null)");
             sql("insert into static_uid_tags values('_ignore')");
             sql("insert into static_uid_tags values('_pal')");
             sql("insert into static_uid_tags values('_leader')");
+            sql("insert into static_uid_tags values('_tox_friend')");
+            sql("insert into static_uid_tags values('_tox_device')");
+            sql("insert into static_uid_tags values('_tox')");
+            // note: unlike the main db's static_uid_tags (where these are
+            // excluded on purpose so leaving a group purges them), a backup
+            // is a local, user-owned snapshot, and restoring onto a new
+            // device should bring the tox identities along with it.
+            sql("insert into static_uid_tags values('_tox_save')");
+            // note: '_tox_active' is deliberately NOT here. it is a claim
+            // about which device is running an identity *right now*, not
+            // durable state, and a claim from a device that no longer exists
+            // (or a different one) means nothing once restored. signing in
+            // always writes a newer claim anyway, so the restored copy would
+            // be dead weight.
+
+            // note: the tombstone filter has to appear in the dedup subquery
+            // as well as the outer query. it only filters the outer one, the
+            // dedup would still pick the newest rowid per (mid,tag) even when
+            // that row is deleted, and "rowid in (...)" would then match
+            // nothing -- dropping the tag entirely even though an older live
+            // row exists. filtering both makes the dedup pick the newest
+            // *live* row, which is what the current value of a tag means.
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
-                "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
+                "and " GTOMB_LIVE " "
+                "and rowid in (select max(rowid) from mt.gmt where " GTOMB_LIVE " group by mid,tag) "
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
                 );
             sql("update main.tags set uid = ?1", to_hex(My_UID));
+            // note: no filter needed here, this is already scoped to the rows
+            // that made it into main.tags, which cannot include a tombstoned
+            // guid now that the insert above filters them.
+            sql("insert into main.tags_payload(guid, mid, payload) "
+                "select guid, mid, payload from mt.gmt_payload "
+                "where guid in (select guid from main.tags)");
             sql_commit_transaction();
         }
         catch(...)
         {
             sql_rollback_transaction();
-            goto done;
         }
 
-        // plain texts that are favorited from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                    "and not exists (select 1 from main.msgs where favmid = mid) "
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        // prioritize: favorites from pals, favorites, pals, all, then with attachments
+        // batch_size 30 for performance; with a size limit, earlier categories get priority
+        // note: every read of mt.gmt here filters tombstones via GTOMB_LIVE, so
+        // an un-favorited message or an un-pal'd sender doesn't consume the size
+        // budget ahead of what was actually kept.
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment isnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal' and " GTOMB_LIVE ") "
+            "and not exists (select 1 from main.msgs where favmid = mid) "
+            " order by logical_clock desc", 30);
 
-        // plain texts that are favorited
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment isnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // plain texts from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal' and " GTOMB_LIVE ") "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // plain texts
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // favorites with attachments from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment notnull "
+            "and assoc_uid in (select mid from mt.gmt where tag = '_pal' and " GTOMB_LIVE ") "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // favorites with attachments
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
-            goto done;
-        }
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) "
+            "where tag = '_fav' and " GTOMB_LIVE " and has_attachment notnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        // with attachments
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment notnull "
-                    "and not exists (select 1 from main.msgs where favmid = mid)"
-                    " order by logical_clock desc"))
-        {
+        attempt_backup(
+            "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment notnull "
+            "and not exists (select 1 from main.msgs where favmid = mid)"
+            " order by logical_clock desc", 30);
 
-        }
-done:
-        ;
+        if(include_account_info)
+            backup_account_info("main");
     }
     catch(vc err)
     {
         sql_rollback_transaction();
         if(err == vc("full"))
         {
-
+        }
+        else
+        {
+            redo_backup = true;
         }
     }
     catch(...)
     {
-
+        redo_backup = true;
     }
+
     Db->exit();
     delete Db;
     Db = 0;
+    if(redo_backup)
+    {
+        TRACK_ADD(BU_remove_trashed_backup, 1);
+        DeleteFile(newfn(fn).c_str());
+        return 0;
+    }
+    return 1;
 }
 
 static
@@ -697,95 +726,6 @@ desktop_days_since_backup_created()
 }
 
 
-int
-desktop_backup()
-{
-    if(Db)
-        return 0;
-    Db = new backup_sql("bun.sql");
-    // in the field, it appears backups get trashed occasionally, so
-    // if there is any problem at all during backup creation, just remove it
-    // and hope the next one will work.
-    bool redo_backup = false;
-
-    try
-    {
-        if(!Db->init())
-        {
-            throw -1;
-            return 0;
-            //oopanic("can't init backup");
-        }
-        Db->sync_off();
-        Db->optimize();
-        Db->attach(newfn(MSG_IDX_DB), "mi");
-        Db->attach(newfn(TAG_DB), "mt");
-
-        sql_start_transaction();
-        sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
-        //sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
-        //sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
-        sql("delete from main.tags");
-        sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
-        sql_commit_transaction();
-        Db->vacuum();
-
-
-        // these tags are user-generated and usually pretty small
-        try
-        {
-            sql_start_transaction();
-            sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags)");
-            sql_commit_transaction();
-        }
-        catch(...)
-        {
-            sql_rollback_transaction();
-            throw -1;
-        }
-
-        // everything not already backed up
-        if(!attempt_backup(
-                "select assoc_uid, mid from mi.msg_idx where mid not in (select mid from main.msgs) "
-                " order by logical_clock desc", 30))
-        {
-            // note: if attempt_backup returns 0, it could be the disk is full, not necessarily that
-            // the database is corrupt. so make an attempt to store the account info. if that fails,
-            // we probably need to redo the backup.
-        }
-        backup_account_info("main");
-    }
-    catch(vc err)
-    {
-        sql_rollback_transaction();
-        if(err == vc("full"))
-        {
-            // this may be transient, and there isn't really
-            // any indication the backup is trashed in this case.
-            // so just ignore it for now.
-        }
-        else
-        {
-            redo_backup = true;
-        }
-    }
-    catch(...)
-    {
-        redo_backup = true;
-    }
-
-    Db->exit();
-    delete Db;
-    Db = 0;
-    if(redo_backup)
-    {
-        TRACK_ADD(BU_remove_trashed_backup, 1);
-        DeleteFile(newfn("bun.sql").c_str());
-        return 0;
-    }
-    return 1;
-}
-
 // note: uid is assumed be hex already here
 static
 int
@@ -804,7 +744,7 @@ make_msg_folder(const vc& uid, DwString* fn_out)
     return 1;
 }
 
-// note: uid is assumed to hex
+// note: uid is assumed to be hex
 static
 int
 restore_msg(const vc& uid, const vc& mid)
@@ -903,68 +843,9 @@ restore_msg(const vc& uid, const vc& mid)
 }
 
 int
-android_restore_msgs()
+restore_msgs(const char *cfn, int no_fnmod, int msgs_only)
 {
-    int ret = 1;
-    if(Db)
-        return 0;
-    Db = new backup_sql;
-    if(!Db->init())
-    {
-        delete Db;
-        Db = 0;
-        return 0;
-    }
-
-    Db->attach(newfn(TAG_DB), "mt");
-    Db->sync_off();
-    GRTLOG("android restore", 0, 0);
-
-    try
-    {
-        vc res;
-
-        res = sql("select distinct(from_uid) from main.msgs");
-
-        // we are likely to be loading something at this point,
-        // so kill the index so it is rebuilt
-        DeleteFile(newfn(MSG_IDX_DB).c_str());
-
-        for(int i = 0; i < res.num_elems(); ++i)
-        {
-            const vc& uid = res[i][0];
-            make_msg_folder(uid, 0);
-        }
-
-        res = sql("select from_uid, mid from main.msgs");
-
-        for(int i = 0; i < res.num_elems(); ++i)
-        {
-            const vc& uid = res[i][0];
-            const vc& mid = res[i][1];
-            restore_msg(uid, mid);
-        }
-
-        // merge in the tags from the backup
-        sql_start_transaction();
-        sql("insert into mt.gmt select * from main.tags");
-        sql_commit_transaction();
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
-        ret = 0;
-    }
-    Db->exit();
-    delete Db;
-    Db = 0;
-    return ret;
-}
-
-int
-restore_msgs(const char *cfn, int msgs_only)
-{
-    // note: this filename is coming from the user's external
+    // note: this filename could be coming from the user's external
     // filesystem, so we don't want to subject it to the same
     // filename munging we do for internal names
     DwString fn(cfn);
@@ -973,7 +854,7 @@ restore_msgs(const char *cfn, int msgs_only)
     if(Db)
         return 0;
     Db = new backup_sql(cfn);
-    if(!Db->init(SQLITE_OPEN_READWRITE, true))
+    if(!Db->init(SQLITE_OPEN_READWRITE, no_fnmod ? true : false))
     {
         delete Db;
         Db = 0;
@@ -1012,6 +893,25 @@ restore_msgs(const char *cfn, int msgs_only)
         sql_start_transaction();
         sql("insert into mt.gmt select * from main.tags");
         sql_commit_transaction();
+
+        // merge in tag payloads from the backup, if present.
+        // backups made before payloads existed don't have this table
+        // note: this relies on the export having filtered tombstones out of
+        // main.tags. a backup can't reintroduce a payload for a deleted tag,
+        // because the payload export is scoped to the rows in main.tags and
+        // that insert now skips tombstoned guids. don't reorder those two.
+        try
+        {
+            sql_start_transaction();
+            sql("insert or replace into mt.gmt_payload(guid, mid, payload) "
+                "select guid, mid, payload from main.tags_payload "
+                "where guid in (select guid from mt.gmt)");
+            sql_commit_transaction();
+        }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
     }
     catch(...)
     {

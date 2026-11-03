@@ -15,6 +15,7 @@
 namespace dwyco {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+int sql_is_initialized();
 
 namespace qmsgsql {
 void sql_start_transaction();
@@ -50,7 +51,14 @@ void sql_fav_set_fav(vc mid, int fav);
 int sql_fav_is_fav(vc mid);
 int sql_fav_has_fav(vc from_uid);
 
-void sql_add_tag(vc mid, vc tag);
+void sql_add_tag(vc mid, vc tag, vc payload = vcnil);
+vc sql_get_tag_payload(vc mid, vc tag);
+// returns the winning tag row for (mid, tag) as a 3 element vector
+// (time, guid, payload), or an empty vector if none. the winning row is the
+// latest by time, with ties broken by the larger guid, so every client
+// computes the same winner (gmt.time is whole seconds, so same-second ties
+// are common, and guid travels with the row).
+vc sql_get_tag_payload_ranked(vc mid, vc tag);
 void sql_remove_tag(vc tag);
 void sql_remove_mid_tag(vc mid, vc tag);
 vc sql_get_tagged_mids(vc tag);
@@ -81,6 +89,7 @@ vc import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(cvcr remote_uid, cvcr vals);
 vc sql_get_non_local_messages_at_uid(vc uid, int max_count);
 vc sql_get_non_local_messages_at_uid_recent(vc uid, int max_count);
+vc sql_untagged_mids_at_uid(const vc &uid, const vc &tag);
 vc sql_uid_updated_since(vc time);
 int sql_attachment_already_received(const vc& att_name);
 

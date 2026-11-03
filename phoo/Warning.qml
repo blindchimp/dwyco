@@ -15,6 +15,8 @@ Rectangle {
     id: popupid
     property string warning
     property string inhibit_key
+    property string link_text
+    property string link_url
     property bool oops: false
     property alias oops_text : oops_button.text
 
@@ -44,6 +46,16 @@ Rectangle {
         }
         Item {
             Layout.fillHeight: true
+        }
+
+        Button {
+            text: link_text
+            visible: {link_url.length > 0}
+            onClicked: {
+                Qt.openUrlExternally(link_url)
+            }
+
+            Layout.fillWidth: true
         }
 
         Button {

@@ -1,0 +1,273 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
+/*
+ * WARNING: the bulk of this code is AI generated (opencode/big-pickle ca. 2026)
+ */
+#ifndef TOXBRIDGE_H
+#define TOXBRIDGE_H
+
+#include "vc.h"
+#include "ser.h"
+#include "dwstr.h"
+
+namespace dwyco {
+
+// NOTE: for this API, identifiers and addresses are all
+// binary strings. there is no hex encoding.
+
+// tox bridge lifecycle
+int tox_bridge_init(const char *save_file);
+void tox_bridge_shutdown();
+int tox_bridge_is_active();
+void tox_bridge_cleanup_incomplete();
+
+// encrypted-save support
+// the bridge remembers the password of the identity it currently has loaded,
+// in memory only (never persisted). invariant: whenever the save file is
+// replaced -- select_save, load_from_file, load_from_bytes, reset_identity,
+// factory_reset -- the remembered password is cleared as part of the same
+// operation. it is never carried across an identity change, because
+// tox_bridge_init passes it to toxp_init as the candidate password and a new
+// identity that happens to share a password would unlock without prompting.
+// when adding a new save-swapping path, clear it too.
+int tox_bridge_needs_password();
+int tox_bridge_unlock(const uint8_t *pw, int pw_len);
+int tox_bridge_set_password(const uint8_t *pw, int pw_len);
+int tox_bridge_has_password();
+// verify that pw matches the on-disk profile password (1 if ok, or no
+// password set). does not alter the running instance.
+int tox_bridge_check_password(const uint8_t *pw, int pw_len);
+
+// import a qTox-style .tox file as the active profile. the existing profile
+// is validated/decrypted (src_pw), backed up to replaced_tox_save[.N].tox
+// unless make_backup is 0, the live instance is replaced while running, and
+int tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                              int make_backup, char *err_buf, int err_buf_len);
+int tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
+                               char *err_buf, int err_buf_len);
+int tox_bridge_peek_pubkey_from_file(const char *path, const uint8_t *pw, int pw_len,
+                                     vc &pubkey_out);
+int tox_bridge_peek_pubkey_from_bytes(const vc &bytes, vc &pubkey_out);
+// discard the current profile (backing it up to replaced_tox_save[.N].tox) and
+// start fresh with a brand new identity. on failure err_buf is filled with a
+// message and the old profile is restored.
+int tox_bridge_reset_identity(char *err_buf, int err_buf_len);
+// delete the tox save entirely and clear all password state, leaving the tox
+// system fully stopped (the "factory reset" state). does NOT create a new
+// identity and does NOT re-initialize tox.
+int tox_bridge_factory_reset(char *err_buf, int err_buf_len);
+// returns 1 if a tox save file exists on disk (drives the "empty" state).
+int tox_bridge_save_exists();
+// returns 1 if the on-disk tox save is toxencryptsave-encrypted (file probe,
+// valid whether or not tox is running).
+int tox_bridge_save_is_encrypted();
+// encrypt/decrypt the on-disk tox save without a running instance. old_pw must
+// match if the save is currently encrypted; empty new_pw clears encryption.
+// on failure err_buf is filled with a message.
+int tox_bridge_set_file_password(const uint8_t *old_pw, int old_pw_len,
+                                 const uint8_t *new_pw, int new_pw_len,
+                                 char *err_buf, int err_buf_len);
+// probe a tox save file: returns 1 if it is toxencryptsave-encrypted, 0 otherwise
+int tox_bridge_file_is_encrypted(const char *path);
+
+// export the live profile's save data to dst_path, preserving the current
+// encryption state. on failure err_buf is filled with a message.
+int tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len);
+
+// polling — call from dwyco timer loop
+void tox_bridge_poll();
+
+// identity
+vc tox_bridge_get_address();
+vc tox_bridge_get_pubkey();
+
+// what actually differs between the save on disk and the group's published
+// copy of the same identity. see tox_bridge_compare_saves().
+//
+// note "same" means the same in the fields a person recognizes (profile name,
+// status, nospam, friend list, password protection). it does NOT mean the two
+// saves are byte identical: a tox save also carries connection state that
+// shifts on its own, and reporting that as a change would be noise.
+//
+// this describes the CURRENT identity only -- other published identities have
+// no local counterpart to compare against.
+enum {
+    // the two copies match in every field we look at
+    TOX_DIFF_SAME = 0,
+    // they differ, and the difference list says how
+    TOX_DIFF_DIFFERENT,
+    // this identity has never been published, so there is nothing to compare
+    // against. a normal state, not a problem.
+    TOX_DIFF_NOT_SHARED,
+    // one of the two copies could not be opened, so no comparison was
+    // possible. happens when the save is password protected and either tox
+    // is stopped (no password to hand) or the published copy was encrypted
+    // under a different password.
+    TOX_DIFF_UNREADABLE,
+    // the published copy belongs to a different tox-id than the save on
+    // disk. shouldn't be reachable (the tag mid is the pubkey, and
+    // tox_bridge_select_save refuses a mismatched payload), but a comparison
+    // across two identities would be meaningless, so it gets its own state
+    // instead of a bogus diff.
+    TOX_DIFF_DIFFERENT_ID
+};
+
+// group-shared tox identities.
+//
+// a tox save is published as a crdt tag payload so the whole device group
+// sees it: tag '_tox_save', mid is hex(pubkey), payload is the raw bytes of
+// the save file, read verbatim so any encryption state is preserved. several
+// rows can exist for one mid; the newest wins on read. to keep a single tox
+// identity from running on two group members at once, signing in also writes
+// tag '_tox_active' (same mid, payload is hex of the signing-in device's
+// dwyco uid). newest row wins, so the last device to sign in owns the
+// identity, and any other client running it stands down.
+//
+// note a published copy is NEVER adopted automatically. signing in runs the
+// bytes in the save file and nothing else; the only way a '_tox_save' payload
+// becomes this device's identity is an explicit tox_bridge_select_save. the
+// save file is written by exactly these paths and no others:
+// tox_bridge_select_save, tox_bridge_load_from_file, tox_bridge_load_from_bytes,
+// tox_bridge_reset_identity, tox_bridge_factory_reset. do not add a reconcile
+// to tox_bridge_init.
+int tox_bridge_publish_save();
+// human readable name for a hex tox pubkey, from the dwyco '_tox_friend' tags.
+// nil if we've never seen this identity as a friend. works for encrypted saves,
+// since the name lives in the dwyco db, not inside the tox save.
+vc tox_bridge_name_for_pubkey_hex(const vc &pub_hex);
+// one row per published identity: mid_hex, time, size, encrypted, name.
+// name may be nil.
+vc tox_bridge_list_saves();
+// compare the save on disk against the group's published copy of that same
+// identity and report what actually differs -- friend list, profile name,
+// status, nospam, password protection. purely advisory: this never adopts
+// anything and never writes the save file. returns nil when there is no local
+// save, else a 3 element vector:
+//   0: state       - one of the TOX_DIFF_* codes above
+//   1: differences - vector of rows, each [kind, who, detail]. empty when the
+//                    state is SAME. kinds are:
+//                      friend_added    who=friend pubkey hex, detail=alias
+//                                         from the save on disk. the friend is
+//                                         here and NOT in the published copy
+//                      friend_removed  who=friend pubkey hex, detail=alias
+//                                         from the published copy. the friend is
+//                                         there and NOT in the save on disk
+//                      friend_renamed  who=friend pubkey hex, detail=this
+//                                         device's alias (both sides are
+//                                         present, only the aliases differ)
+//                      name_changed    detail=this device's name
+//                      status_changed  detail=this device's status message
+//                      nospam_changed  detail=this device's nospam
+//                      password_changed detail=1 if this device's save is
+//                                         password protected, 0 if not
+//   2: mid         - ascii hex pubkey, nil when it couldn't be determined
+// note "same" means the same in those fields, not byte identical: a tox save
+// carries connection state that changes on its own, and that is deliberately
+// not reported.
+vc tox_bridge_compare_saves();
+// adopt the published save for mid_hex (hex pubkey) as the identity this
+// device runs. leaves tox stopped; the user signs in explicitly afterwards,
+// which is what writes the '_tox_active' claim.
+//
+// refuses (err_buf set, nothing written) if the payload's pubkey does not
+// match mid_hex, so a payload filed under the wrong mid can't be adopted as
+// the wrong identity. that check is skipped for encrypted payloads, whose
+// pubkey can't be read without a password.
+int tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len);
+// remove the shared identity with mid_hex (hex pubkey) from every group
+// member's list. any client may do this. deliberately does not change any
+// client's tox state: nobody is signed out, and a device still signed in
+// with the identity can publish it again.
+int tox_bridge_depublish_save(const vc &mid_hex);
+// hex(uid) of the device that currently owns the identity with the given hex
+// pubkey, or nil if nobody has claimed it.
+vc tox_bridge_claimant(const vc &pub_hex);
+// called from the poll loop; shuts tox down if another device has claimed
+// the identity we're running.
+void tox_bridge_check_active_conflict();
+
+// contact management
+int tox_bridge_friend_add(const vc &address, const vc &message);
+int tox_bridge_friend_add_norequest(const vc &pubkey);
+int tox_bridge_friend_delete(uint32_t friend_number);
+int tox_bridge_friend_delete_by_pubkey(const vc &pubkey);
+// delete a friend identified by their pseudo uid (the uid the rest of dwyco
+// knows them by). use this instead of the pubkey variant when all we have is
+// a uid, eg. from the ignore list. 0 if they aren't a friend right now.
+int tox_bridge_friend_delete_by_uid(const vc &pseudo_uid);
+
+// messaging
+int tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out = 0, int *tox_error_out = 0);
+int tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_action);
+int tox_bridge_send_file_message_by_uid(const vc &pseudo_uid, const vc &text,
+                                        const vc &original_filename,
+                                        const DwString &attachment_basename,
+                                        const vc &filehash,
+                                        uint64_t file_size,
+                                        vc &local_mid_out);
+void tox_bridge_send_queued();
+int tox_bridge_kill_message(const vc &local_mid);
+
+// file transfer
+int tox_bridge_file_send(uint32_t friend_number, const vc &name, uint64_t size);
+int tox_bridge_file_send_data(uint32_t friend_number, uint32_t file_number,
+                              uint64_t pos, const vc &data);
+int tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number);
+
+// tox avatars: retrieves the cached avatar image data for a friend.
+// returns 1 and fills avatar_data_out on success, 0 if none is available.
+int tox_bridge_get_avatar(const vc &pseudo_uid, vc &avatar_data_out);
+
+// tox avatars: set/clear our own avatar. set stores the image under both
+// the app self uid and the tox self pseudo uid, then broadcasts it to all
+// online friends (kind TOX_FILE_KIND_AVATAR, filename = tox_hash(image)).
+// clear deletes the stored copies and signals removal with a size-0 avatar
+// transfer.
+int tox_bridge_set_avatar(const vc &avatar_data);
+void tox_bridge_clear_avatar();
+
+// pseudo-uid mapping
+vc tox_pubkey_to_pseudo_uid(const vc &pubkey);
+int tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out);
+int tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out);
+
+// friend number lookup (run on startup to rebuild cache)
+void tox_bridge_rebuild_friend_cache();
+
+// QD-compatible queue access for integrating tox messages into the
+// dwyco_get_qd_messages / dwyco_qd_message_to_body APIs.
+vc tox_queue_get_qd_msgs(const vc &pseudo_uid);
+vc tox_queue_load_qd_body(const vc &local_mid);
+int tox_queue_is_failed(const char *local_mid, int len);
+
+// typing indicators
+int tox_bridge_set_typing(uint32_t friend_number, int typing);
+int tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing);
+
+// self profile
+int tox_bridge_set_name(const char *name, int name_len);
+int tox_bridge_set_status_message(const char *msg, int msg_len);
+vc tox_bridge_get_name();
+vc tox_bridge_get_status_message();
+
+// user status (away/busy)
+int tox_bridge_set_user_status(const char *status);
+vc tox_bridge_get_user_status();
+
+// convenience wrappers for dlli
+int tox_bridge_is_tox_uid(const vc &uid);
+vc make_tox_info_vec(const vc &pseudo, const vc &name);
+// must call dwyco_free_array on returned pointer
+int tox_bridge_get_self_public_key(char **out, int *len_out);
+vc tox_bridge_get_friend_list_vc();
+
+}
+
+#endif

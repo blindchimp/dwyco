@@ -18,6 +18,7 @@ RowLayout {
     property alias inputMethodHints: textInput1.inputMethodHints
     property alias inputMask: textInput1.inputMask
     property alias acceptableInput: textInput1.acceptableInput
+    property alias validator: textInput1.validator
 
     property alias readOnly: textInput1.readOnly
     signal accepted()

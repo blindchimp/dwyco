@@ -323,6 +323,8 @@ using namespace CryptoPP;
 #include "autoup.h"
 #include "fnmod.h"
 #include "profiledb.h"
+#include "toxbridge.h"
+#include "toxd_plugin.h"
 #include "callq.h"
 #include "mmcall.h"
 #include "calldll.h"
@@ -898,6 +900,11 @@ DWYCOEXPORT
 void
 dwyco_ezd2(const char *str, int len_str, char **str_out, int *len_out)
 {
+    if(len_str < 8)
+    {
+        *str_out = 0;
+        return;
+    }
     vc key(VC_BSTRING, EZEKEY, 10);
     // hokey, we know the first 8 bytes are iv
     vc iv(VC_BSTRING, str, 8);
@@ -1588,7 +1595,7 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
-    weekly_trash_empty();
+    debug_trash_empty();
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);
@@ -2180,6 +2187,7 @@ dwyco_service_channels(int *spin_out)
     poll_pipeline();
 #endif
     handle_deferred_msg_send();
+    tox_bridge_poll();
     se_process();
     crank_activity_timer();
     sync_call_setup();
@@ -5279,6 +5287,32 @@ dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
     return 1;
 }
 
+// note: the size of the local copy of a queued (not yet sent) file
+// attachment. this is just the info that is handy for displaying a
+// "this is a file, this is how big it is" placeholder. returns 0 and
+// sets size_out to 0 if we can't figure it out.
+DWYCOEXPORT
+int
+dwyco_qd_file_zap_size(DWYCO_SAVED_MSG_LIST m, long *size_out)
+{
+    if(size_out == 0)
+        return 0;
+    *size_out = 0;
+    vc& v = *(vc *)m;
+    vc body = v[0];
+    vc attachment = body[QM_BODY_ATTACHMENT];
+    if(attachment.is_nil())
+        return 0;
+    DwString a((const char *)attachment, 0, attachment.len());
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
+        return 0;
+    struct stat s;
+    if(stat(newfn(attachment).c_str(), &s) == -1)
+        return 0;
+    *size_out = (long)s.st_size;
+    return 1;
+}
+
 DWYCOEXPORT
 int
 dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
@@ -5336,6 +5370,50 @@ dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
         //DeleteFile(dst_filename);
         return 0;
     }
+    return 1;
+}
+
+// note: the size of the local copy of a saved message's file attachment.
+// this is just the info that is handy for displaying a "this is a file,
+// this is how big it is" placeholder. returns 0 and sets size_out to 0
+// if we can't figure it out.
+DWYCOEXPORT
+int
+dwyco_file_zap_size(const char *msg_id, long *size_out)
+{
+    if(size_out == 0)
+        return 0;
+    *size_out = 0;
+    vc body;
+    vc attachment;
+    vc from;
+    vc iuid;
+
+    body = direct_to_body(msg_id, iuid);
+    if(body.is_nil())
+        return 0;
+
+    from = body[QM_BODY_FROM];
+    attachment = body[QM_BODY_ATTACHMENT];
+    if(attachment.is_nil())
+        return 0;
+    DwString a((const char *)attachment, 0, attachment.len());
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
+        return 0;
+
+    DwString s2;
+    if(body[QM_BODY_SENT].is_nil())
+        s2 = (const char *)to_hex(from);
+    else
+        s2 = (const char *)to_hex(iuid);
+
+    s2 += ".usr" DIRSEPSTR;
+    s2 += attachment;
+
+    struct stat s;
+    if(stat(newfn(s2).c_str(), &s) == -1)
+        return 0;
+    *size_out = (long)s.st_size;
     return 1;
 }
 
@@ -5656,6 +5734,80 @@ dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int 
         return 0; // can't honor no forward with files
     }
     vc vuid = vc(VC_BSTRING, uid, len_uid);
+
+    // route to tox bridge if this is a tox contact
+    if(dwyco::tox_bridge_is_tox_uid(vuid))
+    {
+        // reject dwyco-media (recordings) — only file zaps are sent via tox
+        if(m->user_filename.is_nil() && m->composer && m->actual_filename.length() > 0)
+        {
+            GRTLOG("zap_send: %d rejecting dwyco-media to tox contact", compid, 0);
+            return 0;
+        }
+
+        // For forwarded messages, the composition already carries the
+        // flattened forwarded text in m->msg_text. the `text` argument is
+        // only any extra text supplied by the caller, so combine them so
+        // a tox recipient actually receives the forwarded content instead
+        // of an empty message.
+        DwString send_text;
+        if(m->forward && !m->body_to_forward.is_nil())
+        {
+            DwString s;
+            vc b = m->body_to_forward;
+            int first = 1;
+            while(!b.is_nil() && b.type() == VC_VECTOR)
+            {
+                if(!first)
+                    s += "\r\n---\r\n";
+                first = 0;
+                vc t = b[QM_BODY_NEW_TEXT];
+                if(!t.is_nil())
+                    s += t;
+                if(b[QM_BODY_FORWARDED_BODY].is_nil())
+                    break;
+                b = b[QM_BODY_FORWARDED_BODY];
+            }
+            send_text = s;
+        }
+        if(len_text > 0)
+        {
+            DwString add_text(text, 0, len_text);
+            if(send_text.length() > 0)
+                send_text = add_text + "\r\n---\r\n" + send_text;
+            else
+                send_text = add_text;
+        }
+        vc text_vc(VC_BSTRING, send_text.c_str(), send_text.length());
+        int ret;
+        if(m->actual_filename.length() > 0)
+        {
+            struct stat st;
+            uint64_t fsize = (stat(m->actual_filename.c_str(), &st) == 0)
+                             ? (uint64_t)st.st_size : 0;
+            vc local_mid_out;
+            ret = dwyco::tox_bridge_send_file_message_by_uid(
+                vuid, text_vc,
+                m->user_filename,
+                m->file_basename,
+                m->filehash,
+                fsize,
+                local_mid_out);
+            // bridge owns the file now
+            m->composer = 0;
+        }
+        else
+        {
+            m->composer = 0;
+            ret = dwyco::tox_bridge_send_message_by_uid(vuid, text_vc, 0);
+        }
+        if(pers_id_out)
+            *pers_id_out = "";
+        if(len_pers_id_out)
+            *len_pers_id_out = 0;
+        return ret;
+    }
+
     vc v(VC_VECTOR);
     if(!m->limited_forward)
         v.append(vuid);
@@ -5772,6 +5924,8 @@ int
 dwyco_kill_message(const char *pers_id, int len_pers_id)
 {
     DwString a(pers_id, 0, len_pers_id);
+    if(dwyco::tox_bridge_kill_message(a))
+        return 1;
     if(!is_pers_id(a))
         return 0;
     return kill_message(a);
@@ -6471,6 +6625,17 @@ dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid)
         buid = vc(VC_BSTRING, uid, len_uid);
 
     ret = load_qd_msgs(buid, 0);
+
+    // append tox queued/in-progress/failed messages
+    {
+        vc tox_msgs = tox_queue_get_qd_msgs(buid);
+        int n = tox_msgs.num_elems();
+        for(int i = 0; i < n; ++i)
+            ret.append(tox_msgs[i]);
+    }
+
+    sort_on_time(ret, 2);
+
     *list_out = (DWYCO_QD_MSG_LIST)&ret;
 
 }
@@ -6480,9 +6645,13 @@ int
 dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, int len_pers_id)
 {
     vc pid(VC_BSTRING, pers_id, len_pers_id);
-    if(!is_pers_id((const char *)pid))
-        return 0;
-    vc b = load_qd_to_body(pid);
+    vc b;
+    if(is_pers_id((const char *)pid))
+        b = load_qd_to_body(pid);
+    if(b.is_nil())
+    {
+        b = tox_queue_load_qd_body(pid);
+    }
     if(b.is_nil())
         return 0;
     GRTLOG("qd msg", 0, 0);
@@ -6493,6 +6662,15 @@ dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, in
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_qd_message_is_failed(const char *pers_id, int len_pers_id)
+{
+    DwString a(pers_id, 0, len_pers_id);
+    if(fn_extension(a) == ".q")
+        return 0;
+    return tox_queue_is_failed(pers_id, len_pers_id);
+}
 
 DWYCOEXPORT
 int
@@ -8069,6 +8247,20 @@ dwyco_mid_has_tag(const char *mid, const char *tag)
 
 DWYCOEXPORT
 int
+dwyco_get_mid_tag_payload(const char *mid, const char *tag, DWYCO_LIST *payload_out)
+{
+    if(!payload_out || !mid || !*mid || !tag || !*tag)
+        return 0;
+    vc res = sql_get_tag_payload(vc(mid), vc(tag));
+    vc v(VC_VECTOR);
+    v[0] = res;
+    *payload_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+
+DWYCOEXPORT
+int
 dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
 {
     vc buid(VC_BSTRING, uid, len_uid);
@@ -8350,6 +8542,105 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
     if(cant_resolve_now_out)
         *cant_resolve_now_out = 0;
     vc buid(VC_BSTRING, uid, len_uid);
+
+    // If this is a tox pseudo_uid, return info from local friend cache
+    // without hitting any dwyco servers or profile DB
+    // If the user is not in the friend cache (or has no cached name),
+    // fall through to session_infos / CRDT tag fallbacks below.
+    if(dwyco::tox_bridge_is_tox_uid(buid))
+    {
+        vc fl = dwyco::tox_bridge_get_friend_list_vc();
+        vc name;
+        if(!fl.is_nil())
+        {
+            int n = fl.num_elems();
+            for(int i = 0; i < n; ++i)
+            {
+                vc entry = fl[i];
+                vc pubkey;
+                if(entry.find("pubkey", pubkey))
+                {
+                    vc pseudo = dwyco::tox_pubkey_to_pseudo_uid(pubkey);
+                    if(pseudo == buid)
+                    {
+                        entry.find("name", name);
+                        if(!name.is_nil() && name != vc(""))
+                        {
+                            Session_infos.add_kv(pseudo, dwyco::make_tox_info_vec(pseudo, name));
+                            vc v(VC_VECTOR);
+                            v.append(name);
+                            v.append("");
+                            v.append("");
+                            v.append(0);
+                            v.append(0);
+                            v.append("");
+                            vc v1(VC_VECTOR);
+                            v1[0] = v;
+                            return dwyco_list_from_vc(v1);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Local tox self identity: resolve to its cached/live name instead of
+    // falling through to the profile DB / server lookup.
+    if(dwyco::tox_bridge_is_tox_uid(buid))
+    {
+        vc self_pseudo = dwyco::tox_bridge_get_pubkey();
+        if(!self_pseudo.is_nil())
+            self_pseudo = dwyco::tox_pubkey_to_pseudo_uid(self_pseudo);
+        else
+            self_pseudo = get_settings_value("tox/self_pseudo");
+        if(!self_pseudo.is_nil() && self_pseudo == buid)
+        {
+            vc name = dwyco::tox_bridge_get_name();
+            if(name.is_nil() || name == vc(""))
+                name = get_settings_value("tox/self_name");
+            if(name.is_nil() || name == vc(""))
+                name = to_hex(buid);
+            Session_infos.add_kv(buid, dwyco::make_tox_info_vec(buid, name));
+            vc v(VC_VECTOR);
+            v.append(name);
+            v.append("");
+            v.append("");
+            v.append(0);
+            v.append(0);
+            v.append("");
+            vc v1(VC_VECTOR);
+            v1[0] = v;
+            return dwyco_list_from_vc(v1);
+        }
+    }
+
+    // Fallback for tox friend info synced via CRDT tags
+    // (clients without tox enabled)
+    {
+        vc name;
+        if(sql_is_initialized() && sql_mid_has_tag(to_hex(buid), "_tox_friend"))
+        {
+            // note: the mid is hex(pseudo_uid), the friend's display name
+            // rides along in the tag payload.
+            name = sql_get_tag_payload(to_hex(buid), "_tox_friend");
+            if(!name.is_nil() && name != vc(""))
+                Session_infos.add_kv(buid, dwyco::make_tox_info_vec(buid, name));
+            else
+                name = to_hex(buid);
+            vc v(VC_VECTOR);
+            v.append(name);
+            v.append("");
+            v.append("");
+            v.append(0);
+            v.append(0);
+            v.append("");
+            vc v1(VC_VECTOR);
+            v1[0] = v;
+            return dwyco_list_from_vc(v1);
+        }
+    }
+
     // note: have to think about this. it might be
     // too expensive on mobile if you have lots of
     // profiles. maybe need to just limit it to
@@ -9077,19 +9368,19 @@ dwyco_create_backup(int days_to_run, int days_to_rebuild)
     int du = desktop_days_since_last_backup();
     if(du == -1)
     {
-        desktop_backup();
+        unified_backup("bun.sql", 1, 0);
         return 1;
     }
     int dr = desktop_days_since_backup_created();
     if(dr == -1 || dr >= days_to_rebuild)
     {
         dwyco_remove_backup();
-        desktop_backup();
+        unified_backup("bun.sql", 1, 0);
         return 1;
     }
     if(du < days_to_run)
         return 0;
-    desktop_backup();
+    unified_backup("bun.sql", 1, 0);
     return 1;
 }
 
@@ -9200,7 +9491,13 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
 {
     if(Current_alternate)
         return 0;
-    if(!restore_msgs(bu_fn, msgs_only))
+
+    // the user is selecting a file from their filesystem to restore
+    // so don't apply fnmod stuff. this is for cdc-x, which does a
+    // copy out to the users local directory, which they have to
+    // manage themselves. contrast to android, where the backup is
+    // created in a standard place, then google backs it up automatically.
+    if(!restore_msgs(bu_fn, 1, msgs_only))
         return 0;
 
     special_backup_bailout();
@@ -9232,7 +9529,8 @@ dwyco_restore_android_backup()
 {
     if(Current_alternate)
         return 0;
-    if(!android_restore_msgs())
+    // find the backup file in a standard place, so apply fnmod tweaks.
+    if(!restore_msgs("aback.sql", 0, 1))
         return 0;
     special_backup_bailout();
     return 1;
@@ -9532,6 +9830,542 @@ map_external_gv(ValidPtr , int )
 void
 set_audio_status(int)
 {
+}
+
+DWYCOEXPORT
+int
+dwyco_enable_tox(const char *tox_save_file)
+{
+    return dwyco::tox_bridge_init(tox_save_file);
+}
+
+DWYCOEXPORT
+int
+dwyco_disable_tox()
+{
+    dwyco::tox_bridge_shutdown();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_needs_password()
+{
+    return dwyco::tox_bridge_needs_password() ? 1 : 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_unlock(const char *pw, int pw_len)
+{
+    return dwyco::tox_bridge_unlock((const uint8_t *)pw, pw_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_profile_password(const char *pw, int pw_len)
+{
+    return dwyco::tox_bridge_set_password((const uint8_t *)pw, pw_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_has_profile_password()
+{
+    return dwyco::tox_bridge_has_password() ? 1 : 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_check_password(const char *pw, int pw_len)
+{
+    return dwyco::tox_bridge_check_password((const uint8_t *)pw, pw_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_file_is_encrypted(const char *path)
+{
+    return dwyco::tox_bridge_file_is_encrypted(path);
+}
+
+DWYCOEXPORT
+int
+dwyco_import_tox_profile(const char *src_path, const char *src_pw, int src_pw_len,
+                         int make_backup, char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_load_from_file(src_path, (const uint8_t *)src_pw, src_pw_len,
+                                            make_backup, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_peek_pubkey_from_file(const char *path, const char *pw, int pw_len,
+                                char **pubkey_out, int *pubkey_len_out)
+{
+    vc pk;
+    const char *p = (path && path[0]) ? path : 0;
+    const uint8_t *pwp = (const uint8_t *)pw;
+    if(!dwyco::tox_bridge_peek_pubkey_from_file(p, pwp, pw_len, pk))
+    {
+        *pubkey_out = 0;
+        *pubkey_len_out = 0;
+        return 0;
+    }
+    *pubkey_len_out = (int)pk.len();
+    *pubkey_out = (char *)malloc((size_t)pk.len());
+    memcpy(*pubkey_out, (const char *)pk, (size_t)pk.len());
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_export_profile(dst_path, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_publish_save()
+{
+    return dwyco::tox_bridge_publish_save();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_list_saves(DWYCO_LIST *list_out)
+{
+    if(!list_out)
+        return 0;
+    vc saves = dwyco::tox_bridge_list_saves();
+    if(saves.is_nil())
+        return 0;
+    // widen the bridge rows into the documented columns. the bridge already
+    // resolved the encryption flag and the dwyco-side name while it had the
+    // winning tag payload in hand, so nothing here needs to re-read it.
+    vc out(VC_VECTOR);
+    for(int i = 0; i < saves.num_elems(); ++i)
+    {
+        const vc &r = saves[i];
+        if(r.num_elems() < 3)
+            continue;
+        vc row(VC_VECTOR);
+        for(int j = 0; j < r.num_elems(); ++j)
+            row.append(r[j]);
+        // pad out to the documented column count so callers can index blindly.
+        while(row.num_elems() < 5)
+            row.append(vcnil);
+        out.append(row);
+    }
+    *list_out = dwyco_list_from_vc(out);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_compare_saves(DWYCO_LIST *list_out)
+{
+    if(!list_out)
+        return 0;
+    vc st = dwyco::tox_bridge_compare_saves();
+    if(st.is_nil())
+        return 0;
+    // flatten the difference list into columns. the vector api has no nested
+    // rows, so each difference becomes three columns (kind, who, detail) after
+    // the fixed header columns. empty values keep the column count aligned
+    // with the difference count.
+    int ndiffs = 0;
+    if(st.num_elems() >= 2)
+        ndiffs = st[1].num_elems();
+
+    vc row(VC_VECTOR);
+    row.append(st[0]);                       // state
+    row.append(vc((long)ndiffs));            // difference count
+    row.append(st.num_elems() >= 3 ? st[2] : vcnil);   // mid
+    for(int i = 0; i < ndiffs; ++i)
+    {
+        const vc &d = st[1][i];
+        row.append(d.num_elems() > 0 ? d[0] : vcnil);
+        row.append(d.num_elems() > 1 ? d[1] : vcnil);
+        row.append(d.num_elems() > 2 ? d[2] : vcnil);
+    }
+    vc v(VC_VECTOR);
+    v.append(row);
+    *list_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_name_for_pubkey(const char *pub_hex, int pub_hex_len,
+                          char **name_out, int *name_len_out)
+{
+    if(!name_out || !name_len_out)
+        return 0;
+    *name_out = 0;
+    *name_len_out = 0;
+    if(!pub_hex || pub_hex_len <= 0)
+        return 0;
+    vc hex(pub_hex, (long)pub_hex_len);
+    vc nm = dwyco::tox_bridge_name_for_pubkey_hex(hex);
+    if(nm.is_nil() || nm.len() <= 0)
+        return 0;
+    *name_len_out = (int)nm.len();
+    *name_out = (char *)malloc((size_t)nm.len());
+    memcpy(*name_out, (const char *)nm, (size_t)nm.len());
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_select_save(const char *mid_hex, int mid_hex_len, char *err_buf, int err_buf_len)
+{
+    if(!mid_hex || mid_hex_len <= 0)
+    {
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "no identity given");
+        return 0;
+    }
+    vc mid(VC_BSTRING, mid_hex, (long)mid_hex_len);
+    return dwyco::tox_bridge_select_save(mid, err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_claimant(const char *pub_hex, int pub_hex_len, DWYCO_LIST *list_out)
+{
+    if(!list_out || !pub_hex || pub_hex_len <= 0)
+        return 0;
+    vc who = dwyco::tox_bridge_claimant(vc(VC_BSTRING, pub_hex, (long)pub_hex_len));
+    if(who.is_nil())
+        return 0;
+    // note: must be a 2-d vector (a vector of row vectors), not a 1-d one.
+    // dwyco_list_get walks the column name on top of the row, so a 1-d
+    // vector makes it bail out with an empty value while still returning
+    // success.
+    vc row(VC_VECTOR);
+    row.append(who);
+    vc v(VC_VECTOR);
+    v.append(row);
+    *list_out = dwyco_list_from_vc(v);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_depublish_save(const char *mid_hex, int mid_hex_len)
+{
+    if(!mid_hex || mid_hex_len <= 0)
+        return 0;
+    vc mid(VC_BSTRING, mid_hex, (long)mid_hex_len);
+    return dwyco::tox_bridge_depublish_save(mid);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_reset_identity(char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_reset_identity(err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_factory_reset(char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_factory_reset(err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_save_exists()
+{
+    return dwyco::tox_bridge_save_exists();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_save_is_encrypted()
+{
+    return dwyco::tox_bridge_save_is_encrypted();
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_save_password(const char *old_pw, int old_pw_len,
+                            const char *new_pw, int new_pw_len,
+                            char *err_buf, int err_buf_len)
+{
+    return dwyco::tox_bridge_set_file_password((const uint8_t *)old_pw, old_pw_len,
+                                               (const uint8_t *)new_pw, new_pw_len,
+                                               err_buf, err_buf_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_self_public_key(char **out, int *len_out)
+{
+    return dwyco::tox_bridge_get_self_public_key(out, len_out);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_self_address(char **out, int *len_out)
+{
+    vc addr = dwyco::tox_bridge_get_address();
+    if(addr.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[addr.len()];
+        memcpy(*out, (const char *)addr, addr.len());
+    }
+    if(len_out)
+        *len_out = addr.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_is_tox_uid(const char *uid, int len_uid)
+{
+    return dwyco::tox_bridge_is_tox_uid(vc(VC_BSTRING, uid, len_uid)) ? 1 : 0;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_add_friend(const char *addr, int addr_len, const char *msg)
+{
+    vc addr_vc(VC_BSTRING, addr, (long)addr_len);
+    vc msg_vc(VC_STRING, msg);
+    if(addr_len >= 32)
+    {
+        vc pubkey(VC_BSTRING, addr, 32);
+        dwyco::tox_bridge_friend_delete_by_pubkey(pubkey);
+    }
+    return dwyco::tox_bridge_friend_add(addr_vc, msg_vc);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len)
+{
+    vc pk(VC_BSTRING, pubkey, (long)pubkey_len);
+    return dwyco::tox_bridge_friend_add_norequest(pk);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_friend_list(DWYCO_LIST *list_out)
+{
+    vc fl = dwyco::tox_bridge_get_friend_list_vc();
+    if(fl.is_nil())
+        return 0;
+    if(list_out)
+        *list_out = (DWYCO_LIST)new vc(fl);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out)
+{
+    dwyco::tox_bridge_rebuild_friend_cache();
+    vc fl = dwyco::tox_bridge_get_friend_list_vc();
+    if(fl.is_nil())
+        return 0;
+    vc result(VC_VECTOR);
+    int n = fl.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = fl[i];
+        vc row(VC_VECTOR);
+        vc tmp;
+        row.append(entry.find("friend_number", tmp) ? tmp : vc(0));
+        row.append(entry.find("pubkey", tmp) ? tmp : vc(""));
+        row.append(entry.find("name", tmp) ? tmp : vc(""));
+        row.append(entry.find("status", tmp) ? tmp : vc(""));
+        row.append(entry.find("user_status", tmp) ? tmp : vc("none"));
+        result.append(row);
+    }
+    if(list_out)
+        *list_out = (DWYCO_TOX_FRIENDS_MODEL)new vc(result);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_delete_friend(const char *pubkey, int pubkey_len)
+{
+    vc pk(VC_BSTRING, pubkey, (long)pubkey_len);
+    return dwyco::tox_bridge_friend_delete_by_pubkey(pk);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_delete_friend_by_uid(const char *uid, int len_uid)
+{
+    vc puid(VC_BSTRING, uid, (long)len_uid);
+    return dwyco::tox_bridge_friend_delete_by_uid(puid);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_typing(const char *pseudo_uid, int pseudo_uid_len, int typing)
+{
+    vc puid(VC_BSTRING, pseudo_uid, (long)pseudo_uid_len);
+    return dwyco::tox_bridge_set_typing_by_uid(puid, typing);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_name(const char *name, int name_len)
+{
+    return dwyco::tox_bridge_set_name(name, name_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_status_message(const char *msg, int msg_len)
+{
+    return dwyco::tox_bridge_set_status_message(msg, msg_len);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_name(char **out, int *len_out)
+{
+    vc name = dwyco::tox_bridge_get_name();
+    if(name.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[name.len()];
+        memcpy(*out, (const char *)name, name.len());
+    }
+    if(len_out)
+        *len_out = name.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_status_message(char **out, int *len_out)
+{
+    vc msg = dwyco::tox_bridge_get_status_message();
+    if(msg.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[msg.len()];
+        memcpy(*out, (const char *)msg, msg.len());
+    }
+    if(len_out)
+        *len_out = msg.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_user_status(const char *status)
+{
+    return dwyco::tox_bridge_set_user_status(status);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_user_status(char **out, int *len_out)
+{
+    vc status = dwyco::tox_bridge_get_user_status();
+    if(status.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[status.len()];
+        memcpy(*out, (const char *)status, status.len());
+    }
+    if(len_out)
+        *len_out = status.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_avatar(const char *pseudo_uid, int pseudo_uid_len, char **out, int *len_out)
+{
+    vc puid(VC_BSTRING, pseudo_uid, (long)pseudo_uid_len);
+    vc data;
+    if(!dwyco::tox_bridge_get_avatar(puid, data))
+        return 0;
+    if(data.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[data.len()];
+        memcpy(*out, (const char *)data, data.len());
+    }
+    if(len_out)
+        *len_out = data.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_set_avatar(const char *data, int data_len)
+{
+    if(!data || data_len <= 0)
+        return 0;
+    vc avatar(VC_BSTRING, data, (long)data_len);
+    return dwyco::tox_bridge_set_avatar(avatar);
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_clear_avatar()
+{
+    dwyco::tox_bridge_clear_avatar();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_uid_is_tox_friend(const char *uid, int len_uid)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    // note: the mid of a "_tox_friend" tag is just hex(pseudo_uid)
+    if(!sql_is_initialized())
+        return 0;
+    return sql_mid_has_tag(to_hex(buid), "_tox_friend");
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_get_device_uid(char **out, int *len_out)
+{
+    vc mids = sql_get_tagged_mids2("_tox_device");
+    if(mids.num_elems() == 0)
+        return 0;
+    vc hex_uid = mids[0][0];
+    vc uid = from_hex(hex_uid);
+    if(out)
+    {
+        *out = new char[uid.len()];
+        memcpy(*out, (const char *)uid, uid.len());
+    }
+    if(len_out)
+        *len_out = uid.len();
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_tox_available()
+{
+#ifdef DWYCO_TOXCORE
+    return 1;
+#else
+    return 0;
+#endif
 }
 
 void

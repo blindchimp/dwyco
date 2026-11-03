@@ -2,9 +2,9 @@
 U=`uname`
 if [ $U = Darwin ]
 then
-	export PATH=$HOME/Qt/6.8.2/macos/bin:$PATH
+	export PATH=$HOME/Qt/6.11.1/macos/bin:$PATH
 else
-	export PATH=$HOME/Qt/6.8.2/gcc_64/bin:$PATH
+	export PATH=$HOME/Qt/6.11.1/gcc_64/bin:$PATH
 fi
 
 

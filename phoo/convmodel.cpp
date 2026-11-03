@@ -15,11 +15,16 @@
 #ifdef DWYCO_MODEL_TEST
 #include <QAbstractItemModelTester>
 #endif
+#include <QSet>
+#include <QStringList>
 
 void hack_unread_count();
 void reload_conv_list();
+// defined in dwyco_top.cpp. convmodel.cpp can't include dwyco_top.h.
+void prompt_tox_ignore(const QStringList& uids);
 
 ConvListModel *TheConvListModel;
+static QSet<QByteArray> s_tox_friend_prefixes;
 
 void
 Conversation::load_external_state(const QByteArray& uid)
@@ -37,6 +42,51 @@ Conversation::load_external_state(const QByteArray& uid)
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
     update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
     //update_has_hidden(false);
+    bool tox = dwyco_tox_is_tox_uid(uid.constData(), uid.length()) != 0;
+    update_is_tox(tox);
+    if(tox) {
+        bool is_friend = ConvListModel::is_uid_tox_friend(uid);
+        update_is_tox_friend(is_friend);
+        if(is_friend) {
+            char *name;
+            int name_len;
+            if(dwyco_tox_get_name(&name, &name_len)) {
+                update_tox_section(QString::fromUtf8(name, name_len));
+                delete[] name;
+            } else {
+                update_tox_section(QString());
+            }
+        } else {
+            update_tox_section(QStringLiteral("Tox Other"));
+        }
+    } else {
+        update_is_tox_friend(false);
+        update_tox_section(QString());
+    }
+}
+
+void
+ConvListModel::refresh_tox_friend_cache()
+{
+    s_tox_friend_prefixes.clear();
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(!dwyco_tox_get_friends_model(&fl))
+        return;
+    simple_scoped qfl(fl);
+    int n = qfl.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+        QByteArray pkhex = pk.toHex();
+        if(pkhex.length() >= 20)
+            s_tox_friend_prefixes.insert(pkhex.left(20));
+    }
+}
+
+bool
+ConvListModel::is_uid_tox_friend(const QByteArray& uid)
+{
+    return s_tox_friend_prefixes.contains(uid.toHex());
 }
 
 ConvListModel::ConvListModel(QObject *parent) :
@@ -66,6 +116,7 @@ init_convlist_model()
 void
 ConvListModel::redecorate()
 {
+    refresh_tox_friend_cache();
     int n = count();
     for(int i = 0; i < n; ++i)
     {
@@ -99,6 +150,53 @@ ConvListModel::at_least_one_selected()
     }
     return false;
 
+}
+
+QString
+ConvListModel::selected_display_names(int max_n) const
+{
+    QStringList names;
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+            names.append(c->get_display());
+    }
+    if(names.size() <= max_n)
+        return names.join(", ");
+    QString out = names.mid(0, max_n).join(", ");
+    out += " and " + QString::number(names.size() - max_n) + " more";
+    return out;
+}
+
+bool
+ConvListModel::selected_has_tox_friend() const
+{
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(!c->get_selected())
+            continue;
+        if(is_uid_tox_friend(QByteArray::fromHex(c->get_uid().toLatin1())))
+            return true;
+    }
+    return false;
+}
+
+int
+ConvListModel::selected_count() const
+{
+    int n = 0;
+    int total = count();
+    for(int i = 0; i < total; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+            ++n;
+    }
+    return n;
 }
 
 
@@ -228,8 +326,26 @@ ConvListModel::pal_all_selected(bool b)
 }
 
 void
-ConvListModel::block_all_selected()
+ConvListModel::set_pal_uid(const QString &uid, bool b)
 {
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.length() != 10)
+        return;
+    if(b)
+        dwyco_pal_add(buid.constData(), buid.length());
+    else
+        dwyco_pal_delete(buid.constData(), buid.length());
+    // the uid isn't necessarily in the model, eg. this menu can be opened
+    // from the directory search list, which has its own model.
+    Conversation *c = getByUid(uid);
+    if(c)
+        c->update_pal(b);
+}
+
+void
+ConvListModel::block_all_selected(bool prompt_tox)
+{
+    QStringList selected_uids;
     int n = count();
     for(int i = 0; i < n; ++i)
     {
@@ -241,8 +357,35 @@ ConvListModel::block_all_selected()
             dwyco_ignore(buid.constData(), buid.length());
             TheIgnoreListModel->add_uid_to_model(buid);
             c->update_is_blocked(true);
+            selected_uids.append(c->get_uid());
         }
     }
+    // anyone we just blocked who is still a tox friend needs to come off the
+    // tox friend list. one prompt for the whole batch, not one per contact.
+    // callers that are about to delete the messages anyway pass prompt_tox
+    // false, since the dialog's "also remove messages" option would be a lie.
+    if(prompt_tox)
+        ::prompt_tox_ignore(selected_uids);
+}
+
+void
+ConvListModel::new_msg_received(QString huid, QString txt, QString mid)
+{
+    QByteArray uid = QByteArray::fromHex(huid.toLatin1());
+    Conversation *c = getByUid(huid);
+    if(!c)
+        add_uid_to_model(uid);
+    decorate(huid, txt, mid);
+}
+
+void
+ConvListModel::new_msg_uid(QString huid)
+{
+    QByteArray uid = QByteArray::fromHex(huid.toLatin1());
+    Conversation *c = getByUid(huid);
+    if(!c)
+        add_uid_to_model(uid);
+    decorate(huid, "", "");
 }
 
 void
@@ -251,10 +394,7 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
     Conversation *c = getByUid(huid);
     if(!c)
-    {
-        add_uid_to_model(uid);
         return;
-    }
     //int cnt = uid_unviewed_msgs_count(uid);
     //c->update_unseen_count(cnt);
     c->update_any_unread(uid_has_unviewed_msgs(uid));
@@ -310,6 +450,7 @@ ConvListModel::reload_possible_changes(long time)
 void
 ConvListModel::load_users_to_model()
 {
+    refresh_tox_friend_cache();
     DWYCO_LIST l;
     int n;
     static int cnt;
@@ -346,6 +487,16 @@ ConvListModel::load_users_to_model()
         c->update_counter = cnt;
     }
 #endif
+
+    // add all tox friends, even if they don't have any messages
+    // extant.
+    for (auto i = s_tox_friend_prefixes.cbegin(), end = s_tox_friend_prefixes.cend(); i != end; ++i)
+    {
+        Conversation *c = add_uid_to_model(QByteArray::fromHex(*i));
+        c->update_counter = cnt;
+    }
+
+
 
     // find removed items
     // there is probably a faster way of doing this, but
@@ -481,12 +632,12 @@ ConvSortFilterModel::trash_all_selected()
 }
 
 void
-ConvSortFilterModel::block_all_selected()
+ConvSortFilterModel::block_all_selected(bool prompt_tox)
 {
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->block_all_selected();
+    m->block_all_selected(prompt_tox);
 
 }
 
@@ -500,6 +651,19 @@ ConvSortFilterModel::pal_all_selected(bool b)
 
 }
 
+void
+ConvSortFilterModel::set_pal_uid(const QString &uid, bool b)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    m->set_pal_uid(uid, b);
+    // lessThan() puts pals at the top of their group, but a change to the
+    // pal role alone doesn't make the proxy re-sort, so the row would stay
+    // where it was until something else forced a sort.
+    sort(0);
+}
+
 bool
 ConvSortFilterModel::at_least_one_selected()
 {
@@ -508,6 +672,33 @@ ConvSortFilterModel::at_least_one_selected()
         ::abort();
     return m->at_least_one_selected();
 
+}
+
+QString
+ConvSortFilterModel::selected_display_names()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_display_names();
+}
+
+bool
+ConvSortFilterModel::selected_has_tox_friend()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_has_tox_friend();
+}
+
+int
+ConvSortFilterModel::get_selected_count()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->selected_count();
 }
 
 void
@@ -526,14 +717,13 @@ ConvSortFilterModel::invalidate_model_filter()
 bool
 ConvSortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
-    auto alm = dynamic_cast<ConvListModel *>(sourceModel());
-
-    QVariant uid = alm->data(alm->index(source_row, 0), alm->roleForName("uid"));
-    auto buid = QByteArray::fromHex(uid.toByteArray());
-    if(uid_has_unviewed_msgs(buid))
-        return true;
-    int ret = dwyco_all_messages_tagged(buid.constData(), buid.length(), "_trash");
-    return ret == 0;
+    Q_UNUSED(source_row)
+    Q_UNUSED(source_parent)
+    // A conversation is shown when it is in the model at all: users in the
+    // message index, users with unviewed/unfetched messages, and tox friends.
+    // Trashing or clearing a conversation's messages must NOT hide the person;
+    // use block/delete (obliterate) to remove someone from the list.
+    return true;
 }
 
 bool
@@ -543,6 +733,17 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     if(!m)
         return false;
 
+    // group: non-tox(0) < tox friends(1) < tox other(2)
+    bool ltox = m->data(left, m->roleForName("is_tox")).toBool();
+    bool rtox = m->data(right, m->roleForName("is_tox")).toBool();
+    int lgroup = 0;
+    int rgroup = 0;
+    if(ltox)
+        lgroup = m->data(left, m->roleForName("is_tox_friend")).toBool() ? 1 : 2;
+    if(rtox)
+        rgroup = m->data(right, m->roleForName("is_tox_friend")).toBool() ? 1 : 2;
+    if(lgroup < rgroup) return true;
+    if(lgroup > rgroup) return false;
 
     bool lsm = m->data(left, m->roleForName("session_msg")).toBool();
     bool rsm = m->data(right, m->roleForName("session_msg")).toBool();

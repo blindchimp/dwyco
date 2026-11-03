@@ -14,6 +14,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/speexdsp-1.2.1 ${CMAKE_CURRENT_BINAR
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/pgm ${CMAKE_CURRENT_BINARY_DIR}/bld/pgm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/ppm ${CMAKE_CURRENT_BINARY_DIR}/bld/ppm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/gsm ${CMAKE_CURRENT_BINARY_DIR}/bld/gsm)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/toxd ${CMAKE_CURRENT_BINARY_DIR}/bld/toxd)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/cdc32 ${CMAKE_CURRENT_BINARY_DIR}/bld/cdc32)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/uv ${CMAKE_CURRENT_BINARY_DIR}/bld/uv)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vc ${CMAKE_CURRENT_BINARY_DIR}/bld/vc)

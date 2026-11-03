@@ -15,6 +15,12 @@
 #include <QQuickStyle>
 #include <QDebug>
 #include <QQmlFileSelector>
+// Q_OS_* macros are available after any Qt include.
+// Only include widget headers on desktop where system tray exists.
+#if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
+#include <QApplication>
+#include "trayicon.h"
+#endif
 #ifdef ANDROID
 #include "notificationclient.h"
 #include <QJniObject>
@@ -61,7 +67,11 @@ int main(int argc, char *argv[])
 #endif
 
 
+#if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
+    QApplication app(argc, argv);
+#else
     QGuiApplication app(argc, argv);
+#endif
 
 #if 0 && defined(_WIN32)
     QQuickStyle::setStyle("Fusion");
@@ -139,6 +149,12 @@ int main(int argc, char *argv[])
 #endif
     QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+
+#if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
+    // TheDwycoCore is set during engine.load() when the DwycoCore QML element
+    // calls init() from Component.onCompleted
+    new TrayIcon(&engine);
+#endif
 
     int ret;
     ret = app.exec();

@@ -20,6 +20,7 @@ $${VCCFG_COMP} \
 ../ogg/include \
 ../vorbis112/include \
 ../uv/include \
+../toxd \
 ../miniupnp/miniupnp-master/miniupnpc
 
 linux-*: INCLUDEPATH += ../v4lcap
@@ -293,10 +294,12 @@ aqext_android.cpp \
     grpmsg.cpp \
     upnp.cpp \
     aqkey.cpp \
-    netlog.cpp
+    netlog.cpp \
+    toxbridge.cpp
 
 HEADERS += \
-    backandroid.h
+    backandroid.h \
+    toxbridge.h
 
 
 

@@ -303,6 +303,7 @@ Page {
                         MenuItem {
                             text: "Trash msgs"
                             onTriggered: {
+                                confirm_trash.text = "Trash ALL messages from " + core.uid_to_name(to_uid) + "?"
                                 confirm_trash.visible = true
                             }
                             MessageYN {
@@ -396,6 +397,9 @@ Page {
             id: ditem
             width: grid.cellWidth
             height: grid.cellHeight
+            // an attachment we know how to render a preview for gets a preview
+            // image, everything else gets a FileChip instead.
+            property bool is_plain_file: IS_FILE === 1 && IS_IMAGE_FILE === 0
             radius: 3
             border.width: 1
             border.color: divider
@@ -485,7 +489,7 @@ Page {
             Image {
                 id: preview
                 anchors.fill: parent
-                visible: {HAS_ATTACHMENT}
+                visible: {HAS_ATTACHMENT && !is_plain_file}
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
@@ -504,29 +508,41 @@ Page {
                 }
             }
 
+            FileChip {
+                id: plain_file
+                visible: is_plain_file
+                compact: true
+                fileName: FILE_NAME
+                fileSize: FILE_SIZE
+                z: 1
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: dp(6)
+                width: Math.min(implicitWidth, ditem.width - dp(6))
+            }
+
             Text {
                 function gentext(msg) {
-                    return msg
-                    return "<html>" + msg + "</html>"
+                    return core.format_message(String(msg))
                 }
 
                 id: msg
                 anchors.bottom: datetext.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                //anchors.top: preview.visible ? undefined : parent.top
-                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
-                wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
+                wrapMode: (preview.visible || is_plain_file) ? Text.NoWrap : Text.WordWrap
                 elide: Text.ElideRight
                 textFormat: Text.StyledText
                 color: amber_light
                 style: Text.Outline
                 styleColor: "black"
                 padding: 3
-
                 clip: true
+                onLinkActivated: (link)=> {
+                    Qt.openUrlExternally(link)
+                }
             }
 
             Text {
@@ -581,12 +597,16 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.msg_text = model.MSG_TEXT
+                            themsgview.raw_text = model.MSG_TEXT
+                            themsgview.formatted_text = core.format_message(model.MSG_TEXT)
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
+                            themsgview.is_plain_file = model.IS_FILE === 1 && model.IS_IMAGE_FILE === 0
+                            themsgview.file_name = model.FILE_NAME
+                            themsgview.file_size = model.FILE_SIZE
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = (model.IS_IMAGE_FILE === 0 || model.PREVIEW_FILENAME === "") ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {

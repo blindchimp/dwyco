@@ -8,7 +8,11 @@ fi
 export NDK="$NDK_BASE/28.2.13676358"
 SRC_DIR=$PWD
 BUILD_DIR=$SRC_DIR/build
-#ABIS=("armeabi-v7a" "arm64-v8a" "x86" "x86_64")
+
+if [ ! -d "$SRC_DIR/tox-deps" ]; then
+    echo "ERROR: tox-deps not found. Run ./build-tox-deps.sh first."
+    exit 1
+fi
 
 for ABI in "armeabi-v7a" "arm64-v8a" "x86" "x86_64"
 do
@@ -21,6 +25,7 @@ do
     -DANDROID_PLATFORM=android-26 \
     -DANDROID_STL=c++_shared \
     -DCMAKE_BUILD_TYPE=Release \
-    -G Ninja
+    -DDWYCO_TOXCORE=ON \
+    -GNinja
   cmake --build "$BUILD_DIR/$ABI"
 done

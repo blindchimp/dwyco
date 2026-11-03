@@ -76,6 +76,22 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_IDENT_TO_UID,
 
     DWYCO_SE_SERVER_ATTR,
+
+    DWYCO_SE_TOX_FRIEND_REQUEST,
+    DWYCO_SE_TOX_MESSAGE,
+    DWYCO_SE_TOX_READ_RECEIPT,
+    DWYCO_SE_TOX_FRIEND_STATUS,
+    DWYCO_SE_TOX_FRIEND_NAME,
+    DWYCO_SE_TOX_FILE_REQUEST,
+    DWYCO_SE_TOX_FILE_CHUNK,
+    DWYCO_SE_TOX_SELF_CONNECTION_STATUS,
+    DWYCO_SE_TOX_READY,
+    DWYCO_SE_TOX_CRASHED,
+    DWYCO_SE_TOX_TYPING,
+    DWYCO_SE_TOX_FRIEND_USER_STATUS,
+    DWYCO_SE_TOX_AVATAR,
+    DWYCO_SE_TOX_DISABLED_BY_REMOTE,
+    -1,
 };
 
 void
@@ -109,6 +125,39 @@ se_emit(dwyco_sys_event cmd, const vc& uid)
     Se_q.append(v);
     GRTLOG("se_emit ", 0, 0);
     GRTLOGVC(v);
+}
+
+void
+se_emit(dwyco_sys_event cmd, const vc& a1, const vc& a2)
+{
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = map_to_representative_uid(a1);
+    v[2] = a2;
+    Se_q.append(v);
+}
+
+void
+se_emit(dwyco_sys_event cmd, const vc& a1, const vc& a2, const vc& a3)
+{
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = map_to_representative_uid(a1);
+    v[2] = a2;
+    v[3] = a3;
+    Se_q.append(v);
+}
+
+void
+se_emit(dwyco_sys_event cmd, const vc& a1, const vc& a2, const vc& a3, const vc& a4)
+{
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = map_to_representative_uid(a1);
+    v[2] = a2;
+    v[3] = a3;
+    v[4] = a4;
+    Se_q.append(v);
 }
 
 void
@@ -403,6 +452,142 @@ se_process()
                                            0, 0
                                           );
         }
+            break;
+
+        case SE_TOX_FRIEND_REQUEST:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][2], Se_q[i][2].len(),
+                                           DWYCO_TYPE_STRING, (const char *)Se_q[i][3], Se_q[i][3].len(),
+                                           0, 0
+                                          );
+            break;
+        case SE_TOX_FRIEND_STATUS:
+        case SE_TOX_FRIEND_NAME:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][2], Se_q[i][2].len(),
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_READ_RECEIPT:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_MESSAGE:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][2], Se_q[i][2].len(),
+                                           DWYCO_TYPE_STRING, (const char *)Se_q[i][3], Se_q[i][3].len(),
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_FILE_REQUEST:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][3], Se_q[i][3].len(),
+                                           DWYCO_TYPE_STRING, (const char *)Se_q[i][3], Se_q[i][3].len(),
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_FILE_CHUNK:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_SELF_CONNECTION_STATUS:
+        {
+            const char *val;
+            int len_val;
+            int tp = dllify(Se_q[i][2], val, len_val);
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           0, 0,
+                                           tp, val, len_val,
+                                           0, 0
+                                          );
+            break;
+        }
+
+        case SE_TOX_READY:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_CRASHED:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_TYPING:
+            (*dwyco_system_event_callback)(api_cmd,
+                                            0,
+                                            Se_q[i][1], Se_q[i][1].len(),
+                                            Se_q[i][2], Se_q[i][2].len(),
+                                            0, 0, 0,
+                                            0, 0
+                                           );
+            break;
+
+        case SE_TOX_FRIEND_USER_STATUS:
+            (*dwyco_system_event_callback)(api_cmd,
+                                            0,
+                                            Se_q[i][1], Se_q[i][1].len(),
+                                            Se_q[i][2], Se_q[i][2].len(),
+                                            0, 0, 0,
+                                            0, 0
+                                           );
+            break;
+
+        case SE_TOX_AVATAR:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_TOX_DISABLED_BY_REMOTE:
+            // no arguments: the ui just needs to know tox got stood down.
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
             break;
 
         default:

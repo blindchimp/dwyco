@@ -1,0 +1,128 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
+/*
+ * WARNING: the bulk of this code is AI generated (opencode/big-pickle ca. 2026)
+ */
+#ifndef TOXD_PLUGIN_H
+#define TOXD_PLUGIN_H
+
+#include "vc.h"
+#include <stdint.h>
+#include <stddef.h>
+
+struct ToxPlugin;
+
+typedef void (*ToxpEventCB)(const char *type, const vc &args, void *userdata);
+
+enum {
+    TOXP_STATUS_OK = 0,
+    TOXP_STATUS_NEEDS_PASSWORD = 1,
+    TOXP_STATUS_FAILED = 2
+};
+
+ToxPlugin *toxp_init(const char *save_file, const uint8_t *password, int password_len,
+                     ToxpEventCB cb, void *userdata, int *status_out);
+void toxp_shutdown(ToxPlugin *p);
+void toxp_save(ToxPlugin *p);
+void toxp_iterate(ToxPlugin *p);
+
+// import / password support
+// read a tox save file, decrypt it if needed (src_pw), and verify it is a
+// loadable tox save. on success *out_data (malloc'd) and *out_len are set,
+// caller must free(*out_data).
+int toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                        uint8_t **out_data, size_t *out_len,
+                        char *err_buf, int err_buf_len);
+// write validated save data to save_file, encrypting with dst_pw if non-empty.
+int toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
+                       const uint8_t *dst_pw, int dst_pw_len,
+                       char *err_buf, int err_buf_len);
+// validate that data is a loadable tox save. returns 1 if valid, 0 otherwise.
+int toxp_validate_save(const uint8_t *data, size_t len);
+// extract the public key from a tox save without starting the event loop.
+// returns 1 and fills pubkey_out on success, 0 otherwise.
+int toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out);
+// set/clear the password used to encrypt this profile's save data
+// (immediately re-encrypts the on-disk save). empty pw clears it.
+int toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len);
+// write the live profile's save data to dst_path, preserving the current
+// encryption state (encrypted if the profile has a password). on failure
+// err_buf (if provided) is filled with a message.
+int toxp_export_to_file(ToxPlugin *p, const char *dst_path,
+                        char *err_buf, int err_buf_len);
+int toxp_has_password(ToxPlugin *p);
+// verify that pw decrypts the profile's save data. returns 1 if the
+// password matches (or the profile has no password), 0 otherwise.
+int toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len);
+// returns 1 if the file at path is a toxencryptsave-encrypted tox save
+int toxp_file_is_encrypted(const char *path);
+// same check against an in-memory save blob (eg. one read out of a tag
+// payload), so callers can tell whether a save needs a password without
+// having to stage it on disk first.
+int toxp_data_is_encrypted(const char *data, int len);
+// encrypt/decrypt a tox save file on disk without a running instance.
+// old_pw must match if the file is currently encrypted (may be NULL/0 length
+// for a plain save). empty new_pw writes the save unencrypted, otherwise it
+// is encrypted with new_pw. on failure err_buf is filled with a message.
+int toxp_set_password_on_file(const char *save_file,
+                              const uint8_t *old_pw, int old_pw_len,
+                              const uint8_t *new_pw, int new_pw_len,
+                              char *err_buf, int err_buf_len);
+
+vc toxp_get_address(ToxPlugin *p);
+vc toxp_get_self_pubkey(ToxPlugin *p);
+vc toxp_get_name(ToxPlugin *p);
+vc toxp_get_status_message(ToxPlugin *p);
+
+int toxp_set_name(ToxPlugin *p, const char *name, int len);
+int toxp_set_status_message(ToxPlugin *p, const char *msg, int len);
+void toxp_set_user_status(ToxPlugin *p, const char *status);
+vc toxp_get_user_status(ToxPlugin *p);
+
+int toxp_friend_add(ToxPlugin *p, const vc &address, const vc &message, uint32_t *fn_out);
+int toxp_friend_add_norequest(ToxPlugin *p, const vc &pubkey, uint32_t *fn_out);
+int toxp_friend_delete(ToxPlugin *p, uint32_t fn);
+vc toxp_friend_list(ToxPlugin *p);
+vc toxp_friend_get_name(ToxPlugin *p, uint32_t fn);
+
+int toxp_message_send(ToxPlugin *p, uint32_t fn, const vc &text, int is_action, uint32_t *mid_out, int *tox_err_out);
+int toxp_typing_set(ToxPlugin *p, uint32_t fn, int typing);
+
+int toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size, uint32_t *fnum_out);
+int toxp_file_send_avatar(ToxPlugin *p, uint32_t fn, const vc &hash, uint64_t size, uint32_t *fnum_out);
+int toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos, const vc &data);
+int toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum, int *error_out);
+int toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum);
+
+int toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out);
+
+// read a tox save without starting a network instance, and report the parts a
+// person actually recognizes about it. used to tell the user what genuinely
+// differs between the save on disk and the copy on their other devices.
+//
+// data is a tox save, optionally toxencryptsave-wrapped; pw decrypts it (a
+// wrapped save with no/wrong pw fails). the result is a vc map:
+//   "pubkey"      hex of the identity's public key (not binary -- this is a
+//                 display/comparison value, unlike the rest of this api)
+//   "nospam"      nospam value, as a decimal string
+//   "name"        profile name
+//   "status"      status message
+//   "encrypted"   1 if the data was password protected, 0 if not
+//   "friends"     vector of { "pubkey": hex, "alias": string }, sorted by
+//                 pubkey so that reordering can't look like a change
+//
+// returns 0 if the data isn't a valid save, or is encrypted and pw doesn't
+// open it. callers use this to say "these two really are different" rather
+// than guessing from timestamps: a save carries connection state that shifts
+// on its own, but these fields only move when the user moves them.
+int toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
+                      vc &summary_out);
+
+#endif

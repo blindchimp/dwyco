@@ -3,7 +3,7 @@
 # update the buildtime
 (cd ~/git/dwyco/cdcx;./dumptime)
 
-QTVERS=6.8.2
+QTVERS=6.11.1
 QTFLAVOR=gcc_64
 export PATH=~/Qt/$QTVERS/$QTFLAVOR/bin:$PATH
 export CMAKE_CXX_COMPILER_LAUNCHER=ccache

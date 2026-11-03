@@ -48,6 +48,7 @@ public:
     Q_INVOKABLE void tag_all_selected(QByteArray tag);
     Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE int get_selected_count();
 
     int mid_to_index(QByteArray mid);
 public slots:
@@ -62,6 +63,13 @@ private:
     int filter_show_hidden;
     bool filter_show_trash;
     int filter_only_video;
+
+    // when the conversation is with a tox friend, only show messages
+    // whose _tox_mid tag payload matches this device's tox pseudo uid.
+    // non-friend tox conversations ("Tox Other") are not filtered.
+    void update_tox_filter();
+    QByteArray active_pseudo;
+    bool filter_tox_active;
 };
 
 

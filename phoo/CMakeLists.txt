@@ -28,6 +28,10 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     include_directories(../bld/v4lcap)
 endif()
 
+if(DWYCO_TOXCORE)
+    add_compile_definitions(DWYCO_TOXCORE)
+endif()
+
 add_compile_definitions(NO_BUILDTIME)
 add_compile_definitions(BUILDTIME="${PHOO_VERSION}")
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
@@ -35,6 +39,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
+	#add_compile_definitions(MACOS_EMOJI_CRASH_HACK)
 endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -46,7 +51,7 @@ find_package(Qt6 REQUIRED COMPONENTS Network)
 #find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets Widgets)
 
 # Qt6 BUG in multi-abi android builds: the execute_process thing is only done
 # for the main abi being built. the other 3 abi's end up with empty QT_VERSION
@@ -111,18 +116,24 @@ set(SRCS
     callsm.cpp 
     chatlistmodel.cpp 
     dwycoprofilepreviewprovider.cpp 
+    dwyco_tox_avatar_provider.cpp
     convmodel.cpp 
     getinfo.cpp 
     ignoremodel.cpp 
     qlimitedbuffer.cpp 
     resizeimage.cpp 
     simple_user_list.cpp 
-    ctlist.cpp 
-    dwycovideopreviewprovider.cpp  
+    ctlist.cpp
+    dwycovideopreviewprovider.cpp
+    toxfriendmodel.cpp
     syncmodel.cpp
     msgrawmodel.cpp
     msgproxymodel.cpp
 )
+
+if(NOT ANDROID AND NOT IOS)
+    list(APPEND SRCS trayicon.cpp)
+endif()
 
 qt_add_resources(SRCS
     dwyco.qrc
@@ -192,6 +203,7 @@ qt_add_qml_module(phoo
         PicPreview.qml
         SimpleToolbar.qml
         CircularImage2.qml
+        ToxBadge.qml
         CQRes.qml
         ConvToolButton.qml
         MultiSelectToolbar.qml
@@ -199,6 +211,7 @@ qt_add_qml_module(phoo
         DSettings.qml
         FName.qml
         MsgReport.qml
+        FileChip.qml
         Warning.qml
         TextFieldX.qml
         VidCamPreview.qml
@@ -228,6 +241,8 @@ qt_add_qml_module(phoo
         RestoreAutoBackup.qml
         MessageYN.qml
         SimpleTrashBrowse.qml
+        ToxPage.qml
+        ToxAcct.qml
         PulseLoader.qml
         MsgViewMenu.qml
         MsgViewMenuTrash.qml
@@ -270,6 +285,7 @@ set_target_properties(phoo PROPERTIES
 )
 
 set(BASELIBS
+    toxd
     cdc32
     vc
     crypto8
@@ -333,18 +349,34 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
-   #-fsanitize=undefined
-   #v4lcap
+   Qt6::Widgets
     -ldl
 )
+if(DWYCO_TOXCORE)
+target_link_libraries(phoo
+    PRIVATE
+   /home/dwight/git/c-toxcore/build/libtoxcore.a
+   -lsodium
+)
+endif()
 endif()
 
 if(WIN32)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
+       Qt6::Widgets
        winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
+    if(DWYCO_TOXCORE)
+        target_link_libraries(phoo
+            PRIVATE
+            optimized C:/Users/dwight/c-toxcore/_build/lib/Release/toxcore_static.lib
+            debug C:/Users/dwight/c-toxcore/_build/lib/Debug/toxcore_static.lib
+            optimized C:/Users/dwight/libsodium/bin/x64/Release/v143/static/libsodium.lib
+            debug C:/Users/dwight/libsodium/bin/x64/Debug/v143/static/libsodium.lib
+        )
+    endif()
 target_link_options(phoo PRIVATE binmode.obj)
 endif()
 
@@ -354,8 +386,14 @@ if(APPLE OR IOS)
         PRIVATE
        ${BASELIBS}
        Qt6::Widgets
-
     )
+    if(DWYCO_TOXCORE)
+    target_link_libraries(phoo
+        PRIVATE
+       /opt/homebrew/lib/libtoxcore.a
+       /opt/homebrew/lib/libsodium.a
+    )
+    endif()
 endif()
 
 include(GNUInstallDirs)

@@ -10,6 +10,7 @@ include(subdirs.cmake)
 
 set(BASELIBS
     cdc32
+    toxd
     vc
     crypto8
     dwcls
@@ -25,6 +26,14 @@ set(BASELIBS
     theora.1.2.x
 )
 
+if(DWYCO_TOXCORE AND ANDROID)
+    set(TOX_DEPS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tox-deps/${ANDROID_ABI})
+    set(TOX_LIBS
+        ${TOX_DEPS_DIR}/lib/libtoxcore.a
+        ${TOX_DEPS_DIR}/lib/libsodium.a
+    )
+endif()
+
 add_library(dwyco_jni SHARED dwyco.cpp)
 
 target_link_options(dwyco_jni PRIVATE
@@ -38,12 +47,14 @@ find_library(mumble2 ApplicationServices)
 
 target_link_libraries(dwyco_jni PRIVATE
     ${BASELIBS}
+    ${TOX_LIBS}
     ${mumble}
     ${mumble2}
 )
 else()
     target_link_libraries(dwyco_jni PRIVATE
         ${BASELIBS}
+        ${TOX_LIBS}
     )
 endif()
 #target_link_libraries(dwyco PRIVATE ${mumble} ${mumble2})

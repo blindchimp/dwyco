@@ -118,6 +118,7 @@ qt_add_executable(CDC-X
 )
 
 set(BASELIBS
+    toxd
     cdc32
     vc
     crypto8

@@ -62,6 +62,7 @@ public slots:
     void start_background();
     void load_contacts();
     int open_image();
+    int open_file();
     void vibrate(long ms);
     void beep();
     void log_event();

@@ -35,6 +35,7 @@ int Create_new_account;
 int Auth_remote;
 void (*Entropy_display_callback)(int);
 
+
 vc
 to_hex(const vc& s)
 {

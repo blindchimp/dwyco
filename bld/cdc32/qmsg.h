@@ -46,6 +46,8 @@ int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
 
+extern int64_t Logical_clock;
+vc date_vector();
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
@@ -151,6 +153,7 @@ DwString simple_diagnostics();
 vc gen_hash(DwString filename);
 vc direct_to_body(vc msgid, vc &uid_out);
 vc direct_to_body2(vc dm);
+void sort_on_time(vc vec, int field);
 int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
 int pal_user(vc u);
@@ -183,7 +186,7 @@ void boost_clock(vc mi);
 int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
 void clean_cruft();
-void weekly_trash_empty();
+void debug_trash_empty();
 void boost_logical_clock();
 void update_global_logical_clock(int64_t lc);
 int64_t diff_logical_clock(int64_t tm);

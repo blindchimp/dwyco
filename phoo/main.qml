@@ -1,10 +1,9 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
-; You can obtain one at https://mozilla.org/MPL/2.0/.
+; You can obtain one at https://mozilla.org/MPL/2.0.
 */
 //import QtQml
 import QtQuick
@@ -100,12 +99,411 @@ ApplicationWindow {
         return vh(pct) - mm(.5)
     }
 
+    function maybeAutoLoginTox() {
+        if(core.get_local_setting("tox_auto_login") !== "1")
+            return
+        tox_state.refresh()
+        if(core.tox_enabled && core.tox_needs_password())
+            openToxSignIn()
+    }
+
+    function openToxSignIn() {
+        if (!core.tox_enabled)
+            core.enable_tox()
+        tox_state.refresh()
+        if (core.tox_needs_password()) {
+            toxAutoLoginInput.text = ""
+            toxAutoLoginError.text = ""
+            toxAutoLoginDialog.open()
+            toxAutoLoginInput.forceActiveFocus()
+        } else {
+            // enable_tox() above did not go through a sign in, so the
+            // sticky setting has to be set here too or the next start
+            // won't come back up signed in.
+            core.set_local_setting("tox_enabled", "1")
+        }
+    }
+
+    // ---- single source of truth for tox state ----
+    //
+    // the tox page and the tox save page each show a status panel, and
+    // they have to agree. they used to each sample core on their own into
+    // their own cached properties, which drifted apart: core's
+    // tox_save_exists() / tox_save_is_encrypted() / tox_needs_password()
+    // are invokable methods with no notify signal, and some mutating
+    // calls (tox_set_save_password) emit nothing at all,
+    // so neither page can be driven by bindings alone.
+    //
+    // so the state is sampled here, once, and both pages read it. any
+    // operation that changes the state without emitting a signal still has
+    // to call tox_state.refresh() by hand.
+
+    QtObject {
+        id: tox_state
+
+        property bool present: false
+        property bool encrypted: false
+        property bool enabled: false
+        property bool needsPassword: false
+        property bool connected: false
+        property string selfName: ""
+        property string selfAddress: ""
+        // "empty" | "locked" | "signedout" | "signedin"
+        property string state: "empty"
+        // short form of the address. signed out there is no live address,
+        // so fall back to the last one this device used, so both pages
+        // always show the same id.
+        property string displayId: "-"
+        property bool displayIdCached: false
+        property string cachedName: core.get_local_setting("cached_tox_name")
+        property string cachedAddress: core.get_local_setting("cached_tox_address")
+
+        // one place to ask "is a save loaded but not running", regardless
+        // of whether it is sitting behind a password.
+        readonly property bool signedOut: state === "signedout" || state === "locked"
+
+        // single wording for the status line, shared so it cannot disagree
+        readonly property string statusText: {
+            if (state === "empty")
+                return "No Tox save on this device"
+            if (state === "signedin")
+                return connected ? "Signed in · Connected"
+                                 : "Signed in · Connecting…"
+            return "Signed out"
+        }
+
+        readonly property color dotColor: {
+            if (state === "signedin")
+                return connected ? "green" : "orange"
+            if (state === "empty")
+                return "#999"
+            return "red"
+        }
+
+        // ---- how the save on disk compares to the copy on your devices ----
+        //
+        // this reports the actual differences between the two copies -- friend
+        // list, profile name, status, nospam, password protection -- instead
+        // of inferring which is "newer" from timestamps. that was both noisy
+        // (toxcore rewrites connection state constantly, so the two saves
+        // rarely matched byte for byte) and undecidable for a password
+        // protected save, where a fresh encryption nonce on every write meant
+        // the bytes could never match at all.
+        //
+        // lives here rather than on either page because both the tox page and
+        // the tox save page show it, and they must never disagree.
+        //
+        // named so the switches below don't read as a table of magic numbers.
+        // these mirror TOX_DIFF_* in bld/cdc32/toxbridge.h and must stay in step
+        // with it.
+        readonly property int diffSame: 0
+        readonly property int diffDifferent: 1
+        readonly property int diffNotShared: 2
+        readonly property int diffUnreadable: 3
+        readonly property int diffDifferentId: 4
+
+        property var diff: ({})
+        readonly property int diffState:
+            diff.state !== undefined ? Number(diff.state) : diffSame
+        readonly property var differences:
+            diff.differences !== undefined ? diff.differences : []
+
+        // the backend decodes names and aliases to QString before handing them over,
+        // so this arrives as a plain string already. the byte branches that used
+        // to be here called String.fromUtf8(), which is a qt 4/qtscript thing
+        // that does not exist in qt 6 -- it threw a TypeError and blanked every
+        // diff line that quoted a name.
+        function asText(v) {
+            if (v === undefined || v === null)
+                return ""
+            return String(v)
+        }
+
+        // identify a friend by the name the user gave them, falling back to a
+        // short slice of the tox-id so the line still says who.
+        function friendLabel(d) {
+            var alias = asText(d.detail)
+            if (alias.length > 0)
+                return alias
+            var pk = d.who !== undefined ? String(d.who) : ""
+            if (pk.length > 12)
+                return pk.substring(0, 12) + "\u2026"
+            return pk.length > 0 ? pk : "a contact"
+        }
+
+        // one sentence per difference, in the order the backend reports them
+        // (profile fields first, then the friend list).
+        //
+        // which side of the comparison a friend difference points at is decided
+        // by the merge walk in tox_bridge_compare_saves():
+        //   friend_added   -- in the save on disk, missing from the shared copy,
+        //                     and detail is the alias from the save on disk
+        //   friend_removed -- in the shared copy, missing from the save on disk,
+        //                     and detail is the alias from the shared copy
+        // so each of the three below names the side its own label came from.
+        function diffLine(d) {
+            switch (d.kind) {
+            case "friend_added":
+                return friendLabel(d) + " is on this device, not on your other devices"
+            case "friend_removed":
+                return friendLabel(d) + " is on your other devices, not on this device"
+            case "friend_renamed":
+                // detail is this device's alias, so quote it as ours rather
+                // than letting the name read as the one your other devices use.
+                return "named \"" + friendLabel(d) + "\" on this device, "
+                       + "differently on your other devices"
+            case "name_changed":
+                // detail is this device's value. say whose it is, since only
+                // one side is being quoted.
+                return "this device's profile name is \"" + asText(d.detail) + "\""
+            case "status_changed":
+                return "this device's status message is \"" + asText(d.detail) + "\""
+            case "nospam_changed":
+                // the backend reports nospam as a decimal string while the
+                // tox-id on screen is hex, so naming the number would invite a
+                // wrong comparison. just say which side it differs on.
+                return "the number at the end of your tox-id is different "
+                       + "on this device"
+            case "password_changed":
+                return asText(d.detail) === "1"
+                       ? "this device's save is password protected, "
+                         + "your other devices' is not"
+                       : "your other devices' save is password protected, "
+                         + "this device's is not"
+            }
+            return "something differs"
+        }
+
+        // the bullet list is capped, so a big friend diff doesn't push the save
+        // page around. the summary below carries the counts, so the tail lines
+        // it stands in for are the ones that repeat the least.
+        //
+        // the repeaters bind straight to `differences` and drop the tail with
+        // `visible: index < diffBulletCap` in the delegate. a sliced array
+        // handed to a repeater's model would work too, but an invisible
+        // delegate is cheaper to reason about and costs the ColumnLayout no
+        // space either way.
+        readonly property int diffBulletCap: 5
+        readonly property int diffHidden:
+            Math.max(0, differences.length - diffBulletCap)
+        readonly property string diffOverflow:
+            diffHidden > 0
+            ? "• and " + diffHidden + " more difference"
+              + (diffHidden === 1 ? "" : "s")
+            : ""
+
+        // tally the differences by kind. a plain counter rather than anything
+        // cleverer, so it can't drift out of step with the bullets above.
+        function diffCounts() {
+            var c = { added: 0, removed: 0, renamed: 0, name: 0,
+                      status: 0, nospam: 0, password: 0 }
+            for (var i = 0; i < differences.length; ++i)
+            {
+                switch (differences[i].kind) {
+                case "friend_added":     ++c.added;    break
+                case "friend_removed":   ++c.removed;  break
+                case "friend_renamed":   ++c.renamed;  break
+                case "name_changed":     ++c.name;     break
+                case "status_changed":   ++c.status;   break
+                case "nospam_changed":   ++c.nospam;   break
+                case "password_changed": ++c.password; break
+                }
+            }
+            return c
+        }
+
+        function countPhrase(n, one, many) {
+            return n + " " + (n === 1 ? one : many)
+        }
+
+        // one plain sentence saying how the two copies differ in size and kind,
+        // above the per-item bullets. "2 contacts only on this device, 1 only
+        // on your other devices" tells the user more at a glance than a wall of
+        // bullets does, and costs nothing when they only wanted the count.
+        //
+        // keys off the counts, not off the state code. asking diffState for
+        // permission meant the summary silently vanished in every state except
+        // DIFFERENT, which is exactly the state where the headline already
+        // says there IS a difference and the bullets below are all the detail
+        // the user gets. counting the differences directly answers the same
+        // question without depending on the backend labelling the state.
+        function diffSummary() {
+            var c = diffCounts()
+            var bits = []
+            if (c.added > 0)
+                bits.push(countPhrase(c.added, "contact", "contacts")
+                           + " only on this device")
+            if (c.removed > 0)
+                bits.push(countPhrase(c.removed, "contact", "contacts")
+                           + " only on your other devices")
+            if (c.renamed > 0)
+                bits.push(countPhrase(c.renamed, "contact", "contacts")
+                           + " named differently")
+            if (c.name > 0)
+                bits.push("different profile name")
+            if (c.status > 0)
+                bits.push("different status message")
+            if (c.nospam > 0)
+                bits.push("different tox-id number")
+            if (c.password > 0)
+                bits.push("different password protection")
+            return bits.join(", ")
+        }
+
+        // headline above the list
+        //
+        // "your other devices" is the shared copy, and is used consistently
+        // across all three functions. say "your devices" instead and it reads
+        // as though it includes this one, which makes "this device and your
+        // devices match" close to meaningless.
+        function diffHeadline(s) {
+            switch (s) {
+            case diffSame:
+                return "This device's Tox save matches the one on your other devices"
+            case diffDifferent:
+                return "Your Tox save is different on your other devices"
+            case diffNotShared:
+                return "Not shared with your other devices yet"
+            // these two are unrelated causes, so they get their own headlines
+            // rather than sharing one and leaving the detail to explain which
+            // happened.
+            case diffUnreadable:
+                return "Can't compare — this Tox save is password protected"
+            case diffDifferentId:
+                return "Can't compare — the shared copy is a different tox-id"
+            }
+            return ""
+        }
+
+        // one sentence of consequence under the list. deliberately doesn't name
+        // the copy buttons: this renders on both the tox page and the tox save
+        // page, and only the latter has those buttons. the tox save page spells
+        // out what each button does in copyDirectionNote() below.
+        function diffDetail(s) {
+            switch (s) {
+            case diffSame:
+                return "Friend list, name, status, tox-id and password "
+                       + "protection all match."
+            case diffDifferent:
+                return "Nothing syncs by itself — you choose which copy wins."
+            case diffNotShared:
+                return "Only this device has a copy of this Tox save."
+            case diffUnreadable:
+                return "Sign in to compare it with the copy on your "
+                       + "other devices."
+            case diffDifferentId:
+                return "The shared copy belongs to a different tox-id, so it "
+                       + "can't be compared with the save on this device."
+            }
+            return ""
+        }
+
+        function diffColor(s) {
+            switch (s) {
+            case diffSame: return "#3a8"  // same
+            case diffDifferent: return "#c80"  // real differences
+            case diffNotShared: return "#999"  // not shared
+            case diffUnreadable: return "#999"  // can't compare
+            case diffDifferentId: return "#999"  // can't compare
+            }
+            return "transparent"
+        }
+
+        // both copy buttons write tox_save.tox, in opposite directions, and
+        // neither label says so. this is the one place that spells it out.
+        function copyDirectionNote() {
+            return "\"Share with my devices\" copies this device's Tox save "
+                   + "(tox_save.tox) out to your other devices. "
+                   + "\"Use this tox-id\" copies a shared save in over tox_save.tox "
+                   + "on this device, replacing whatever is there. "
+                   + "Neither happens on its own."
+        }
+
+        function refresh() {
+            present = core.tox_save_exists()
+            encrypted = core.tox_save_is_encrypted()
+            enabled = core.tox_enabled
+            needsPassword = core.tox_needs_password()
+            connected = core.tox_connected !== 0
+            selfAddress = core.tox_self_address
+            selfName = core.tox_get_name()
+            diff = core.tox_compare_saves()
+
+            if (!present)
+                state = "empty"
+            else if (enabled && !needsPassword)
+                state = "signedin"
+            else
+                state = encrypted ? "locked" : "signedout"
+
+            if (state === "signedin") {
+                displayIdCached = false
+                var a = selfAddress.length >= 8 ? selfAddress
+                        : core.tox_get_self_public_key()
+                displayId = a.length >= 8 ? a.substring(0, 8) + "…" : "-"
+                // remember the live name/address so they survive a sign
+                // out. both pages read these, and the delete path clears
+                // them, so the two can never show different values.
+                if (selfName !== cachedName) {
+                    cachedName = selfName
+                    core.set_local_setting("cached_tox_name", cachedName)
+                }
+                if (selfAddress !== cachedAddress) {
+                    cachedAddress = selfAddress
+                    core.set_local_setting("cached_tox_address", cachedAddress)
+                }
+            } else if (state === "signedout" || state === "locked") {
+                // signed out with a save loaded: there is no live address,
+                // so show the last one this device used for it.
+                displayIdCached = true
+                displayId = cachedAddress.length >= 8
+                        ? cachedAddress.substring(0, 8) + "…" : "-"
+            } else {
+                // no save at all, so there is no id to show, however old
+                // a cached one may be.
+                displayIdCached = false
+                displayId = "-"
+            }
+        }
+
+        // the save is gone, so the remembered name/address are stale.
+        function forgetCachedIdentity() {
+            cachedName = ""
+            cachedAddress = ""
+            core.set_local_setting("cached_tox_name", "")
+            core.set_local_setting("cached_tox_address", "")
+            refresh()
+        }
+    }
+
+    Connections {
+        target: core
+        // union of everything either tox panel cares about. core's
+        // save-related values have no notify, so this list is maintained
+        // by hand; any operation that changes them without emitting one
+        // of these must call tox_state.refresh() explicitly.
+        // note these also drive the sync state sampled in tox_state.refresh():
+        // tox_saves_changed covers publish, adopt, unshare and inbound tag
+        // churn, and the rest cover signing in and out. both tox pages already
+        // hang their own list refreshes off these same signals.
+        function onTox_enabledChanged() { tox_state.refresh() }
+        function onTox_connectedChanged() { tox_state.refresh() }
+        function onTox_connection_status_changed(connected) { tox_state.refresh() }
+        function onTox_self_addressChanged() { tox_state.refresh() }
+        function onTox_self_nameChanged() { tox_state.refresh() }
+        function onTox_user_status_changed(status) { tox_state.refresh() }
+        function onTox_import_finished() { tox_state.refresh() }
+        function onTox_saves_changed() { tox_state.refresh() }
+        function onTox_disabled_by_remote(holder) { tox_state.refresh() }
+    }
+
     Material.theme: Material.Light
     Material.accent: accent
     Material.primary: primary
 
     property int profile_bootstrapped : 0
     property bool server_account_created: false
+    // 1 = profile picture, 2 = chat picture, 3 = chat arbitrary file
     property int android_img_pick_hack: 0
 
     // this is set to true if the distributor requires user-generated content
@@ -160,6 +558,26 @@ ApplicationWindow {
         }
     }
 
+    property int last_msg_ts: 0
+    property int beep_seconds: 180
+
+    function receivedMsgBeep() {
+        var now = datesec()
+        var quiet_gap = now - last_msg_ts
+        last_msg_ts = now
+        if(dwy_quiet)
+            return
+        var not_viewing = Qt.platform.os === "android"
+                          ? (qt_application_state !== 0)
+                          : !applicationWindow1.active
+        if(not_viewing || quiet_gap >= beep_seconds)
+            beep()
+    }
+
+    onActiveChanged: {
+        console.log("window active ", applicationWindow1.active)
+    }
+
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
@@ -196,7 +614,10 @@ ApplicationWindow {
     // what we want. for desktop versions, not sure what might be
     // best.
     width: 800
-    height: 600
+    // on desktop give the window enough default height to show the
+    // settings and tox pages without clipping their controls. mobile
+    // goes fullscreen anyway, so leave it at 600.
+    height: is_mobile ? 600 : 850
     // this might be helpful for windows users, as they
     // seem to get confused with multiple windows running around
     // at the same time.
@@ -213,7 +634,9 @@ ApplicationWindow {
         qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
                                                  " (" + core.active_group_name + " " + core.percent_synced + "%)" :
                                                  (core.group_status === 1 ?
-                                                      "(Requesting " + core.active_group_name + ")" : ""))
+                                                      "(Requesting " + core.active_group_name + ")" : "")) +
+                                             (core.tox_available && core.tox_enabled && core.tox_self_name.length > 0 ?
+                                                  " | Tox: " + core.tox_self_name : "")
 
     }
     property int close_bounce: 0
@@ -256,6 +679,10 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        // prime the shared tox state so both tox panels start out
+        // agreeing, before either page is ever shown.
+        tox_state.refresh()
+
         if(camera_permission.status !== Qt.PermissionStatus.Granted) {
             console.log("CAMERA DENIED")
             camera_permission.request()
@@ -317,7 +744,7 @@ ApplicationWindow {
                from: 1.0
                to: 0.0
                duration: 3000
-          }
+         }
     }
 
     
@@ -393,7 +820,6 @@ ApplicationWindow {
                 text: core.is_chat_online === 0 ? "chat off" : "chat on"
             }
     }
-
     
     Menu {
         id: moremenu
@@ -409,7 +835,17 @@ ApplicationWindow {
         MenuItem {
             text: "Block and Delete user"
             onTriggered: {
-                confirm_block_delete.visible = true
+                // a tox friend is handled by the tox block dialog, which
+                // offers the message removal itself. asking here first would
+                // put two confirms in a row.
+                if(!core.is_tox_friend(chatbox.to_uid)) {
+                    confirm_block_delete.text = "Delete ALL messages from " + core.uid_to_name(chatbox.to_uid) + " and BLOCK them?"
+                    confirm_block_delete.visible = true
+                }
+                else {
+                    core.set_ignore(chatbox.to_uid, 1)
+                    stack.pop()
+                }
             }
             MessageYN {
                 id: confirm_block_delete
@@ -418,7 +854,7 @@ ApplicationWindow {
                 text: "Delete ALL messages from user and BLOCK them?"
                 informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                 onYesClicked: {
-                    core.set_ignore(chatbox.to_uid, 1)
+                    core.set_ignore_now(chatbox.to_uid, 1)
                     core.delete_user(chatbox.to_uid)
                     themsglist.reload_model()
                     stack.pop()
@@ -492,7 +928,7 @@ ApplicationWindow {
 //    Loader {
 //        id: settings_dialog
 //        visible: false
-
+//
 //        onVisibleChanged: {
 //            if(visible) {
 //                source = "qrc:/DSettings.qml"
@@ -538,6 +974,16 @@ ApplicationWindow {
         // }
     }
 
+    ToxPage {
+        id: tox_page
+        visible: false
+    }
+
+    ToxAcct {
+        id: tox_acct
+        visible: false
+    }
+
     ConvList {
         id: convlist
         visible: false
@@ -566,7 +1012,6 @@ ApplicationWindow {
                             chat_server.auto_connect = true
                         }
                     }
-
                 }
                 if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
@@ -764,6 +1209,7 @@ ApplicationWindow {
                 if(state === "start") {
                     core.init()
                     init_called = true
+                    maybeAutoLoginTox()
                 }
             }
         }
@@ -836,10 +1282,177 @@ ApplicationWindow {
 
     }
 
+    Dialog {
+        id: toxAutoLoginDialog
+        title: "Sign In to Tox"
+        modal: true
+        closePolicy: Dialog.NoAutoClose
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: "This Tox save is password protected.\nEnter its password to sign in."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: toxAutoLoginInput
+                echoMode: TextInput.Password
+                placeholderText: "Password"
+                Layout.fillWidth: true
+                onAccepted: toxAutoLoginOkButton.clicked()
+            }
+
+            Label {
+                id: toxAutoLoginError
+                text: ""
+                color: "red"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    // note: this used to call core.disable_tox() when tox
+                    // was pending a password. a cancel that silently changes
+                    // state is confusing, and the pending state is fully
+                    // recoverable from the tox page.
+                    onClicked: toxAutoLoginDialog.close()
+                }
+
+                Button {
+                    id: toxAutoLoginOkButton
+                    text: "Sign In"
+                    enabled: toxAutoLoginInput.text.length > 0
+                    onClicked: {
+                        toxAutoLoginError.text = ""
+                        if (!core.tox_enabled)
+                            core.enable_tox()
+                        if (core.tox_needs_password()) {
+                            if (core.tox_unlock(toxAutoLoginInput.text)) {
+                                core.set_local_setting("tox_enabled", "1")
+                                toxAutoLoginDialog.close()
+                            } else {
+                                toxAutoLoginError.text = "Wrong password."
+                                toxAutoLoginInput.text = ""
+                                toxAutoLoginInput.forceActiveFocus()
+                            }
+                        } else {
+                            core.set_local_setting("tox_enabled", "1")
+                            toxAutoLoginDialog.close()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     ProfileUpdateDialog {
         id: profile_update_dialog
         visible: false
+    }
+
+    // raised when the user blocks somebody who is a friend on the running
+    // tox identity. a tox contact has to come off the tox friend list before
+    // the block means anything -- while they're still a friend they keep
+    // reaching us over tox -- so this is not optional. their messages stay
+    // unless the user asks for them to go too.
+    Dialog {
+        id: toxBlockDialog
+        property var pendingUids: []
+        property string who: ""
+
+        anchors.centerIn: Overlay.overlay
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        standardButtons: Dialog.Cancel | Dialog.Yes
+        title: "Ignore Tox contact?"
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: toxBlockDialog.pendingUids.length === 1
+                      ? "In order to ignore " + toxBlockDialog.who + ", they must be removed from your Tox friend list."
+                      : "In order to ignore " + toxBlockDialog.pendingUids.length + " Tox contacts, they must be removed from your Tox friend list."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "Their messages will be kept unless you choose to remove them too."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            CheckBox {
+                id: alsoDeleteMsgs
+                text: "Also remove all messages"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
+                color: "#a00"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                visible: alsoDeleteMsgs.checked
+            }
+        }
+
+        onAccepted: {
+            for(var i = 0; i < pendingUids.length; i++) {
+                var u = pendingUids[i]
+                // set_ignore_now, not set_ignore: the prompt for this very
+                // dialog has already happened, and going back through
+                // set_ignore would raise it again.
+                core.set_ignore_now(u, 1)
+                core.tox_delete_friend_by_uid(u)
+                if(alsoDeleteMsgs.checked) {
+                    core.delete_user(u)
+                    themsglist.reload_model()
+                }
+            }
+            reset()
+        }
+        onRejected: reset()
+
+        function reset() {
+            alsoDeleteMsgs.checked = false
+            pendingUids = []
+            who = ""
+        }
+
+        function askFor(uids) {
+            pendingUids = uids
+            var n = uids.length === 1 ? core.uid_to_name(uids[0]) : ""
+            if(n.length === 0 || n === uids[0])
+                n = "this person"
+            who = n
+            open()
+        }
+    }
+
+    // one connection covers every place a block can start: the chat menus,
+    // the abuse report page, and the conv list's multi-select block.
+    Connections {
+        target: core
+        function onTox_ignore_prompt(uids) {
+            toxBlockDialog.askFor(uids)
+        }
     }
 
     Loader {
@@ -887,8 +1500,7 @@ ApplicationWindow {
         id: dwyco_vid_rec
         visible: false
     }
-  
-
+   
     // SoundEffect {
     //     id: sound_sent
     //     source: "qrc:/androidinst3/assets/space-zap.wav"
@@ -899,13 +1511,30 @@ ApplicationWindow {
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
+    SoundEffect {
+        id: sound_plink
+        source: "qrc:/androidinst3/assets/plink.wav"
+        volume: {dwy_quiet ? 0.0 : 1.0}
+        muted: dwy_quiet
+    }
+    // one (batched) plink when a pal tox contact comes online
+    Connections {
+        target: core
+        function onPal_came_online() {
+            if(dwy_quiet)
+                return
+            if(Qt.platform.os == "android")
+                notificationClient.beep()
+            else
+                sound_plink.play()
+        }
+    }
     // SoundEffect {
     //     id: sound_alert
     //     source: "qrc:/androidinst3/assets/space-incoming.wav"
     //     volume: {dwy_quiet ? 0.0 : 1.0}
     //     muted: dwy_quiet
     // }
-
     
     StackView {
         id: stack
@@ -920,7 +1549,6 @@ ApplicationWindow {
             if(depth === 1)
                 simp_tag_browse.to_tag = ""
         }
-
         
     }
 
@@ -1017,6 +1645,7 @@ ApplicationWindow {
             if(pwdialog.allow_access === 1) {
                 init()
                 init_called = true
+                maybeAutoLoginTox()
             }
         }
 
@@ -1065,8 +1694,7 @@ ApplicationWindow {
             }
             //notificationClient.notification = "New messages"
 
-              beep()
-
+              receivedMsgBeep()
 
         }
 
@@ -1082,13 +1710,17 @@ ApplicationWindow {
         onMsg_send_status: (status, recipient, pers_id)=> {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
-            if(status === DwycoCore.MSG_SEND_SUCCESS) {
+            if(status === DwycoCore.MSG_SEND_SUCCESS ||
+               status === DwycoCore.MSG_SEND_CANCELED ||
+               status === DwycoCore.MSG_SEND_FAIL) {
                 //sound_sent.play()
                 if(themsglist.uid === recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
-
+                if(status === DwycoCore.MSG_SEND_FAIL && core.is_tox_uid(recipient)) {
+                    chatbox.showToast("Tox message could not be sent (likely it is too long.)")
+                }
             }
         }
 
@@ -1131,6 +1763,12 @@ ApplicationWindow {
                 chatbox.android_img_filename = fn
                 chatbox.android_hack = true
 
+            }
+            else if(applicationWindow1.android_img_pick_hack === 3)
+            {
+                console.log("file hack")
+                chatbox.android_file_filename = fn
+                chatbox.android_file_hack = true
             }
         }
 
@@ -1282,7 +1920,3 @@ ApplicationWindow {
 
 
 }
-
-
-
-

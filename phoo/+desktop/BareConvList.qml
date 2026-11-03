@@ -118,31 +118,41 @@ Item {
                            source: mi("ic_visibility_off_white_24dp.png")
                        }
                    }
-                   Rectangle {
-                       id: hidden
-                       width: .3 * ppic.height
-                       height: .3 * ppic.height
-                       anchors.right:parent.right
-                       anchors.top:parent.top
-                       visible: show_hidden && has_hidden
-                       z: 2
-                       radius: width
-                       color: "orange"
-                   }
-               }
+                    Rectangle {
+                        id: hidden
+                        width: .3 * ppic.height
+                        height: .3 * ppic.height
+                        anchors.right:parent.right
+                        anchors.top:parent.top
+                        visible: show_hidden && has_hidden
+                        z: 2
+                        radius: width
+                        color: "orange"
+                    }
+                 }
 
-               Text {
-                   // note: we don't censor the text on desktop, if they are already in your
-                   // list, being able to see the text is a little more important.
-                   text: display
-                   elide: Text.ElideRight
-                   clip: true
-                   Layout.alignment: Qt.AlignLeft
-                   Layout.fillWidth: true
-                   color: "white"
-                   font.weight: Font.Light
-                   font.pixelSize: applicationWindow1.font.pixelSize
-               }
+                ToxBadge {
+                    friendUid: uid
+                    Layout.minimumWidth: 14
+                    Layout.maximumWidth: 14
+                    Layout.minimumHeight: 14
+                    Layout.maximumHeight: 14
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                 Text {
+                    // note: we don't censor the text on desktop, if they are already in your
+                    // list, being able to see the text is a little more important.
+                    text: display
+                    elide: Text.ElideRight
+                    clip: true
+                    Layout.alignment: Qt.AlignLeft
+                    Layout.fillWidth: true
+                    color: "white"
+                    font.weight: Font.Light
+                    font.pixelSize: applicationWindow1.font.pixelSize
+                    renderType: Text.QtRendering
+                }
            }
            MouseArea {
                anchors.fill: drow
@@ -212,9 +222,56 @@ Item {
        //visible: !show_grid.grid_checked
 
        model: ConvListModel
-       delegate: convlist_delegate
-       clip: true
-       highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
+        delegate: convlist_delegate
+        clip: true
+        section.property: "tox_section"
+        section.delegate: Rectangle {
+            id: sectionRoot
+            height: 24
+            visible: section !== ""
+            color: "#444444"
+
+            property string localToxUserStatus: core.tox_get_user_status()
+
+            Rectangle {
+                height: 1
+                color: "#666666"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+            }
+            Row {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 8
+                spacing: 6
+                Image {
+                    width: 16
+                    height: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                    source: {
+                        if (!core.tox_enabled) return "qrc:/new/prefix1/icons/tox-icon-purple.svg"
+                        if (localToxUserStatus === "busy") return "qrc:/new/prefix1/icons/tox-icon-red.svg"
+                        if (localToxUserStatus === "away") return "qrc:/new/prefix1/icons/tox-icon-orange.svg"
+                        return "qrc:/new/prefix1/icons/tox-icon-green.svg"
+                    }
+                }
+                Text {
+                    text: section
+                    color: "white"
+                    font.bold: true
+                    font.pixelSize: applicationWindow1.font.pixelSize
+                }
+            }
+            Connections {
+                target: core
+                function onTox_user_status_changed(status) {
+                    localToxUserStatus = status
+                }
+            }
+        }
+        highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
        highlightMoveDuration: 200
        highlightMoveVelocity: -1
        //spacing: 3
