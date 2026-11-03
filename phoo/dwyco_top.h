@@ -16,6 +16,10 @@
 #include <QUrl>
 #include <QNetworkReply>
 #include <QThread>
+#include <QEvent>
+#include <QSet>
+#include <QStringList>
+#include <QTimer>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -65,6 +69,15 @@ class DwycoCore : public QObject
 
     QML_READONLY_VAR_PROPERTY(int, emergency_exit)
 
+    QML_READONLY_VAR_PROPERTY(int, tox_available)
+    QML_WRITABLE_VAR_PROPERTY(bool, tox_enabled)
+    QML_READONLY_VAR_PROPERTY(int, tox_connected)
+    QML_READONLY_VAR_PROPERTY(QString, tox_self_address)
+    QML_READONLY_VAR_PROPERTY(QString, tox_self_name)
+    QML_READONLY_VAR_PROPERTY(QString, tox_reset_error)
+
+    QML_WRITABLE_VAR_PROPERTY(bool, auto_away_enabled)
+    QML_WRITABLE_VAR_PROPERTY(int, auto_away_timeout)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -95,6 +108,14 @@ public:
         m_total_users = 0;
         m_qt_version_string = QT_VERSION_STRING;
         m_emergency_exit = 0;
+        m_tox_available = dwyco_tox_available();
+        m_tox_enabled = false;
+        m_tox_connected = 0;
+        m_tox_self_address = "";
+        m_tox_self_name = "";
+        m_auto_away_enabled = false;
+        m_auto_away_timeout = 300;
+        m_is_auto_away = false;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -171,12 +192,14 @@ public:
     }
 
     Q_INVOKABLE void power_clean();
+    Q_INVOKABLE void obliterate();
 
     Q_INVOKABLE QString get_my_uid() {
         return My_uid.toHex();
     }
 
     Q_INVOKABLE QString strip_html(QString);
+    Q_INVOKABLE QString format_message(QString);
 
     Q_INVOKABLE int database_online();
     Q_INVOKABLE int chat_online();
@@ -223,6 +246,10 @@ public:
     Q_INVOKABLE int get_pal(QString uid);
 
     Q_INVOKABLE void set_ignore(QString uid, int is_ignored);
+    // set_ignore() with no tox friend-list prompt. use this only from ui
+    // that has already dealt with the prompt itself, eg. the tox block
+    // dialog, or where the caller knows the target isn't a tox friend.
+    Q_INVOKABLE void set_ignore_now(QString uid, int is_ignored);
     Q_INVOKABLE int get_ignore(QString uid);
     Q_INVOKABLE void clear_ignore_list();
 
@@ -254,10 +281,12 @@ public:
     Q_INVOKABLE int delete_message(QString uid, QString mid);
     Q_INVOKABLE int clear_messages(QString uid);
     Q_INVOKABLE int clear_messages_unfav(QString uid);
+    Q_INVOKABLE void trash_messages(QString uid);
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
     Q_INVOKABLE void set_fav_message(QString mid, int val);
     Q_INVOKABLE int has_tag_message(QString mid, QString tag);
+    Q_INVOKABLE int is_queued_message(QString mid);
     Q_INVOKABLE void set_tag_message(QString mid, QString tag);
     Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
 
@@ -309,6 +338,8 @@ public:
 
     Q_INVOKABLE int send_report(QString uid);
     Q_INVOKABLE QString export_attachment(QString mid);
+    Q_INVOKABLE int export_attachment_as(QString mid, QString dst_filename);
+    Q_INVOKABLE QString export_conversation(QString uid, qint64 unix_time);
 #if 0
     // these are part of one-time migration
     static void one_time_copy_files();
@@ -327,7 +358,81 @@ public:
     Q_INVOKABLE int load_backup();
     Q_INVOKABLE int get_android_backup_state();
 
+    // debug/testing hooks for the backup api
+    Q_INVOKABLE int debug_create_backup(int days_to_run, int days_to_rebuild);
+    Q_INVOKABLE int debug_unified_backup(const QString& fn, int include_account_info, int max_size_mb);
+
     Q_INVOKABLE QString map_to_representative(const QString& uid);
+
+    Q_INVOKABLE void enable_tox();
+    Q_INVOKABLE void disable_tox();
+    Q_INVOKABLE int tox_add_friend(const QString& addr, const QString& msg);
+    Q_INVOKABLE int tox_delete_friend(const QString& pubkey);
+    Q_INVOKABLE int tox_delete_friend_by_uid(const QString& uid);
+    Q_INVOKABLE void tox_set_typing(const QString& uid, int typing);
+    Q_INVOKABLE int tox_set_name(const QString& name);
+    Q_INVOKABLE int tox_set_status_message(const QString& msg);
+    Q_INVOKABLE int tox_set_avatar(const QString& file_path);
+    Q_INVOKABLE int tox_clear_avatar();
+    Q_INVOKABLE int tox_set_user_status(const QString& status);
+    Q_INVOKABLE QString tox_get_user_status();
+    Q_INVOKABLE QString tox_get_name();
+    Q_INVOKABLE QString tox_get_status_message();
+    Q_INVOKABLE bool is_tox_uid(const QString& uid);
+    // true when uid is currently a friend on the running tox identity.
+    // unlike dwyco_uid_is_tox_friend() (which tests the "_tox_friend" crdt
+    // tag) this asks the live friend list, so it goes false once they have
+    // actually been removed from tox.
+    Q_INVOKABLE bool is_tox_friend(const QString& uid);
+    Q_INVOKABLE QString tox_get_self_public_key();
+    Q_INVOKABLE QString tox_get_self_address();
+    Q_INVOKABLE bool tox_needs_password();
+    Q_INVOKABLE bool tox_unlock(const QString& pw);
+    Q_INVOKABLE bool tox_set_profile_password(const QString& pw);
+    Q_INVOKABLE bool tox_has_profile_password();
+    Q_INVOKABLE bool tox_check_password(const QString& pw);
+    Q_INVOKABLE bool tox_file_is_encrypted(const QString& path);
+    Q_INVOKABLE QString tox_import_profile(const QString& path, const QString& pw, bool makeBackup);
+    Q_INVOKABLE QString tox_export_profile(const QString& path);
+    Q_INVOKABLE bool tox_reset_identity();
+    Q_INVOKABLE bool tox_factory_reset();
+    Q_INVOKABLE bool tox_save_exists();
+    Q_INVOKABLE bool tox_save_is_encrypted();
+    Q_INVOKABLE QString tox_set_save_password(const QString& oldPw, const QString& newPw);
+
+    // group-shared tox identities.
+    // tox_publish_save() pushes the running identity's save to the group.
+    // tox_list_saves() returns one map per identity the group has published:
+    //   mid, pubkey, size, when (unix seconds), encrypted, is_current
+    //   (whether it matches the identity currently on disk), holder (hex dwyco
+    //   uid of the device running it), held_by_me
+    // tox_select_save() adopts an identity; it leaves tox stopped, so the ui
+    // then goes through the normal sign in flow, which is what claims it.
+    // empty return string == success, matching tox_import_profile().
+    Q_INVOKABLE bool tox_publish_save();
+    Q_INVOKABLE QVariantList tox_list_saves();
+    Q_INVOKABLE QVariantList tox_list_all_saves();
+// what actually differs between the save on disk and the group's published
+    // copy of it. keys: state (int, TOX_DIFF_*), mid, differences (a list of
+    // {kind, who, detail}). empty map when there's no local save.
+    // advisory only -- nothing is adopted or written.
+    //
+    // all three fields cross as QString, never as QByteArray: qt 6's qml engine
+    // has no way to decode a byte array, so handing qml raw bytes blanks every
+    // label that quotes one instead of failing loudly.
+Q_INVOKABLE QVariantMap tox_compare_saves();
+    // hex pubkey of the save on disk, or "" when there is none. peeks at the
+    // file so it answers while signed out, falling back to the running
+    // instance for a password protected save.
+    Q_INVOKABLE QString tox_local_save_pubkey();
+    // dwyco-side name for a hex tox pubkey. works for encrypted saves.
+    Q_INVOKABLE QString tox_name_for_pubkey(const QString& pubHex);
+    Q_INVOKABLE QString tox_select_save(const QString& mid);
+    Q_INVOKABLE QString tox_sign_in(const QString& mid, const QString& pw);
+    Q_INVOKABLE bool tox_depublish_save(const QString& mid);
+    Q_INVOKABLE void copy_to_clipboard(const QString& text);
+    Q_INVOKABLE void start_auto_away();
+    Q_INVOKABLE void stop_auto_away();
 
 public:
 
@@ -349,6 +454,12 @@ signals:
     void profile_update(int success);
     void pal_event(const QString& uid);
     void ignore_event(QString uid);
+    // emitted instead of ignoring outright when the target is a friend on
+    // the running tox identity. a tox contact has to come off the tox
+    // friend list before they can be ignored, so the ui asks what to do
+    // and then calls set_ignore_now()/tox_delete_friend_by_uid().
+    // uids are hex uid's, one entry per contact to remove.
+    void tox_ignore_prompt(QStringList uids);
     void video_display(int ui_id, int frame_number, QString img_path);
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
@@ -406,6 +517,7 @@ signals:
     void mid_tag_changed(QString mid);
     //void migration_complete();
 	void reindex_complete();
+    void obliterate_error(const QString& msg);
 
     void name_to_uid_result(QString uid, QString handle);
     // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not
@@ -417,7 +529,37 @@ signals:
 
     void emergency_exit_signal(int what, int must_exit, QString msg);
 
+    void tox_connection_status_changed(int connected);
+    void tox_friend_status_changed(QString pseudo_uid, QString status);
+    void tox_friend_user_status_changed(QString pseudo_uid, QString user_status);
+    void tox_user_status_changed(QString user_status);
+    void tox_import_finished();
+    void auto_away_state_changed(bool is_away);
+    void tox_avatar_changed();
+    // the set of identities shared with the group changed (a save was
+    // published, removed, or claimed). debounced, since the underlying
+    // event fires for every uid-tag change.
+    void tox_saves_changed();
+    // another device in the group signed in with the identity this device
+    // was running, so tox was stopped here. holder is the ascii hex dwyco
+    // uid of that device, or empty if unknown.
+    void tox_disabled_by_remote(QString holder);
+
+    // debounced: fires once when one or more pal tox contacts come online
+    void pal_came_online();
+
 private:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+    static void DWYCOCALLCONV dwyco_activity_callback(int timeout);
+    bool m_is_auto_away;
+    QString m_saved_tox_status;
+    void set_user_status_impl(const QString& status);
+    void schedule_tox_plink();
+    void schedule_tox_saves_changed();
+
+    QSet<QString> m_tox_online_uids;
+    QTimer *m_tox_plink_timer = nullptr;
+    QTimer *m_tox_saves_timer = nullptr;
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
     static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);

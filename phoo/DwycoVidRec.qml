@@ -466,7 +466,7 @@ Page {
 //    }
     BusyIndicator {
         id: busy1
-        running: {viewer.source == "" && rzid != -1}
+        running: {viewer.source.toString() === "" && rzid != -1}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

@@ -27,7 +27,49 @@ Page {
     //property alias pick_pic: picture_picker.visible
     property bool android_hack: false
     property string android_img_filename
+    // set when the user picked a non-picture file with the android
+    // document picker. unlike pictures, there's nothing to preview, so it
+    // goes straight out.
+    property bool android_file_hack: false
+    property string android_file_filename
     property int ind_typing: 0
+
+    function utf8len(s) {
+        var len = 0
+        for (var i = 0; i < s.length; i++) {
+            var c = s.charCodeAt(i)
+            if (c < 0x80) len += 1
+            else if (c < 0x800) len += 2
+            else if (c < 0xD800 || c > 0xDFFF) len += 3
+            else { i++; len += 4 }
+        }
+        return len
+    }
+
+    function can_send_to(uid, msg) {
+        if (!core.is_tox_uid(uid))
+            return true
+        if (!core.tox_enabled) {
+            showToast("Tox is not enabled. Message cannot be sent.")
+            return false
+        }
+        for (var i = 0; i < ToxFriendModel.count; i++) {
+            if (ToxFriendModel.get(i).pubkey.substring(0, 20) === uid) {
+                if (utf8len(core.strip_html(msg)) > 1372) {
+                    showToast("Tox message could not be sent (likely it is too long.)")
+                    return false
+                }
+                return true
+            }
+        }
+        showToast("Tox contact not in current friend list. Message cannot be delivered.")
+        return false
+    }
+
+    function showToast(msg) {
+        failed_msg.text = msg
+        animateOpacity.restart()
+    }
     property int ind_online: 0
     property int inh_block_warning: 0
     property bool multiselect_mode: false
@@ -43,6 +85,14 @@ Page {
     property var drafts: ({})
     property string _prev_uid: ""    // holds the UID before the current change
     property bool _updatingText: false
+    property bool _toxTypingActive: false
+    property Timer _toxTypingTimer: Timer {
+        interval: 2000
+        onTriggered: {
+            _toxTypingActive = false
+            core.tox_set_typing(to_uid, 0)
+        }
+    }
     /* --------- END AI CODE --------- */
 
     prov_img_height: .33 * height
@@ -181,6 +231,13 @@ Page {
                         height: parent.height
 
                     }
+                    ToxBadge {
+                        friendUid: chatbox_page.to_uid
+                        anchors.right: top_toolbar_img.right
+                        anchors.bottom: top_toolbar_img.bottom
+                        width: .3 * top_toolbar_img.height
+                        height: .3 * top_toolbar_img.height
+                    }
                     Text {
                         id: top_toolbar_text
                         //width: dp(160)
@@ -192,6 +249,7 @@ Page {
                         anchors.top: parent.top
                         //anchors.bottom: parent.bottom
                         anchors.left: top_toolbar_img.right
+                        renderType: Text.QtRendering
                     }
                     Label {
                         anchors.bottom: parent.bottom
@@ -421,11 +479,29 @@ Page {
                             }
                         }
                         MenuItem {
-                            text: "Send video message"
+                            text: "Send file..."
                             onTriggered: {
-                                core.start_control(to_uid)
-                                dwyco_vid_rec.uid = to_uid
-                                stack.push(dwyco_vid_rec)
+                                if(Qt.platform.os === "android") {
+                                    applicationWindow1.android_img_pick_hack = 0
+                                    applicationWindow1.android_img_pick_hack = 3
+                                    if(notificationClient.open_file() === 0) {
+                                        failed_msg.text = "Android blocked access to files."
+                                        animateOpacity.start()
+                                    }
+                                } else {
+                                    file_picker.visible = true
+                                }
+                            }
+                        }
+                        Repeater {
+                            model: core.is_tox_uid(to_uid) ? 0 : 1
+                            MenuItem {
+                                text: "Send video message"
+                                onTriggered: {
+                                    core.start_control(to_uid)
+                                    dwyco_vid_rec.uid = to_uid
+                                    stack.push(dwyco_vid_rec)
+                                }
                             }
                         }
 
@@ -433,6 +509,18 @@ Page {
                             text: "Browse Msgs"
                             onTriggered: {
                                 stack.push(simp_msg_browse)
+                            }
+                        }
+                        MenuItem {
+                            text: "Export last 30 days"
+                            onTriggered: {
+                                var thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60)
+                                var result = core.export_conversation(to_uid, thirtyDaysAgo)
+                                if(result !== "") {
+                                    showToast("Conversation exported to: " + result)
+                                } else {
+                                    showToast("Export failed")
+                                }
                             }
                         }
 
@@ -461,6 +549,7 @@ Page {
                         MenuItem {
                             text: "Trash msgs..."
                             onTriggered: {
+                                confirm_trash.text = "Trash ALL (including HIDDEN) msgs from " + core.uid_to_name(to_uid) + "?"
                                 confirm_trash.visible = true
                             }
                             MessageYN {
@@ -597,6 +686,19 @@ Page {
         }
     }
 
+    onAndroid_file_hackChanged: {
+        if(android_file_hack) {
+            console.log(android_file_filename)
+            if(android_file_filename.length > 0) {
+                core.simple_send_file(to_uid, "", android_file_filename)
+                themsglist.reload_model()
+                listView1.positionViewAtBeginning()
+            }
+            android_file_filename = ""
+            android_file_hack = false
+        }
+    }
+
     onTo_uidChanged: {
 
         /* Save the current draft for the old UID */
@@ -636,6 +738,7 @@ Page {
         sourceComponent: FileDialog {
 
             title: "Pick a picture"
+            nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp *.gif *.ppm *.pgm *.pbm *.ico *.tif *.tiff *.webp *.xbm *.xpm *.svg)", "All files (*)"]
             currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
             onAccepted: {
                 console.log("PICK ", selectedFile)
@@ -646,6 +749,31 @@ Page {
                 stack.push(chat_pic_preview)
             }
             onRejected: {picture_picker.visible = false}
+            Component.onCompleted: {visible = true}
+        }
+    }
+
+    Loader {
+        id: file_picker
+        active: visible
+        visible: false
+
+        sourceComponent: FileDialog {
+            // note: this one is deliberately permissive, it's for sending
+            // arbitrary files, not just pictures.
+            title: "Pick a file"
+            nameFilters: ["All files (*)"]
+            currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+            onAccepted: {
+                var p = core.url_to_filename(selectedFile)
+                if(p === "")
+                    return
+                core.simple_send_file(to_uid, "", p)
+                themsglist.reload_model()
+                listView1.positionViewAtBeginning()
+                file_picker.visible = false
+            }
+            onRejected: {file_picker.visible = false}
             Component.onCompleted: {visible = true}
         }
     }
@@ -744,13 +872,23 @@ Page {
         Rectangle {
             id: ditem
 
+            // an attachment we know how to render a preview for is not a
+            // "plain file", and gets a preview image instead of a FileChip.
+            property bool is_plain_file: IS_FILE === 1 && IS_IMAGE_FILE === 0
+
             radius: 6
             height: clayout.height + 20
             width: clayout.width + 20
 
             border.width: 1
             border.color: divider
-            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
+            color: {
+                if(IS_QD === 1 && IS_FAILED === 1)
+                    return "#663333"
+                if(IS_QD === 1)
+                    return "gray"
+                return (SENT === 0) ? accent : primary_light
+            }
 
             //anchors.left: {(SENT == 0) ? parent.left : undefined}
             //x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
@@ -871,10 +1009,22 @@ Page {
                 z: 2
                 Layout.margins: 1
                 anchors.centerIn: ditem
+                Text {
+                    id: toxMidLabel
+                    visible: TOX_MID_NAME !== ""
+                    text: TOX_MID_NAME
+                    font.pointSize: applicationWindow1.font.pointSize * 0.75
+                    font.italic: true
+                    color: primary_text
+                    opacity: 0.7
+                    Layout.maximumWidth: (listView1.width * 3) / 4
+                    Layout.fillWidth: true
+                    horizontalAlignment: (SENT === 1) ? Text.AlignRight : Text.AlignLeft
+                }
                 Image {
                     id: preview
 
-                    visible: {HAS_ATTACHMENT}
+                    visible: {HAS_ATTACHMENT && !is_plain_file}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
@@ -902,19 +1052,27 @@ Page {
 
                 }
 
+                FileChip {
+                    id: plain_file
+                    visible: is_plain_file
+                    fileName: FILE_NAME
+                    fileSize: FILE_SIZE
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: (listView1.width * 3) / 4
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
 
 
 
                 Text {
                     function gentext(msg, tm) {
                         var dt = new Date(tm * 1000)
-                        //                        return "<table><tr><td>" + msg + "</td>" +
-                        //                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
-                        //                                "</td></tr></table>"
+                        var fmt = core.format_message(String(msg))
                         if(Date.now() - dt.getTime() > 86400 * 1000) {
-                            return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
+                            return "<html>" + fmt + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
                         } else {
-                            return "<html>" + msg + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
+                            return "<html>" + fmt + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
                         }
 
                     }
@@ -993,13 +1151,16 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.msg_text = model.MSG_TEXT
+                            themsgview.raw_text = model.MSG_TEXT
+                            themsgview.formatted_text = core.format_message(model.MSG_TEXT)
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
-                            themsgview.text_bg_color = ditem.color
+                            themsgview.is_plain_file = model.IS_FILE === 1 && model.IS_IMAGE_FILE === 0
+                            themsgview.file_name = model.FILE_NAME
+                            themsgview.file_size = model.FILE_SIZE
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = (model.IS_IMAGE_FILE === 0 || model.PREVIEW_FILENAME === "") ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
 
                                 // PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
                                 stack.push(themsgview)
@@ -1070,14 +1231,32 @@ Page {
 
         onLengthChanged: {
             if (chatbox_page._updatingText) return
-            core.uid_keyboard_input(to_uid)
+            if (core.is_tox_uid(to_uid)) {
+                if (!chatbox_page._toxTypingActive) {
+                    chatbox_page._toxTypingActive = true
+                    core.tox_set_typing(to_uid, 1)
+                }
+                chatbox_page._toxTypingTimer.restart()
+            } else {
+                core.uid_keyboard_input(to_uid)
+            }
         }
         onInputMethodComposingChanged: {
-            core.uid_keyboard_input(to_uid)
+            if (core.is_tox_uid(to_uid)) {
+                if (!chatbox_page._toxTypingActive) {
+                    chatbox_page._toxTypingActive = true
+                    core.tox_set_typing(to_uid, 1)
+                }
+                chatbox_page._toxTypingTimer.restart()
+            } else {
+                core.uid_keyboard_input(to_uid)
+            }
         }
 
         onAccepted: {
             if(textField1.length > 0) {
+                if(!can_send_to(to_uid, textField1.text))
+                    return
                 core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.start_control(to_uid)
 
@@ -1124,7 +1303,7 @@ Page {
                 source: mi("ic_add_a_photo_black_24dp.png")
             }
             checkable: false
-            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0)
+            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0) && !core.is_tox_uid(to_uid)
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
@@ -1171,6 +1350,8 @@ Page {
 
         //text: "send"
         onClicked: {
+            if(!can_send_to(to_uid, textField1.text))
+                return
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
             core.simple_send(to_uid, core.strip_html(textField1.text))
@@ -1231,8 +1412,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
-        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input && !core.is_tox_uid(to_uid)
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input && !core.is_tox_uid(to_uid)
         z: 5
         background: Rectangle {
             id: bg2

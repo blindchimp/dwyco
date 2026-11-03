@@ -254,6 +254,16 @@ ok:;
     return 1;
 }
 
+int
+NotificationClient::open_file()
+{
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/android/NotificationClient",
+        "openAFile"
+    );
+    return 1;
+}
+
 void
 NotificationClient::vibrate(long ms)
 {

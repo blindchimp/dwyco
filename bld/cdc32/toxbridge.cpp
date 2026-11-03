@@ -1,0 +1,3056 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
+/*
+ * WARNING: the bulk of this code is AI generated (opencode/big-pickle ca. 2026)
+ */
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <time.h>
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+typedef intptr_t ssize_t;
+#define close _close
+#define open _open
+#define read _read
+#define lseek _lseeki64
+#define unlink _unlink
+static inline ssize_t pwrite_compat(int fd, const void *buf, size_t count, long long offset)
+{
+    long long cur = _lseeki64(fd, 0, SEEK_CUR);
+    _lseeki64(fd, offset, SEEK_SET);
+    ssize_t result = _write(fd, buf, count);
+    _lseeki64(fd, cur, SEEK_SET);
+    return result;
+}
+#define pwrite pwrite_compat
+#else
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#endif
+#include <map>
+
+#include "ezset.h"
+#include "toxbridge.h"
+#include "toxd_plugin.h"
+#include "qauth.h"
+#include "dwrtlog.h"
+#include "se.h"
+#include "qmsg.h"
+#include "ser.h"
+#include "simplesql.h"
+#include "xinfo.h"
+#include "fnmod.h"
+#include "qdirth.h"
+#include "qmsgsql.h"
+
+// toxcore error codes — only the ones we check on the bridge side
+#define TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED 3
+#define TOX_MAX_MESSAGE_LENGTH 1372
+
+namespace dwyco {
+
+class ToxQueue : public SimpleSql
+{
+public:
+    ToxQueue();
+    void init_schema(const DwString&);
+    int enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file = 0);
+    vc dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id);
+    int mark_inprogress(int64_t row_id, uint32_t tox_mid);
+    int mark_sent(int64_t row_id);
+    int mark_failed(int64_t row_id);
+    int remove_message(const vc &local_mid);
+    vc load_qqm_blob(int64_t row_id);
+    void recover_inprogress();
+    vc get_qd_msgs(const vc &pseudo_uid);
+    vc load_qd_body(const vc &local_mid);
+    int save_tox_avatar(const vc &uid, const vc &avatar_data, const vc &avatar_hash);
+    vc load_tox_avatar(const vc &uid);
+    int has_tox_avatar_hash(const vc &uid, const vc &avatar_hash);
+    int delete_tox_avatar(const vc &uid);
+};
+
+static ToxPlugin *Tox_plugin;
+static int Started;
+static ToxQueue *Tox_q;
+static vc Friend_cache;
+static DwString Save_file;
+static uint8_t *Active_password;
+static int Active_password_len;
+static int Needs_password;
+static const uint64_t TOX_AVATAR_MAX_SIZE = 128 * 1024;
+// the synced tox save rides in a single tag payload, which the sync channel
+// sends as one vc. this bound is well above any realistic identity (the save
+// holds keys, the friend list and relay info, not message history), and just
+// exists so a corrupt/huge file can't wedge the tag db.
+static const long TOX_SAVE_MAX_PUBLISH = 2 * 1024 * 1024;
+// the save file name used when the caller doesn't give one. note that several
+// entry points below can be reached before tox has ever been started (eg.
+// loading a shared identity before the first sign in), so they can't assume
+// tox_bridge_init has already set Save_file -- and newfn("") panics.
+static const char *TOX_SAVE_FILE_DEFAULT = "tox_save.tox";
+
+static void
+ensure_save_file()
+{
+    if(Save_file.length() == 0)
+        Save_file = TOX_SAVE_FILE_DEFAULT;
+}
+
+struct IncomingFileTransfer {
+    DwString tmp_basename;
+    int fd;
+    uint64_t expected_size;
+    uint64_t received_size;
+    DwString original_filename;
+    vc pseudo_uid;
+};
+static std::map<DwString, IncomingFileTransfer> Incoming_xfers;
+
+struct IncomingAvatar {
+    DwString buf;
+    uint64_t expected_size;
+    vc pseudo_uid;
+    vc avatar_hash;
+};
+static std::map<DwString, IncomingAvatar> Incoming_avatars;
+
+struct OutgoingFileTransfer {
+    DwString file_path;
+    int fd;
+    uint64_t file_size;
+    uint64_t sent_size;
+    DwString original_filename;
+    int64_t row_id;
+    vc local_mid;
+    vc recipient_pseudo;
+    uint32_t tox_fn;
+    uint32_t tox_fnum;
+};
+static std::map<DwString, OutgoingFileTransfer> Outgoing_xfers;
+
+struct OutgoingAvatar {
+    DwString data;
+    vc hash;
+    uint64_t size;
+    uint64_t sent_size;
+    uint32_t tox_fn;
+    uint32_t tox_fnum;
+};
+static std::map<DwString, OutgoingAvatar> Outgoing_avatars;
+
+static void
+set_active_password(const uint8_t *pw, int pw_len)
+{
+    if(Active_password)
+    {
+        free(Active_password);
+        Active_password = NULL;
+        Active_password_len = 0;
+    }
+    if(pw && pw_len > 0)
+    {
+        Active_password = (uint8_t *)malloc((size_t)pw_len);
+        memcpy(Active_password, pw, (size_t)pw_len);
+        Active_password_len = pw_len;
+    }
+}
+
+static int
+file_exists(const DwString &path)
+{
+    struct stat st;
+    return stat(path.c_str(), &st) == 0;
+}
+
+static int
+copy_file(const DwString &src, const DwString &dst)
+{
+    FILE *in = fopen(src.c_str(), "rb");
+    if(!in)
+        return 0;
+    FILE *out = fopen(dst.c_str(), "wb");
+    if(!out)
+    {
+        fclose(in);
+        return 0;
+    }
+    char buf[65536];
+    size_t n;
+    int ret = 1;
+    while((n = fread(buf, 1, sizeof(buf), in)) > 0)
+    {
+        if(n < sizeof(buf) && ferror(in))
+            break;
+        if(fwrite(buf, 1, n, out) != n)
+        {
+            ret = 0;
+            break;
+        }
+    }
+    if(ferror(in))
+        ret = 0;
+    fclose(in);
+    if(fclose(out) != 0)
+        ret = 0;
+    return ret;
+}
+
+static DwString
+backup_path_for_save(const DwString &save_path)
+{
+    (void)save_path;
+    DwString base = newfn("replaced_tox_save.tox");
+    if(!file_exists(base))
+        return base;
+    for(int i = 1; ; ++i)
+    {
+        DwString cand = newfn(DwString("replaced_tox_save.") + DwString::fromInt(i) + ".tox");
+        if(!file_exists(cand))
+            return cand;
+    }
+    return base;
+}
+
+// read a file whole into a vc. returns nil if it can't be read, is empty,
+// or is implausibly large. note: the size cap here is a sanity bound on
+// anything we'd write into a tag payload, not a protocol limit.
+static vc
+read_whole_file(const DwString &path, long max_len)
+{
+    if(!file_exists(path))
+        return vcnil;
+    FILE *f = fopen(path.c_str(), "rb");
+    if(!f)
+        return vcnil;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz > max_len)
+    {
+        fclose(f);
+        return vcnil;
+    }
+    char *buf = new char[sz];
+    size_t got = fread(buf, 1, (size_t)sz, f);
+    fclose(f);
+    if(got != (size_t)sz)
+    {
+        delete [] buf;
+        return vcnil;
+    }
+    vc tmp(VC_BSTRING, buf, sz);
+    delete[] buf;
+    return tmp;
+}
+
+// write bytes to the active save file atomically (tmp + rename), the same way
+// save_tox_state in toxd.cpp does it, so a crash mid-write can't leave a
+// truncated identity on disk.
+static int
+write_save_bytes(const vc &bytes)
+{
+    if(bytes.is_nil() || bytes.len() <= 0)
+        return 0;
+    ensure_save_file();
+    DwString save_path = newfn(Save_file);
+    DwString tmp_path = save_path + ".new";
+    FILE *f = fopen(tmp_path.c_str(), "wb");
+    if(!f)
+        return 0;
+    int ret = 1;
+    if(fwrite((const char *)bytes, 1, (size_t)bytes.len(), f) != (size_t)bytes.len())
+        ret = 0;
+    if(fclose(f) != 0)
+        ret = 0;
+    if(ret && rename(tmp_path.c_str(), save_path.c_str()) != 0)
+        ret = 0;
+    if(!ret)
+        remove(tmp_path.c_str());
+    return ret;
+}
+
+static void
+fail_outgoing(const vc &local_mid)
+{
+    if(!Tox_q)
+        return;
+    Tox_q->sql_simple("UPDATE tox_outbox SET status=3 WHERE local_mid=?1", local_mid);
+    vc res = Tox_q->sql_simple("SELECT recipient_pseudo FROM tox_outbox WHERE local_mid=?1", local_mid);
+    vc recip;
+    if(!res.is_nil() && res.num_elems() > 0)
+        recip = from_hex(res[0][0]);
+    se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recip);
+}
+
+static DwString
+xfer_key(uint32_t fn, uint32_t fnum)
+{
+    return DwString::fromInt(fn) + "_" + DwString::fromInt(fnum);
+}
+
+static vc
+self_tox_pseudo()
+{
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return vcnil;
+    return tox_pubkey_to_pseudo_uid(pk);
+}
+
+// tag a tox message with the pseudo_id of the local tox client that
+// sent or received it, so other devices in the device group know which
+// tox client was involved. payload is the raw pseudo_uid.
+// peer_pseudo is the friend's pseudo uid on either side of the exchange,
+// used only to skip ignored uids.
+// note: mids are unique per message, so plain sql_add_tag is used here
+// (safe_add_crdt_tag would scan every mid carrying this tag).
+static void
+tag_msg_tox_mid(const vc &mid, const vc &peer_pseudo)
+{
+    if(uid_ignored(peer_pseudo))
+        return;
+    vc self = self_tox_pseudo();
+    if(self.is_nil())
+        return;
+    sql_add_tag(mid, "_tox_mid", self);
+}
+
+// first-run backfill: messages stored under a tox friend's uid before
+// _tox_mid tagging existed get attributed to this device's tox client.
+// idempotent: mids that already carry the tag are skipped, so later
+// runs find nothing to do.
+static void
+backfill_tox_mid_tags()
+{
+    if(!sql_is_initialized())
+        return;
+    vc self = self_tox_pseudo();
+    if(self.is_nil() || Friend_cache.is_nil())
+        return;
+    int n = Friend_cache.num_elems();
+    int ntagged = 0;
+    try
+    {
+        qmsgsql::sql_start_transaction();
+        for(int i = 0; i < n; ++i)
+        {
+            vc entry = Friend_cache[i];
+            vc pubkey;
+            if(!entry.find("pubkey", pubkey))
+                continue;
+            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+            if(pseudo.is_nil() || uid_ignored(pseudo))
+                continue;
+            vc mids = sql_untagged_mids_at_uid(pseudo, "_tox_mid");
+            for(int j = 0; j < mids.num_elems(); ++j)
+            {
+                sql_add_tag(mids[j], "_tox_mid", self);
+                ++ntagged;
+            }
+        }
+        qmsgsql::sql_commit_transaction();
+    }
+    catch(...)
+    {
+        qmsgsql::sql_rollback_transaction();
+        GRTLOG("tox: backfill of _tox_mid tags failed", 0, 0);
+        return;
+    }
+    GRTLOG("tox: backfilled %d messages with _tox_mid", ntagged, 0);
+}
+
+static void
+cancel_outgoing_avatar_for(uint32_t fn)
+{
+    for(std::map<DwString, OutgoingAvatar>::iterator it = Outgoing_avatars.begin();
+        it != Outgoing_avatars.end(); )
+    {
+        if(it->second.tox_fn == fn)
+        {
+            toxp_file_cancel(Tox_plugin, it->second.tox_fn, it->second.tox_fnum);
+            it = Outgoing_avatars.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+// broadcast the current avatar (or its removal) to all online friends.
+// data is empty and size is 0 to signal avatar removal.
+static void
+send_avatar_to_friends(const vc &hash, const DwString &data, uint64_t size)
+{
+    if(!Tox_plugin)
+        return;
+    if(Friend_cache.is_nil())
+        tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc fnum;
+        vc status;
+        if(!entry.find("friend_number", fnum) || fnum.type() != VC_INT)
+            continue;
+        if(!entry.find("status", status) || status != vc("online"))
+            continue;
+        uint32_t fn = (uint32_t)(int)fnum;
+        cancel_outgoing_avatar_for(fn);
+        uint32_t tox_fnum;
+        if(!toxp_file_send_avatar(Tox_plugin, fn, hash, size, &tox_fnum))
+        {
+            GRTLOG("tox: avatar send init failed fn=%d", (int)fn, 0);
+            continue;
+        }
+        OutgoingAvatar av;
+        av.data = data;
+        av.hash = hash;
+        av.size = size;
+        av.sent_size = 0;
+        av.tox_fn = fn;
+        av.tox_fnum = tox_fnum;
+        Outgoing_avatars[xfer_key(fn, tox_fnum)] = av;
+        GRTLOG("tox: avatar send initiated fn=%d fnum=%d", (int)fn, (int)tox_fnum);
+    }
+}
+
+static void
+send_self_avatar_to(uint32_t fn)
+{
+    if(!Tox_plugin)
+        return;
+    vc pseudo = self_tox_pseudo();
+    if(pseudo.is_nil())
+        return;
+    vc avatar_data;
+    if(!Tox_q || !tox_bridge_get_avatar(pseudo, avatar_data) || avatar_data.is_nil())
+        return;
+    vc hash;
+    if(!toxp_avatar_hash(Tox_plugin, avatar_data, hash))
+        return;
+    cancel_outgoing_avatar_for(fn);
+    uint32_t tox_fnum;
+    if(!toxp_file_send_avatar(Tox_plugin, fn, hash, (uint64_t)avatar_data.len(), &tox_fnum))
+        return;
+    OutgoingAvatar av;
+    av.data = DwString((const char *)avatar_data, avatar_data.len());
+    av.hash = hash;
+    av.size = (uint64_t)avatar_data.len();
+    av.sent_size = 0;
+    av.tox_fn = fn;
+    av.tox_fnum = tox_fnum;
+    Outgoing_avatars[xfer_key(fn, tox_fnum)] = av;
+    GRTLOG("tox: avatar send initiated on connect fn=%d fnum=%d", (int)fn, (int)tox_fnum);
+}
+
+static void
+safe_add_crdt_tag(const vc &mid, const vc &tag, const vc &payload = vcnil)
+{
+    vc existing = sql_get_tagged_mids2(tag);
+    for(int i = 0; i < existing.num_elems(); ++i)
+    {
+        if(existing[i][0] == mid)
+        {
+            if(payload.is_nil())
+                return;
+            // note: if the mid is already tagged but with a different
+            // payload (eg. friend renamed), we fall through and add a new
+            // tag row. readers use the latest row.
+            vc pl = sql_get_tag_payload(mid, tag);
+            if(!pl.is_nil() && pl == payload)
+                return;
+        }
+    }
+    sql_add_tag(mid, tag, payload);
+}
+
+vc
+tox_pubkey_to_pseudo_uid(const vc &pubkey)
+{
+    if(pubkey.len() < 10)
+        return vcnil;
+    return vc(VC_BSTRING, (const char *)pubkey, 10);
+}
+
+vc
+make_tox_info_vec(const vc &pseudo, const vc &name)
+{
+    vc v(VC_VECTOR);
+    v[QIR_FROM] = pseudo;
+    v[QIR_HANDLE] = name;
+    v[QIR_EMAIL] = "";
+    v[QIR_USER_SPECED_ID] = "";
+    v[QIR_FIRST] = "";
+    v[QIR_LAST] = "";
+    v[QIR_DESCRIPTION] = "";
+    v[QIR_LOCATION] = "";
+    return v;
+}
+
+static vc
+vcblob(const vc &v)
+{
+    vc ret(VC_VECTOR);
+    ret.append(vc("blob"));
+    ret.append(v);
+    return ret;
+}
+
+static vc
+make_msg_body(const vc &from, const vc &text,
+              const vc &attachment = vcnil,
+              const vc &file_attachment = vcnil,
+              const vc &estimated_size = vcnil)
+{
+    vc body(VC_VECTOR);
+    body[QQM_BODY_FROM] = from;
+    body[QQM_BODY_TEXT_do_not_use] = vcnil;
+    body[QQM_BODY_ATTACHMENT] = attachment;
+    body[QQM_BODY_DATE] = date_vector();
+    body[QQM_BODY_RATING_do_not_use] = vcnil;
+    body[QQM_BODY_AUTH_VEC] = vcnil;
+    body[QQM_BODY_FORWARDED_BODY] = vcnil;
+    body[QQM_BODY_NEW_TEXT] = text;
+    body[QQM_BODY_ATTACHMENT_LOCATION] = vcnil;
+    body[QQM_BODY_SPECIAL_TYPE] = vcnil;
+    body[QQM_BODY_NO_FORWARD] = vcnil;
+    body[QQM_BODY_FILE_ATTACHMENT] = file_attachment;
+    body[QQM_BODY_DHSF] = vcnil;
+    body[QQM_BODY_EMSG] = vcnil;
+    body[QQM_BODY_ESTIMATED_SIZE] = estimated_size;
+    body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
+    body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
+    body[QQM_BODY_FROM_GROUP] = vcnil;
+    return body;
+}
+
+static void
+tox_uid_tag_add(const vc &pseudo_uid)
+{
+    vc hex_uid = to_hex(pseudo_uid);
+    if(!sql_mid_has_tag(hex_uid, "_tox"))
+        sql_add_tag(hex_uid, "_tox");
+}
+
+static void
+process_tox_event(const char *type, const vc &args)
+{
+
+    if(strcmp(type, "friend_request") == 0 && args.num_elems() >= 2) {
+        vc pubkey = args[0];
+        vc msg = args[1];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        GRTLOG("tox: friend request from ", 0, 0);
+        GRTLOGVC(pseudo);
+        se_emit(SE_TOX_FRIEND_REQUEST, pseudo, msg, pubkey);
+
+    } else if(strcmp(type, "message") == 0 && args.num_elems() >= 4) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc text = args[2];
+        vc msg_type = args[3];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+
+        GRTLOG("tox: message from fn %d", (int)fn, 0);
+        GRTLOGVC(pseudo);
+
+        vc body = make_msg_body(pseudo, text);
+
+        vc qqm(VC_VECTOR);
+        qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+        qqm[QQM_RECIP_VEC][0] = My_UID;
+        qqm[QQM_MSG_VEC] = body;
+        qqm[QQM_LOCAL_ID] = to_hex(gen_id());
+
+        store_direct(0, qqm, 0);
+        tag_msg_tox_mid(qqm[QQM_LOCAL_ID], pseudo);
+
+        se_emit(SE_TOX_MESSAGE, pseudo);
+
+    } else if(strcmp(type, "read_receipt") == 0 && args.num_elems() >= 2) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t mid = (uint32_t)(int)args[1];
+        GRTLOG("tox: read receipt for mid %d", (int)mid, 0);
+        if(Tox_q)
+        {
+            vc pseudo;
+            if(!tox_friend_number_to_pseudo_uid(fn, pseudo))
+                pseudo = vcnil;
+            if(!pseudo.is_nil())
+                pseudo = to_hex(pseudo);
+            vc res = Tox_q->sql_simple(
+                "SELECT id, local_mid, qqm_blob FROM tox_outbox "
+                "WHERE recipient_pseudo=?1 AND tox_mid=?2 AND status=1",
+                pseudo, vc((int)mid));
+            if(!res.is_nil() && res.num_elems() > 0)
+            {
+                vc row = res[0];
+                int64_t row_id = (int64_t)(long long)row[0];
+                vc local_mid = row[1];
+                vc qqm_blob = row[2];
+                vc qqm;
+                if(deserialize(qqm_blob, qqm) > 0)
+                {
+                    DwString tmpfn = gen_random_filename() + ".q";
+                    if(save_info(qqm, tmpfn))
+                    {
+                        do_local_store(tmpfn, local_mid);
+                        tag_msg_tox_mid(local_mid, from_hex(pseudo));
+                        unlink(newfn(tmpfn).c_str());
+                    }
+                }
+                Tox_q->mark_sent(row_id);
+            }
+        }
+        vc recip;
+        if(tox_friend_number_to_pseudo_uid(fn, recip))
+            se_emit(SE_TOX_READ_RECEIPT, recip, vc((int)mid));
+
+    } else if(strcmp(type, "friend_connection_status") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc status = args[2];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        GRTLOG("tox: friend %d online=%d", (int)fn, status == vc("online") ? 1 : 0);
+        se_emit(SE_TOX_FRIEND_STATUS, pseudo, status);
+        if(status == vc("online"))
+            send_self_avatar_to(fn);
+
+    } else if(strcmp(type, "friend_name") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc name = args[2];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        (void)fn;
+        se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
+        if(!name.is_nil() && name != vc(""))
+        {
+            vc old;
+            int same = Session_infos.find(pseudo, old) && old.num_elems() > QIR_HANDLE && old[QIR_HANDLE] == name;
+            Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            if(!same)
+                save_info(Session_infos, "sinfo");
+            safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
+        }
+
+    } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t fnum = (uint32_t)(int)args[1];
+        uint32_t kind = (uint32_t)(int)args[2];
+        uint64_t size = 0;
+        if(args[3].type() == VC_INT)
+            size = (uint64_t)(long long)args[3];
+        vc name_vc = args[4];
+        DwString original_name((const char *)name_vc, name_vc.len());
+
+        vc pseudo;
+        if(!tox_friend_number_to_pseudo_uid(fn, pseudo))
+            return;
+
+        if(kind == 1)
+        {
+            // avatar transfers: name field is the 32-byte avatar hash.
+            if(size == 0)
+            {
+                // friend removed their avatar: drop cached copy, notify UI,
+                // and cancel the empty transfer.
+                if(Tox_q)
+                    Tox_q->delete_tox_avatar(pseudo);
+                GRTLOG("tox: avatar removed by friend fnum=%d", fnum, 0);
+                se_emit(SE_TOX_AVATAR, pseudo);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            if(size > TOX_AVATAR_MAX_SIZE)
+            {
+                GRTLOG("tox: rejecting avatar size=%llu fnum=%d",
+                       (unsigned long long)size, fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            vc avatar_hash(VC_BSTRING, (const char *)name_vc, name_vc.len());
+            if(Tox_q && Tox_q->has_tox_avatar_hash(pseudo, avatar_hash))
+            {
+                GRTLOG("tox: rejecting avatar (already have) fn=%d fnum=%d", fn, fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            if(!Tox_q)
+            {
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                return;
+            }
+            int err = 0;
+            if(!toxp_file_accept(Tox_plugin, fn, fnum, &err))
+            {
+                GRTLOG("tox: avatar accept failed fnum=%d err=%d", fnum, err);
+                return;
+            }
+            IncomingAvatar av;
+            av.expected_size = size;
+            av.pseudo_uid = pseudo;
+            av.avatar_hash = avatar_hash;
+            Incoming_avatars[xfer_key(fn, fnum)] = av;
+            GRTLOG("tox: avatar recv accepted fnum=%d size=%llu",
+                   fnum, (unsigned long long)size);
+            return;
+        }
+
+        int err = 0;
+        if(!toxp_file_accept(Tox_plugin, fn, fnum, &err))
+        {
+            GRTLOG("tox: auto-accept failed fn=%d fnum=%d", fn, fnum);
+            GRTLOG("tox: auto-accept err=%d", err, 0);
+            return;
+        }
+
+        DwString tmp_basename = gen_random_filename() + ".tmp";
+        DwString tmp_path = newfn(tmp_basename);
+        int fd = open(tmp_path.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0600);
+        if(fd == -1)
+        {
+            GRTLOG("tox: cant open temp file %s", tmp_path.c_str(), 0);
+            return;
+        }
+
+        IncomingFileTransfer xfer;
+        xfer.tmp_basename = tmp_basename;
+        xfer.fd = fd;
+        xfer.expected_size = size;
+        xfer.received_size = 0;
+        xfer.original_filename = dwbasename(original_name);
+        xfer.pseudo_uid = pseudo;
+        Incoming_xfers[xfer_key(fn, fnum)] = xfer;
+
+        GRTLOG("tox: file recv accepted fn=%d fnum=%d", fn, fnum);
+
+    } else if(strcmp(type, "self_connection_status") == 0 && args.num_elems() >= 1) {
+        vc status = args[0];
+        GRTLOG("tox: self connection status %s", (const char *)status, 0);
+
+        se_emit(SE_TOX_SELF_CONNECTION_STATUS, My_UID, status);
+
+    } else if(strcmp(type, "file_chunk") == 0 && args.num_elems() >= 4) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t fnum = (uint32_t)(int)args[1];
+        uint64_t pos = 0;
+        if(args[2].type() == VC_INT)
+            pos = (uint64_t)(long long)args[2];
+        vc data = args[3];
+
+        DwString key = xfer_key(fn, fnum);
+
+        // avatar transfers are buffered in memory, not written to disk
+        std::map<DwString, IncomingAvatar>::iterator avit = Incoming_avatars.find(key);
+        if(avit != Incoming_avatars.end())
+        {
+            IncomingAvatar &av = avit->second;
+            if(data.is_nil())
+            {
+                // EOF → avatar complete, persist
+                vc avatar_data(VC_BSTRING, av.buf.c_str(), (long)av.buf.length());
+                if(Tox_q && Tox_q->save_tox_avatar(av.pseudo_uid, avatar_data, av.avatar_hash))
+                {
+                    se_emit(SE_TOX_AVATAR, av.pseudo_uid);
+                    GRTLOG("tox: avatar recv complete fn=%d fnum=%d", fn, fnum);
+                }
+                else
+                {
+                    GRTLOG("tox: avatar save failed fn=%d fnum=%d", fn, fnum);
+                }
+                Incoming_avatars.erase(avit);
+            }
+            else
+            {
+                if((uint64_t)av.buf.length() + (uint64_t)data.len() > TOX_AVATAR_MAX_SIZE)
+                {
+                    GRTLOG("tox: avatar too large, cancelling fn=%d fnum=%d", fn, fnum);
+                    toxp_file_cancel(Tox_plugin, fn, fnum);
+                    Incoming_avatars.erase(avit);
+                    return;
+                }
+                av.buf += data;
+            }
+            return;
+        }
+
+        std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
+        if(it == Incoming_xfers.end())
+            return;
+        IncomingFileTransfer &xfer = it->second;
+
+        // nil data signals EOF → file complete
+        if(data.is_nil())
+        {
+            close(xfer.fd);
+            xfer.fd = -1;
+
+            DwString fle_basename = gen_random_filename() + ".fle";
+            DwString src = newfn(xfer.tmp_basename);
+            DwString dst = newfn(fle_basename);
+            if(CopyFile(src.c_str(), dst.c_str(), 0))
+            {
+                vc body = make_msg_body(xfer.pseudo_uid, vc(""),
+                                        fle_basename,
+                                        xfer.original_filename,
+                                        vc((long long)xfer.expected_size));
+
+                vc qqm(VC_VECTOR);
+                qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+                qqm[QQM_RECIP_VEC][0] = My_UID;
+                qqm[QQM_MSG_VEC] = body;
+                qqm[QQM_LOCAL_ID] = to_hex(gen_id());
+
+                store_direct(0, qqm, 0);
+                tag_msg_tox_mid(qqm[QQM_LOCAL_ID], xfer.pseudo_uid);
+                se_emit(SE_TOX_MESSAGE, xfer.pseudo_uid);
+                GRTLOG("tox: file recv complete fn=%d fnum=%d", fn, fnum);
+            }
+            else
+            {
+                GRTLOG("tox: failed to copy completed file %s", src.c_str(), 0);
+            }
+            DeleteFile(src.c_str());
+            Incoming_xfers.erase(it);
+        }
+        else
+        {
+            // normal data chunk — append to temp file
+            const char *buf = (const char *)data;
+            size_t len = data.len();
+            ssize_t n = pwrite(xfer.fd, buf, len, pos);
+            if(n < 0 || (size_t)n != len)
+            {
+                GRTLOG("tox: file write error fn=%d fnum=%d", fn, fnum);
+                close(xfer.fd);
+                DeleteFile(newfn(xfer.tmp_basename).c_str());
+                Incoming_xfers.erase(it);
+            }
+            else
+            {
+                xfer.received_size += len;
+            }
+        }
+
+    } else if(strcmp(type, "file_chunk_request") == 0 && args.num_elems() >= 4) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t fnum = (uint32_t)(int)args[1];
+        uint64_t position = 0;
+        if(args[2].type() == VC_INT)
+            position = (uint64_t)(long long)args[2];
+        uint64_t length = 0;
+        if(args[3].type() == VC_INT)
+            length = (uint64_t)(long long)args[3];
+
+        DwString key = xfer_key(fn, fnum);
+        std::map<DwString, OutgoingAvatar>::iterator avit = Outgoing_avatars.find(key);
+        if(avit != Outgoing_avatars.end())
+        {
+            OutgoingAvatar &av = avit->second;
+
+            // length == 0 signals toxcore has confirmed transfer complete
+            if(length == 0)
+            {
+                GRTLOG("tox: avatar send complete fn=%d fnum=%d", (int)fn, (int)fnum);
+                Outgoing_avatars.erase(avit);
+                return;
+            }
+
+            uint64_t read_len = length;
+            const uint64_t max_chunk = 65536;
+            if(read_len > max_chunk)
+                read_len = max_chunk;
+            if(position + read_len > av.size)
+                read_len = av.size > position ? av.size - position : 0;
+            if(read_len == 0)
+            {
+                GRTLOG("tox: avatar chunk request out of range fn=%d fnum=%d", (int)fn, (int)fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                Outgoing_avatars.erase(avit);
+                return;
+            }
+            vc chunk(VC_BSTRING, av.data.c_str() + position, (long)read_len);
+            if(toxp_file_send_data(Tox_plugin, fn, fnum, position, chunk))
+            {
+                av.sent_size += read_len;
+            }
+            else
+            {
+                GRTLOG("tox: avatar chunk send error fn=%d fnum=%d", (int)fn, (int)fnum);
+                toxp_file_cancel(Tox_plugin, fn, fnum);
+                Outgoing_avatars.erase(avit);
+            }
+            return;
+        }
+
+        std::map<DwString, OutgoingFileTransfer>::iterator oit = Outgoing_xfers.find(key);
+        if(oit == Outgoing_xfers.end())
+            return;
+        OutgoingFileTransfer &xfer = oit->second;
+
+        // length == 0 signals toxcore has confirmed transfer complete
+        if(length == 0)
+        {
+            close(xfer.fd);
+            GRTLOG("tox: file send complete fn=%d fnum=%d", (int)fn, (int)fnum);
+
+            if(Tox_q)
+            {
+                vc qqm_blob = Tox_q->load_qqm_blob(xfer.row_id);
+                if(!qqm_blob.is_nil())
+                {
+                    vc qqm;
+                    if(deserialize(qqm_blob, qqm) > 0)
+                    {
+                        DwString tmpfn = gen_random_filename() + ".q";
+                        if(save_info(qqm, tmpfn))
+                        {
+                                do_local_store(tmpfn, xfer.local_mid);
+                                tag_msg_tox_mid(xfer.local_mid, xfer.recipient_pseudo);
+                                DeleteFile(newfn(tmpfn).c_str());
+                        }
+                    }
+                }
+                Tox_q->mark_sent(xfer.row_id);
+            }
+
+            Outgoing_xfers.erase(oit);
+            return;
+        }
+
+        // read length bytes at position and send
+        if(lseek(xfer.fd, position, SEEK_SET) < 0)
+        {
+            GRTLOG("tox: file_chunk_request lseek error fn=%d fnum=%d", (int)fn, (int)fnum);
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            fail_outgoing(xfer.local_mid);
+            Outgoing_xfers.erase(oit);
+            return;
+        }
+
+        uint64_t read_len = length;
+        const uint64_t max_chunk = 65536;
+        if(read_len > max_chunk)
+            read_len = max_chunk;
+        char *buf = new char[read_len];
+        ssize_t n = read(xfer.fd, buf, (size_t)read_len);
+        if(n < 0 || (size_t)n != read_len)
+        {
+            GRTLOG("tox: file_chunk_request read error fn=%d fnum=%d", (int)fn, (int)fnum);
+            delete[] buf;
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            fail_outgoing(xfer.local_mid);
+            Outgoing_xfers.erase(oit);
+            return;
+        }
+
+        vc chunk(VC_BSTRING, buf, n);
+        delete[] buf;
+        if(toxp_file_send_data(Tox_plugin, fn, fnum, position, chunk))
+        {
+            xfer.sent_size += n;
+        }
+        else
+        {
+            GRTLOG("tox: file_chunk_request send error fn=%d fnum=%d", (int)fn, (int)fnum);
+            toxp_file_cancel(Tox_plugin, fn, fnum);
+            fail_outgoing(xfer.local_mid);
+            Outgoing_xfers.erase(oit);
+            return;
+        }
+
+    } else if(strcmp(type, "file_control") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        uint32_t fnum = (uint32_t)(int)args[1];
+        vc control = args[2];
+        DwString key = xfer_key(fn, fnum);
+        std::map<DwString, IncomingAvatar>::iterator avit = Incoming_avatars.find(key);
+        if(avit != Incoming_avatars.end())
+        {
+            if(control == vc("cancel"))
+            {
+                GRTLOG("tox: incoming avatar cancelled by sender fn=%d fnum=%d", fn, fnum);
+                Incoming_avatars.erase(avit);
+            }
+            return;
+        }
+        std::map<DwString, OutgoingAvatar>::iterator oavit = Outgoing_avatars.find(key);
+        if(oavit != Outgoing_avatars.end())
+        {
+            if(control == vc("cancel"))
+            {
+                GRTLOG("tox: outgoing avatar cancelled by receiver fn=%d fnum=%d", fn, fnum);
+                Outgoing_avatars.erase(oavit);
+            }
+            return;
+        }
+        std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.find(key);
+        if(it != Incoming_xfers.end())
+        {
+            if(control == vc("cancel"))
+            {
+                if(it->second.fd >= 0)
+                    close(it->second.fd);
+                DeleteFile(newfn(it->second.tmp_basename).c_str());
+                Incoming_xfers.erase(it);
+                GRTLOG("tox: xfer cancelled by sender fn=%d fnum=%d", fn, fnum);
+            }
+            return;
+        }
+        std::map<DwString, OutgoingFileTransfer>::iterator oit = Outgoing_xfers.find(key);
+        if(oit != Outgoing_xfers.end())
+        {
+            if(control == vc("resume"))
+            {
+                oit->second.fd = open(oit->second.file_path.c_str(), O_RDONLY);
+                if(oit->second.fd < 0)
+                {
+                    GRTLOG("tox: outgoing xfer resume, cant open %s", oit->second.file_path.c_str(), 0);
+                    toxp_file_cancel(Tox_plugin, fn, fnum);
+                    fail_outgoing(oit->second.local_mid);
+                    Outgoing_xfers.erase(oit);
+                }
+                else
+                {
+                    GRTLOG("tox: outgoing xfer resume fn=%d fnum=%d", fn, fnum);
+                }
+            }
+            else if(control == vc("cancel"))
+            {
+                GRTLOG("tox: outgoing xfer cancelled by receiver fn=%d fnum=%d", fn, fnum);
+                if(oit->second.fd >= 0)
+                    close(oit->second.fd);
+                fail_outgoing(oit->second.local_mid);
+                Outgoing_xfers.erase(oit);
+            }
+            return;
+        }
+
+    } else if(strcmp(type, "ready") == 0) {
+        GRTLOG("tox: ready", 0, 0);
+        se_emit(SE_TOX_READY, vcnil);
+
+    } else if(strcmp(type, "typing") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        GRTLOG("tox: typing fn=%d typing=%s", (int)fn, (const char *)args[2]);
+        se_emit(SE_TOX_TYPING, pseudo, args[2]);
+
+    } else if(strcmp(type, "friend_status") == 0 && args.num_elems() >= 3) {
+        uint32_t fn = (uint32_t)(int)args[0];
+        vc pubkey = args[1];
+        vc status = args[2];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        (void)fn;
+        GRTLOG("tox: friend status fn=%d status=%s", (int)fn, (const char *)status);
+        se_emit(SE_TOX_FRIEND_USER_STATUS, pseudo, status);
+    }
+}
+
+static void
+on_tox_event(const char *type, const vc &args, void *userdata)
+{
+    (void)userdata;
+    if(!Started)
+        return;
+    process_tox_event(type, args);
+}
+
+// the tag mid shared by '_tox_save' and '_tox_active': hex of the tox
+// pubkey. using the same mid for both is the whole design -- the save and
+// the claim about that save are about the same identity.
+static vc
+save_tag_mid()
+{
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return vcnil;
+    return to_hex(pk);
+}
+
+// publish the current identity's save bytes to the group, under tag
+// '_tox_save' (mid is hex(pubkey), payload is the raw bytes of the save
+// file, read verbatim so any encryption/password state is preserved).
+//
+// note: we deliberately never delete the previous row for this mid. tag
+// payloads are last-writer-wins on read, so re-publishing is just adding a
+// new row, and safe_add_crdt_tag no-ops when the bytes are unchanged (which
+// makes a periodic republish free). deleting rows instead would broadcast a
+// tombstone that wipes the copy other group members are relying on.
+int
+tox_bridge_publish_save()
+{
+    if(!Started || !Tox_plugin)
+    {
+        GRTLOG("tox: publish save ignored, tox not running", 0, 0);
+        return 0;
+    }
+    if(!sql_is_initialized())
+        return 0;
+    vc mid = save_tag_mid();
+    if(mid.is_nil())
+        return 0;
+    // flush the live state to disk first, then take the bytes from disk, so
+    // what we publish is exactly what a fresh sign-in on another device
+    // would load.
+    toxp_save(Tox_plugin);
+    vc bytes = read_whole_file(newfn(Save_file), TOX_SAVE_MAX_PUBLISH);
+    if(bytes.is_nil())
+    {
+        GRTLOG("tox: publish save failed, could not read %s", Save_file.c_str(), 0);
+        return 0;
+    }
+    safe_add_crdt_tag(mid, "_tox_save", bytes);
+    GRTLOG("tox: published save, %d bytes", (int)bytes.len(), 0);
+    return 1;
+}
+
+// claim the running identity for this device, under tag '_tox_active' (mid is
+// hex(pubkey), payload is hex of this device's dwyco uid). the newest row
+// wins, so the last device to sign in with an identity owns it, and every
+// other client running that identity sees a foreign claim and stands down.
+static void
+publish_active_claim()
+{
+    vc mid = save_tag_mid();
+    if(mid.is_nil())
+        return;
+    safe_add_crdt_tag(mid, "_tox_active", to_hex(My_UID));
+}
+
+// stand down if some other device has signed in with the identity we're
+// currently running. called from the poll loop, debounced to once a second.
+void
+tox_bridge_check_active_conflict()
+{
+    if(!Started || !Tox_plugin)
+        return;
+    static long long last_check = 0;
+    long long now = (long long)time(0);
+    if(now - last_check < 1)
+        return;
+    last_check = now;
+    vc mid = save_tag_mid();
+    if(mid.is_nil())
+        return;
+    vc win = sql_get_tag_payload_ranked(mid, "_tox_active");
+    if(win.num_elems() < 3)
+        return; // nobody has claimed it
+    if(win[2] == to_hex(My_UID))
+        return; // still ours
+    GRTLOG("tox bridge: identity claimed by another device, standing down", 0, 0);
+    // note: we do not publish on the way out. we lost the race, so our copy
+    // is the stale one, and writing it would clobber the winner's.
+    tox_bridge_shutdown();
+    se_emit(SE_TOX_DISABLED_BY_REMOTE, vcnil);
+}
+
+// human readable name for a hex tox pubkey, as known to dwyco.
+//
+// tox keeps its own profile name inside the save, but that is useless here:
+// an encrypted save can't be read without its password, which is exactly the
+// case where a label matters most. dwyco already mirrors every tox friend name
+// into a '_tox_friend' crdt tag keyed by hex(pseudo_uid), and a pseudo uid is
+// just the first 10 bytes of the pubkey. so the name comes out of the dwyco
+// database and is available regardless of the save's encryption state.
+//
+// returns nil when we've never seen this identity as a friend, which is normal
+// for a save just published by another device.
+vc
+tox_bridge_name_for_pubkey_hex(const vc &pub_hex)
+{
+    if(pub_hex.is_nil() || pub_hex.len() <= 0)
+        return vcnil;
+    if(!sql_is_initialized())
+        return vcnil;
+    vc pseudo = tox_pubkey_to_pseudo_uid(from_hex(pub_hex));
+    if(pseudo.is_nil())
+        return vcnil;
+    vc name = sql_get_tag_payload(to_hex(pseudo), "_tox_friend");
+    if(name.is_nil() || name.len() <= 0)
+        return vcnil;
+    return name;
+}
+
+// one entry per identity the group has published.
+// row layout: mid_hex, time, size, encrypted, name. name may be nil.
+vc
+tox_bridge_list_saves()
+{
+    vc out(VC_VECTOR);
+    if(!sql_is_initialized())
+        return out;
+    vc mids = sql_get_tagged_mids2("_tox_save");
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        vc mid = mids[i][0];
+        vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
+        if(win.num_elems() < 3)
+            continue;
+        vc row(VC_VECTOR);
+        row.append(mid);
+        row.append(win[0]);
+        row.append(vc((long)win[2].len()));
+        // the encryption probe needs the payload, and we already have the
+        // winning copy in hand, so answer it here rather than making every
+        // caller re-read the tag.
+        row.append(toxp_data_is_encrypted((const char *)win[2], (int)win[2].len()) ? 1 : 0);
+        row.append(tox_bridge_name_for_pubkey_hex(mid));
+        out.append(row);
+    }
+    return out;
+}
+
+// pull a field out of a summary map, as a plain string. note vc::find is
+// non-const, hence the by-value summary.
+static vc
+sum_get(vc sum, const char *key)
+{
+    vc out;
+    if(!sum.find(key, out))
+        return vcnil;
+    return out;
+}
+
+// one row of a diff: [kind, who, detail]
+//   kind   one of the diff_* codes below
+//   who    a friend pubkey hex, for the friend_* kinds; nil otherwise
+//   detail the alias involved, or the old/new value for a scalar change
+static vc
+make_diff(const char *kind, const vc &who, const vc &detail)
+{
+    vc row(VC_VECTOR);
+    row.append(vc(kind));
+    row.append(who);
+    row.append(detail);
+    return row;
+}
+
+// compare the save on disk against the group's published copy of the same
+// identity, and report what actually differs between them.
+//
+// this replaced a timestamp-based "which copy is newer" report, which was
+// noisy (toxcore rewrites connection state constantly) and undecidable for
+// password protected saves (a fresh random nonce on every write means the
+// bytes never match, and signing out rewrites the file without changing
+// anything). diffing the interpreted saves instead answers the question a
+// person actually has -- "is my friend list different?" -- and answers it
+// exactly, for password protected saves as well as plain ones.
+//
+// advisory only. nothing is read into a running instance and nothing is
+// written.
+//
+// returns nil if there is no save on disk. otherwise a 3 element vector:
+//   0: state       - one of the TOX_DIFF_* codes in toxbridge.h
+//   1: differences - vector of rows, each [kind, who, detail]. empty when
+//                    the state says they match.
+//   2: mid         - ascii hex pubkey, or nil when it couldn't be determined
+vc
+tox_bridge_compare_saves()
+{
+    if(!tox_bridge_save_exists())
+        return vcnil;
+    // the group half of the comparison needs the tag store, which isn't up
+    // until dwyco_init has run. the tox ui is reachable before that.
+    if(!sql_is_initialized())
+        return vcnil;
+    ensure_save_file();
+    DwString save_path = newfn(Save_file);
+    vc local_bytes = read_whole_file(save_path, TOX_SAVE_MAX_PUBLISH);
+    if(local_bytes.is_nil())
+        return vcnil;
+
+    // the pubkey the tag row is filed under. the file peek is tried first
+    // because it works while signed out; it refuses a password protected
+    // save, so fall back to the running instance, which knows its own pubkey
+    // once we're signed in. (see tox_bridge_peek_pubkey_from_file for why the
+    // peek doesn't just use the remembered password.)
+    vc pk;
+    if(!tox_bridge_peek_pubkey_from_file(0, NULL, 0, pk) || pk.is_nil())
+        pk = tox_bridge_get_pubkey();
+    vc mid = pk.is_nil() ? vcnil : to_hex(pk);
+
+    // the password we remember belongs to the identity on disk, so it is
+    // exactly what is needed to open both sides of this comparison. nil when
+    // signed out on an encrypted save, which is the one case we can't read.
+    const uint8_t *pw = Active_password;
+    int pw_len = Active_password_len;
+
+    vc local_sum;
+    int have_local = toxp_save_summary((const char *)local_bytes, (int)local_bytes.len(),
+                                      pw, pw_len, local_sum);
+
+    vc shared_bytes;
+    if(!mid.is_nil())
+    {
+        vc win = sql_get_tag_payload_ranked(mid, "_tox_save");
+        if(win.num_elems() >= 3)
+            shared_bytes = win[2];
+    }
+
+    vc shared_sum;
+    int have_shared = !shared_bytes.is_nil()
+                      && toxp_save_summary((const char *)shared_bytes,
+                                           (int)shared_bytes.len(), pw, pw_len,
+                                           shared_sum);
+
+    int state;
+    vc diffs(VC_VECTOR);
+    vc local_id, shared_id;
+    if(!have_local)
+    {
+        // can't read the save on disk. shouldn't happen (we just read the
+        // file), but don't claim a match if we couldn't parse it.
+        state = TOX_DIFF_UNREADABLE;
+    }
+    else if(mid.is_nil() || shared_bytes.is_nil())
+    {
+        // nothing published for this identity, so there is nothing to compare
+        // against. distinct from UNREADABLE: this is a normal state.
+        state = TOX_DIFF_NOT_SHARED;
+    }
+    else if(!have_shared)
+    {
+        // there is a published copy but we can't open it -- most likely a
+        // password protected save compared against a different password.
+        // say so rather than guessing at a difference we can't see.
+        state = TOX_DIFF_UNREADABLE;
+    }
+    // the two summaries must describe the same identity, or a diff between
+    // them would be meaningless.
+    else if((local_id = sum_get(local_sum, "pubkey")).is_nil()
+            || (shared_id = sum_get(shared_sum, "pubkey")).is_nil()
+            || local_id != shared_id)
+    {
+        // different identities entirely. shouldn't be reachable via the tag
+        // mid, and tox_bridge_select_save refuses such a payload, but a
+        // report that compared two different tox-ids would be nonsense.
+        state = TOX_DIFF_DIFFERENT_ID;
+    }
+    else
+    {
+        // profile fields first, then the friend list, since those read more
+        // naturally in that order to a person.
+        static const char *scalar_fields[] = {"name", "status", "nospam"};
+        for(int i = 0; i < 3; ++i)
+        {
+            vc a = sum_get(local_sum, scalar_fields[i]);
+            vc b = sum_get(shared_sum, scalar_fields[i]);
+            if(a.is_nil() || b.is_nil())
+                continue;
+            if(a != b)
+            {
+                const char *kind = "name_changed";
+                if(i == 1)
+                    kind = "status_changed";
+                else if(i == 2)
+                    kind = "nospam_changed";
+                // report this device's value; the ui can say what changed if
+                // it wants the other one too.
+                diffs.append(make_diff(kind, vcnil, a));
+            }
+        }
+
+        // whether each copy is password protected is part of "which save is
+        // this" from the user's point of view, and they can disagree: one
+        // device can add or remove a password and publish without the other
+        // noticing, which matters when the next device tries to sign in.
+        vc le = sum_get(local_sum, "encrypted");
+        vc se = sum_get(shared_sum, "encrypted");
+        if(!le.is_nil() && !se.is_nil() && le != se)
+            diffs.append(make_diff("password_changed", vcnil, le));
+
+        // friend list. both sides are sorted by pubkey and have no
+        // duplicates, so a single merge walk finds every addition, removal
+        // and rename in one pass.
+        vc lf = sum_get(local_sum, "friends");
+        vc sf = sum_get(shared_sum, "friends");
+        if(!lf.is_nil() && !sf.is_nil())
+        {
+            int i = 0, j = 0;
+            int ln = lf.num_elems();
+            int sn = sf.num_elems();
+            while(i < ln || j < sn)
+            {
+                int c;
+                if(i >= ln)
+                    c = 1;
+                else if(j >= sn)
+                    c = -1;
+                else
+                {
+                    vc lp, sp;
+                    lf[i].find("pubkey", lp);
+                    sf[j].find("pubkey", sp);
+                    c = strcmp((const char *)lp, (const char *)sp);
+                }
+
+                if(c < 0)
+                {
+                    // here but not in the shared copy
+                    vc pk2, al;
+                    lf[i].find("pubkey", pk2);
+                    lf[i].find("alias", al);
+                    diffs.append(make_diff("friend_added", pk2, al));
+                    ++i;
+                }
+                else if(c > 0)
+                {
+                    // in the shared copy but not here
+                    vc pk2, al;
+                    sf[j].find("pubkey", pk2);
+                    sf[j].find("alias", al);
+                    diffs.append(make_diff("friend_removed", pk2, al));
+                    ++j;
+                }
+                else
+                {
+                    vc la, sa;
+                    lf[i].find("alias", la);
+                    sf[j].find("alias", sa);
+                    if(!la.is_nil() && !sa.is_nil() && la != sa)
+                    {
+                        vc pk2;
+                        lf[i].find("pubkey", pk2);
+                        diffs.append(make_diff("friend_renamed", pk2, la));
+                    }
+                    ++i;
+                    ++j;
+                }
+            }
+        }
+
+        state = diffs.num_elems() == 0 ? TOX_DIFF_SAME : TOX_DIFF_DIFFERENT;
+    }
+
+    vc ret(VC_VECTOR);
+    ret.append(vc((long)state));
+    ret.append(diffs);
+    ret.append(mid);
+    return ret;
+}
+
+// who currently owns the identity with the given hex pubkey, as a 1 element
+// vector holding hex(uid), or nil if nobody has claimed it.
+vc
+tox_bridge_claimant(const vc &pub_hex)
+{
+    if(pub_hex.is_nil() || pub_hex.len() <= 0)
+        return vcnil;
+    vc win = sql_get_tag_payload_ranked(pub_hex, "_tox_active");
+    if(win.num_elems() < 3)
+        return vcnil;
+    return win[2];
+}
+
+// adopt a published save as the identity this device will run, by writing the
+// bytes to the save file. leaves tox stopped: the caller is expected to leave
+// the ui in the "loaded, not signed in" state so the user signs in explicitly,
+// which is what actually publishes the '_tox_active' claim.
+int
+tox_bridge_select_save(const vc &mid_hex, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!sql_is_initialized())
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+    vc win = sql_get_tag_payload_ranked(mid_hex, "_tox_save");
+    if(win.num_elems() < 3)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no such synced identity");
+        return 0;
+    }
+    vc bytes = win[2];
+
+    // the mid is hex(pubkey) by construction (see save_tag_mid), so the payload
+    // filed under it is supposed to hold that same identity. verify rather than
+    // assume: adopting is the one path that replaces the save file, so a
+    // payload filed under the wrong mid -- a buggy publisher, or a group member
+    // that just got it wrong -- would otherwise silently hand this device
+    // somebody else's identity while the ui says it took the one that was
+    // picked. refuse instead.
+    //
+    // compare the decoded bytes rather than the hex text, so a differently
+    // cased mid_hex coming back from the ui still matches.
+    vc want_pk = from_hex(mid_hex);
+    if(want_pk.is_nil() || want_pk.len() <= 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "malformed identity id");
+        return 0;
+    }
+    // note: an encrypted payload is toxencryptsave-wrapped, so its pubkey can't
+    // be read without the password we don't have here. the check is skipped in
+    // that case, and the identity only gets verified once the user actually
+    // unlocks it. everything else has to match.
+    if(!toxp_data_is_encrypted((const char *)bytes, (int)bytes.len()))
+    {
+        vc got_pk;
+        if(!tox_bridge_peek_pubkey_from_bytes(bytes, got_pk))
+        {
+            snprintf(err_buf, (size_t)err_buf_len, "synced identity could not be read");
+            return 0;
+        }
+        if(got_pk != want_pk)
+        {
+            GRTLOG("tox: refusing to adopt payload filed under a mismatched mid", 0, 0);
+            snprintf(err_buf, (size_t)err_buf_len,
+                     "synced identity does not match the id it is filed under");
+            return 0;
+        }
+    }
+
+    // back up whatever identity is currently on disk. note this can be called
+    // before tox has ever been started (eg. adopting a shared identity as the
+    // very first thing the user does), so don't rely on tox_bridge_init having
+    // set Save_file -- newfn("") panics.
+    ensure_save_file();
+    DwString save_path = newfn(Save_file);
+    DwString backup_path;
+    int have_backup = 0;
+    if(file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up current identity to %s", backup_path.c_str(), 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+    if(!write_save_bytes(bytes))
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        snprintf(err_buf, (size_t)err_buf_len, "could not write identity file");
+        return 0;
+    }
+    // the remembered password belongs to the identity we just replaced, not to
+    // the one now on disk. drop it, otherwise tox_bridge_init hands it to
+    // toxp_init as the candidate password for the new identity, and any save
+    // that happens to share a password unlocks without the user being asked.
+    // cleared unconditionally: for an unencrypted save toxp_init ignores it
+    // anyway, so there's nothing to preserve and no reason to branch.
+set_active_password(NULL, 0);
+Needs_password = 0;
+set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+GRTLOG("tox bridge: selected synced identity (tox left stopped)", 0, 0);
+return 1;
+}
+
+// remove a shared identity from every group member's list of shared
+// identities. any client may do this; there is no ownership check.
+//
+// the delete goes through the normal crdt machinery: sql_remove_mid_tag
+// drops the rows, the pgmt_clean trigger drops the payloads, and the dgmt
+// trigger tombstones the guids and queues a 'd' update for every connected
+// peer. peers that are offline pick the tombstone up from the index dump
+// (or the delta's guid-only deletes) when they reconnect. receivers only
+// tombstone, so the save is hidden from every read but the bytes stay in
+// their tags.sql until a full index import or the startup orphan sweep.
+//
+// this is a one shot removal. it does NOT change any client's tox state --
+// nobody is signed out, and a device still signed in with this identity can
+// publish it again, which creates a fresh (untombstoned) tag row.
+int
+tox_bridge_depublish_save(const vc &mid_hex)
+{
+    if(mid_hex.is_nil() || mid_hex.len() <= 0)
+        return 0;
+    if(!sql_is_initialized())
+        return 0;
+    if(!sql_mid_has_tag(mid_hex, "_tox_save"))
+        return 0;
+    try
+    {
+        qmsgsql::sql_start_transaction();
+        // the claim goes first, so the state peers observe while this is in
+        // flight is "listed but nobody using it" rather than "invisible but
+        // still claimed". both tags describe the same identity, so clearing
+        // both leaves nothing stale behind.
+        sql_remove_mid_tag(mid_hex, "_tox_active");
+        sql_remove_mid_tag(mid_hex, "_tox_save");
+        qmsgsql::sql_commit_transaction();
+    }
+    catch(...)
+    {
+        qmsgsql::sql_rollback_transaction();
+        return 0;
+    }
+    GRTLOG("tox bridge: unpublished shared identity", 0, 0);
+    return 1;
+}
+
+// the sign-in path.
+//
+// note there is deliberately NO reconcile against the group's published copy
+// of this identity here. signing in runs exactly the bytes in the save file,
+// and nothing else. a published '_tox_save' payload is only ever adopted
+// through tox_bridge_select_save, which the user asks for. this is what makes
+// "the identity this device is running is the one on disk" true by
+// construction: no automatic path can swap the save out from under a running
+// sign-in, so a stale device coming back from offline runs its own copy
+// rather than silently adopting (or silently having adopted) someone else's.
+int
+tox_bridge_init(const char *save_file)
+{
+    if(Started)
+        return 1;
+
+    Save_file = save_file ? save_file : TOX_SAVE_FILE_DEFAULT;
+    Needs_password = 0;
+    int status = TOXP_STATUS_FAILED;
+    Tox_plugin = toxp_init(Save_file.c_str(), Active_password, Active_password_len,
+                           on_tox_event, NULL, &status);
+    if(!Tox_plugin)
+    {
+        if(status == TOXP_STATUS_NEEDS_PASSWORD)
+            Needs_password = 1;
+        return 0;
+    }
+    Started = 1;
+
+    if(!Tox_q)
+    {
+        Tox_q = new ToxQueue;
+        if(!Tox_q->init())
+        {
+            delete Tox_q;
+            Tox_q = 0;
+        }
+    }
+    if(Tox_q)
+        Tox_q->recover_inprogress();
+    tox_bridge_cleanup_incomplete();
+tox_bridge_rebuild_friend_cache();
+vc self_pseudo = self_tox_pseudo();
+if(!self_pseudo.is_nil())
+{
+    tox_uid_tag_add(self_pseudo);
+    set_settings_value("tox/self_pseudo", self_pseudo);
+    set_settings_value("tox/self_name", tox_bridge_get_name());
+}
+safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
+    backfill_tox_mid_tags();
+    publish_active_claim();
+    // note: the identity is *not* published here. sharing is something the
+    // user asks for explicitly (see tox_bridge_publish_save), so signing in
+    // only claims the identity.
+    GRTLOG("tox bridge: initialized", 0, 0);
+    return 1;
+}
+
+void
+tox_bridge_shutdown()
+{
+    if(!Started)
+        return;
+
+    // clean up incoming file transfers
+    for(std::map<DwString, IncomingFileTransfer>::iterator it = Incoming_xfers.begin();
+        it != Incoming_xfers.end(); ++it)
+    {
+        if(it->second.fd >= 0)
+            close(it->second.fd);
+    }
+    Incoming_xfers.clear();
+    Incoming_avatars.clear();
+
+    // clean up outgoing file transfers
+    for(std::map<DwString, OutgoingFileTransfer>::iterator it = Outgoing_xfers.begin();
+        it != Outgoing_xfers.end(); ++it)
+    {
+        if(it->second.fd >= 0)
+            close(it->second.fd);
+    }
+    Outgoing_xfers.clear();
+    Outgoing_avatars.clear();
+
+    if(Tox_q) {
+        Tox_q->exit();
+        delete Tox_q;
+        Tox_q = 0;
+    }
+
+    if(Tox_plugin) {
+        // note: the identity is deliberately not published here. sharing is
+        // something the user asks for explicitly, so signing out just leaves
+        // whatever the group already has.
+        toxp_save(Tox_plugin);
+        toxp_shutdown(Tox_plugin);
+        Tox_plugin = 0;
+    }
+    Started = 0;
+    GRTLOG("tox bridge: shutdown", 0, 0);
+}
+
+int
+tox_bridge_needs_password()
+{
+    return Needs_password;
+}
+
+int
+tox_bridge_unlock(const uint8_t *pw, int pw_len)
+{
+    if(Started)
+        return 1;
+    set_active_password(pw, pw_len);
+    return tox_bridge_init(Save_file.c_str());
+}
+
+int
+tox_bridge_has_password()
+{
+    return toxp_has_password(Tox_plugin);
+}
+
+int
+tox_bridge_set_password(const uint8_t *pw, int pw_len)
+{
+    if(!Tox_plugin)
+        return 0;
+    if(!toxp_set_password(Tox_plugin, pw, pw_len))
+        return 0;
+    set_active_password(pw, pw_len);
+    return 1;
+}
+
+int
+tox_bridge_check_password(const uint8_t *pw, int pw_len)
+{
+    if(Save_file.length() == 0)
+        return 0;
+    return toxp_check_password(dwyco::newfn(Save_file).c_str(), pw, pw_len);
+}
+
+int
+tox_bridge_file_is_encrypted(const char *path)
+{
+    return toxp_file_is_encrypted(path);
+}
+
+int
+tox_bridge_export_profile(const char *dst_path, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!dst_path || !dst_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no destination file");
+        return 0;
+    }
+    if(Tox_plugin)
+        return toxp_export_to_file(Tox_plugin, dst_path, err_buf, err_buf_len);
+    // tox is not running: export the on-disk save as-is (preserving its
+    // encryption state). this lets an encrypted profile be exported without
+    // first entering its password. note the save file may not have been
+    // resolved yet if tox has never been started in this session.
+    ensure_save_file();
+    DwString src = newfn(Save_file);
+    if(!file_exists(src))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no tox save to export");
+        return 0;
+    }
+    if(!copy_file(src, DwString(dst_path)))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "could not copy the tox save to %s", dst_path);
+        return 0;
+    }
+    return 1;
+}
+
+int
+tox_bridge_load_from_file(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                          int make_backup, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!src_path || !src_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "cannot open %s", src_path ? src_path : "");
+        return 0;
+    }
+
+    // drop the outgoing identity's password up front, before anything can
+    // fail. src_pw is the *incoming* save's password; the one in memory is
+    // stale the moment the user chooses to switch identities. clearing here
+    // means every early return below leaves nothing behind, so a failed import
+    // can't leave a password that a later identity switch would silently
+    // reuse. the cost is that a failed import makes the user retype.
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+
+    uint8_t *data = NULL;
+    size_t len = 0;
+    if(!toxp_import_prepare(src_path, src_pw, src_pw_len, &data, &len,
+                            err_buf, err_buf_len))
+    {
+        GRTLOG("tox: load prepare failed: %s", err_buf, 0);
+        return 0;
+    }
+    ensure_save_file();
+    DwString save_path = newfn(Save_file);
+    DwString backup_path;
+    int have_backup = 0;
+    if(make_backup && file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up profile to %s", backup_path.c_str(), 0);
+        }
+        else
+        {
+            GRTLOG("tox: backup failed, continuing without backup", 0, 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+
+    int ret = toxp_import_commit(Save_file.c_str(), data, len,
+                                 src_pw, src_pw_len,
+                                 err_buf, err_buf_len);
+    free(data);
+    if(!ret)
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        return 0;
+    }
+    // only now, with the imported save actually on disk, is it safe to
+    // remember a password for it. the imported save keeps its own encryption
+    // state, so an empty src_pw stores nothing and an encrypted one lets the
+    // caller's immediate sign in proceed without a second prompt.
+set_active_password(src_pw, src_pw_len);
+set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+GRTLOG("tox bridge: loaded profile from file", 0, 0);
+return 1;
+}
+
+int
+tox_bridge_load_from_bytes(const vc &save_bytes, int make_backup,
+                           char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(save_bytes.is_nil() || save_bytes.len() <= 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "empty save bytes");
+        return 0;
+    }
+
+    if(!toxp_validate_save((const uint8_t *)(const char *)save_bytes, (size_t)save_bytes.len()))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "not a valid tox save file");
+        return 0;
+    }
+
+    ensure_save_file();
+    DwString save_path = newfn(Save_file);
+    DwString backup_path;
+    int have_backup = 0;
+    if(make_backup && file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(copy_file(save_path, backup_path))
+        {
+            have_backup = 1;
+            GRTLOG("tox: backed up profile to %s", backup_path.c_str(), 0);
+        }
+        else
+        {
+            GRTLOG("tox: backup failed, continuing without backup", 0, 0);
+        }
+    }
+
+    tox_bridge_shutdown();
+
+    // write bytes as-is, preserving whatever encryption state they already have
+    if(!write_save_bytes(save_bytes))
+    {
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        snprintf(err_buf, (size_t)err_buf_len, "write failed");
+        return 0;
+    }
+    // the password in memory belonged to the identity we just replaced. these
+    // bytes carry their own encryption state and the caller supplied no
+    // password, so there is nothing to preserve: clear it so the next sign in
+    // has to ask rather than trying the previous identity's password.
+set_active_password(NULL, 0);
+Needs_password = 0;
+set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+GRTLOG("tox bridge: loaded profile from bytes, %d bytes", (int)save_bytes.len(), 0);
+    return 1;
+}
+
+int
+tox_bridge_peek_pubkey_from_file(const char *path, const uint8_t *pw, int pw_len,
+                                 vc &pubkey_out)
+{
+    if(path && path[0])
+    {
+        uint8_t *data = NULL;
+        size_t len = 0;
+        if(!toxp_import_prepare(path, pw, pw_len, &data, &len, NULL, 0))
+            return 0;
+        int ret = toxp_get_pubkey_from_save(data, len, pubkey_out);
+        free(data);
+        return ret;
+    }
+
+    if(!tox_bridge_save_exists())
+        return 0;
+    ensure_save_file();
+    vc bytes = read_whole_file(newfn(Save_file), TOX_SAVE_MAX_PUBLISH);
+    if(bytes.is_nil())
+        return 0;
+    // note: an encrypted save on disk is toxencryptsave-wrapped, not a plain
+    // tox save, so handing it to tox_new below would just fail. say so
+    // explicitly instead -- the caller shows "Password protected" and the user
+    // types the password. we deliberately do not peek with the remembered
+    // active password here: deriving the key is deliberately expensive
+    // (scrypt) and this runs on ui refreshes.
+    //
+    // callers that need a pubkey for an encrypted save while tox is stopped
+    // can't get one, but they can ask tox_bridge_get_pubkey() once signed in.
+    // see tox_bridge_sync_status for the pattern.
+    if(toxp_data_is_encrypted((const char *)bytes, (int)bytes.len()))
+        return 0;
+    return tox_bridge_peek_pubkey_from_bytes(bytes, pubkey_out);
+}
+
+int
+tox_bridge_peek_pubkey_from_bytes(const vc &bytes, vc &pubkey_out)
+{
+    if(bytes.is_nil() || bytes.len() <= 0)
+        return 0;
+    return toxp_get_pubkey_from_save((const uint8_t *)(const char *)bytes,
+                                     (size_t)bytes.len(), pubkey_out);
+}
+
+int
+tox_bridge_reset_identity(char *err_buf, int err_buf_len)
+{
+    if(err_buf && err_buf_len > 0)
+        err_buf[0] = 0;
+    if(Save_file.length() == 0)
+        Save_file = TOX_SAVE_FILE_DEFAULT;
+
+    // shutting down first saves any in-memory state to the save file so the
+    // backup below captures the most recent profile.
+    tox_bridge_shutdown();
+
+    DwString save_path = newfn(Save_file);
+    DwString backup_path;
+    int have_backup = 0;
+    if(file_exists(save_path))
+    {
+        backup_path = backup_path_for_save(save_path);
+        if(!copy_file(save_path, backup_path))
+        {
+            if(err_buf && err_buf_len > 0)
+                snprintf(err_buf, (size_t)err_buf_len,
+                         "could not back up the current profile to %s", backup_path.c_str());
+            GRTLOG("tox: reset backup failed to %s", backup_path.c_str(), 0);
+            return 0;
+        }
+        have_backup = 1;
+        GRTLOG("tox: reset backed up profile to %s", backup_path.c_str(), 0);
+        remove(save_path.c_str());
+        GRTLOG("tox: reset removed old save file", 0, 0);
+    }
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+
+    if(!tox_bridge_init(Save_file.c_str()))
+    {
+        GRTLOG("tox: reset re-init failed, restoring backup", 0, 0);
+        // note: the restored backup keeps whatever encryption it had, but the
+        // password we cleared above is not restored with it. that is
+        // deliberate -- fail closed. the user gets asked for the password
+        // again rather than the bridge unlocking an identity the user did not
+        // just choose.
+        if(have_backup)
+            copy_file(backup_path, save_path);
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "could not create a new Tox identity");
+        return 0;
+    }
+    return 1;
+}
+
+int
+tox_bridge_factory_reset(char *err_buf, int err_buf_len)
+{
+    if(err_buf && err_buf_len > 0)
+        err_buf[0] = 0;
+    if(Save_file.length() == 0)
+    {
+        if(err_buf && err_buf_len > 0)
+            snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+
+    // shut down first so any running instance is stopped cleanly (it saves
+    // its in-memory state to the save file before removal, but that is fine:
+    // we are deleting the save anyway).
+    tox_bridge_shutdown();
+
+    DwString save_path = newfn(Save_file);
+    if(file_exists(save_path))
+    {
+        remove(save_path.c_str());
+        GRTLOG("tox: factory reset removed save file", 0, 0);
+    }
+    set_active_password(NULL, 0);
+    Needs_password = 0;
+    set_settings_value("tox/self_pseudo", vc(VC_BSTRING, "", 0));
+    set_settings_value("tox/self_name", vc(VC_BSTRING, "", 0));
+
+    // intentionally do NOT re-initialize: this restores the first-run state
+    // where no tox save exists yet.
+    return 1;
+}
+
+int
+tox_bridge_save_exists()
+{
+    const char *sf = Save_file.length() ? Save_file.c_str() : TOX_SAVE_FILE_DEFAULT;
+    return file_exists(newfn(sf)) ? 1 : 0;
+}
+
+int
+tox_bridge_save_is_encrypted()
+{
+    const char *sf = Save_file.length() ? Save_file.c_str() : TOX_SAVE_FILE_DEFAULT;
+    return tox_bridge_file_is_encrypted(newfn(sf).c_str());
+}
+
+int
+tox_bridge_set_file_password(const uint8_t *old_pw, int old_pw_len,
+                             const uint8_t *new_pw, int new_pw_len,
+                             char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(Save_file.length() == 0)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not initialized");
+        return 0;
+    }
+    if(Started)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "sign out of tox before changing encryption");
+        return 0;
+    }
+    DwString save_path = newfn(Save_file);
+    if(!file_exists(save_path))
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no tox save to change");
+        return 0;
+    }
+    int ret = toxp_set_password_on_file(save_path.c_str(), old_pw, old_pw_len,
+                                        new_pw, new_pw_len, err_buf, err_buf_len);
+    if(ret)
+    {
+        // the on-disk encryption changed underneath the running system, so
+        // drop any remembered password to avoid stale state later.
+        set_active_password(NULL, 0);
+        Needs_password = 0;
+    }
+    return ret ? 1 : 0;
+}
+
+void
+tox_bridge_cleanup_incomplete()
+{
+    DwString pat = newfn("*.tmp");
+    FindVec fv(pat);
+    for(int i = 0; i < fv.num_elems(); ++i)
+    {
+        const WIN32_FIND_DATA &d = *fv[i];
+        DwString full = newfn(d.cFileName);
+        DeleteFile(full.c_str());
+        GRTLOG("tox: cleaned orphaned temp file %s", d.cFileName, 0);
+    }
+}
+
+int
+tox_bridge_is_active()
+{
+    return Started;
+}
+
+vc
+tox_queue_get_qd_msgs(const vc &pseudo_uid)
+{
+    if(!Tox_q)
+        return vc(VC_VECTOR);
+    return Tox_q->get_qd_msgs(pseudo_uid);
+}
+
+vc
+tox_queue_load_qd_body(const vc &local_mid)
+{
+    if(!Tox_q)
+        return vcnil;
+    return Tox_q->load_qd_body(local_mid);
+}
+
+int
+tox_queue_is_failed(const char *local_mid, int len)
+{
+    if(!Tox_q)
+        return 0;
+    vc pid(VC_BSTRING, local_mid, len);
+    vc res = Tox_q->sql_simple("SELECT status FROM tox_outbox WHERE local_mid=?1", pid);
+    if(res.is_nil() || res.num_elems() == 0)
+        return 0;
+    int status = (int)(long long)res[0][0];
+    return status == 3 ? 1 : 0;
+}
+
+void
+tox_bridge_poll()
+{
+    if(!Started || !Tox_plugin)
+        return;
+
+    toxp_iterate(Tox_plugin);
+
+    // if another device signed in with the identity we're running, stand
+    // down. this shuts tox down, so check before doing any more work.
+    tox_bridge_check_active_conflict();
+    if(!Started || !Tox_plugin)
+        return;
+
+    // reset stale in-progress text-only messages so they get retried
+    // (handles lost read receipts). file transfers are one-shot and must
+    // not be retried.
+    if(Tox_q)
+        Tox_q->sql_simple("UPDATE tox_outbox SET status=0 "
+                           "WHERE status=1 AND (has_file IS NULL OR has_file = 0) "
+                           "AND created_at < strftime('%s','now') - 30");
+
+    tox_bridge_send_queued();
+}
+
+vc
+tox_bridge_get_address()
+{
+    if(!Tox_plugin)
+        return vcnil;
+    vc result = toxp_get_address(Tox_plugin);
+    vc addr;
+    if(!result.find("address", addr))
+        return vcnil;
+    return addr;
+}
+
+vc
+tox_bridge_get_name()
+{
+    if(!Tox_plugin)
+        return vcnil;
+    vc result = toxp_get_name(Tox_plugin);
+    vc name;
+    if(!result.find("name", name))
+        return vcnil;
+    return name;
+}
+
+vc
+tox_bridge_get_status_message()
+{
+    if(!Tox_plugin)
+        return vcnil;
+    vc result = toxp_get_status_message(Tox_plugin);
+    vc msg;
+    if(!result.find("status_message", msg))
+        return vcnil;
+    return msg;
+}
+
+vc
+tox_bridge_get_pubkey()
+{
+    if(!Tox_plugin)
+        return vcnil;
+    vc result = toxp_get_self_pubkey(Tox_plugin);
+    vc pk;
+    if(!result.find("pubkey", pk))
+        return vcnil;
+    return pk;
+}
+
+int
+tox_bridge_friend_add(const vc &address, const vc &message)
+{
+    if(!Tox_plugin)
+        return 0;
+    uint32_t fn;
+    if(toxp_friend_add(Tox_plugin, address, message, &fn))
+    {
+        vc pubkey((const char *)address, 32);
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        vc name = toxp_friend_get_name(Tox_plugin, fn);
+        if(name.is_nil() || name == vc(""))
+        {
+            vc old;
+            if(Session_infos.find(pseudo, old) && old.num_elems() > QIR_HANDLE)
+                name = old[QIR_HANDLE];
+        }
+        if(!name.is_nil() && name != vc(""))
+        {
+            Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+int
+tox_bridge_friend_add_norequest(const vc &pubkey)
+{
+    if(!Tox_plugin)
+        return 0;
+    uint32_t fn;
+    if(toxp_friend_add_norequest(Tox_plugin, pubkey, &fn))
+    {
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        vc name = toxp_friend_get_name(Tox_plugin, fn);
+        if(name.is_nil() || name == vc(""))
+        {
+            vc old;
+            if(Session_infos.find(pseudo, old) && old.num_elems() > QIR_HANDLE)
+                name = old[QIR_HANDLE];
+        }
+        if(!name.is_nil() && name != vc(""))
+        {
+            Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+            safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+int
+tox_bridge_friend_delete(uint32_t friend_number)
+{
+    if(!Tox_plugin)
+        return 0;
+    return toxp_friend_delete(Tox_plugin, friend_number);
+}
+
+int
+tox_bridge_friend_delete_by_pubkey(const vc &pubkey)
+{
+    vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo, &fn))
+        return 0;
+    return tox_bridge_friend_delete(fn);
+}
+
+int
+tox_bridge_friend_delete_by_uid(const vc &pseudo_uid)
+{
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    return tox_bridge_friend_delete(fn);
+}
+
+int
+tox_bridge_send_message(uint32_t friend_number, const vc &text, int is_action, uint32_t *mid_out, int *tox_error_out)
+{
+    if(!Tox_plugin)
+        return -1;
+    uint32_t mid = 0;
+    int tox_err = 0;
+    int ret = toxp_message_send(Tox_plugin, friend_number, text, is_action, &mid, &tox_err);
+    if(ret == 0 && tox_err != 0)
+    {
+        if(tox_error_out)
+            *tox_error_out = tox_err;
+        return 0;
+    }
+    if(ret == 1 && mid_out)
+        *mid_out = mid;
+    return ret;
+}
+
+int
+tox_bridge_file_send(uint32_t friend_number, const vc &name, uint64_t size)
+{
+    if(!Tox_plugin)
+        return 0;
+    uint32_t fnum;
+    return toxp_file_send(Tox_plugin, friend_number, name, size, &fnum);
+}
+
+int
+tox_bridge_file_send_data(uint32_t friend_number, uint32_t file_number,
+                          uint64_t pos, const vc &data)
+{
+    if(!Tox_plugin)
+        return 0;
+    return toxp_file_send_data(Tox_plugin, friend_number, file_number, pos, data);
+}
+
+int
+tox_bridge_file_accept(uint32_t friend_number, uint32_t file_number)
+{
+    if(!Tox_plugin)
+        return 0;
+    return toxp_file_accept(Tox_plugin, friend_number, file_number, 0);
+}
+
+int
+tox_bridge_get_avatar(const vc &pseudo_uid, vc &avatar_data_out)
+{
+    if(!Tox_q)
+        return 0;
+    avatar_data_out = Tox_q->load_tox_avatar(pseudo_uid);
+    return !avatar_data_out.is_nil();
+}
+
+int
+tox_bridge_set_avatar(const vc &avatar_data)
+{
+    if(!Tox_plugin || !Tox_q)
+        return 0;
+    if(avatar_data.is_nil())
+        return 0;
+    int len = avatar_data.len();
+    if(len == 0 || (uint64_t)len > TOX_AVATAR_MAX_SIZE)
+        return 0;
+
+    vc hash;
+    if(!toxp_avatar_hash(Tox_plugin, avatar_data, hash))
+        return 0;
+
+    int stored = 0;
+
+    vc pseudo = self_tox_pseudo();
+    if(!pseudo.is_nil())
+        if(Tox_q->save_tox_avatar(pseudo, avatar_data, hash))
+            stored = 1;
+    if(!stored)
+        return 0;
+
+    se_emit(SE_TOX_AVATAR, pseudo);
+
+    DwString data((const char *)avatar_data, avatar_data.len());
+    send_avatar_to_friends(hash, data, (uint64_t)len);
+    GRTLOG("tox: avatar set size=%d", len, 0);
+    return 1;
+}
+
+void
+tox_bridge_clear_avatar()
+{
+    if(!Tox_plugin || !Tox_q)
+        return;
+
+    vc pseudo = self_tox_pseudo();
+    if(!pseudo.is_nil())
+        Tox_q->delete_tox_avatar(pseudo);
+
+    se_emit(SE_TOX_AVATAR, pseudo);
+
+    // empty data + size 0 signals avatar removal
+    vc hash;
+    if(!toxp_avatar_hash(Tox_plugin, vc(""), hash))
+    {
+        static const char zero_hash[32] = {0};
+        hash = vc(VC_BSTRING, zero_hash, 32);
+    }
+    send_avatar_to_friends(hash, DwString(), 0);
+    GRTLOG("tox: avatar cleared", 0, 0);
+}
+
+int
+tox_pseudo_uid_to_friend_number(const vc &pseudo_uid, uint32_t *fn_out)
+{
+    if(Friend_cache.is_nil())
+        tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return 0;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc pubkey;
+        if(entry.find("pubkey", pubkey))
+        {
+            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+            if(pseudo == pseudo_uid)
+            {
+                vc fnum;
+                if(entry.find("friend_number", fnum) && fnum.type() == VC_INT)
+                {
+                    if(fn_out)
+                        *fn_out = (uint32_t)(int)fnum;
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int
+tox_friend_number_to_pseudo_uid(uint32_t fn, vc &pseudo_uid_out)
+{
+    if(Friend_cache.is_nil())
+        tox_bridge_rebuild_friend_cache();
+    if(Friend_cache.is_nil())
+        return 0;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc fnum;
+        if(entry.find("friend_number", fnum) && fnum == vc((int)fn))
+        {
+            vc pubkey;
+            if(entry.find("pubkey", pubkey))
+                pseudo_uid_out = tox_pubkey_to_pseudo_uid(pubkey);
+            else
+                return 0;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+void
+tox_bridge_rebuild_friend_cache()
+{
+    if(!Tox_plugin)
+    {
+        Friend_cache = vcnil;
+        return;
+    }
+    vc result = toxp_friend_list(Tox_plugin);
+    vc fl;
+    if(result.find("friends", fl) && fl.type() == VC_VECTOR)
+    {
+        Friend_cache = fl;
+        int n = Friend_cache.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            vc entry = Friend_cache[i];
+            vc pubkey;
+            if(entry.find("pubkey", pubkey))
+                tox_uid_tag_add(tox_pubkey_to_pseudo_uid(pubkey));
+        }
+        for(int i = 0; i < n; ++i)
+        {
+            vc entry = Friend_cache[i];
+            vc pubkey;
+            vc name;
+            if(entry.find("pubkey", pubkey) && entry.find("name", name) && !name.is_nil() && name != vc(""))
+            {
+                vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+                Session_infos.add_kv(pseudo, make_tox_info_vec(pseudo, name));
+                safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
+            }
+        }
+        GRTLOG("tox bridge: rebuilt friend cache, count=%d", Friend_cache.num_elems(), 0);
+    }
+}
+
+int
+tox_bridge_is_tox_uid(const vc &uid)
+{
+    vc self_pseudo = self_tox_pseudo();
+    if(!self_pseudo.is_nil() && uid == self_pseudo)
+        return 1;
+    if(sql_is_initialized())
+        return sql_mid_has_tag(to_hex(uid), "_tox") ? 1 : 0;
+    if(Friend_cache.is_nil())
+        return 0;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc entry = Friend_cache[i];
+        vc pubkey;
+        if(entry.find("pubkey", pubkey))
+        {
+            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+            if(pseudo == uid)
+                return 1;
+        }
+    }
+    return 0;
+}
+
+int
+tox_bridge_get_self_public_key(char **out, int *len_out)
+{
+    vc pk = tox_bridge_get_pubkey();
+    if(pk.is_nil())
+        return 0;
+    if(out)
+    {
+        *out = new char[pk.len()];
+        memcpy(*out, (const char *)pk, pk.len());
+    }
+    if(len_out)
+        *len_out = pk.len();
+    return 1;
+}
+
+vc
+tox_bridge_get_friend_list_vc()
+{
+    if(Friend_cache.is_nil())
+        tox_bridge_rebuild_friend_cache();
+    return Friend_cache;
+}
+
+int
+tox_bridge_set_typing(uint32_t friend_number, int typing)
+{
+    if(!Tox_plugin)
+        return 0;
+    return toxp_typing_set(Tox_plugin, friend_number, typing);
+}
+
+int
+tox_bridge_set_typing_by_uid(const vc &pseudo_uid, int typing)
+{
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    return tox_bridge_set_typing(fn, typing);
+}
+
+int
+tox_bridge_set_name(const char *name, int name_len)
+{
+    if(!Tox_plugin)
+        return 0;
+    int ret = toxp_set_name(Tox_plugin, name, name_len);
+    if(ret)
+        set_settings_value("tox/self_name", vc(VC_BSTRING, name, name_len));
+    return ret;
+}
+
+int
+tox_bridge_set_status_message(const char *msg, int msg_len)
+{
+    if(!Tox_plugin)
+        return 0;
+    return toxp_set_status_message(Tox_plugin, msg, msg_len);
+}
+
+int
+tox_bridge_set_user_status(const char *status)
+{
+    if(!Tox_plugin)
+        return 0;
+    toxp_set_user_status(Tox_plugin, status);
+    return 1;
+}
+
+vc
+tox_bridge_get_user_status()
+{
+    if(!Tox_plugin)
+        return vcnil;
+    vc result = toxp_get_user_status(Tox_plugin);
+    vc status;
+    if(!result.find("status", status))
+        return vcnil;
+    return status;
+}
+
+// --- ToxQueue implementation ---
+
+ToxQueue::ToxQueue() : SimpleSql("tox.sql") {}
+
+void
+ToxQueue::init_schema(const DwString&)
+{
+    sql_simple("CREATE TABLE IF NOT EXISTS tox_outbox ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "qqm_blob BLOB, "
+               "recipient_pseudo TEXT, "
+               "status INTEGER DEFAULT 0, "
+               "tox_mid INTEGER, "
+               "local_mid TEXT, "
+               "has_file INTEGER DEFAULT 0, "
+               "created_at INTEGER DEFAULT (strftime('%s','now')))");
+    sql_simple("CREATE TABLE IF NOT EXISTS tox_avatars ("
+               "uid         TEXT PRIMARY KEY, "
+               "avatar_data BLOB, "
+               "avatar_hash BLOB, "
+               "time        INTEGER DEFAULT (strftime('%s','now')))");
+    // migration: convert tox_uid_type to _tox CRDT tags, then drop
+    vc check = sql_simple("SELECT name FROM sqlite_master WHERE type='table' AND name='tox_uid_type'");
+    if(!check.is_nil() && check.num_elems() > 0)
+    {
+        vc uids = sql_simple("SELECT pseudo_uid FROM tox_uid_type");
+        for(int i = 0; i < uids.num_elems(); ++i)
+        {
+            vc hex_uid = to_hex(uids[i][0]);
+            if(!sql_mid_has_tag(hex_uid, "_tox"))
+                sql_add_tag(hex_uid, "_tox");
+        }
+        sql_simple("DROP TABLE tox_uid_type");
+    }
+    // migration: add has_file column for existing databases
+    // PRAGMA table_info is the standard SQLite way to check column existence
+    vc col_info = sql_simple("PRAGMA table_info(tox_outbox)");
+    int has_col = 0;
+    if(!col_info.is_nil())
+    {
+        int n = col_info.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            vc col_name = col_info[i][1];
+            if(col_name.type() == VC_STRING)
+            {
+                DwString s((const char *)col_name, col_name.len());
+                if(s == "has_file")
+                {
+                    has_col = 1;
+                    break;
+                }
+            }
+        }
+    }
+    if(!has_col)
+        (void)sql_simple("ALTER TABLE tox_outbox ADD COLUMN has_file INTEGER DEFAULT 0");
+    // migration: convert legacy binary pseudo-uid columns to hex.
+    // new rows store the 10-byte pseudo uid as 20 hex chars; any row that
+    // is not 20 chars is treated as legacy binary and hex-encoded in place.
+    {
+        vc bin_outbox = sql_simple("SELECT id, recipient_pseudo FROM tox_outbox "
+                                   "WHERE recipient_pseudo IS NOT NULL "
+                                   "AND length(recipient_pseudo) != 20");
+        for(int i = 0; i < bin_outbox.num_elems(); ++i)
+        {
+            vc hex_uid = to_hex(bin_outbox[i][1]);
+            sql_simple("UPDATE tox_outbox SET recipient_pseudo=?1 WHERE id=?2",
+                       hex_uid, bin_outbox[i][0]);
+        }
+        vc bin_avatar = sql_simple("SELECT uid FROM tox_avatars "
+                                   "WHERE uid IS NOT NULL "
+                                   "AND length(uid) != 20");
+        for(int i = 0; i < bin_avatar.num_elems(); ++i)
+        {
+            vc hex_uid = to_hex(bin_avatar[i][0]);
+            sql_simple("UPDATE tox_avatars SET uid=?1 WHERE uid=?2",
+                       hex_uid, vcblob(bin_avatar[i][0]));
+        }
+    }
+}
+
+int
+ToxQueue::enqueue(const vc &qqm_blob, const vc &recipient_pseudo, const vc &local_mid, int has_file)
+{
+    vc blob_arg = vcblob(qqm_blob);
+    vc pseudo_arg = to_hex(recipient_pseudo);
+    vc res = sql_simple("INSERT INTO tox_outbox (qqm_blob, recipient_pseudo, status, local_mid, has_file) "
+                        "VALUES (?1, ?2, 0, ?3, ?4)",
+                        blob_arg, pseudo_arg, local_mid, vc(has_file));
+    return !res.is_nil();
+}
+
+vc
+ToxQueue::dequeue(vc *recipient_pseudo_out, vc *local_mid_out, int64_t *row_id)
+{
+    vc res = sql_simple("SELECT id, recipient_pseudo, local_mid FROM tox_outbox "
+                        "WHERE status=0 ORDER BY id LIMIT 1");
+    if(res.is_nil() || res.num_elems() == 0)
+        return vcnil;
+    vc row = res[0];
+    if(row_id) *row_id = (int64_t)(long long)row[0];
+    if(recipient_pseudo_out) *recipient_pseudo_out = from_hex(row[1]);
+    if(local_mid_out) *local_mid_out = row[2];
+    return vctrue;
+}
+
+int
+ToxQueue::mark_inprogress(int64_t row_id, uint32_t tox_mid)
+{
+    vc res = sql_simple("UPDATE tox_outbox SET status=1, tox_mid=?2, "
+                        "created_at=strftime('%s','now') "
+                        "WHERE id=?1",
+                        vc((long long)row_id), vc((int)tox_mid));
+    return !res.is_nil();
+}
+
+int
+ToxQueue::mark_sent(int64_t row_id)
+{
+    vc res = sql_simple("DELETE FROM tox_outbox WHERE id=?1",
+                        vc((long long)row_id));
+    return !res.is_nil();
+}
+
+int
+ToxQueue::mark_failed(int64_t row_id)
+{
+    vc res = sql_simple("UPDATE tox_outbox SET status=3 WHERE id=?1",
+                        vc((long long)row_id));
+    return !res.is_nil();
+}
+
+int
+ToxQueue::remove_message(const vc &local_mid)
+{
+    vc res = sql_simple("DELETE FROM tox_outbox WHERE local_mid=?1",
+                        local_mid);
+    return !res.is_nil();
+}
+
+vc
+ToxQueue::load_qqm_blob(int64_t row_id)
+{
+    vc res = sql_simple("SELECT qqm_blob FROM tox_outbox WHERE id=?1",
+                        vc((long long)row_id));
+    if(res.is_nil() || res.num_elems() == 0)
+        return vcnil;
+    return res[0][0];
+}
+
+void
+ToxQueue::recover_inprogress()
+{
+    // text-only: can retry on restart
+    sql_simple("UPDATE tox_outbox SET status=0 WHERE status=1 "
+               "AND (has_file IS NULL OR has_file = 0)");
+    // file messages: one-shot, mark as failed on restart
+    sql_simple("UPDATE tox_outbox SET status=3 WHERE status=1 AND has_file = 1");
+}
+
+vc
+ToxQueue::get_qd_msgs(const vc &pseudo_uid)
+{
+    vc ret(VC_VECTOR);
+    vc rows;
+    if(pseudo_uid.is_nil())
+        rows = sql_simple("SELECT local_mid, recipient_pseudo, qqm_blob "
+                          "FROM tox_outbox WHERE status IN (0,1,3) ORDER BY id");
+    else
+        rows = sql_simple("SELECT local_mid, recipient_pseudo, qqm_blob "
+                          "FROM tox_outbox WHERE recipient_pseudo=?1 "
+                          "AND status IN (0,1,3) ORDER BY id",
+                          to_hex(pseudo_uid));
+    if(rows.is_nil())
+        return ret;
+    int n = rows.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc row = rows[i];
+        vc local_mid = row[0];
+        vc recipient = row[1];
+        vc blob = row[2];
+        vc qqm;
+        deserialize(blob, qqm);
+        vc v(VC_VECTOR);
+        v[0] = from_hex(recipient);
+        v[1] = local_mid;
+        v[2] = qqm[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
+        v[3] = qqm[QQM_MSG_VEC][QQM_BODY_ATTACHMENT];
+        v[4] = qqm[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
+        ret.append(v);
+    }
+    return ret;
+}
+
+vc
+ToxQueue::load_qd_body(const vc &local_mid)
+{
+    vc res = sql_simple("SELECT qqm_blob FROM tox_outbox WHERE local_mid=?1",
+                        local_mid);
+    if(res.is_nil() || res.num_elems() == 0)
+        return vcnil;
+    vc blob = res[0][0];
+    vc qqm;
+    deserialize(blob, qqm);
+    return direct_to_body2(qqm[QQM_MSG_VEC]);
+}
+
+int
+ToxQueue::save_tox_avatar(const vc &uid, const vc &avatar_data, const vc &avatar_hash)
+{
+    vc res = sql_simple("INSERT OR REPLACE INTO tox_avatars (uid, avatar_data, avatar_hash, time) "
+                        "VALUES (?1, ?2, ?3, strftime('%s','now'))",
+                        to_hex(uid), vcblob(avatar_data), vcblob(avatar_hash));
+    return !res.is_nil();
+}
+
+vc
+ToxQueue::load_tox_avatar(const vc &uid)
+{
+    vc res = sql_simple("SELECT avatar_data FROM tox_avatars WHERE uid=?1", to_hex(uid));
+    if(res.is_nil() || res.num_elems() == 0)
+        return vcnil;
+    return res[0][0];
+}
+
+int
+ToxQueue::has_tox_avatar_hash(const vc &uid, const vc &avatar_hash)
+{
+    vc res = sql_simple("SELECT avatar_hash FROM tox_avatars WHERE uid=?1", to_hex(uid));
+    if(res.is_nil() || res.num_elems() == 0)
+        return 0;
+    vc stored = res[0][0];
+    if(stored.len() != avatar_hash.len())
+        return 0;
+    return memcmp((const char *)stored, (const char *)avatar_hash, (size_t)stored.len()) == 0;
+}
+
+int
+ToxQueue::delete_tox_avatar(const vc &uid)
+{
+    vc res = sql_simple("DELETE FROM tox_avatars WHERE uid=?1", to_hex(uid));
+    return !res.is_nil();
+}
+
+int
+tox_bridge_send_message_by_uid(const vc &pseudo_uid, const vc &text, int is_action)
+{
+    if(!Tox_q)
+        return 0;
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    if(text.len() > TOX_MAX_MESSAGE_LENGTH)
+        return 0;
+    vc local_mid = to_hex(gen_id());
+    vc body = make_msg_body(My_UID, text);
+    vc qqm(VC_VECTOR);
+    qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+    qqm[QQM_RECIP_VEC][0] = pseudo_uid;
+    qqm[QQM_MSG_VEC] = body;
+    qqm[QQM_LOCAL_ID] = local_mid;
+    vc blob = serialize(qqm);
+    return Tox_q->enqueue(blob, pseudo_uid, local_mid);
+}
+
+int
+tox_bridge_send_file_message_by_uid(const vc &pseudo_uid, const vc &text,
+                                     const vc &original_filename,
+                                     const DwString &attachment_basename,
+                                     const vc &filehash,
+                                     uint64_t file_size,
+                                     vc &local_mid_out)
+{
+    if(!Tox_q)
+        return 0;
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(pseudo_uid, &fn))
+        return 0;
+    vc local_mid = to_hex(gen_id());
+    local_mid_out = local_mid;
+    vc body = make_msg_body(My_UID, text,
+                            attachment_basename,
+                            original_filename,
+                            vc((long long)file_size));
+    (void)filehash;
+    vc qqm(VC_VECTOR);
+    qqm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+    qqm[QQM_RECIP_VEC][0] = pseudo_uid;
+    qqm[QQM_MSG_VEC] = body;
+    qqm[QQM_LOCAL_ID] = local_mid;
+    vc blob = serialize(qqm);
+    return Tox_q->enqueue(blob, pseudo_uid, local_mid, 1);
+}
+
+void
+tox_bridge_send_queued()
+{
+    if(!Tox_q || !Tox_plugin)
+        return;
+    vc recipient_pseudo;
+    vc local_mid;
+    int64_t row_id = -1;
+    if(Tox_q->dequeue(&recipient_pseudo, &local_mid, &row_id).is_nil())
+        return;
+    uint32_t fn;
+    if(!tox_pseudo_uid_to_friend_number(recipient_pseudo, &fn))
+    {
+        Tox_q->remove_message(local_mid);
+        se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+        return;
+    }
+    vc qqm_blob = Tox_q->load_qqm_blob(row_id);
+    if(qqm_blob.is_nil())
+    {
+        Tox_q->remove_message(local_mid);
+        se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+        return;
+    }
+    vc qqm;
+    deserialize(qqm_blob, qqm);
+    vc body = qqm[QQM_MSG_VEC];
+    vc text = body[QQM_BODY_NEW_TEXT];
+
+    // if this message has a file attachment, skip text send entirely
+    // (one-shot: if it fails, the message is marked failed permanently)
+    if(!body[QQM_BODY_ATTACHMENT].is_nil())
+    {
+        DwString basename((const char *)body[QQM_BODY_ATTACHMENT],
+                          body[QQM_BODY_ATTACHMENT].len());
+        DwString file_path = newfn(basename);
+        vc orig_name_vc = body[QQM_BODY_FILE_ATTACHMENT];
+        DwString orig_name;
+        if(!orig_name_vc.is_nil())
+            orig_name = DwString((const char *)orig_name_vc, orig_name_vc.len());
+        else
+            orig_name = DwString("file");
+        uint64_t fsize = 0;
+        if(body[QQM_BODY_ESTIMATED_SIZE].type() == VC_INT)
+            fsize = (uint64_t)(long long)body[QQM_BODY_ESTIMATED_SIZE];
+
+        struct stat st;
+        if(stat(file_path.c_str(), &st) != 0 || (uint64_t)st.st_size != fsize)
+        {
+            Tox_q->mark_failed(row_id);
+            se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+            GRTLOG("tox: file missing for message, marking failed %s", file_path.c_str(), 0);
+            return;
+        }
+
+        uint32_t fnum;
+        vc name_vc(VC_BSTRING, orig_name.c_str(), (long)orig_name.length());
+        if(!toxp_file_send(Tox_plugin, fn, name_vc, fsize, &fnum))
+        {
+            Tox_q->mark_failed(row_id);
+            se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+            GRTLOG("tox: file send init failed for fn=%d", (int)fn, 0);
+            return;
+        }
+
+        // no text sent, so tox_mid is 0 (no read receipt expected)
+        Tox_q->mark_inprogress(row_id, 0);
+
+        OutgoingFileTransfer xfer;
+        xfer.file_path = file_path;
+        xfer.fd = -1;
+        xfer.file_size = fsize;
+        xfer.sent_size = 0;
+        xfer.original_filename = orig_name;
+        xfer.row_id = row_id;
+        xfer.local_mid = local_mid;
+        xfer.recipient_pseudo = recipient_pseudo;
+        xfer.tox_fn = fn;
+        xfer.tox_fnum = fnum;
+        Outgoing_xfers[xfer_key(fn, fnum)] = xfer;
+        GRTLOG("tox: file send initiated fn=%d fnum=%d", (int)fn, (int)fnum);
+        return;
+    }
+
+    // text-only path
+    uint32_t tox_mid = 0;
+    int tox_error = -1;
+    int ret = tox_bridge_send_message(fn, text, 0, &tox_mid, &tox_error);
+    if(ret == 1 || (ret == 0 && tox_error == TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED))
+    {
+        // toxcore accepted the message (friend offline, will deliver later)
+        Tox_q->mark_inprogress(row_id, tox_mid);
+    }
+    else if(ret == 0)
+    {
+        // permanent failure
+        Tox_q->remove_message(local_mid);
+        se_emit_msg(SE_MSG_SEND_FAIL, local_mid, recipient_pseudo);
+        GRTLOG("tox: send permanent failure, error=%d", tox_error, 0);
+    }
+    else
+    {
+        // transport failure: mark in-progress so we don't re-dequeue
+        // on the next poll and spam the recipient.  The stale-timeout in
+        // tox_bridge_poll (30 s) will reset stuck entries to status=0
+        // for retry.
+        Tox_q->mark_inprogress(row_id, tox_mid);
+    }
+}
+
+int
+tox_bridge_kill_message(const vc &local_mid)
+{
+    if(!Tox_q)
+        return 0;
+    DwString s = local_mid;
+    if(fn_extension(s) == ".q")
+        return 0;
+    vc res = Tox_q->sql_simple("SELECT recipient_pseudo FROM tox_outbox WHERE local_mid=?1",
+                                local_mid);
+    if(res.is_nil() || res.num_elems() == 0)
+        return 0;
+    vc recipient = from_hex(res[0][0]);
+
+    // cancel any active file transfer for this message
+    for(auto it = Outgoing_xfers.begin(); it != Outgoing_xfers.end(); )
+    {
+        if(it->second.local_mid == local_mid)
+        {
+            toxp_file_cancel(Tox_plugin, it->second.tox_fn, it->second.tox_fnum);
+            if(it->second.fd >= 0)
+                close(it->second.fd);
+            it = Outgoing_xfers.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    Tox_q->remove_message(local_mid);
+    se_emit_msg(SE_MSG_SEND_CANCELED, local_mid, recipient);
+    return 1;
+}
+
+}

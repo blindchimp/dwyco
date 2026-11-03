@@ -385,15 +385,29 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
+                                confirm_clear.visible = true
+                            }
+                            MessageYN {
+                                id: confirm_clear
+                                title: "Clear msgs?"
+                                text: "Delete ALL (non-FAVORITE) messages from " + core.uid_to_name(chatbox.to_uid) + "?"
+                                informativeText: "This KEEPS FAVORITE messages."
 
-                                themsglist.reload_model()
+                                onYesClicked: {
+                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNoClicked: {
+                                    close()
+                                }
                             }
                         }
 
                         MenuItem {
                             text: "Delete user"
                             onTriggered: {
+                                confirm_delete.text = "Delete ALL messages from " + core.uid_to_name(chatbox.to_uid) + "?"
                                 confirm_delete.visible = true
                             }
                             MessageDialog {
@@ -692,13 +706,11 @@ Page {
                 Text {
                     function gentext(msg, tm) {
                         var dt = new Date(tm * 1000)
-                        //                        return "<table><tr><td>" + msg + "</td>" +
-                        //                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
-                        //                                "</td></tr></table>"
+                        var fmt = core.format_message(String(msg))
                         if(Date.now() - dt.getTime() > 86400 * 1000) {
-                            return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
+                            return "<html>" + fmt + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
                         } else {
-                            return "<html>" + msg + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
+                            return "<html>" + fmt + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
                         }
 
                     }
@@ -711,7 +723,9 @@ Page {
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
-                    //font.family: "Noto Color Emoji"
+                    onLinkActivated: (link)=> {
+                        Qt.openUrlExternally(link)
+                    }
                 }
 
             }
@@ -773,7 +787,8 @@ Page {
 
                         } else {
                             console.log("show msg")
-                            themsgview.msg_text = model.MSG_TEXT
+                            themsgview.raw_text = model.MSG_TEXT
+                            themsgview.formatted_text = core.format_message(model.MSG_TEXT)
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
@@ -783,6 +798,8 @@ Page {
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
+                                    if(themsgview.view_id !== -1)
+                                        core.delete_zap_view(themsgview.view_id)
                                     var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
 

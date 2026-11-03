@@ -3,7 +3,7 @@
 # update the buildtime
 (cd ~/git/dwyco/cdcx;./dumptime-mac)
 
-QTVERS=6.12.0
+QTVERS=6.11.1
 export PATH=~/Qt/$QTVERS/macos/bin:$PATH
 export CMAKE_CXX_COMPILER_LAUNCHER=ccache
 

@@ -19,6 +19,7 @@ package dwvc
 //     Map/Tree: interleaved key, value, key, value...
 
 import (
+	"io"
 	"math"
 	"reflect"
 	"strconv"
@@ -27,7 +28,11 @@ import (
 // XferStream manages buffered I/O for vc serialization.
 // Analog of the C++ vcxstream class.
 type XferStream struct {
-	// Read buffer — entire input is loaded for FIXED-style access.
+	// Optional underlying reader for stream-based deserialization.
+	r io.Reader
+
+	// Read buffer — entire input is loaded for FIXED-style access,
+	// or used as a scratch buffer when reading from r.
 	rbuf []byte
 	rpos int
 
@@ -61,6 +66,20 @@ type XferStream struct {
 func NewXferStreamForRead(data []byte) *XferStream {
 	return &XferStream{
 		rbuf:          data,
+		MaxMemory:     math.MaxInt64,
+		MaxDepth:      math.MaxInt64,
+		MaxElements:   math.MaxInt64,
+		MaxElementLen: math.MaxInt64,
+		depthLimit:    math.MaxInt64,
+		allowSelfRef:  true,
+	}
+}
+
+// NewXferStreamFromReader creates a stream for deserialization from an io.Reader.
+func NewXferStreamFromReader(r io.Reader) *XferStream {
+	return &XferStream{
+		r:             r,
+		rbuf:          make([]byte, 2048),
 		MaxMemory:     math.MaxInt64,
 		MaxDepth:      math.MaxInt64,
 		MaxElements:   math.MaxInt64,
@@ -127,6 +146,16 @@ func (xs *XferStream) outWant(n int) ([]byte, error) {
 func (xs *XferStream) inWant(n int) ([]byte, error) {
 	if n <= 0 {
 		return nil, nil
+	}
+	if xs.r != nil {
+		if n > len(xs.rbuf) {
+			xs.rbuf = make([]byte, n)
+		}
+		buf := xs.rbuf[:n]
+		if _, err := io.ReadFull(xs.r, buf); err != nil {
+			return nil, ErrDev
+		}
+		return buf, nil
 	}
 	if xs.rpos+n > len(xs.rbuf) {
 		return nil, ErrDev
@@ -658,4 +687,33 @@ func DecodeWithConstraints(data []byte, maxMem, maxDepth, maxElems, maxElemLen i
 	xs.SetConstraints(maxMem, maxDepth, maxElems, maxElemLen)
 	v, _, err := xs.XferIn()
 	return v, err
+}
+
+// EncodeTo serializes a Vc and writes it to w. Returns bytes written.
+// Analog of LH's putfile / socket-send.
+func (v *Vc) EncodeTo(w io.Writer) (int, error) {
+	xs := NewXferStreamForWrite()
+	n, err := v.XferOut(xs)
+	if err != nil {
+		return 0, err
+	}
+	written, err := w.Write(xs.wbuf[:n])
+	if err != nil {
+		return written, err
+	}
+	return written, nil
+}
+
+// DecodeFrom deserializes a single Vc from r. Returns the decoded Vc and bytes consumed.
+// Analog of LH's getfile / socket-recv.
+func DecodeFrom(r io.Reader) (Vc, int, error) {
+	xs := NewXferStreamFromReader(r)
+	return xs.XferIn()
+}
+
+// DecodeFromWithConstraints deserializes a single Vc from r with explicit security limits.
+func DecodeFromWithConstraints(r io.Reader, maxMem, maxDepth, maxElems, maxElemLen int64) (Vc, int, error) {
+	xs := NewXferStreamFromReader(r)
+	xs.SetConstraints(maxMem, maxDepth, maxElems, maxElemLen)
+	return xs.XferIn()
 }

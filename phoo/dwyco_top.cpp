@@ -15,6 +15,8 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
+#include <QClipboard>
+#include <QEvent>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
 #ifdef LINUX
@@ -32,6 +34,15 @@
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
+#include "dwycolist2.h"
+
+// for debug_unified_backup(), we don't want to add the cdc32 include
+// dir to this project's include path (it has its own dlli.h), so just
+// declare it here.
+namespace dwyco {
+int unified_backup(const char *fn, int include_account_info, int max_size_mb);
+}
+#include <QSet>
 #include "getinfo.h"
 #include "msgrawmodel.h"
 #include "msgproxymodel.h"
@@ -40,6 +51,7 @@
 #include "ssmap.h"
 #include "dwycoimageprovider.h"
 #include "dwycoprofilepreviewprovider.h"
+#include "dwyco_tox_avatar_provider.h"
 #include "dwycovideopreviewprovider.h"
 #include "ignoremodel.h"
 #include "chatlistmodel.h"
@@ -51,6 +63,7 @@
 #include "simpledirmodel.h"
 #include "syncmodel.h"
 #include "discomodel.h"
+#include "toxfriendmodel.h"
 #include "ccmodel.h"
 #include "joinlogmodel.h"
 #ifdef ANDROID
@@ -207,6 +220,23 @@ reload_conv_list_since(long time)
     Conv_sort_proxy->setDynamicSortFilter(false);
     TheConvListModel->reload_possible_changes(time);
     Conv_sort_proxy->setDynamicSortFilter(true);
+}
+
+// free function so convmodel.cpp can reach it without including dwyco_top.h.
+// filters uids down to the ones that are tox friends on the running identity
+// and asks the ui to deal with them. silent no-op when none of them are.
+void
+prompt_tox_ignore(const QStringList& uids)
+{
+    if(!TheDwycoCore)
+        return;
+    QStringList tox_uids;
+    for(int i = 0; i < uids.size(); ++i)
+        if(TheDwycoCore->is_tox_friend(uids[i]))
+            tox_uids.append(uids[i]);
+    if(tox_uids.isEmpty())
+        return;
+    emit TheDwycoCore->tox_ignore_prompt(tox_uids);
 }
 
 static
@@ -602,6 +632,7 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_SEND_START:
     case DWYCO_SE_MSG_SEND_FAIL:
     case DWYCO_SE_MSG_SEND_SUCCESS:
+    case DWYCO_SE_MSG_SEND_CANCELED:
         emit TheDwycoCore->msg_send_status(cmd, huid, str_data);
         break;
     case DWYCO_SE_MSG_SEND_STATUS:
@@ -660,6 +691,9 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     {
         reload_ignore_list();
         TheConvListModel->redecorate();
+        // uid tag changes (including the shared tox saves and claims) arrive
+        // as this event, so nudge the tox identity list to refresh.
+        TheDwycoCore->schedule_tox_saves_changed();
         break;
     }
     case DWYCO_SE_SERVER_ATTR:
@@ -671,6 +705,98 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
             else
                 TheDwycoCore->update_invisible(true);
         }
+        break;
+    }
+    case DWYCO_SE_TOX_FRIEND_REQUEST:
+        // uid here is the tox pseudo uid (se.cpp), which is the same key the
+        // ignore list uses. an ignored contact's request is auto rejected:
+        // toxcore has no explicit reject, so not accepting it is the
+        // rejection, and we do it silently.
+        if(uid && len_uid > 0 && dwyco_is_ignored(uid, len_uid))
+            break;
+        dwyco_tox_accept_friend_request(val, len_val);
+        reload_conv_list();
+        break;
+    case DWYCO_SE_TOX_SELF_CONNECTION_STATUS:
+    {
+        int connected = 0;
+        if(str_data == "udp" || str_data =="tcp")
+            connected = 1;
+        TheDwycoCore->update_tox_connected(connected);
+        emit TheDwycoCore->tox_connection_status_changed(connected);
+        break;
+    }
+    case DWYCO_SE_TOX_READY:
+        TheDwycoCore->set_tox_enabled(true);
+        TheDwycoCore->update_tox_self_address(TheDwycoCore->tox_get_self_address());
+        TheDwycoCore->update_tox_self_name(TheDwycoCore->tox_get_name());
+        reload_conv_list();
+        break;
+    case DWYCO_SE_TOX_CRASHED:
+        TheDwycoCore->set_tox_enabled(false);
+        TheDwycoCore->update_tox_connected(0);
+        emit TheDwycoCore->tox_connection_status_changed(0);
+        reload_conv_list();
+        break;
+    case DWYCO_SE_TOX_FRIEND_NAME:
+        // tox friend name changed — re-resolve display name
+        emit TheDwycoCore->sys_uid_resolved(huid);
+        break;
+    case DWYCO_SE_TOX_FRIEND_STATUS:
+        // tox friend online/offline — re-resolve display
+        emit TheDwycoCore->sys_uid_resolved(huid);
+        {
+            QString status = QString::fromUtf8(namestr);
+            emit TheDwycoCore->tox_friend_status_changed(huid, status);
+            // plink when a pal tox contact transitions to online (a uid can be
+            // favorited/pal'd like any other). batching is handled so a burst of
+            // friends coming online at once (e.g. first login) yields just one sound.
+            if(status == "online")
+            {
+                if(!TheDwycoCore->m_tox_online_uids.contains(huid))
+                {
+                    TheDwycoCore->m_tox_online_uids.insert(huid);
+                    if(TheDwycoCore->get_pal(huid))
+                        TheDwycoCore->schedule_tox_plink();
+                }
+            }
+            else if(status == "offline")
+            {
+                TheDwycoCore->m_tox_online_uids.remove(huid);
+            }
+        }
+        break;
+    case DWYCO_SE_TOX_TYPING:
+    {
+        int typing = (namestr == "on") ? 1 : 0;
+        emit TheDwycoCore->sc_rem_keyboard_active(huid, typing);
+        break;
+    }
+    case DWYCO_SE_TOX_FRIEND_USER_STATUS:
+        emit TheDwycoCore->sys_uid_resolved(huid);
+        emit TheDwycoCore->tox_friend_user_status_changed(huid, QString::fromUtf8(namestr));
+        break;
+    case DWYCO_SE_TOX_AVATAR:
+        // tox friend avatar received/changed/removed: refresh the
+        // profile preview so it re-fetches the cached avatar
+        emit TheDwycoCore->sys_uid_resolved(huid);
+        break;
+    case DWYCO_SE_TOX_DISABLED_BY_REMOTE:
+    {
+        // another device in the group signed in with the identity we were
+        // running, so the bridge stopped tox. reflect that in the ui. we do
+        // not sign in anywhere automatically -- the point of the claim is
+        // that one device runs the identity, and the user picks which.
+        TheDwycoCore->stop_auto_away();
+        TheDwycoCore->set_tox_enabled(false);
+        TheDwycoCore->update_tox_connected(0);
+        TheDwycoCore->update_tox_self_address("");
+        TheDwycoCore->update_tox_self_name("");
+        emit TheDwycoCore->tox_connection_status_changed(0);
+        TheDwycoCore->set_local_setting("tox_enabled", "0");
+        emit TheDwycoCore->tox_disabled_by_remote(QString());
+        reload_conv_list();
+        TheDwycoCore->schedule_tox_saves_changed();
         break;
     }
     default:
@@ -940,6 +1066,50 @@ DwycoCore::strip_html(QString txt)
     return res;
 }
 
+
+
+QString
+DwycoCore::format_message(QString txt)
+{
+    if (txt.contains("<html>", Qt::CaseInsensitive))
+        return txt;
+    {
+        QString fm;
+        setting_get("format_messages", fm);
+        if (!fm.isEmpty() && fm == "0") {
+            txt.replace(QStringLiteral("&"), QStringLiteral("&amp;"));
+            txt.replace(QStringLiteral("<"), QStringLiteral("&lt;"));
+            txt.replace(QStringLiteral(">"), QStringLiteral("&gt;"));
+            return txt;
+        }
+    }
+    // split on URLs first so we can escape only the non-URL parts
+    static QRegularExpression re(QStringLiteral("(https?://[^\\s<>\"'()]+)"));
+    QRegularExpressionMatchIterator i = re.globalMatch(txt);
+    int last_end = 0;
+    QString res;
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        // escape non-URL segment
+        QString seg = txt.mid(last_end, match.capturedStart() - last_end);
+        seg.replace(QStringLiteral("&"), QStringLiteral("&amp;"));
+        seg.replace(QStringLiteral("<"), QStringLiteral("&lt;"));
+        seg.replace(QStringLiteral(">"), QStringLiteral("&gt;"));
+        res += seg;
+        // URL segment — use as-is (no HTML escaping needed), wrap in link
+        QString url = match.captured();
+        res += QStringLiteral("<a href=\"") + url + QStringLiteral("\" style=\"color:#FFAB00;\">") + url + QStringLiteral("</a>");
+        last_end = match.capturedStart() + match.capturedLength();
+    }
+    // escape remaining tail
+    QString tail = txt.mid(last_end);
+    tail.replace(QStringLiteral("&"), QStringLiteral("&amp;"));
+    tail.replace(QStringLiteral("<"), QStringLiteral("&lt;"));
+    tail.replace(QStringLiteral(">"), QStringLiteral("&gt;"));
+    res += tail;
+    return res;
+}
+
 void
 DWYCOCALLCONV
 DwycoCore::dwyco_chat_ctx_callback(int cmd, int id,
@@ -966,7 +1136,7 @@ DwycoCore::dwyco_chat_ctx_callback(int cmd, int id,
 void
 DwycoCore::send_chat(QString text)
 {
-    QByteArray chat = text.toLatin1();
+    QByteArray chat = text.toUtf8();
 
     dwyco_chat_send_data(chat.constBegin(), chat.length(), DWYCO_CHAT_DATA_PIC_TYPE_NONE, 0, 0);
 }
@@ -2002,6 +2172,27 @@ DwycoCore::init()
     if(!dwyco_init())
         ::abort();
     setup_emergency_servers();
+    {
+        QString tox_enabled_s = get_local_setting("tox_enabled");
+        QString tox_auto_login_s = get_local_setting("tox_auto_login");
+        if(tox_enabled_s == "" || tox_enabled_s == "0" ||
+           tox_auto_login_s == "" || tox_auto_login_s == "0") {
+            set_tox_enabled(false);
+        } else {
+            set_tox_enabled(true);
+            dwyco_enable_tox("tox_save.tox");
+            set_user_status_impl(QStringLiteral("none"));
+            update_tox_self_address(tox_get_self_address());
+            update_tox_self_name(tox_get_name());
+        }
+        QString aa_enabled = get_local_setting("auto_away_enabled");
+        m_auto_away_enabled = (aa_enabled == "1");
+        QString aa_timeout = get_local_setting("auto_away_timeout");
+        if(aa_timeout != "")
+            m_auto_away_timeout = aa_timeout.toInt();
+        if(m_auto_away_enabled && m_tox_enabled)
+            start_auto_away();
+    }
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
@@ -2026,7 +2217,8 @@ DwycoCore::init()
     connect(this, SIGNAL(decorate_user(QString)), TheChatListModel, SLOT(decorate(QString)));
     connect(this, SIGNAL(ignore_event(QString)), TheChatListModel, SLOT(ignore_state_change(QString)));
 
-    connect(this, SIGNAL(new_msg(QString,QString,QString)), TheConvListModel, SLOT(decorate(QString,QString,QString)));
+    connect(this, SIGNAL(new_msg(QString,QString,QString)), TheConvListModel, SLOT(new_msg_received(QString,QString,QString)));
+    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(new_msg_uid(QString)));
     connect(this, SIGNAL(decorate_user(QString)), TheConvListModel, SLOT(decorate(QString)));
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheConvListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheConvListModel, SLOT(uid_invalidate_profile(QString)));
@@ -2169,6 +2361,38 @@ DwycoCore::power_clean()
     dwyco_end_bulk_update();
 }
 
+void
+DwycoCore::obliterate()
+{
+#if 1
+    static const char *expected[] = {"auth", "outbox", "sinfo"};
+    QStringList missing;
+    for(int i = 0; i < 3; ++i)
+    {
+        if(!QFile::exists(add_pfx(User_pfx, expected[i])))
+            missing.append(expected[i]);
+    }
+    if(!missing.isEmpty())
+    {
+        emit obliterate_error("Safety check failed: " + missing.join(", ") +
+            " not found in " + QString::fromUtf8(User_pfx) +
+            ". Obliterate aborted.");
+        return;
+    }
+    hangup_all_calls();
+    dwyco_disconnect_chat_server();
+    // TODO: leave all phoo messenger groups (send group-leave to members)
+    // when Groups map is accessible from main build
+    if(m_tox_enabled)
+        dwyco_disable_tox();
+    // dwyco_remove_profile(0, 0);  // TODO: not implemented yet, enable when ready
+    dwyco_remove_backup();
+    dwyco_exit();
+    QDir(User_pfx).removeRecursively();
+    QMetaObject::invokeMethod(qApp, "quit", Qt::QueuedConnection);
+#endif
+}
+
 int
 DwycoCore::load_backup()
 {
@@ -2180,6 +2404,19 @@ int
 DwycoCore::get_android_backup_state()
 {
     return dwyco_get_android_backup_state();
+}
+
+int
+DwycoCore::debug_create_backup(int days_to_run, int days_to_rebuild)
+{
+    return dwyco_create_backup(days_to_run, days_to_rebuild);
+}
+
+int
+DwycoCore::debug_unified_backup(const QString& fn, int include_account_info, int max_size_mb)
+{
+    QByteArray b = fn.toLatin1();
+    return dwyco::unified_backup(b.constData(), include_account_info, max_size_mb);
 }
 
 QString
@@ -2238,6 +2475,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     if(as == Qt::ApplicationSuspended /* || as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
+        stop_auto_away();
         dwyco_set_disposition("background", 10);
         simple_call::suspend();
         dwyco_disconnect_chat_server();
@@ -2289,6 +2527,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
             QGuiApplication::quit();
         }
         Suspended = 0;
+        start_auto_away();
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);
 #endif
@@ -2340,6 +2579,8 @@ int
 DwycoCore::get_rem_keyboard_state(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
+    if(!c)
+        return 0;
     return c->rem_kb_active;
 
 }
@@ -2348,6 +2589,8 @@ int
 DwycoCore::get_established_state(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
+    if(!c)
+        return 0;
     return c->get_connected();
 
 }
@@ -2414,8 +2657,8 @@ DwycoCore::bootstrap(QString name, QString email)
     // note: android and other mobile platforms with auto complete
     // and other keyboard auto-typing is notorious for having extra
     // spaces at the end of text inputs. just get rid of it.
-    QByteArray bname = name.trimmed().toLatin1().trimmed();
-    QByteArray bemail = email.trimmed().toLatin1().trimmed();
+    QByteArray bname = name.trimmed().toUtf8().trimmed();
+    QByteArray bemail = email.trimmed().toUtf8().trimmed();
 
     dwyco_create_bootstrap_profile(bname.constData(), bname.length(), "", 0, "mobile user", 11, bemail.constData(), bemail.length());
     dwyco_set_local_auth(1);
@@ -2487,10 +2730,10 @@ DwycoCore::set_simple_profile(QString handle, QString email, QString desc, QStri
     const char *profile_pack;
     int len_profile_pack;
 
-    QByteArray bhandle = handle.trimmed().toLatin1().trimmed();
-    QByteArray bemail = email.trimmed().toLatin1().trimmed();
-    QByteArray bedesc = desc.trimmed().toLatin1().trimmed();
-    QByteArray fn = img_fn.toLatin1();
+    QByteArray bhandle = handle.trimmed().toUtf8().trimmed();
+    QByteArray bemail = email.trimmed().toUtf8().trimmed();
+    QByteArray bedesc = desc.trimmed().toUtf8().trimmed();
+    QByteArray fn = img_fn.toUtf8();
     int compid;
 
     if(fn.length() > 0)
@@ -2546,11 +2789,68 @@ int
 DwycoCore::get_pal(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.length() != 10)
+        return 0;
     return dwyco_is_pal(buid.constData(), buid.length());
 }
 
 void
+DwycoCore::schedule_tox_plink()
+{
+    if(!m_tox_plink_timer)
+    {
+        m_tox_plink_timer = new QTimer(this);
+        m_tox_plink_timer->setSingleShot(true);
+        m_tox_plink_timer->setInterval(700);
+        connect(m_tox_plink_timer, &QTimer::timeout, this, [this]() {
+            emit pal_came_online();
+        });
+    }
+    // if a burst of pals is coming online, keep the (already running) timer
+    // so only a single pal_came_online is emitted once it finally elapses.
+    if(!m_tox_plink_timer->isActive())
+        m_tox_plink_timer->start();
+}
+
+void
+DwycoCore::schedule_tox_saves_changed()
+{
+    if(!m_tox_saves_timer)
+    {
+        m_tox_saves_timer = new QTimer(this);
+        m_tox_saves_timer->setSingleShot(true);
+        m_tox_saves_timer->setInterval(700);
+        connect(m_tox_saves_timer, &QTimer::timeout, this, [this]() {
+            emit tox_saves_changed();
+        });
+    }
+    // uid tag changes (which is how the shared tox saves arrive) also cover
+    // every other uid tag, so this can fire a lot. coalesce.
+    if(!m_tox_saves_timer->isActive())
+        m_tox_saves_timer->start();
+}
+
+void
 DwycoCore::set_ignore(QString uid, int is_ignored)
+{
+    // let's just avoid this from the outset
+    if(uid == HTheMan)
+        return;
+
+    if(is_ignored && is_tox_friend(uid))
+    {
+        // a tox contact has to come off the tox friend list before they can
+        // be ignored -- while they're still a friend they'd keep reaching us
+        // over tox, bypassing the block. defer to the ui, which asks whether
+        // their messages go too, then calls set_ignore_now().
+        emit tox_ignore_prompt(QStringList() << uid);
+        return;
+    }
+    set_ignore_now(uid, is_ignored);
+}
+
+void
+DwycoCore::set_ignore_now(QString uid, int is_ignored)
 {
     // let's just avoid this from the outset
     if(uid == HTheMan)
@@ -2564,6 +2864,9 @@ DwycoCore::set_ignore(QString uid, int is_ignored)
     }
     else
     {
+        // note: unignoring is deliberately just dropping the tag. we do not
+        // put back anything the block removed, so someone taken off the tox
+        // friend list stays off it.
         dwyco_unignore(buid.constData(), buid.length());
         TheIgnoreListModel->remove_uid_from_model(buid);
     }
@@ -2595,6 +2898,8 @@ int
 DwycoCore::get_ignore(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.length() != 10)
+        return 0;
     return dwyco_is_ignored(buid.constData(), buid.length());
 }
 
@@ -2695,6 +3000,16 @@ DwycoCore::uid_to_profile_preview(QString uid)
 {
 
     QString u;
+    if(is_tox_uid(uid))
+    {
+        u = "image://tox_avatar/";
+        u += uid;
+        u += "/";
+        u += random_fn();
+        QUrl url;
+        url.setUrl(u);
+        return url;
+    }
     u = "image://profile_preview/";
     u += uid;
     u += "/";
@@ -2775,6 +3090,745 @@ DwycoCore::get_local_setting(QString name)
         return QString();
 
     return ret;
+}
+
+void
+DwycoCore::enable_tox()
+{
+    if(m_tox_enabled)
+        return;
+    set_tox_enabled(true);
+    dwyco_enable_tox("tox_save.tox");
+    set_user_status_impl(QStringLiteral("none"));
+    update_tox_self_address(tox_get_self_address());
+    update_tox_self_name(tox_get_name());
+    reload_conv_list();
+    start_auto_away();
+}
+
+void
+DwycoCore::disable_tox()
+{
+    if(!m_tox_enabled)
+        return;
+    stop_auto_away();
+    dwyco_disable_tox();
+    set_tox_enabled(false);
+    update_tox_connected(0);
+    update_tox_self_address("");
+    update_tox_self_name("");
+    emit tox_connection_status_changed(0);
+    reload_conv_list();
+}
+
+int
+DwycoCore::tox_add_friend(const QString& addr, const QString& msg)
+{
+    QByteArray addr_b = QByteArray::fromHex(addr.toLatin1());
+    QByteArray msg_b = msg.toLatin1();
+    int ret = dwyco_tox_add_friend(addr_b.constData(), addr_b.length(), msg_b.constData());
+    if(ret >= 0)
+        reload_conv_list();
+    return ret;
+}
+
+int
+DwycoCore::tox_delete_friend(const QString& pubkey)
+{
+    QByteArray pk = QByteArray::fromHex(pubkey.toLatin1());
+    int ret = dwyco_tox_delete_friend(pk.constData(), pk.length());
+    if(ret >= 0)
+        reload_conv_list();
+    return ret;
+}
+
+int
+DwycoCore::tox_delete_friend_by_uid(const QString& uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    int ret = dwyco_tox_delete_friend_by_uid(buid.constData(), buid.length());
+    if(ret)
+    {
+        // the friend list changed, so both the conv list decorations and the
+        // cached "who is a tox friend" set are stale now.
+        ConvListModel::refresh_tox_friend_cache();
+        reload_conv_list();
+    }
+    return ret;
+}
+
+void
+DwycoCore::tox_set_typing(const QString& uid, int typing)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    dwyco_tox_set_typing(buid.constData(), buid.length(), typing);
+}
+
+int
+DwycoCore::tox_set_name(const QString& name)
+{
+    QByteArray bname = name.toUtf8();
+    int ret = dwyco_tox_set_name(bname.constData(), bname.length());
+    if(ret)
+        update_tox_self_name(tox_get_name());
+    return ret;
+}
+
+int
+DwycoCore::tox_set_status_message(const QString& msg)
+{
+    QByteArray bmsg = msg.toUtf8();
+    return dwyco_tox_set_status_message(bmsg.constData(), bmsg.length());
+}
+
+int
+DwycoCore::tox_set_avatar(const QString& file_path)
+{
+    QByteArray out_fn;
+    if(!load_and_resize(file_path.toUtf8(), out_fn, 64000))
+        return 0;
+    QFile f(out_fn);
+    if(!f.open(QIODevice::ReadOnly))
+        return 0;
+    QByteArray bdata = f.readAll();
+    f.close();
+    if(bdata.isEmpty())
+        return 0;
+    int ret = dwyco_tox_set_avatar(bdata.constData(), bdata.length());
+    if(out_fn != file_path.toUtf8())
+        QFile::remove(out_fn);
+    if(ret)
+        emit tox_avatar_changed();
+    return ret;
+}
+
+int
+DwycoCore::tox_clear_avatar()
+{
+    dwyco_tox_clear_avatar();
+    emit tox_avatar_changed();
+    return 1;
+}
+
+void
+DwycoCore::set_user_status_impl(const QString& status)
+{
+    QByteArray bstatus = status.toUtf8();
+    dwyco_tox_set_user_status(bstatus.constData());
+    emit tox_user_status_changed(status);
+}
+
+int
+DwycoCore::tox_set_user_status(const QString& status)
+{
+    set_user_status_impl(status);
+    if(m_auto_away_enabled)
+    {
+        m_saved_tox_status = status;
+        if(m_is_auto_away)
+        {
+            m_is_auto_away = false;
+            emit auto_away_state_changed(false);
+        }
+    }
+    return 1;
+}
+
+QString
+DwycoCore::tox_get_user_status()
+{
+    char *out = 0;
+    int len = 0;
+    if(!dwyco_tox_get_user_status(&out, &len))
+        return QString();
+    QString s = QString::fromUtf8(out, len);
+    delete[] out;
+    return s;
+}
+
+QString
+DwycoCore::tox_get_name()
+{
+    char *out = 0;
+    int len = 0;
+    if(!dwyco_tox_get_name(&out, &len))
+        return QString();
+    QString s = QString::fromUtf8(out, len);
+    delete[] out;
+    return s;
+}
+
+QString
+DwycoCore::tox_get_status_message()
+{
+    char *out = 0;
+    int len = 0;
+    if(!dwyco_tox_get_status_message(&out, &len))
+        return QString();
+    QString s = QString::fromUtf8(out, len);
+    delete[] out;
+    return s;
+}
+
+bool
+DwycoCore::is_tox_uid(const QString& uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    return dwyco_tox_is_tox_uid(buid.constData(), buid.length()) != 0;
+}
+
+bool
+DwycoCore::is_tox_friend(const QString& uid)
+{
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
+    if(buid.isEmpty())
+        return false;
+    if(!dwyco_tox_is_tox_uid(buid.constData(), buid.length()))
+        return false;
+    // note: ask the live tox friend list rather than dwyco_uid_is_tox_friend().
+    // that one tests the "_tox_friend" crdt tag, which is never removed when a
+    // friend is deleted, so it says yes to people we already dropped.
+    DWYCO_TOX_FRIENDS_MODEL fl = 0;
+    if(!dwyco_tox_get_friends_model(&fl))
+        return false;
+    simple_scoped qfl(fl);
+    QByteArray want = buid.toHex();
+    for(int i = 0; i < qfl.rows(); ++i)
+    {
+        QByteArray pk = qfl.get<QByteArray>(i, DWYCO_TF_PUBKEY);
+        // the pseudo uid is the first 10 bytes of the pubkey
+        if(pk.toHex().startsWith(want))
+            return true;
+    }
+    return false;
+}
+
+QString
+DwycoCore::tox_get_self_public_key()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_get_self_public_key(&out, &len_out))
+        return QString();
+    QByteArray ret(out, len_out);
+    dwyco_free_array(out);
+    return ret.toHex();
+}
+
+QString
+DwycoCore::tox_get_self_address()
+{
+    char *out;
+    int len_out;
+    if(!dwyco_tox_get_self_address(&out, &len_out))
+        return QString();
+    QByteArray ret(out, len_out);
+    dwyco_free_array(out);
+    return ret.toHex();
+}
+
+bool
+DwycoCore::tox_needs_password()
+{
+    return dwyco_tox_needs_password() != 0;
+}
+
+bool
+DwycoCore::tox_unlock(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    int ret = dwyco_tox_unlock(bpw.constData(), bpw.length());
+    if(ret)
+    {
+        update_tox_self_address(tox_get_self_address());
+        update_tox_self_name(tox_get_name());
+        reload_conv_list();
+    }
+    return ret != 0;
+}
+
+bool
+DwycoCore::tox_set_profile_password(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    return dwyco_tox_set_profile_password(bpw.constData(), bpw.length()) != 0;
+}
+
+bool
+DwycoCore::tox_has_profile_password()
+{
+    return dwyco_tox_has_profile_password() != 0;
+}
+
+bool
+DwycoCore::tox_check_password(const QString& pw)
+{
+    QByteArray bpw = pw.toUtf8();
+    return dwyco_tox_check_password(bpw.constData(), bpw.length()) != 0;
+}
+
+bool
+DwycoCore::tox_file_is_encrypted(const QString& path)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    return dwyco_tox_file_is_encrypted(bpath.constData()) != 0;
+}
+
+QString
+DwycoCore::tox_import_profile(const QString& path, const QString& pw, bool makeBackup)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    QByteArray bpw = pw.toUtf8();
+    char err_buf[512] = {0};
+    int ret = dwyco_import_tox_profile(bpath.constData(), bpw.constData(), bpw.length(),
+                                       makeBackup ? 1 : 0, err_buf, sizeof(err_buf));
+    if(ret)
+    {
+        // importing only puts the save on disk; tox stays stopped. clear the
+        // identity we were showing rather than querying a bridge that isn't
+        // running, which would come back empty anyway.
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        emit tox_connection_status_changed(0);
+        set_local_setting("tox_enabled", "0");
+        reload_conv_list();
+        emit tox_import_finished();
+        emit tox_saves_changed();
+        return QString();
+    }
+    return QString::fromUtf8(err_buf);
+}
+
+QString
+DwycoCore::tox_export_profile(const QString& path)
+{
+    QByteArray bpath = path.toLocal8Bit();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_export_profile(bpath.constData(), err_buf, sizeof(err_buf));
+    if(ret)
+        return QString();
+    return QString::fromUtf8(err_buf);
+}
+
+bool
+DwycoCore::tox_reset_identity()
+{
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_reset_identity(err_buf, sizeof(err_buf));
+    update_tox_reset_error(QString::fromUtf8(err_buf));
+    if(ret)
+    {
+        // minting a new identity is account manipulation, not a sign in, so it
+        // should leave the same "loaded but not signed in" state that selecting
+        // a shared save does. the reset had to bring tox up briefly --
+        // tox_bridge_reset_identity re-inits, and that init is what actually
+        // creates and persists the new save, since toxcore mints a fresh
+        // identity when the save file is missing -- so take it back down here.
+        // call dwyco_disable_tox directly rather than disable_tox(), which
+        // early-returns when the flag is already false, so the shutdown does
+        // not depend on flag ordering.
+        dwyco_disable_tox();
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        emit tox_connection_status_changed(0);
+        set_local_setting("tox_enabled", "0");
+        reload_conv_list();
+        emit tox_saves_changed();
+        return true;
+    }
+    return false;
+}
+
+bool
+DwycoCore::tox_factory_reset()
+{
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_factory_reset(err_buf, sizeof(err_buf));
+    if(ret)
+    {
+        set_tox_enabled(false);
+        update_tox_connected(0);
+        update_tox_self_address("");
+        update_tox_self_name("");
+        reload_conv_list();
+        return true;
+    }
+    update_tox_reset_error(QString::fromUtf8(err_buf));
+    return false;
+}
+
+bool
+DwycoCore::tox_save_exists()
+{
+    return dwyco_tox_save_exists() != 0;
+}
+
+bool
+DwycoCore::tox_save_is_encrypted()
+{
+    return dwyco_tox_save_is_encrypted() != 0;
+}
+
+QString
+DwycoCore::tox_set_save_password(const QString& oldPw, const QString& newPw)
+{
+    QByteArray bopw = oldPw.toUtf8();
+    QByteArray bnpw = newPw.toUtf8();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_set_save_password(bopw.constData(), bopw.length(),
+                                          bnpw.constData(), bnpw.length(),
+                                          err_buf, sizeof(err_buf));
+    if(ret)
+        return QString();
+    return QString::fromUtf8(err_buf);
+}
+
+bool
+DwycoCore::tox_publish_save()
+{
+    if(!dwyco_tox_publish_save())
+        return false;
+    // note: this used to return silently, leaving the shared-saves list on
+    // this device showing the pre-publish state even though the tag was
+    // written and peers saw it fine. schedule rather than emit so a burst of
+    // publishes coalesces into one list rebuild, same as inbound uid-tag
+    // churn.
+    schedule_tox_saves_changed();
+    return true;
+}
+
+// the hex pubkey of the save on disk, or "" when there is none.
+//
+// note this deliberately does NOT just ask the running instance. tox is stopped
+// whenever the user is picking between saves, which is exactly when the ui
+// needs to know which identity is on disk in order to mark it. peeking at the
+// file works while stopped, and fails only for a password protected save --
+// in which case the running instance is the only thing that could answer, so
+// fall back to it.
+QString
+DwycoCore::tox_local_save_pubkey()
+{
+    char *pk = 0;
+    int pk_len = 0;
+    if(dwyco_tox_peek_pubkey_from_file(0, 0, 0, &pk, &pk_len) && pk && pk_len > 0)
+    {
+        QByteArray pubkey(pk, pk_len);
+        dwyco_free_array(pk);
+        return QString::fromLatin1(pubkey.toHex());
+    }
+    return tox_get_self_public_key();
+}
+
+QVariantList
+DwycoCore::tox_list_saves()
+{
+    QVariantList out;
+    DWYCO_LIST saves = 0;
+    if(!dwyco_tox_list_saves(&saves))
+        return out;
+    simple_scoped l(saves);
+    // which identity is on disk right now, so the ui can mark it. compare on
+    // the ascii hex pubkey, which is exactly what the list reports.
+    QString cur_pub = tox_local_save_pubkey();
+    const char *my_uid = nullptr;
+    int my_uid_len = 0;
+    dwyco_get_my_uid(&my_uid, &my_uid_len);
+    QByteArray myhex = (my_uid && my_uid_len > 0)
+        ? QByteArray(my_uid, my_uid_len).toHex() : QByteArray();
+
+    int rows = l.rows();
+    for(int i = 0; i < rows; ++i)
+    {
+        QVariantMap m;
+        QString mid = QString::fromLatin1(l.get<QByteArray>(i, "000"));
+        m["mid"] = mid;
+        // the mid *is* the hex pubkey for a shared identity
+        m["pubkey"] = mid;
+        m["when"] = (qlonglong)l.get_long(i, "001");
+        m["size"] = (qlonglong)l.get_long(i, "002");
+        m["encrypted"] = l.get_long(i, "003") != 0;
+        // column 004 is the dwyco-side name for this pubkey. it comes out of
+        // the '_tox_friend' tags, so it is available even for encrypted saves.
+        // may be nil when we've never seen this identity as a friend.
+        QByteArray nm = l.get<QByteArray>(i, "004");
+        m["name"] = nm.isEmpty() ? QString() : QString::fromUtf8(nm);
+        m["is_current"] = (!cur_pub.isEmpty() && cur_pub == mid);
+
+        DWYCO_LIST cl = 0;
+        QByteArray clbuf = mid.toLatin1();
+        if(dwyco_tox_claimant(clbuf.constData(), clbuf.length(), &cl))
+        {
+            simple_scoped c(cl);
+            QByteArray holder = c.get<QByteArray>(0, "000");
+            m["holder"] = QString::fromLatin1(holder);
+            m["held_by_me"] = (!myhex.isEmpty() && holder == myhex);
+        }
+        else
+        {
+            m["holder"] = QString();
+            m["held_by_me"] = false;
+        }
+        out.append(m);
+    }
+    return out;
+}
+
+QString
+DwycoCore::tox_select_save(const QString& mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    char err_buf[512] = {0};
+    int ret = dwyco_tox_select_save(bmid.constData(), bmid.length(),
+                                    err_buf, sizeof(err_buf));
+    if(!ret)
+        return QString::fromUtf8(err_buf);
+
+    // selecting an identity is a file-level operation: tox stays stopped and
+    // the ui moves to the "loaded but not signed in" state, where the normal
+    // sign in button takes over (and is what claims the identity).
+    stop_auto_away();
+    set_tox_enabled(false);
+    update_tox_connected(0);
+    update_tox_self_address("");
+    update_tox_self_name("");
+    emit tox_connection_status_changed(0);
+    set_local_setting("tox_enabled", "0");
+    reload_conv_list();
+    emit tox_import_finished();
+    emit tox_saves_changed();
+    return QString();
+}
+
+// dwyco-side name for a hex tox pubkey. resolves through the '_tox_friend'
+// tags rather than the tox save, so it works for password protected saves.
+// empty string when we've never seen the identity as a friend.
+QString DwycoCore::tox_name_for_pubkey(const QString& pubHex)
+{
+    QByteArray b = pubHex.toLatin1();
+    char *nm = 0;
+    int len = 0;
+    if(!dwyco_tox_name_for_pubkey(b.constData(), b.length(), &nm, &len))
+        return QString();
+    QByteArray ret(nm, len);
+    dwyco_free_array(nm);
+    return QString::fromUtf8(ret);
+}
+
+QVariantList
+DwycoCore::tox_list_all_saves()
+{
+    QVariantList out;
+
+    // local save (if any)
+    if(tox_save_exists())
+    {
+        QVariantMap m;
+        // note: mid stays empty for the local save. a non-empty mid means
+        // "adopt this from a group tag", and the local save is already on
+        // disk -- looking its own pubkey up in the tag store would fail.
+        // the ui selects rows by key, not mid.
+        m["mid"] = QString();
+        m["key"] = QString("local");
+        m["pubkey"] = QString();
+        m["local"] = true;
+        m["encrypted"] = tox_save_is_encrypted();
+        m["is_current"] = true;
+
+        // same helper the shared rows use to find the current identity, so the
+        // local row and the matching shared row can't disagree about which
+        // pubkey is on disk.
+        QString lpk = tox_local_save_pubkey();
+        if(lpk.length() > 0)
+        {
+            m["pubkey"] = lpk;
+            // same dwyco-side name lookup the shared rows use, so an encrypted
+            // local save still gets a label.
+            m["name"] = tox_name_for_pubkey(lpk);
+        }
+        out.append(m);
+    }
+
+    // shared saves
+    QVariantList shared = tox_list_saves();
+    for(int i = 0; i < shared.size(); ++i)
+    {
+        QVariantMap m = shared[i].toMap();
+        m["local"] = false;
+        // for a shared save the mid is the hex pubkey, which is a unique key.
+        m["key"] = m.value("mid").toString();
+        out.append(m);
+    }
+
+    return out;
+}
+
+QVariantMap
+DwycoCore::tox_compare_saves()
+{
+    QVariantMap m;
+    DWYCO_LIST l = 0;
+    // note: returns 0 only when there is no save on disk at all. every other
+    // outcome is a real state, including "unreadable" for a password
+    // protected save we can't open -- the ui needs to say that rather than
+    // show nothing.
+    if(!dwyco_tox_compare_saves(&l))
+        return m;
+    simple_scoped sc(l);
+    m["state"] = (int)sc.get_long(0, "000");
+    QByteArray mid = sc.get<QByteArray>(0, "002");
+    m["mid"] = mid.isEmpty() ? QString() : QString::fromLatin1(mid);
+
+    // the differences arrive as three columns per entry, starting after the
+    // three header columns. the header carries the count, so the loop doesn't
+    // have to trust the column count.
+    long n = sc.get_long(0, "001");
+    QVariantList diffs;
+    for(long i = 0; i < n; ++i)
+    {
+        // format each column index separately. the list api walks a column
+        // name digit by digit, so they have to be zero padded and there is no
+        // way to get to a later column by advancing a pointer.
+        char c_kind[8], c_who[8], c_detail[8];
+        snprintf(c_kind, sizeof(c_kind), "%03d", 3 + (int)(i * 3));
+        snprintf(c_who, sizeof(c_who), "%03d", 4 + (int)(i * 3));
+        snprintf(c_detail, sizeof(c_detail), "%03d", 5 + (int)(i * 3));
+        QVariantMap d;
+        d["kind"] = QString::fromLatin1(sc.get<QByteArray>(0, c_kind));
+        d["who"] = QString::fromLatin1(sc.get<QByteArray>(0, c_who));
+        // detail is raw bytes for some kinds (a name or an alias can hold any
+        // bytes), so decode it here rather than handing qml a byte array.
+        // qt 6's qml engine has no String.fromUtf8, so a byte array arriving in
+        // qml throws and silently blanks every line that quotes a name -- the
+        // headline still renders because nothing on that path decodes, which
+        // makes it look like the text is just empty rather than broken. invalid
+        // utf-8 decodes to replacement characters, which is fine for display.
+        d["detail"] = QString::fromUtf8(sc.get<QByteArray>(0, c_detail));
+        diffs.append(d);
+    }
+    m["differences"] = diffs;
+    return m;
+}
+
+QString
+DwycoCore::tox_sign_in(const QString& mid, const QString& pw)
+{
+    // if mid is non-empty, it's a shared save -- adopt it first. this leaves
+    // tox stopped, which is what we want: we haven't started it yet.
+    if(!mid.isEmpty())
+    {
+        QString err = tox_select_save(mid);
+        if(!err.isEmpty())
+            return err;
+    }
+
+    // start the bridge for real. note the order matters: needs_password() only
+    // means something once tox_bridge_init has actually run and reported
+    // whether the save is locked. checking it before this point reads a stale
+    // flag, which skips the unlock entirely and leaves the ui claiming to be
+    // signed in against a bridge that never came up.
+    enable_tox();
+
+    if(tox_needs_password())
+    {
+        if(pw.isEmpty())
+        {
+            disable_tox();
+            return "Password required";
+        }
+        if(!tox_unlock(pw))
+        {
+            disable_tox();
+            return "Wrong password";
+        }
+    }
+
+    // last, so the flag never outlives a failed start.
+    set_local_setting("tox_enabled", "1");
+    emit tox_saves_changed();
+    return QString();
+}
+
+bool
+DwycoCore::tox_depublish_save(const QString& mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    int ret = dwyco_tox_depublish_save(bmid.constData(), bmid.length());
+    // note: this deliberately does not touch tox state. no sign out, no
+    // identity file changes -- it only drops the shared copy (and its claim)
+    // from the group. a device still signed in with the identity can publish
+    // it again, which puts it back in the list.
+    if(ret)
+        emit tox_saves_changed();
+    return ret != 0;
+}
+
+void
+DwycoCore::copy_to_clipboard(const QString& text)
+{
+    QGuiApplication::clipboard()->setText(text);
+}
+
+void DWYCOCALLCONV
+DwycoCore::dwyco_activity_callback(int /*timeout*/)
+{
+    if(!TheDwycoCore || !TheDwycoCore->m_auto_away_enabled || !TheDwycoCore->m_tox_enabled)
+        return;
+    if(TheDwycoCore->m_is_auto_away)
+        return;
+    TheDwycoCore->m_saved_tox_status = TheDwycoCore->tox_get_user_status();
+    if (TheDwycoCore->m_saved_tox_status == "busy" || TheDwycoCore->m_saved_tox_status == "away")
+        return;
+    TheDwycoCore->set_user_status_impl(QStringLiteral("away"));
+    TheDwycoCore->m_is_auto_away = true;
+    emit TheDwycoCore->auto_away_state_changed(true);
+}
+
+bool
+DwycoCore::eventFilter(QObject *obj, QEvent *event)
+{
+    if(m_auto_away_enabled && m_tox_enabled &&
+       (event->type() == QEvent::MouseMove ||
+        event->type() == QEvent::MouseButtonPress ||
+        event->type() == QEvent::KeyPress))
+    {
+        if(m_is_auto_away)
+        {
+            set_user_status_impl(m_saved_tox_status);
+            m_is_auto_away = false;
+            emit auto_away_state_changed(false);
+        }
+        if(m_auto_away_timeout > 0)
+            dwyco_enable_activity_checking(1, m_auto_away_timeout, dwyco_activity_callback);
+    }
+    return QObject::eventFilter(obj, event);
+}
+
+void
+DwycoCore::start_auto_away()
+{
+    if(!m_tox_enabled || !m_auto_away_enabled)
+        return;
+    m_saved_tox_status = tox_get_user_status();
+    m_is_auto_away = false;
+    if(m_auto_away_timeout > 0)
+        dwyco_enable_activity_checking(1, m_auto_away_timeout, dwyco_activity_callback);
+    qGuiApp->installEventFilter(this);
+}
+
+void
+DwycoCore::stop_auto_away()
+{
+    dwyco_enable_activity_checking(0, 0, 0);
+    qGuiApp->removeEventFilter(this);
+    if(m_is_auto_away)
+    {
+        set_user_status_impl(m_saved_tox_status);
+        m_is_auto_away = false;
+    }
 }
 
 QUrl
@@ -2899,6 +3953,17 @@ DwycoCore::delete_message(QString uid, QString mid)
 }
 
 int
+DwycoCore::is_queued_message(QString mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    DWYCO_LIST l;
+    int ret = dwyco_qd_message_to_body(&l, bmid.constData(), bmid.length());
+    if(ret)
+        dwyco_list_release(l);
+    return ret;
+}
+
+int
 DwycoCore::get_fav_message(QString mid)
 {
     QByteArray bmid = mid.toLatin1();
@@ -2957,6 +4022,58 @@ DwycoCore::clear_messages_unfav(QString uid)
     buid = QByteArray::fromHex(buid);
     return dwyco_clear_user_unfav(buid.constData(), buid.length());
 
+}
+
+void
+DwycoCore::trash_messages(QString uid)
+{
+    QByteArray buid = uid.toLatin1();
+    buid = QByteArray::fromHex(buid);
+
+    DWYCO_LIST msgs;
+    if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
+        return;
+    simple_scoped q(msgs);
+
+    DWYCO_LIST favs;
+    if(!dwyco_get_tagged_mids(&favs, "_fav"))
+        return;
+
+    QSet<QByteArray> fset;
+
+    simple_scoped qf(favs);
+    int n = qf.rows();
+    QByteArray hbuid = buid.toHex();
+    for(int i = 0; i < n; ++i)
+    {
+        auto huid = qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID);
+        if(huid != hbuid)
+            continue;
+        fset.insert(qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID));
+    }
+
+    n = q.rows();
+
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
+
+    DWYCO_LIST um;
+    if(!dwyco_get_unfetched_messages(&um, buid.constData(), buid.length()))
+        return;
+    simple_scoped q2(um);
+    n = q2.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q2.get<QByteArray>(i, DWYCO_QMS_ID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
 }
 
 int
@@ -3455,6 +4572,155 @@ DwycoCore::export_attachment(QString mid)
 }
 #endif
 
+// save an attachment to a location the user picked with a save dialog.
+// unlike export_attachment(), we don't second-guess the name, because the
+// user chose both the name and where it goes.
+int
+DwycoCore::export_attachment_as(QString mid, QString dst_filename)
+{
+    QByteArray rmid = mid.toLatin1();
+    if(dst_filename.isEmpty())
+        return 0;
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+        return 0;
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+        return 0;
+    QByteArray lfn = QFile::encodeName(dst_filename);
+    if(lfn.length() == 0)
+        return 0;
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+        return 0;
+    return 1;
+}
+
+// display names come from the network, so they can be arbitrarily long
+// and can contain newlines (which would break the one-message-per-line
+// format). squash whitespace and clip to something reasonable.
+static
+QString
+export_conv_name(const QString& name)
+{
+    static const int max_len = 24;
+    QString n = QString(name);
+    n.replace(QRegularExpression("[\\r\\n\\t]+"), " ");
+    n = n.simplified();
+    if(n.length() > max_len)
+        n = n.left(max_len - 3) + "...";
+    if(n.isEmpty())
+        n = "(unknown)";
+    return n;
+}
+
+QString
+DwycoCore::export_conversation(QString uid, qint64 unix_time)
+{
+    QByteArray buid = uid.toLatin1();
+    buid = QByteArray::fromHex(buid);
+
+    if(buid.length() != 10)
+        return "";
+
+    DWYCO_MSG_IDX msg_idx;
+    if(!dwyco_get_message_index(&msg_idx, buid.constData(), buid.length()))
+        return "";
+    simple_scoped qmi(msg_idx);
+
+    DWYCO_UNFETCHED_MSG_LIST unfetched;
+    if(!dwyco_get_unfetched_messages(&unfetched, buid.constData(), buid.length()))
+        return "";
+    simple_scoped quf(unfetched);
+
+    QString userdir;
+#ifdef ANDROID
+    userdir = add_pfx(User_pfx, "exports");
+#else
+    userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+
+    QString filename = QString("/phoo_conversation_%1_%2.txt")
+        .arg(uid.left(8))
+        .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+    userdir += filename;
+
+    QFile file(userdir);
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return "";
+
+    QTextStream out(&file);
+
+    // resolve the display names for both participants. fall back to the
+    // hex uid if we don't know a name for someone.
+    QString my_name = uid_to_name(My_uid.toHex());
+    if(my_name.isEmpty())
+        my_name = My_uid.toHex();
+    QString them_name = uid_to_name(uid);
+    if(them_name.isEmpty())
+        them_name = uid;
+
+    out << "Conversation with: " << export_conv_name(them_name) << "\n";
+    out << "Exported: " << QDateTime::currentDateTime().toString(Qt::ISODate) << "\n";
+    out << "Messages after: " << QDateTime::fromSecsSinceEpoch(unix_time).toString(Qt::ISODate) << "\n";
+    out << "\n";
+
+    int num_msgs = qmi.rows();
+    int available_count = 0;
+    int unavailable_count = 0;
+
+    out << "--- Messages ---\n\n";
+
+    // note: the message index is sorted newest to oldest, so walk it
+    // backwards to end up with the newest message at the bottom of the file.
+    for(int i = num_msgs - 1; i >= 0; --i)
+    {
+        long msg_date = qmi.get_long(i, DWYCO_MSG_IDX_DATE);
+        if(msg_date <= (long)unix_time)
+            continue;
+
+        QByteArray mid = qmi.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        bool is_sent = !qmi.is_nil(i, DWYCO_MSG_IDX_IS_SENT);
+
+        QString timestamp = QDateTime::fromSecsSinceEpoch(msg_date).toString(Qt::ISODate);
+        QString sender = export_conv_name(is_sent ? my_name : them_name);
+
+        DWYCO_SAVED_MSG_LIST sm;
+        if(dwyco_get_saved_message3(&sm, mid.constData()) == DWYCO_GSM_SUCCESS)
+        {
+            simple_scoped qsm(sm);
+            DWYCO_LIST ba = dwyco_get_body_array(qsm);
+            simple_scoped qba(ba);
+            QByteArray txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
+            out << "[" << timestamp << "] " << sender << ": " << QString::fromUtf8(txt) << "\n";
+            available_count++;
+        }
+        else
+        {
+            out << "[" << timestamp << "] " << sender << ": [Message text not available]\n";
+            unavailable_count++;
+        }
+    }
+
+    if(quf.rows() > 0)
+    {
+        out << "\n--- Unfetched Messages (not yet downloaded from server) ---\n\n";
+        for(int i = quf.rows() - 1; i >= 0; --i)
+        {
+            QByteArray mid = quf.get<QByteArray>(i, DWYCO_QMS_ID);
+            out << "Message " << QString::fromLatin1(mid.toHex()) << " not yet fetched\n";
+            unavailable_count++;
+        }
+    }
+
+    out << "\n--- Summary ---\n";
+    out << "Total messages after given time: " << (available_count + unavailable_count) << "\n";
+    out << "Available messages: " << available_count << "\n";
+    out << "Unavailable messages: " << unavailable_count << "\n";
+
+    file.close();
+    return userdir;
+}
+
 
 int
 DwycoCore::make_zap_view(QString mid)
@@ -3533,6 +4799,7 @@ dwyco_register_qml(QQmlContext *root)
     Dwyco_video_provider = new DwycoImageProvider;
     root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
     root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);
+    root->engine()->addImageProvider("tox_avatar", new DwycoToxAvatarProvider);
     Dwyco_video_preview_provider = new DwycoVideoPreviewProvider;
     root->engine()->addImageProvider("dwyco_video_preview", Dwyco_video_preview_provider);
 
@@ -3571,6 +4838,9 @@ dwyco_register_qml(QQmlContext *root)
 
     JoinLogModel *jlm = new JoinLogModel;
     root->setContextProperty("JoinLogModel", jlm);
+
+    ToxFriendModel *toxfm = new ToxFriendModel;
+    root->setContextProperty("ToxFriendModel", toxfm);
 
 //#ifdef ANDROID
     //AndroidPerms *a = new AndroidPerms;

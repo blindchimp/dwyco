@@ -2,6 +2,11 @@ set(DWYCO_APP "phoo")
 set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
 
+option(DWYCO_TOXCORE "Build with toxcore support" ON)
+if(DWYCO_TOXCORE)
+    add_compile_definitions(DWYCO_TOXCORE)
+endif()
+
 add_compile_definitions(VCCFG_FILE)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_APP_DEBUG>)
@@ -40,7 +45,7 @@ endif()
 
 
 if(ANDROID)
-	add_compile_definitions(ANDROID LINUX DWYCO_NO_ACQ_VIDEO_MEDIA)
+	add_compile_definitions(ANDROID LINUX DWYCO_NO_ACQ_VIDEO_MEDIA )
     add_compile_options( -frtti -fexceptions)
 endif()
 

@@ -59,7 +59,9 @@ Page {
                 MenuItem {
                     text: "Block"
                     onTriggered: {
-                        ConvListModel.block_all_selected()
+                        // prompts once for any selected tox friends, to take
+                        // them off the tox friend list
+                        ConvListModel.block_all_selected(true)
                         multiselect_mode = false
 
                     }
@@ -68,6 +70,15 @@ Page {
                 MenuItem {
                     text: "Block and delete"
                     onTriggered: {
+                        if(ConvListModel.selected_has_tox_friend()) {
+                            // the tox block dialog covers the whole thing --
+                            // it already offers removing the messages, so
+                            // asking here first would double up the confirms.
+                            ConvListModel.block_all_selected(true)
+                            multiselect_mode = false
+                            return
+                        }
+                        confirm_delete.text = "Delete ALL messages from " + ConvListModel.selected_display_names() + " and BLOCK them?"
                         confirm_delete.visible = true
                     }
                     MessageYN {
@@ -76,7 +87,10 @@ Page {
                         text: "Delete ALL messages from selected users?"
                         informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                         onYesClicked: {
-                            ConvListModel.block_all_selected()
+                            // messages are going away in this path, so no
+                            // prompt_tox -- the tox dialog's "also remove
+                            // messages" option would be redundant here
+                            ConvListModel.block_all_selected(false)
                             ConvListModel.obliterate_all_selected()
                             multiselect_mode = false
                             close()
@@ -302,21 +316,28 @@ Page {
                            source: mi("ic_visibility_off_white_24dp.png")
                        }
                    }
-                   Rectangle {
-                       id: hidden
-                       width: 16
-                       height: 16
-                       anchors.right:parent.right
-                       anchors.top:parent.top
-                       visible: show_hidden && has_hidden
-                       z: 2
-                       radius: width
-                       color: "orange"
-                   }
-               }
+                    Rectangle {
+                        id: hidden
+                        width: 16
+                        height: 16
+                        anchors.right:parent.right
+                        anchors.top:parent.top
+                        visible: show_hidden && has_hidden
+                        z: 2
+                        radius: width
+                        color: "orange"
+                    }
+                    ToxBadge {
+                        friendUid: uid
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        width: .3 * ppic.height
+                        height: .3 * ppic.height
+                    }
+                }
 
-               Text {
-                   // on desktop, don't censor text
+                Text {
+                    // on desktop, don't censor text
                    text: (!censor_it || !is_mobile)  ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
@@ -379,24 +400,75 @@ Page {
    }
    
    
-   ListView {
-       id: listView2
-       anchors.fill:parent
+    ListView {
+        id: listView2
+        anchors.fill:parent
 
-       visible: !show_grid.grid_checked
+        visible: !show_grid.grid_checked
 
-       model: ConvListModel
-       delegate: convlist_delegate
-       clip: true
-       //spacing: 5
-       ScrollBar.vertical: ScrollBar { 
-           background: Rectangle {
-               color: "green"
-           }
+        model: ConvListModel
+        delegate: convlist_delegate
+        clip: true
+        section.property: "tox_section"
+        section.criteria: ViewSection.FullString
+        section.delegate: Rectangle {
+            id: sectionRoot
+            height: 24
+            width: ListView.view.width
+            visible: section !== ""
+            color: "dimgray"
 
-       }
+            property string localToxUserStatus: core.tox_get_user_status()
 
-   }
+            Rectangle {
+                height: 1
+                color: "#888888"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+            }
+            Row {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 8
+                spacing: 6
+                Image {
+                    width: 16
+                    height: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                    source: {
+                        if (!core.tox_enabled) return "qrc:/new/prefix1/icons/tox-icon-purple.svg"
+                        if (localToxUserStatus === "busy") return "qrc:/new/prefix1/icons/tox-icon-red.svg"
+                        if (localToxUserStatus === "away") return "qrc:/new/prefix1/icons/tox-icon-orange.svg"
+                        return "qrc:/new/prefix1/icons/tox-icon-green.svg"
+                    }
+                }
+                Text {
+                    text: section
+                    color: "white"
+                    font.bold: true
+                    font.pixelSize: 14
+                    renderType: Text.QtRendering
+                    elide: Text.ElideRight
+                }
+            }
+            Connections {
+                target: core
+                function onTox_user_status_changed(status) {
+                    localToxUserStatus = status
+                }
+            }
+        }
+        //spacing: 5
+        ScrollBar.vertical: ScrollBar { 
+            background: Rectangle {
+                color: "green"
+            }
+
+        }
+
+    }
 
    Component {
        id: convgrid_delegate
@@ -482,18 +554,25 @@ Page {
                        source: mi("ic_visibility_off_white_24dp.png")
                    }
                }
-               Rectangle {
-                   id: ghidden
-                   width: 16
-                   height: 16
-                   anchors.right:parent.right
-                   anchors.top:parent.top
-                   visible: show_hidden && has_hidden
-                   z: 2
-                   radius: width
-                   color: "orange"
-               }
-           }
+                Rectangle {
+                    id: ghidden
+                    width: 16
+                    height: 16
+                    anchors.right:parent.right
+                    anchors.top:parent.top
+                    visible: show_hidden && has_hidden
+                    z: 2
+                    radius: width
+                    color: "orange"
+                }
+                ToxBadge {
+                    friendUid: uid
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    width: .3 * ppic.height
+                    height: .3 * ppic.height
+                }
+            }
 
            Text {
                // don't censor text on desktop

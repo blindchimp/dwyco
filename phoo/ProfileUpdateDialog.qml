@@ -304,7 +304,7 @@ Page {
                 width: dp(32)
                 height: dp(32)
                 source: "qrc:/new/red32/icons/red-32x32/cancel-32x32.png"
-                visible: img_preview.source != "" && img_preview.status == Image.Ready
+                visible: img_preview.source.toString() !== "" && img_preview.status == Image.Ready
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {

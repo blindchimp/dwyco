@@ -1,0 +1,1990 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
+/*
+ * WARNING: the bulk of this code is AI generated (opencode/big-pickle ca. 2026)
+ */
+#ifdef DWYCO_TOXCORE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#ifdef _WIN32
+#include <io.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#else
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#endif
+#include <errno.h>
+#ifdef LOCAL_TOXCORE
+#include <tox.h>
+#include <toxencryptsave.h>
+#else
+#include <tox/tox.h>
+#include <tox/toxencryptsave.h>
+#endif
+#include <sodium.h>
+#include <vector>
+#include <algorithm>
+
+#include "vc.h"
+#include "vccomp.h"
+#include "dwstr.h"
+#include "fnmod.h"
+#include "toxd_plugin.h"
+
+// Order: static IP entries, then resolved IP equivalents of hostname entries,
+// then hostname entries (dead code since DNS is disabled via
+// experimental_disable_dns, kept as documentation).
+static const char *bootstrap_nodes[] =
+{
+    // --- static IP entries ---
+    "144.217.167.73:33445:7E5668E0EE09E19F320AD47902419331FFEE147BB3606769CFBE921A2A2FD34C",
+    "198.199.98.108:33445:BEF0CFB37AF874BD17B9A8F9FE64C75521DB95A37D33C5BDB00E9CF58659C04F",
+    "205.185.115.131:53:3091C6BEB2A993F1C6300C16549FABA67098FF3D62C6D253828B531470B53D68",
+    "46.101.197.175:33445:CD133B521159541FB1D326DE9850F5E56A6C724B5B8E5EB5CD8D950408E95707",
+
+    // --- resolved IPs of hostname nodes (used when DNS is disabled) ---
+    "24.87.200.32:33445:10C00EB250C3233E343E2AEBA07115A5C28920E9C8D29492F6D00B29049EDC7E",
+    "114.35.245.150:33445:3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25",
+    "104.244.74.69:33445:8E8B63299B3D520FB377FE5100E65E3322F7AE5B20A0ACED2981769FC5B43725",
+    "165.227.194.41:443:5D57B95EE4A7F37BA031DAD0CBD9510A9C96FFE09C1CE24A9C33746F39817D6E",
+    "90.89.165.222:33445:1CEEA650D5DDA858EA6AF6CEA79FEAF022F9C2B8295EE3716E2785C81DD09152",
+
+    // --- hostname entries (documentation only; DNS disabled, always BAD_HOST) ---
+    "tox.abilinski.com:33445:10C00EB250C3233E343E2AEBA07115A5C28920E9C8D29492F6D00B29049EDC7E",
+    "tox.initramfs.io:33445:3F0A45A268367C1BEA652F258C85F4A66DA76BCAA667A49E770BCC4917AB6A25",
+    "tox.plastiras.org:33445:8E8B63299B3D520FB377FE5100E65E3322F7AE5B20A0ACED2981769FC5B43725",
+    "tox.hidemybits.com:443:5D57B95EE4A7F37BA031DAD0CBD9510A9C96FFE09C1CE24A9C33746F39817D6E",
+    "tox.libre.tw:33445:1CEEA650D5DDA858EA6AF6CEA79FEAF022F9C2B8295EE3716E2785C81DD09152",
+};
+
+struct ToxPlugin
+{
+    Tox *tox{};
+    DwString save_file{};
+    FILE *log_file{};
+    int bootstrapped{};
+    Tox_Pass_Key *pass_key{};
+    uint8_t *password{};
+    int password_len{};
+#if 0
+    int lock_fd{-1};
+    DwString lock_path;
+#endif
+    ToxpEventCB event_cb{};
+    void *event_userdata{};
+};
+
+static void
+log_printf(FILE *lf, const char *fmt, ...)
+{
+    if(!lf)
+        return;
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(lf, fmt, ap);
+    va_end(ap);
+    fputc('\n', lf);
+    fflush(lf);
+}
+
+static vc
+pubkey_to_vc(const uint8_t *pk)
+{
+    return vc(VC_BSTRING, (const char *)pk, TOX_PUBLIC_KEY_SIZE);
+}
+
+static void
+tox_bootstrap(Tox *tox)
+{
+    int n = sizeof(bootstrap_nodes) / sizeof(bootstrap_nodes[0]);
+    for(int i = 0; i < n; ++i)
+    {
+        const char *s = bootstrap_nodes[i];
+        char addr[256];
+        int port;
+        char pubkey_hex[2 * TOX_PUBLIC_KEY_SIZE + 1];
+        if(sscanf(s, "%255[^:]:%d:%64s", addr, &port, pubkey_hex) != 3)
+            continue;
+        uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+        if(sodium_hex2bin(pubkey, sizeof(pubkey), pubkey_hex, strlen(pubkey_hex), NULL, NULL, NULL))
+            continue;
+        Tox_Err_Bootstrap err;
+        tox_bootstrap(tox, addr, (uint16_t)port, pubkey, &err);
+        tox_add_tcp_relay(tox, addr, (uint16_t)port, pubkey, &err);
+    }
+}
+
+// --- toxcore callbacks (forward events to toxbridge) ---
+
+static void
+toxd_on_friend_request(Tox *tox, const uint8_t *pubkey, const uint8_t *msg,
+                       size_t len, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] friend_request msg=%.*s", (int)len, (const char *)msg);
+    vc args(VC_VECTOR);
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(VC_BSTRING, (const char *)msg, (long)len));
+    p->event_cb("friend_request", args, p->event_userdata);
+}
+
+static void
+toxd_on_friend_message(Tox *tox, uint32_t fn, Tox_Message_Type type,
+                       const uint8_t *msg, size_t len, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] friend_message fn=%u type=%s msg=%.*s", fn,
+               type == TOX_MESSAGE_TYPE_ACTION ? "action" : "normal",
+               (int)len, (const char *)msg);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(VC_BSTRING, (const char *)msg, (long)len));
+    args.append(vc(type == TOX_MESSAGE_TYPE_ACTION ? "action" : "normal"));
+    p->event_cb("message", args, p->event_userdata);
+}
+
+static void
+toxd_on_friend_read_receipt(Tox *tox, uint32_t fn, uint32_t mid, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] read_receipt fn=%u mid=%u", fn, mid);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)mid));
+    p->event_cb("read_receipt", args, p->event_userdata);
+}
+
+static void
+toxd_on_file_recv(Tox *tox, uint32_t fn, uint32_t fnum, uint32_t kind,
+                  uint64_t size, const uint8_t *name, size_t nlen, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] file_request fn=%u fnum=%u kind=%u size=%llu name=%.*s",
+               fn, fnum, kind, (unsigned long long)size, (int)nlen, (const char *)name);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)fnum));
+    args.append(vc((int)kind));
+    args.append(vc((long long)size));
+    if(name && nlen > 0)
+        args.append(vc(VC_BSTRING, (const char *)name, (long)nlen));
+    else
+        args.append(vcnil);
+    p->event_cb("file_request", args, p->event_userdata);
+}
+
+static void
+toxd_on_file_recv_chunk(Tox *tox, uint32_t fn, uint32_t fnum,
+                        uint64_t pos, const uint8_t *data, size_t len, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] file_chunk fn=%u fnum=%u pos=%llu len=%zu",
+               fn, fnum, (unsigned long long)pos, len);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)fnum));
+    args.append(vc((long long)pos));
+    if(data && len)
+        args.append(vc(VC_BSTRING, (const char *)data, (long)len));
+    else
+        args.append(vcnil);
+    p->event_cb("file_chunk", args, p->event_userdata);
+}
+
+static void
+toxd_on_file_recv_control(Tox *tox, uint32_t fn, uint32_t fnum,
+                          Tox_File_Control control, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    const char *ctrl_str = "resume";
+    if(control == TOX_FILE_CONTROL_PAUSE)
+        ctrl_str = "pause";
+    else if(control == TOX_FILE_CONTROL_CANCEL)
+        ctrl_str = "cancel";
+    log_printf(p->log_file, "[cb] file_control fn=%u fnum=%u control=%s",
+               fn, fnum, ctrl_str);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)fnum));
+    args.append(vc(ctrl_str));
+    p->event_cb("file_control", args, p->event_userdata);
+}
+
+static void
+toxd_on_file_chunk_request(Tox *tox, uint32_t fn, uint32_t fnum,
+                           uint64_t position, size_t length, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] file_chunk_request fn=%u fnum=%u pos=%llu len=%zu",
+               fn, fnum, (unsigned long long)position, length);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(vc((int)fnum));
+    args.append(vc((long long)position));
+    args.append(vc((long long)length));
+    p->event_cb("file_chunk_request", args, p->event_userdata);
+}
+
+static void
+toxd_on_self_connection_status(Tox *tox, Tox_Connection status, void *ud)
+{
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] self_connection_status %s",
+               status == TOX_CONNECTION_NONE ? "offline" : status == TOX_CONNECTION_TCP ? "tcp" : "udp");
+    vc args(VC_VECTOR);
+    args.append(vc(status == TOX_CONNECTION_NONE ? "offline" : status == TOX_CONNECTION_TCP ? "tcp" : "udp"));
+    p->event_cb("self_connection_status", args, p->event_userdata);
+}
+
+static void
+toxd_on_connection_status(Tox *tox, uint32_t fn, Tox_Connection status, void *ud)
+{
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] friend_connection_status fn=%u %s", fn,
+               status == TOX_CONNECTION_NONE ? "offline" : "online");
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(status == TOX_CONNECTION_NONE ? "offline" : "online"));
+    p->event_cb("friend_connection_status", args, p->event_userdata);
+}
+
+static void
+toxd_on_friend_name(Tox *tox, uint32_t fn, const uint8_t *name, size_t len, void *ud)
+{
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] friend_name fn=%u name=%.*s", fn, (int)len, (const char *)name);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(VC_BSTRING, (const char *)name, (long)len));
+    p->event_cb("friend_name", args, p->event_userdata);
+}
+
+static void
+toxd_on_friend_status_message(Tox *tox, uint32_t fn, const uint8_t *msg,
+                              size_t len, void *ud)
+{
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] friend_status_message fn=%u msg=%.*s", fn, (int)len, (const char *)msg);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(VC_BSTRING, (const char *)msg, (long)len));
+    p->event_cb("friend_status_message", args, p->event_userdata);
+}
+
+static void
+toxd_on_friend_typing(Tox *tox, uint32_t fn, bool typing, void *ud)
+{
+    (void)tox;
+    ToxPlugin *p = (ToxPlugin *)ud;
+    log_printf(p->log_file, "[cb] friend_typing fn=%u typing=%d", fn, typing);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(typing ? "on" : "off"));
+    p->event_cb("typing", args, p->event_userdata);
+}
+
+static void
+toxd_on_friend_status(Tox *tox, uint32_t fn, Tox_User_Status status, void *ud)
+{
+    ToxPlugin *p = (ToxPlugin *)ud;
+    const char *status_str = "none";
+    if(status == TOX_USER_STATUS_AWAY)
+        status_str = "away";
+    else if(status == TOX_USER_STATUS_BUSY)
+        status_str = "busy";
+    log_printf(p->log_file, "[cb] friend_status fn=%u status=%s", fn, status_str);
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_friend_get_public_key(tox, fn, pubkey, NULL);
+    vc args(VC_VECTOR);
+    args.append(vc((int)fn));
+    args.append(pubkey_to_vc(pubkey));
+    args.append(vc(status_str));
+    p->event_cb("friend_status", args, p->event_userdata);
+}
+
+// --- internal helpers ---
+
+static void
+save_tox_state(ToxPlugin *p)
+{
+    DwString save_path = dwyco::newfn(p->save_file);
+    DwString tmp_path = save_path + ".new";
+
+    size_t sz = tox_get_savedata_size(p->tox);
+    uint8_t *data = (uint8_t *)malloc(sz);
+    tox_get_savedata(p->tox, data);
+
+    const uint8_t *out_data = data;
+    size_t out_sz = sz;
+    uint8_t *enc_data = NULL;
+    if(p->pass_key)
+    {
+        out_sz = sz + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc_data = (uint8_t *)malloc(out_sz);
+        Tox_Err_Encryption err;
+        if(!tox_pass_key_encrypt(p->pass_key, data, sz, enc_data, &err))
+        {
+            fprintf(stderr, "toxd: save encrypt failed\n");
+            free(enc_data);
+            free(data);
+            return;
+        }
+        out_data = enc_data;
+    }
+
+    FILE *f = fopen(tmp_path.c_str(), "wb");
+    if(f)
+    {
+        fwrite(out_data, 1, out_sz, f);
+        fclose(f);
+        rename(tmp_path.c_str(), save_path.c_str());
+    }
+    if(enc_data)
+        free(enc_data);
+    free(data);
+}
+
+static void
+tox_write_log(Tox *tox, Tox_Log_Level level, const char *file,
+              uint32_t line, const char *func, const char *message,
+              void *user_data)
+{
+    FILE *lf = (FILE *)user_data;
+    if(lf)
+    {
+        fprintf(lf, "[%s] %s:%u (%s): %s\n",
+                tox_log_level_to_string(level), file, line, func, message);
+        fflush(lf);
+    }
+}
+
+static void
+load_or_create_tox(ToxPlugin *p, int *status_out)
+{
+    *status_out = TOXP_STATUS_FAILED;
+    DwString save_path = dwyco::newfn(p->save_file);
+
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts_ptr = tox_options_new(&new_err);
+    if(!opts_ptr)
+    {
+        *status_out = TOXP_STATUS_FAILED;
+        return;
+    }
+    struct Tox_Options &opts = *opts_ptr;
+    tox_options_default(&opts);
+    tox_options_set_experimental_disable_dns(&opts, true);
+    tox_options_set_udp_enabled(&opts, false);
+
+    DwString log_path = dwyco::newfn("tox.log");
+    p->log_file = fopen(log_path.c_str(), "a");
+    if(p->log_file)
+    {
+        opts.log_callback = tox_write_log;
+        opts.log_user_data = p->log_file;
+    }
+
+    uint8_t *savedata = NULL;
+    size_t savedata_sz = 0;
+    int had_savedata = 0;
+    int was_encrypted = 0;
+    FILE *f = fopen(save_path.c_str(), "rb");
+    if(f)
+    {
+        fseek(f, 0, SEEK_END);
+        long sz = ftell(f);
+        rewind(f);
+        if(sz > 0 && sz < 10 * 1024 * 1024)
+        {
+            savedata = (uint8_t *)malloc((size_t)sz);
+            if(fread(savedata, 1, (size_t)sz, f) == (size_t)sz)
+            {
+                savedata_sz = (size_t)sz;
+                had_savedata = 1;
+            }
+            else
+            {
+                free(savedata);
+                savedata = NULL;
+            }
+        }
+        fclose(f);
+    }
+
+    if(savedata && tox_is_data_encrypted(savedata))
+    {
+        was_encrypted = 1;
+        if(!p->password || p->password_len == 0)
+        {
+            free(savedata);
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_NEEDS_PASSWORD;
+            return;
+        }
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt(savedata, salt, NULL))
+        {
+            free(savedata);
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_FAILED;
+            return;
+        }
+        Tox_Err_Key_Derivation kerr;
+        p->pass_key = tox_pass_key_derive_with_salt(p->password, (size_t)p->password_len,
+                                                    salt, &kerr);
+        if(!p->pass_key)
+        {
+            free(savedata);
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_FAILED;
+            return;
+        }
+        size_t plain_len = savedata_sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        uint8_t *plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+        Tox_Err_Decryption derr;
+        if(!tox_pass_key_decrypt(p->pass_key, savedata, savedata_sz, plain, &derr))
+        {
+            free(plain);
+            free(savedata);
+            tox_pass_key_free(p->pass_key);
+            p->pass_key = NULL;
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            // wrong password (or corrupt data); let the user try again
+            *status_out = TOXP_STATUS_NEEDS_PASSWORD;
+            return;
+        }
+        free(savedata);
+        savedata = plain;
+        savedata_sz = plain_len;
+    }
+
+    if(savedata)
+    {
+        tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+        tox_options_set_savedata_data(&opts, savedata, savedata_sz);
+    }
+
+    Tox_Err_New err;
+    p->tox = tox_new(&opts, &err);
+    if(savedata)
+        free(savedata);
+    if(!p->tox)
+    {
+        if(was_encrypted)
+        {
+            // never silently mint a fresh identity from an encrypted save
+            if(p->pass_key)
+            {
+                tox_pass_key_free(p->pass_key);
+                p->pass_key = NULL;
+            }
+            tox_options_free(&opts);
+            if(p->log_file)
+            {
+                fclose(p->log_file);
+                p->log_file = NULL;
+            }
+            *status_out = TOXP_STATUS_FAILED;
+            return;
+        }
+        tox_options_default(&opts);
+        tox_options_set_experimental_disable_dns(&opts, true);
+        tox_options_set_udp_enabled(&opts, false);
+        tox_options_set_savedata_type(&opts, TOX_SAVEDATA_TYPE_NONE);
+
+        p->tox = tox_new(&opts, &err);
+    }
+
+    tox_options_free(&opts);
+
+    if(p->tox)
+    {
+        uint8_t address[TOX_ADDRESS_SIZE];
+        tox_self_get_address(p->tox, address);
+        char hex[TOX_ADDRESS_SIZE * 2 + 1];
+        sodium_bin2hex(hex, sizeof(hex), address, TOX_ADDRESS_SIZE);
+        fprintf(stderr, "toxd: %s %s\n", had_savedata ? "loaded" : "created", hex);
+
+        if(!had_savedata)
+            save_tox_state(p);
+        *status_out = TOXP_STATUS_OK;
+    }
+}
+
+static void
+register_callbacks(Tox *tox)
+{
+    tox_callback_friend_request(tox, toxd_on_friend_request);
+    tox_callback_friend_message(tox, toxd_on_friend_message);
+    tox_callback_friend_read_receipt(tox, toxd_on_friend_read_receipt);
+    tox_callback_file_recv(tox, toxd_on_file_recv);
+    tox_callback_file_recv_chunk(tox, toxd_on_file_recv_chunk);
+    tox_callback_file_recv_control(tox, toxd_on_file_recv_control);
+    tox_callback_file_chunk_request(tox, toxd_on_file_chunk_request);
+    tox_callback_friend_connection_status(tox, toxd_on_connection_status);
+    tox_callback_self_connection_status(tox, toxd_on_self_connection_status);
+    tox_callback_friend_name(tox, toxd_on_friend_name);
+    tox_callback_friend_status_message(tox, toxd_on_friend_status_message);
+    tox_callback_friend_typing(tox, toxd_on_friend_typing);
+    tox_callback_friend_status(tox, toxd_on_friend_status);
+}
+
+// --- plugin API ---
+
+ToxPlugin *
+toxp_init(const char *save_file, const uint8_t *password, int password_len,
+          ToxpEventCB cb, void *userdata, int *status_out)
+{
+    *status_out = TOXP_STATUS_FAILED;
+    ToxPlugin *p = new ToxPlugin;
+    p->event_cb = cb;
+    p->event_userdata = userdata;
+
+    if(password && password_len > 0)
+    {
+        p->password = (uint8_t *)malloc((size_t)password_len);
+        memcpy(p->password, password, (size_t)password_len);
+        p->password_len = password_len;
+    }
+
+    if(save_file && save_file[0])
+        p->save_file = save_file;
+    else
+    {
+        if(p->password)
+            free(p->password);
+        delete p;
+        return NULL;
+    }
+
+#if 0
+    DwString lock_path = DwString("%1/%2").arg(p->save_file, "toxd.lock");
+    p->lock_fd = open(lock_path.c_str(), O_CREAT | O_RDWR, 0644);
+    if(p->lock_fd < 0)
+    {
+        delete p;
+        return NULL;
+    }
+    if(flock(p->lock_fd, LOCK_EX | LOCK_NB) < 0)
+    {
+        close(p->lock_fd);
+        delete p;
+        return NULL;
+    }
+    p->lock_path = lock_path;
+#endif
+    load_or_create_tox(p, status_out);
+    if(!p->tox)
+    {
+#if 0
+        close(p->lock_fd);
+        unlink(p->lock_path.c_str());
+#endif
+        if(p->password)
+            free(p->password);
+        delete p;
+        return NULL;
+    }
+
+    register_callbacks(p->tox);
+    return p;
+}
+
+void
+toxp_shutdown(ToxPlugin *p)
+{
+    if(!p)
+        return;
+    save_tox_state(p);
+    tox_kill(p->tox);
+#if 0
+    if(p->lock_fd >= 0)
+    {
+        close(p->lock_fd);
+        unlink(p->lock_path.c_str());
+    }
+#endif
+    if(p->pass_key)
+    {
+        tox_pass_key_free(p->pass_key);
+        p->pass_key = NULL;
+    }
+    if(p->password)
+    {
+        free(p->password);
+        p->password = NULL;
+    }
+    p->password_len = 0;
+    if(p->log_file)
+        fclose(p->log_file);
+    delete p;
+}
+
+void
+toxp_save(ToxPlugin *p)
+{
+    save_tox_state(p);
+}
+
+int
+toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    err_buf[0] = 0;
+    if(!p || !p->tox)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+        return 0;
+    }
+    if(!dst_path || !dst_path[0])
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "no destination file");
+        return 0;
+    }
+
+    size_t sz = tox_get_savedata_size(p->tox);
+    uint8_t *data = (uint8_t *)malloc(sz);
+    tox_get_savedata(p->tox, data);
+
+    const uint8_t *out_data = data;
+    size_t out_sz = sz;
+    uint8_t *enc_data = NULL;
+    if(p->pass_key)
+    {
+        out_sz = sz + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc_data = (uint8_t *)malloc(out_sz);
+        Tox_Err_Encryption err;
+        if(!tox_pass_key_encrypt(p->pass_key, data, sz, enc_data, &err))
+        {
+            fprintf(stderr, "toxd: export encrypt failed\n");
+            free(enc_data);
+            free(data);
+            snprintf(err_buf, (size_t)err_buf_len, "encryption failed");
+            return 0;
+        }
+        out_data = enc_data;
+    }
+
+    int ret = 0;
+    FILE *f = fopen(dst_path, "wb");
+    if(f)
+    {
+        if(fwrite(out_data, 1, out_sz, f) == out_sz)
+            ret = 1;
+        fclose(f);
+    }
+    if(!ret)
+        snprintf(err_buf, (size_t)err_buf_len, "could not write file");
+
+    if(enc_data)
+        free(enc_data);
+    free(data);
+    return ret;
+}
+
+int
+toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                    uint8_t **out_data, size_t *out_len,
+                    char *err_buf, int err_buf_len)
+{
+    *out_data = NULL;
+    *out_len = 0;
+    // err_buf is optional: callers that only want a yes/no answer (eg. peeking
+    // a pubkey before importing) pass NULL and just don't get to see why it
+    // failed. route those into a scratch buffer so the messages below can stay
+    // unconditional.
+    char scratch[256];
+    if(!err_buf || err_buf_len <= 0)
+    {
+        err_buf = scratch;
+        err_buf_len = (int)sizeof(scratch);
+    }
+    err_buf[0] = 0;
+
+    FILE *f = fopen(src_path, "rb");
+    if(!f)
+    {
+        snprintf(err_buf, (size_t)err_buf_len, "cannot open %s", src_path);
+        return 0;
+    }
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz >= 10 * 1024 * 1024)
+    {
+        fclose(f);
+        snprintf(err_buf, (size_t)err_buf_len, "bad file size");
+        return 0;
+    }
+    uint8_t *raw = (uint8_t *)malloc((size_t)sz);
+    if(fread(raw, 1, (size_t)sz, f) != (size_t)sz)
+    {
+        fclose(f);
+        free(raw);
+        snprintf(err_buf, (size_t)err_buf_len, "read failed");
+        return 0;
+    }
+    fclose(f);
+
+    uint8_t *plain = raw;
+    size_t plain_len = (size_t)sz;
+    if(tox_is_data_encrypted(raw))
+    {
+        if(!src_pw || src_pw_len == 0)
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "profile is password protected");
+            return 0;
+        }
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt(raw, salt, NULL))
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "bad encrypted format");
+            return 0;
+        }
+        Tox_Err_Key_Derivation kerr;
+        Tox_Pass_Key *key = tox_pass_key_derive_with_salt(src_pw, (size_t)src_pw_len,
+                                                          salt, &kerr);
+        if(!key)
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "key derivation failed");
+            return 0;
+        }
+        if(sz < TOX_PASS_ENCRYPTION_EXTRA_LENGTH || sz > 10 * 1024 * 1024)
+        {
+            free(raw);
+            snprintf(err_buf, (size_t)err_buf_len, "bogus size");
+            return 0;
+        }
+        plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+        Tox_Err_Decryption derr;
+        if(!tox_pass_key_decrypt(key, raw, (size_t)sz, plain, &derr))
+        {
+            free(plain);
+            free(raw);
+            tox_pass_key_free(key);
+            snprintf(err_buf, (size_t)err_buf_len, "wrong password or corrupt data");
+            return 0;
+        }
+        free(raw);
+        tox_pass_key_free(key);
+    }
+
+    // validate it is a loadable tox save
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, plain, plain_len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+    {
+        free(plain);
+        snprintf(err_buf, (size_t)err_buf_len, "not a valid tox save file");
+        return 0;
+    }
+    tox_kill(tmp);
+
+    *out_data = plain;
+    *out_len = plain_len;
+    return 1;
+}
+
+int
+toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
+                   const uint8_t *dst_pw, int dst_pw_len,
+                   char *err_buf, int err_buf_len)
+{
+    if(!err_buf || err_buf_len <= 0)
+        return 0;
+    DwString save_path = dwyco::newfn(save_file);
+    DwString tmp_path = save_path + ".new";
+
+    const uint8_t *out_data = data;
+    size_t out_len = len;
+    uint8_t *enc = NULL;
+    Tox_Pass_Key *key = NULL;
+    if(dst_pw && dst_pw_len > 0)
+    {
+        Tox_Err_Key_Derivation kerr;
+        key = tox_pass_key_derive(dst_pw, (size_t)dst_pw_len, &kerr);
+        if(!key)
+        {
+            snprintf(err_buf, (size_t)err_buf_len, "key derivation failed");
+            return 0;
+        }
+        out_len = len + TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        enc = (uint8_t *)malloc(out_len);
+        Tox_Err_Encryption eerr;
+        if(!tox_pass_key_encrypt(key, data, len, enc, &eerr))
+        {
+            free(enc);
+            tox_pass_key_free(key);
+            snprintf(err_buf, (size_t)err_buf_len, "encryption failed");
+            return 0;
+        }
+        out_data = enc;
+    }
+
+    FILE *f = fopen(tmp_path.c_str(), "wb");
+    int ret = 0;
+    if(f)
+    {
+        if(fwrite(out_data, 1, out_len, f) == out_len)
+            ret = 1;
+        fclose(f);
+        if(ret)
+        {
+            if(rename(tmp_path.c_str(), save_path.c_str()) != 0)
+                ret = 0;
+        }
+        if(!ret)
+            remove(tmp_path.c_str());
+    }
+    if(enc)
+        free(enc);
+    if(key)
+        tox_pass_key_free(key);
+    if(!ret)
+        snprintf(err_buf, (size_t)err_buf_len, "write failed");
+    return ret;
+}
+
+int
+toxp_validate_save(const uint8_t *data, size_t len)
+{
+    if(!data || len == 0)
+        return 0;
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    if(!opts)
+        return 0;
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, data, len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+        return 0;
+    tox_kill(tmp);
+    return 1;
+}
+
+int
+toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out)
+{
+    if(!data || len == 0)
+        return 0;
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    if(!opts)
+        return 0;
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, data, len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+        return 0;
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_self_get_public_key(tmp, pubkey);
+    tox_kill(tmp);
+    pubkey_out = vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE);
+    return 1;
+}
+
+// hex helper, so the summary reports public keys in the same form the ui and
+// the tag mids use everywhere else.
+static vc
+hex_of(const uint8_t *b, int len)
+{
+    static const char *digits = "0123456789abcdef";
+    char *out = new char[(size_t)len * 2 + 1];
+    for(int i = 0; i < len; ++i)
+    {
+        out[2 * i] = digits[(b[i] >> 4) & 0xf];
+        out[2 * i + 1] = digits[b[i] & 0xf];
+    }
+    vc ret(VC_BSTRING, out, (long)len * 2);
+    delete [] out;
+    return ret;
+}
+
+// compare friend entries by pubkey, so the summary is order independent.
+// note vc::find is non-const, hence the by-value parameters (an entry is two
+// short strings, so the copies are cheap).
+static bool
+friend_less(vc a, vc b)
+{
+    vc apk, bpk;
+    if(!a.find("pubkey", apk) || !b.find("pubkey", bpk))
+        return false;
+    // both are hex of a fixed-width key, so a plain string compare orders
+    // them consistently with the binary compare
+    return strcmp((const char *)apk, (const char *)bpk) < 0;
+}
+
+int
+toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
+                 vc &summary_out)
+{
+    if(!data || len <= 0)
+        return 0;
+
+    // decrypt first if needed. this is the one expensive part of the whole
+    // comparison (scrypt, deliberately), so it only happens for a password
+    // protected save -- and only once per comparison, not per ui repaint.
+    const uint8_t *plain = (const uint8_t *)data;
+    size_t plain_len = (size_t)len;
+    uint8_t *decrypted = NULL;
+    bool encrypted = tox_is_data_encrypted((const uint8_t *)data);
+    if(encrypted)
+    {
+        if(!pw || pw_len <= 0)
+            return 0;
+        if((size_t)len <= TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+            return 0;
+        uint8_t salt[TOX_PASS_SALT_LENGTH];
+        if(!tox_get_salt((const uint8_t *)data, salt, NULL))
+            return 0;
+        Tox_Err_Key_Derivation kerr;
+        Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len,
+                                                          salt, &kerr);
+        if(!key)
+            return 0;
+        plain_len = (size_t)len - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+        decrypted = (uint8_t *)malloc(plain_len);
+        Tox_Err_Decryption derr;
+        int ok = tox_pass_key_decrypt(key, (const uint8_t *)data, (size_t)len,
+                                      decrypted, &derr);
+        tox_pass_key_free(key);
+        if(!ok)
+        {
+            free(decrypted);
+            return 0;
+        }
+        plain = decrypted;
+    }
+
+    // load it offline. udp and dns are off so nothing here touches the
+    // network; we only want the stored fields.
+    Tox_Err_Options_New new_err;
+    Tox_Options *opts = tox_options_new(&new_err);
+    if(!opts)
+    {
+        free(decrypted);
+        return 0;
+    }
+    tox_options_default(opts);
+    tox_options_set_experimental_disable_dns(opts, true);
+    tox_options_set_udp_enabled(opts, false);
+    tox_options_set_savedata_type(opts, TOX_SAVEDATA_TYPE_TOX_SAVE);
+    tox_options_set_savedata_data(opts, plain, plain_len);
+    Tox_Err_New terr;
+    Tox *tmp = tox_new(opts, &terr);
+    tox_options_free(opts);
+    if(!tmp)
+    {
+        free(decrypted);
+        return 0;
+    }
+
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_self_get_public_key(tmp, pubkey);
+
+    char name_buf[TOX_MAX_NAME_LENGTH + 1];
+    size_t name_len = tox_self_get_name_size(tmp);
+    if(name_len > TOX_MAX_NAME_LENGTH)
+        name_len = TOX_MAX_NAME_LENGTH;
+    tox_self_get_name(tmp, (uint8_t *)name_buf);
+    name_buf[name_len] = 0;
+
+    char status_buf[TOX_MAX_STATUS_MESSAGE_LENGTH + 1];
+    size_t status_len = tox_self_get_status_message_size(tmp);
+    if(status_len > TOX_MAX_STATUS_MESSAGE_LENGTH)
+        status_len = TOX_MAX_STATUS_MESSAGE_LENGTH;
+    tox_self_get_status_message(tmp, (uint8_t *)status_buf);
+    status_buf[status_len] = 0;
+
+    // friend pubkey + alias. deliberately NOT the connection status, last
+    // seen, or per-friend user status: those move on their own as the
+    // network runs, and reporting them would make every save look changed.
+    std::vector<vc> friends;
+    uint32_t n = tox_self_get_friend_list_size(tmp);
+    if(n > 0)
+    {
+        std::vector<uint32_t> list(n);
+        tox_self_get_friend_list(tmp, list.data());
+        for(uint32_t i = 0; i < n; ++i)
+        {
+            uint32_t fn = list[i];
+            uint8_t fpk[TOX_PUBLIC_KEY_SIZE];
+            if(!tox_friend_get_public_key(tmp, fn, fpk, NULL))
+                continue;
+            vc entry(VC_MAP, "", 2);
+            entry.add_kv("pubkey", hex_of(fpk, TOX_PUBLIC_KEY_SIZE));
+            char alias[TOX_MAX_NAME_LENGTH + 1];
+            size_t alias_len = tox_friend_get_name_size(tmp, fn, NULL);
+            if(alias_len > TOX_MAX_NAME_LENGTH)
+                alias_len = TOX_MAX_NAME_LENGTH;
+            if(alias_len > 0)
+            {
+                tox_friend_get_name(tmp, fn, (uint8_t *)alias, NULL);
+                alias[alias_len] = 0;
+                entry.add_kv("alias", vc(VC_BSTRING, alias, (long)alias_len));
+            }
+            else
+                entry.add_kv("alias", vc(""));
+            friends.push_back(entry);
+        }
+    }
+    // sort so two saves with the same friends compare equal regardless of the
+    // order toxcore happens to list them in.
+    std::sort(friends.begin(), friends.end(), friend_less);
+
+    uint32_t nospam = tox_self_get_nospam(tmp);
+    tox_kill(tmp);
+    free(decrypted);
+
+    vc ret(VC_MAP, "", 6);
+    ret.add_kv("pubkey", hex_of(pubkey, TOX_PUBLIC_KEY_SIZE));
+    // note: nospam is reported as a decimal string rather than a vc int,
+    // because this map is compared field by field and a string keeps that
+    // working regardless of how vc formats large numbers.
+    ret.add_kv("nospam", vc(DwString::fromInt((long)nospam)));
+    ret.add_kv("name", vc(VC_BSTRING, name_buf, (long)name_len));
+    ret.add_kv("status", vc(VC_BSTRING, status_buf, (long)status_len));
+    ret.add_kv("encrypted", vc(encrypted ? 1 : 0));
+    vc fv(VC_VECTOR);
+    for(size_t i = 0; i < friends.size(); ++i)
+        fv.append(friends[i]);
+    ret.add_kv("friends", fv);
+    summary_out = ret;
+    return 1;
+}
+
+int
+toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
+{
+    if(!p)
+        return 0;
+    Tox_Pass_Key *new_key = NULL;
+    if(pw && pw_len > 0)
+    {
+        Tox_Err_Key_Derivation kerr;
+        new_key = tox_pass_key_derive(pw, (size_t)pw_len, &kerr);
+        if(!new_key)
+            return 0;
+    }
+    if(p->pass_key)
+    {
+        tox_pass_key_free(p->pass_key);
+        p->pass_key = NULL;
+    }
+    p->pass_key = new_key;
+    if(p->tox)
+        save_tox_state(p);
+    return 1;
+}
+
+int
+toxp_has_password(ToxPlugin *p)
+{
+    return p && p->pass_key ? 1 : 0;
+}
+
+int
+toxp_set_password_on_file(const char *save_file,
+                          const uint8_t *old_pw, int old_pw_len,
+                          const uint8_t *new_pw, int new_pw_len,
+                          char *err_buf, int err_buf_len)
+{
+    uint8_t *data = NULL;
+    size_t len = 0;
+    if(!toxp_import_prepare(save_file, old_pw, old_pw_len, &data, &len,
+                            err_buf, err_buf_len))
+        return 0;
+    int ret = toxp_import_commit(save_file, data, len, new_pw, new_pw_len,
+                                 err_buf, err_buf_len);
+    free(data);
+    return ret ? 1 : 0;
+}
+
+int
+toxp_file_is_encrypted(const char *path)
+{
+    if(!path)
+        return 0;
+    FILE *f = fopen(path, "rb");
+    if(!f)
+        return 0;
+    uint8_t probe[TOX_PASS_ENCRYPTION_EXTRA_LENGTH];
+    size_t n = fread(probe, 1, sizeof(probe), f);
+    fclose(f);
+    if(n < TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+        return 0;
+    return tox_is_data_encrypted(probe);
+}
+
+int
+toxp_data_is_encrypted(const char *data, int len)
+{
+    if(!data || len < (int)TOX_PASS_ENCRYPTION_EXTRA_LENGTH)
+        return 0;
+    return tox_is_data_encrypted((const uint8_t *)data);
+}
+
+int
+toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
+{
+    if(!save_file || !save_file[0])
+        return 0;
+    FILE *f = fopen(save_file, "rb");
+    if(!f)
+        return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if(sz <= 0 || sz >= 10 * 1024 * 1024)
+    {
+        fclose(f);
+        return 0;
+    }
+    uint8_t *raw = (uint8_t *)malloc((size_t)sz);
+    if(fread(raw, 1, (size_t)sz, f) != (size_t)sz)
+    {
+        fclose(f);
+        free(raw);
+        return 0;
+    }
+    fclose(f);
+
+    if(!tox_is_data_encrypted(raw))
+    {
+        free(raw);
+        return 1;
+    }
+    if(!pw || pw_len == 0)
+    {
+        free(raw);
+        return 0;
+    }
+    uint8_t salt[TOX_PASS_SALT_LENGTH];
+    if(!tox_get_salt(raw, salt, NULL))
+    {
+        free(raw);
+        return 0;
+    }
+    Tox_Err_Key_Derivation kerr;
+    Tox_Pass_Key *key = tox_pass_key_derive_with_salt(pw, (size_t)pw_len, salt, &kerr);
+    if(!key)
+    {
+        free(raw);
+        return 0;
+    }
+    if(sz < TOX_PASS_ENCRYPTION_EXTRA_LENGTH || sz > 10 * 1024 * 1024)
+    {
+        free(raw);
+        return 0;
+    }
+    size_t plain_len = (size_t)sz - TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+    uint8_t *plain = (uint8_t *)malloc(plain_len ? plain_len : 1);
+    Tox_Err_Decryption derr;
+    int ret = tox_pass_key_decrypt(key, raw, (size_t)sz, plain, &derr);
+    free(plain);
+    free(raw);
+    tox_pass_key_free(key);
+    return ret;
+}
+
+void
+toxp_iterate(ToxPlugin *p)
+{
+    tox_iterate(p->tox, p);
+    if(!p->bootstrapped)
+    {
+        tox_bootstrap(p->tox);
+        p->bootstrapped = 1;
+    }
+}
+
+vc
+toxp_get_address(ToxPlugin *p)
+{
+    uint8_t address[TOX_ADDRESS_SIZE];
+    tox_self_get_address(p->tox, address);
+    vc result(VC_MAP, "", 2);
+    result.add_kv("address", vc(VC_BSTRING, (const char *)address, TOX_ADDRESS_SIZE));
+    return result;
+}
+
+vc
+toxp_get_self_pubkey(ToxPlugin *p)
+{
+    uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+    tox_self_get_public_key(p->tox, pubkey);
+    uint8_t address[TOX_ADDRESS_SIZE];
+    tox_self_get_address(p->tox, address);
+
+    vc result(VC_MAP, "", 4);
+    result.add_kv("pubkey", vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE));
+    result.add_kv("address", vc(VC_BSTRING, (const char *)address, TOX_ADDRESS_SIZE));
+    return result;
+}
+
+vc
+toxp_get_name(ToxPlugin *p)
+{
+    size_t len = tox_self_get_name_size(p->tox);
+    uint8_t *name = (uint8_t *)malloc(len + 1);
+    tox_self_get_name(p->tox, name);
+    name[len] = 0;
+    vc result(VC_MAP, "", 2);
+    result.add_kv("name", vc(VC_BSTRING, (const char *)name, (long)len));
+    free(name);
+    return result;
+}
+
+vc
+toxp_get_status_message(ToxPlugin *p)
+{
+    size_t len = tox_self_get_status_message_size(p->tox);
+    uint8_t *msg = (uint8_t *)malloc(len + 1);
+    tox_self_get_status_message(p->tox, msg);
+    msg[len] = 0;
+    vc result(VC_MAP, "", 2);
+    result.add_kv("status_message", vc(VC_BSTRING, (const char *)msg, (long)len));
+    free(msg);
+    return result;
+}
+
+int
+toxp_set_name(ToxPlugin *p, const char *name, int len)
+{
+    Tox_Err_Set_Info err;
+    if(!tox_self_set_name(p->tox, (const uint8_t *)name, (size_t)len, &err))
+        return 0;
+    save_tox_state(p);
+    return 1;
+}
+
+int
+toxp_set_status_message(ToxPlugin *p, const char *msg, int len)
+{
+    Tox_Err_Set_Info err;
+    if(!tox_self_set_status_message(p->tox, (const uint8_t *)msg, (size_t)len, &err))
+        return 0;
+    save_tox_state(p);
+    return 1;
+}
+
+void
+toxp_set_user_status(ToxPlugin *p, const char *status)
+{
+    Tox_User_Status ts = TOX_USER_STATUS_NONE;
+    if(strcmp(status, "away") == 0)
+        ts = TOX_USER_STATUS_AWAY;
+    else if(strcmp(status, "busy") == 0)
+        ts = TOX_USER_STATUS_BUSY;
+    tox_self_set_status(p->tox, ts);
+}
+
+vc
+toxp_get_user_status(ToxPlugin *p)
+{
+    Tox_User_Status ts = tox_self_get_status(p->tox);
+    const char *status_str = "none";
+    if(ts == TOX_USER_STATUS_AWAY)
+        status_str = "away";
+    else if(ts == TOX_USER_STATUS_BUSY)
+        status_str = "busy";
+    vc result(VC_MAP, "", 2);
+    result.add_kv("status", vc(status_str));
+    return result;
+}
+
+int
+toxp_friend_add(ToxPlugin *p, const vc &address, const vc &message, uint32_t *fn_out)
+{
+    if(address.len() != TOX_ADDRESS_SIZE || fn_out == NULL)
+        return 0;
+    uint8_t addr[TOX_ADDRESS_SIZE];
+    memcpy(addr, (const char *)address, TOX_ADDRESS_SIZE);
+    const uint8_t *msg = (const uint8_t *)(const char *)message;
+    size_t mlen = (size_t)message.len();
+
+    Tox_Err_Friend_Add err;
+    uint32_t fn = tox_friend_add(p->tox, addr, msg, mlen, &err);
+    if(err != TOX_ERR_FRIEND_ADD_OK)
+        return 0;
+
+    *fn_out = fn;
+    save_tox_state(p);
+    return 1;
+}
+
+int
+toxp_friend_add_norequest(ToxPlugin *p, const vc &pubkey, uint32_t *fn_out)
+{
+    if(pubkey.len() != TOX_PUBLIC_KEY_SIZE || fn_out == NULL)
+        return 0;
+    Tox_Public_Key pk;
+    memcpy(pk, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE);
+
+    Tox_Err_Friend_Add err;
+    uint32_t fn = tox_friend_add_norequest(p->tox, pk, &err);
+    if(err != TOX_ERR_FRIEND_ADD_OK)
+        return 0;
+
+    *fn_out = fn;
+    save_tox_state(p);
+    return 1;
+}
+
+int
+toxp_friend_delete(ToxPlugin *p, uint32_t fn)
+{
+    Tox_Err_Friend_Delete err;
+    tox_friend_delete(p->tox, fn, &err);
+    if(err != TOX_ERR_FRIEND_DELETE_OK)
+        return 0;
+    save_tox_state(p);
+    return 1;
+}
+
+int
+toxp_message_send(ToxPlugin *p, uint32_t fn, const vc &text, int is_action,
+                  uint32_t *mid_out, int *tox_err_out)
+{
+    Tox_Message_Type mtype = is_action ? TOX_MESSAGE_TYPE_ACTION : TOX_MESSAGE_TYPE_NORMAL;
+    const uint8_t *msg = (const uint8_t *)(const char *)text;
+    size_t mlen = (size_t)text.len();
+
+    Tox_Err_Friend_Send_Message err;
+    uint32_t mid = tox_friend_send_message(p->tox, fn, mtype, msg, mlen, &err);
+    if(err != TOX_ERR_FRIEND_SEND_MESSAGE_OK)
+    {
+        if(tox_err_out)
+            *tox_err_out = (int)err;
+        return 0;
+    }
+    if(mid_out)
+        *mid_out = mid;
+    return 1;
+}
+
+int
+toxp_typing_set(ToxPlugin *p, uint32_t fn, int typing)
+{
+    Tox_Err_Set_Typing err;
+    if(!tox_self_set_typing(p->tox, fn, typing != 0, &err))
+        return 0;
+    return 1;
+}
+
+int
+toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size,
+               uint32_t *fnum_out)
+{
+    const uint8_t *fname = (const uint8_t *)(const char *)name;
+    size_t fnlen = (size_t)name.len();
+
+    Tox_Err_File_Send err;
+    uint32_t fnum = tox_file_send(p->tox, fn, TOX_FILE_KIND_DATA, size, NULL, fname, fnlen, &err);
+    if(err != TOX_ERR_FILE_SEND_OK)
+        return 0;
+    if(fnum_out)
+        *fnum_out = fnum;
+    return 1;
+}
+
+int
+toxp_file_send_avatar(ToxPlugin *p, uint32_t fn, const vc &hash, uint64_t size,
+                      uint32_t *fnum_out)
+{
+    const uint8_t *fname = (const uint8_t *)(const char *)hash;
+    size_t fnlen = (size_t)hash.len();
+
+    Tox_Err_File_Send err;
+    uint32_t fnum = tox_file_send(p->tox, fn, TOX_FILE_KIND_AVATAR, size, NULL, fname, fnlen, &err);
+    if(err != TOX_ERR_FILE_SEND_OK)
+        return 0;
+    if(fnum_out)
+        *fnum_out = fnum;
+    return 1;
+}
+
+int
+toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out)
+{
+    (void)p;
+    Tox_Hash hash;
+    size_t len = (size_t)data.len();
+    const uint8_t *bytes = NULL;
+    if(len > 0)
+        bytes = (const uint8_t *)(const char *)data;
+    if(!tox_hash(hash, bytes, len))
+        return 0;
+    hash_out = vc(VC_BSTRING, (const char *)hash, TOX_HASH_LENGTH);
+    return 1;
+}
+
+int
+toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos,
+                    const vc &data)
+{
+    Tox_Err_File_Send_Chunk err;
+    if(data.is_nil() || data.len() == 0)
+        tox_file_send_chunk(p->tox, fn, fnum, pos, NULL, 0, &err);
+    else
+    {
+        const uint8_t *d = (const uint8_t *)(const char *)data;
+        size_t dlen = (size_t)data.len();
+        tox_file_send_chunk(p->tox, fn, fnum, pos, d, dlen, &err);
+    }
+    if(err != TOX_ERR_FILE_SEND_CHUNK_OK)
+        return 0;
+    return 1;
+}
+
+int
+toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum, int *error_out)
+{
+    Tox_Err_File_Control err;
+    tox_file_control(p->tox, fn, fnum, TOX_FILE_CONTROL_RESUME, &err);
+    if(error_out)
+        *error_out = (int)err;
+    return err == TOX_ERR_FILE_CONTROL_OK ? 1 : 0;
+}
+
+int
+toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum)
+{
+    Tox_Err_File_Control err;
+    tox_file_control(p->tox, fn, fnum, TOX_FILE_CONTROL_CANCEL, &err);
+    return err == TOX_ERR_FILE_CONTROL_OK ? 1 : 0;
+}
+
+vc
+toxp_friend_list(ToxPlugin *p)
+{
+    uint32_t n = tox_self_get_friend_list_size(p->tox);
+    std::vector<uint32_t> friend_list(n);
+    tox_self_get_friend_list(p->tox, friend_list.data());
+    vc friends(VC_VECTOR);
+    for(uint32_t i = 0; i < n; ++i)
+    {
+        uint32_t fn = friend_list[i];
+        uint8_t pubkey[TOX_PUBLIC_KEY_SIZE];
+        if(tox_friend_get_public_key(p->tox, fn, pubkey, NULL))
+        {
+            vc entry(VC_MAP, "", 8);
+            entry.add_kv("friend_number", vc((int)fn));
+            entry.add_kv("pubkey", vc(VC_BSTRING, (const char *)pubkey, TOX_PUBLIC_KEY_SIZE));
+
+            size_t name_len = tox_friend_get_name_size(p->tox, fn, NULL);
+            if(name_len > 0 && name_len <= TOX_MAX_NAME_LENGTH)
+            {
+                uint8_t name[TOX_MAX_NAME_LENGTH];
+                tox_friend_get_name(p->tox, fn, name, NULL);
+                entry.add_kv("name", vc(VC_BSTRING, (const char *)name, (long)name_len));
+            }
+            else
+                entry.add_kv("name", vc(""));
+
+            Tox_Connection conn = tox_friend_get_connection_status(p->tox, fn, NULL);
+            entry.add_kv("status", vc(conn == TOX_CONNECTION_NONE ? "offline" : "online"));
+
+            Tox_User_Status us = tox_friend_get_status(p->tox, fn, NULL);
+            entry.add_kv("user_status", vc(us == TOX_USER_STATUS_AWAY ? "away" : us == TOX_USER_STATUS_BUSY ? "busy" : "none"));
+
+            friends.append(entry);
+        }
+    }
+    vc result(VC_MAP, "", 2);
+    result.add_kv("friends", friends);
+    return result;
+}
+
+vc
+toxp_friend_get_name(ToxPlugin *p, uint32_t fn)
+{
+    size_t name_len = tox_friend_get_name_size(p->tox, fn, NULL);
+    if(name_len > 0 && name_len <= TOX_MAX_NAME_LENGTH)
+    {
+        uint8_t name[TOX_MAX_NAME_LENGTH];
+        tox_friend_get_name(p->tox, fn, name, NULL);
+        return vc(VC_BSTRING, (const char *)name, (long)name_len);
+    }
+    return vcnil;
+}
+
+// --- old-style main kept for standalone test builds ---
+#if defined(TOXD_STANDALONE)
+
+struct StandaloneCtx {
+    ToxPlugin *plugin;
+};
+
+static void
+standalone_on_event(const char *type, const vc &args, void *userdata)
+{
+    StandaloneCtx *ctx = (StandaloneCtx *)userdata;
+    log_printf(ctx->plugin->log_file, "[event] %s args=%d", type, args.num_elems());
+    for(int i = 0; i < args.num_elems(); ++i)
+    {
+        vc v = args[i];
+        DwString s;
+        s = v.peek_str();
+        log_printf(ctx->plugin->log_file, "  [%d] %s", i, s.c_str());
+    }
+}
+
+void
+oopanic(const char *)
+{
+    ::abort();
+}
+
+int
+main(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    StandaloneCtx ctx = {};
+    int status = TOXP_STATUS_FAILED;
+    ToxPlugin *p = toxp_init("tox.save", NULL, 0, standalone_on_event, &ctx, &status);
+    if(!p)
+        return 1;
+    ctx.plugin = p;
+    log_printf(p->log_file, "START!");
+    while(1)
+    {
+        toxp_iterate(p);
+        usleep(tox_iteration_interval(p->tox) * 1000);
+    }
+    toxp_shutdown(p);
+    return 0;
+}
+#endif
+
+#else
+
+#include <stdio.h>
+#include "toxd_plugin.h"
+
+ToxPlugin *
+toxp_init(const char *save_file, const uint8_t *password, int password_len,
+          ToxpEventCB cb, void *userdata, int *status_out)
+{
+    (void)save_file;
+    (void)password;
+    (void)password_len;
+    (void)cb;
+    (void)userdata;
+    if(status_out)
+        *status_out = TOXP_STATUS_FAILED;
+    return nullptr;
+}
+
+void
+toxp_shutdown(ToxPlugin *)
+{
+}
+
+void
+toxp_save(ToxPlugin *p)
+{
+    (void)p;
+}
+
+int
+toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_buf_len)
+{
+    (void)p;
+    (void)dst_path;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_import_prepare(const char *src_path, const uint8_t *src_pw, int src_pw_len,
+                    uint8_t **out_data, size_t *out_len,
+                    char *err_buf, int err_buf_len)
+{
+    (void)src_path;
+    (void)src_pw;
+    (void)src_pw_len;
+    if(out_data)
+        *out_data = NULL;
+    if(out_len)
+        *out_len = 0;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_import_commit(const char *save_file, const uint8_t *data, size_t len,
+                   const uint8_t *dst_pw, int dst_pw_len,
+                   char *err_buf, int err_buf_len)
+{
+    (void)save_file;
+    (void)data;
+    (void)len;
+    (void)dst_pw;
+    (void)dst_pw_len;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not enabled");
+    return 0;
+}
+
+int
+toxp_validate_save(const uint8_t *data, size_t len)
+{
+    (void)data;
+    (void)len;
+    return 0;
+}
+
+int
+toxp_get_pubkey_from_save(const uint8_t *data, size_t len, vc &pubkey_out)
+{
+    (void)data;
+    (void)len;
+    (void)pubkey_out;
+    return 0;
+}
+
+int
+toxp_set_password(ToxPlugin *p, const uint8_t *pw, int pw_len)
+{
+    (void)p;
+    (void)pw;
+    (void)pw_len;
+    return 0;
+}
+
+int
+toxp_has_password(ToxPlugin *p)
+{
+    (void)p;
+    return 0;
+}
+
+int
+toxp_check_password(const char *save_file, const uint8_t *pw, int pw_len)
+{
+    (void)save_file;
+    (void)pw;
+    (void)pw_len;
+    return 0;
+}
+
+int
+toxp_file_is_encrypted(const char *path)
+{
+    (void)path;
+    return 0;
+}
+
+int
+toxp_data_is_encrypted(const char *data, int len)
+{
+    (void)data;
+    (void)len;
+    return 0;
+}
+
+int
+toxp_set_password_on_file(const char *save_file,
+                          const uint8_t *old_pw, int old_pw_len,
+                          const uint8_t *new_pw, int new_pw_len,
+                          char *err_buf, int err_buf_len)
+{
+    (void)save_file;
+    (void)old_pw;
+    (void)old_pw_len;
+    (void)new_pw;
+    (void)new_pw_len;
+    if(err_buf && err_buf_len > 0)
+        snprintf(err_buf, (size_t)err_buf_len, "tox is not supported");
+    return 0;
+}
+
+void
+toxp_iterate(ToxPlugin *p)
+{
+    (void)p;
+}
+
+vc
+toxp_get_address(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_get_self_pubkey(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_get_name(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_get_status_message(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+int
+toxp_set_name(ToxPlugin *p, const char *name, int len)
+{
+    (void)p;
+    (void)name;
+    (void)len;
+    return 0;
+}
+
+int
+toxp_set_status_message(ToxPlugin *p, const char *msg, int len)
+{
+    (void)p;
+    (void)msg;
+    (void)len;
+    return 0;
+}
+
+void
+toxp_set_user_status(ToxPlugin *p, const char *status)
+{
+    (void)p;
+    (void)status;
+}
+
+vc
+toxp_get_user_status(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+int
+toxp_friend_add(ToxPlugin *p, const vc &address, const vc &message, uint32_t *fn_out)
+{
+    (void)p;
+    (void)address;
+    (void)message;
+    (void)fn_out;
+    return 0;
+}
+
+int
+toxp_friend_add_norequest(ToxPlugin *p, const vc &pubkey, uint32_t *fn_out)
+{
+    (void)p;
+    (void)pubkey;
+    (void)fn_out;
+    return 0;
+}
+
+int
+toxp_friend_delete(ToxPlugin *p, uint32_t fn)
+{
+    (void)p;
+    (void)fn;
+    return 0;
+}
+
+vc
+toxp_friend_list(ToxPlugin *p)
+{
+    (void)p;
+    return vcnil;
+}
+
+vc
+toxp_friend_get_name(ToxPlugin *p, uint32_t fn)
+{
+    (void)p;
+    (void)fn;
+    return vcnil;
+}
+
+int
+toxp_message_send(ToxPlugin *p, uint32_t fn, const vc &text, int is_action,
+                  uint32_t *mid_out, int *tox_err_out)
+{
+    (void)p;
+    (void)fn;
+    (void)text;
+    (void)is_action;
+    (void)mid_out;
+    (void)tox_err_out;
+    return 0;
+}
+
+int
+toxp_typing_set(ToxPlugin *p, uint32_t fn, int typing)
+{
+    (void)p;
+    (void)fn;
+    (void)typing;
+    return 0;
+}
+
+int
+toxp_file_send(ToxPlugin *p, uint32_t fn, const vc &name, uint64_t size,
+               uint32_t *fnum_out)
+{
+    (void)p;
+    (void)fn;
+    (void)name;
+    (void)size;
+    (void)fnum_out;
+    return 0;
+}
+
+int
+toxp_file_send_avatar(ToxPlugin *p, uint32_t fn, const vc &hash, uint64_t size,
+                      uint32_t *fnum_out)
+{
+    (void)p;
+    (void)fn;
+    (void)hash;
+    (void)size;
+    (void)fnum_out;
+    return 0;
+}
+
+int
+toxp_avatar_hash(ToxPlugin *p, const vc &data, vc &hash_out)
+{
+    (void)p;
+    (void)data;
+    (void)hash_out;
+    return 0;
+}
+
+int
+toxp_save_summary(const char *data, int len, const uint8_t *pw, int pw_len,
+                 vc &summary_out)
+{
+    (void)data;
+    (void)len;
+    (void)pw;
+    (void)pw_len;
+    (void)summary_out;
+    return 0;
+}
+
+int
+toxp_file_send_data(ToxPlugin *p, uint32_t fn, uint32_t fnum, uint64_t pos,
+                    const vc &data)
+{
+    (void)p;
+    (void)fn;
+    (void)fnum;
+    (void)pos;
+    (void)data;
+    return 0;
+}
+
+int
+toxp_file_accept(ToxPlugin *p, uint32_t fn, uint32_t fnum, int *error_out)
+{
+    (void)p;
+    (void)fn;
+    (void)fnum;
+    (void)error_out;
+    return 0;
+}
+
+int
+toxp_file_cancel(ToxPlugin *p, uint32_t fn, uint32_t fnum)
+{
+    (void)p;
+    (void)fn;
+    (void)fnum;
+    return 0;
+}
+
+#endif

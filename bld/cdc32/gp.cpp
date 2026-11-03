@@ -1,5 +1,5 @@
 /* C++ code produced by gperf version 3.1 */
-/* Command-line: gperf -L C++ -t -l -G gperf.spec  */
+/* Command-line: gperf -L C++ -t -l -G /home/dwight/git/dwyco/bld/cdc32/gperf.spec  */
 /* Computed positions: -k'1-3' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -29,15 +29,15 @@
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-#line 1 "gperf.spec"
+#line 1 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
 struct fn_rules  {const char *name; char **pfx; int cacheable; DwString *cached_val;};
 
-#define TOTAL_KEYWORDS 52
+#define TOTAL_KEYWORDS 53
 #define MIN_WORD_LENGTH 2
 #define MAX_WORD_LENGTH 10
-#define MIN_HASH_VALUE 2
+#define MIN_HASH_VALUE 4
 #define MAX_HASH_VALUE 126
-/* maximum key range = 125, duplicates = 0 */
+/* maximum key range = 123, duplicates = 0 */
 
 class Perfect_Hash
 {
@@ -61,10 +61,10 @@ Perfect_Hash::hash (const char *str, size_t len)
       127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
       127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
       127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
-      127, 127, 127, 127, 127, 127, 127,  40,  25,  20,
-        1,   0,  60,  10,   0,  25,   1,   5,  55,  20,
-       20,  15,  30,   0,  35,   5,   0,   5,  30,  56,
-        0,   6,  10, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127,  50,  25,   5,
+       11,   0,  60,  10,   0,  25,  60,   5,  11,  30,
+       20,  15,  30,  10,  40,   5,   0,   5,  35,   1,
+        0,   1,  10, 127, 127, 127, 127, 127, 127, 127,
       127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
       127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
       127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
@@ -98,154 +98,153 @@ Perfect_Hash::hash (const char *str, size_t len)
 
 static unsigned char lengthtable[] =
   {
-     0,  0,  2,  0,  4,  4,  4,  0,  0,  4,  4,  0,  0,  0,
-     4,  4,  0,  0,  8,  4,  9,  0,  0,  0,  4,  4,  0,  0,
-     0,  4,  5,  6,  7,  0,  4,  5,  0,  2,  0,  4,  0,  5,
-     0,  0,  4,  0,  6,  0,  0,  4,  5,  6,  0,  0,  4, 10,
-     6,  0,  0,  4,  5,  0,  6,  0,  4,  5,  0,  6,  8,  4,
-     5,  0,  0,  0,  4,  8,  0,  0,  3,  4,  0,  5,  0,  0,
-     4,  0,  0,  7,  0,  4,  5,  0,  0,  0,  4,  0,  0,  0,
-     0,  0,  0,  6,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  0,
+     0,  0,  0,  0,  4,  4,  0,  0,  0,  4,  0,  0,  2,  0,
+     4,  9,  0,  0,  8,  4,  4,  0,  0,  0,  4,  4,  5,  0,
+     6,  4,  8,  6,  7,  0,  4,  5,  0,  2,  0,  4,  5,  0,
+     0,  0,  4,  4,  6,  0,  0,  4,  5,  6,  0,  0,  4,  5,
+     6,  0,  0,  4,  5,  0,  0,  0,  4, 10,  0,  6,  8,  4,
+     5,  0,  6,  0,  4,  4,  0,  7,  0,  4,  0,  0,  0,  3,
+     4,  5,  0,  0,  0,  4,  0,  0,  0,  0,  4,  0,  0,  0,
+     0,  0,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  0,
      6
   };
 
 static struct fn_rules wordlist[] =
   {
-    {""}, {""},
-#line 40 "gperf.spec"
-    {".q", &User_prefix, 0},
-    {""},
-#line 54 "gperf.spec"
+    {""}, {""}, {""}, {""},
+#line 55 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".tdb", &Tmp_prefix, 0},
-#line 42 "gperf.spec"
-    {".jpg", &Tmp_prefix, 0},
-#line 36 "gperf.spec"
-    {".dif", &User_prefix, 0},
-    {""}, {""},
-#line 35 "gperf.spec"
-    {".usr", &User_prefix, 0},
-#line 45 "gperf.spec"
+#line 45 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".exe", &System_prefix, 0},
     {""}, {""}, {""},
-#line 53 "gperf.spec"
-    {".urd", &User_prefix, 0},
-#line 46 "gperf.spec"
-    {".dyc", &User_prefix, 0},
+#line 35 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".usr", &User_prefix, 0},
     {""}, {""},
-#line 4 "gperf.spec"
-    {"servers2", &User_prefix, 1},
-#line 41 "gperf.spec"
-    {".enc", &User_prefix, 0},
-#line 6 "gperf.spec"
+#line 40 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".q", &User_prefix, 0},
+    {""},
+#line 53 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".urd", &User_prefix, 0},
+#line 6 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"system.dh", &System_prefix, 1},
-    {""}, {""}, {""},
-#line 43 "gperf.spec"
-    {".tmp", &Tmp_prefix, 0},
-#line 34 "gperf.spec"
+    {""}, {""},
+#line 4 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"servers2", &User_prefix, 1},
+#line 41 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".enc", &User_prefix, 0},
+#line 34 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".dbg", &User_prefix, 0},
     {""}, {""}, {""},
-#line 48 "gperf.spec"
+#line 43 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".tmp", &Tmp_prefix, 0},
+#line 46 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".dyc", &User_prefix, 0},
+#line 17 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"never", &User_prefix, 1},
+    {""},
+#line 22 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"lhcore", &User_prefix, 1},
+#line 48 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".idx", &User_prefix, 0},
-#line 9 "gperf.spec"
-    {"qtabs", &System_prefix, 1},
-#line 28 "gperf.spec"
+#line 7 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"dwyco.dh", &System_prefix, 1},
+#line 28 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"outbox", &User_prefix, 1},
-#line 5 "gperf.spec"
+#line 5 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"entropy", &User_prefix, 1},
     {""},
-#line 44 "gperf.spec"
-    {".ppm", &Tmp_prefix, 0},
-#line 20 "gperf.spec"
+#line 54 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".tox", &User_prefix, 0},
+#line 20 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"stats", &User_prefix, 1},
     {""},
-#line 32 "gperf.spec"
+#line 32 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"pk", &User_prefix, 1},
     {""},
-#line 50 "gperf.spec"
+#line 50 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".prv", &User_prefix, 0},
-    {""},
-#line 15 "gperf.spec"
-    {"noise", &User_prefix, 1},
-    {""}, {""},
-#line 51 "gperf.spec"
-    {".sql", &User_prefix, 0},
-    {""},
-#line 19 "gperf.spec"
+#line 9 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"qtabs", &System_prefix, 1},
+    {""}, {""}, {""},
+#line 44 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".ppm", &Tmp_prefix, 0},
+#line 38 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".log", &Tmp_prefix, 0},
+#line 19 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"igrant", &User_prefix, 1},
     {""}, {""},
-#line 39 "gperf.spec"
-    {".out", &Tmp_prefix, 0},
-#line 25 "gperf.spec"
+#line 51 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".sql", &User_prefix, 0},
+#line 25 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"sinfo", &User_prefix, 1},
-#line 14 "gperf.spec"
+#line 14 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"timing", &User_prefix, 1},
     {""}, {""},
-#line 10 "gperf.spec"
-    {"auth", &User_prefix, 1},
-#line 26 "gperf.spec"
-    {"inprogress", &User_prefix, 1},
-#line 16 "gperf.spec"
+#line 39 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".out", &Tmp_prefix, 0},
+#line 29 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"inbox", &User_prefix, 1},
+#line 16 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"ignore", &User_prefix, 1},
     {""}, {""},
-#line 52 "gperf.spec"
+#line 52 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".pat", &System_prefix, 0},
-#line 24 "gperf.spec"
+#line 24 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"infos", &User_prefix, 1},
+    {""}, {""}, {""},
+#line 10 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"auth", &User_prefix, 1},
+#line 26 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"inprogress", &User_prefix, 1},
     {""},
-#line 22 "gperf.spec"
-    {"lhcore", &User_prefix, 1},
-    {""},
-#line 49 "gperf.spec"
+#line 12 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"always", &User_prefix, 1},
+#line 18 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"theygrnt", &User_prefix, 1},
+#line 49 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {".pub", &User_prefix, 0},
-#line 27 "gperf.spec"
+#line 27 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"trash", &User_prefix, 1},
     {""},
-#line 11 "gperf.spec"
+#line 11 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"accept", &User_prefix, 1},
-#line 18 "gperf.spec"
-    {"theygrnt", &User_prefix, 1},
-#line 8 "gperf.spec"
-    {"poli", &System_prefix, 1},
-#line 29 "gperf.spec"
-    {"inbox", &User_prefix, 1},
-    {""}, {""}, {""},
-#line 37 "gperf.spec"
-    {".aux", &User_prefix, 0},
-#line 7 "gperf.spec"
-    {"dwyco.dh", &System_prefix, 1},
-    {""}, {""},
-#line 30 "gperf.spec"
-    {"prf", &User_prefix, 1},
-#line 31 "gperf.spec"
-    {"prf2", &User_prefix, 1},
     {""},
-#line 17 "gperf.spec"
-    {"never", &User_prefix, 1},
-    {""}, {""},
-#line 47 "gperf.spec"
-    {".fle", &User_prefix, 0},
-    {""}, {""},
-#line 21 "gperf.spec"
+#line 42 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".jpg", &Tmp_prefix, 0},
+#line 36 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".dif", &User_prefix, 0},
+    {""},
+#line 21 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"crashed", &User_prefix, 1},
     {""},
-#line 38 "gperf.spec"
-    {".log", &Tmp_prefix, 0},
-#line 23 "gperf.spec"
+#line 8 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"poli", &System_prefix, 1},
+    {""}, {""}, {""},
+#line 30 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"prf", &User_prefix, 1},
+#line 31 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"prf2", &User_prefix, 1},
+#line 23 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"crumb", &User_prefix, 1},
     {""}, {""}, {""},
-#line 13 "gperf.spec"
-    {"pals", &User_prefix, 1},
-    {""}, {""}, {""}, {""}, {""}, {""},
-#line 12 "gperf.spec"
-    {"always", &User_prefix, 1},
-    {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+#line 37 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".aux", &User_prefix, 0},
+    {""}, {""}, {""}, {""},
+#line 47 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {".fle", &User_prefix, 0},
+    {""}, {""}, {""}, {""}, {""},
+#line 15 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"noise", &User_prefix, 1},
     {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
     {""}, {""}, {""}, {""},
-#line 33 "gperf.spec"
+#line 13 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
+    {"pals", &User_prefix, 1},
+    {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+#line 33 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"xfer", &User_prefix, 1},
     {""},
-#line 3 "gperf.spec"
+#line 3 "/home/dwight/git/dwyco/bld/cdc32/gperf.spec"
     {"xferdl", &System_prefix, 1}
   };
 

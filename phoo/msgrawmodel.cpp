@@ -22,14 +22,26 @@
 #include "dwycolist2.h"
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
+#include "getinfo.h"
 
-#if defined(LINUX) && !(defined(ANDROID) || defined(MACOSX))
-#define LINUX_EMOJI_CRASH_HACK
-#endif
 [[noreturn]] void cdcxpanic(const char *);
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
+
+static QString resolve_tox_mid_name(const QByteArray& mid)
+{
+    DWYCO_LIST l;
+    if(!dwyco_get_mid_tag_payload(mid.constData(), "_tox_mid", &l))
+        return QString();
+    simple_scoped pl(l);
+    if(pl.is_nil(0, DWYCO_NO_COLUMN))
+        return QString();
+    QByteArray pseudo = pl.get<QByteArray>(0);
+    if(pseudo.isEmpty())
+        return QString();
+    return dwyco_info_to_display(pseudo);
+}
 
 // note: this model integrates 3 lists when a particular uid is
 // selected: the saved message list, the inbox (just msgs from that uid) and
@@ -215,6 +227,9 @@ msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
     roles.append(PREVIEW_FILENAME);
+    roles.append(FILE_NAME);
+    roles.append(FILE_SIZE);
+    roles.append(IS_IMAGE_FILE);
     emit dataChanged(mi, mi, roles);
 }
 
@@ -711,6 +726,11 @@ msglist_raw::roleNames() const
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
+    rn(IS_FAILED);
+    rn(TOX_MID_NAME);
+    rn(FILE_NAME);
+    rn(FILE_SIZE);
+    rn(IS_IMAGE_FILE);
 #undef rn
     return roles;
 }
@@ -749,11 +769,7 @@ msglist_raw::qd_data ( int r, int role ) const
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
         QByteArray txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
-#ifdef LINUX_EMOJI_CRASH_HACK
-        return QString::fromLatin1(txt);
-#else
         return QString::fromUtf8(txt);
-#endif
     }
     case SENT:
         return 1;
@@ -778,6 +794,20 @@ msglist_raw::qd_data ( int r, int role ) const
         if(!qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT) && !qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
             return 1;
         return 0;
+    }
+    case FILE_NAME:
+    case FILE_SIZE:
+    case IS_IMAGE_FILE:
+    {
+        QByteArray user_fn;
+        qint64 size;
+        int is_image;
+        msg_body_file_info(qsm, user_fn, size, is_image);
+        if(role == FILE_NAME)
+            return QString::fromUtf8(user_fn);
+        if(role == FILE_SIZE)
+            return (double)size;
+        return is_image;
     }
     case DATE_CREATED:
     {
@@ -820,8 +850,18 @@ msglist_raw::qd_data ( int r, int role ) const
     case FETCH_STATE:
         return QString("none");
 
+    case IS_FAILED:
+    {
+        int failed = dwyco_qd_message_is_failed(pers_id.constData(), pers_id.length());
+        return failed;
+    }
     case Qt::DecorationRole:
+    {
+        int failed = dwyco_qd_message_is_failed(pers_id.constData(), pers_id.length());
+        if(failed)
+            return QVariant("qrc:///new/red32/icons/red-32x32/no-32x32.png");
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
+    }
 
     case IS_NO_FORWARD:
     {
@@ -843,6 +883,8 @@ msglist_raw::qd_data ( int r, int role ) const
 
         return v;
     }
+    case TOX_MID_NAME:
+        return QString();
     default:
         return QVariant();
     }
@@ -886,6 +928,9 @@ retry_auto_fetch(QByteArray mid)
     roles.append(msglist_raw::FETCH_STATE);
     roles.append(msglist_raw::ATTACHMENT_PERCENT);
     roles.append(msglist_raw::PREVIEW_FILENAME);
+    roles.append(msglist_raw::FILE_NAME);
+    roles.append(msglist_raw::FILE_SIZE);
+    roles.append(msglist_raw::IS_IMAGE_FILE);
     emit mlm->dataChanged(mi, mi, roles);
     return tmp;
 }
@@ -981,11 +1026,20 @@ msglist_raw::inbox_data (int r, int role ) const
         // when a message download has completed... have to check
         return QVariant();
 
+    case FILE_NAME:
+        return QString("");
+    case FILE_SIZE:
+    case IS_IMAGE_FILE:
+        return 0;
+
     case ASSOC_UID:
     {
         auto buid = m.get<QByteArray>(r, DWYCO_QMS_FROM);
         return buid.toHex();
     }
+
+    case TOX_MID_NAME:
+        return QString();
 
     default:
         return QVariant();
@@ -1200,6 +1254,37 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         auto huid = m.get<QByteArray>(r, DWYCO_MSG_IDX_ASSOC_UID);
         return huid;
     }
+    else if(role == IS_FAILED)
+        return 0;
+    else if(role == TOX_MID_NAME)
+    {
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+        return resolve_tox_mid_name(mid);
+    }
+    else if(role == FILE_NAME)
+    {
+        QByteArray user_fn;
+        qint64 size;
+        int is_image;
+        file_info(r, user_fn, size, is_image);
+        return QString::fromUtf8(user_fn);
+    }
+    else if(role == FILE_SIZE)
+    {
+        QByteArray user_fn;
+        qint64 size;
+        int is_image;
+        file_info(r, user_fn, size, is_image);
+        return (double)size;
+    }
+    else if(role == IS_IMAGE_FILE)
+    {
+        QByteArray user_fn;
+        qint64 size;
+        int is_image;
+        file_info(r, user_fn, size, is_image);
+        return is_image;
+    }
     }
     catch(...)
     {
@@ -1256,11 +1341,7 @@ msglist_raw::get_msg_text(int row) const
             return "";
         simple_scoped qbt(bt);
         auto ftxt = qbt.get<QByteArray>(0);
-#ifdef LINUX_EMOJI_CRASH_HACK
-        return QString::fromLatin1(get_extended(ftxt));
-#else
         return QString::fromUtf8(get_extended(ftxt));
-#endif
     }
 
     QByteArray txt;
@@ -1271,11 +1352,7 @@ msglist_raw::get_msg_text(int row) const
     }
     else
         txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
-#ifdef LINUX_EMOJI_CRASH_HACK
-    return QString::fromLatin1(get_extended(txt));
-#else
     return QString::fromUtf8(get_extended(txt));
-#endif
 }
 
 QString
@@ -1300,4 +1377,24 @@ msglist_raw::preview_filename(int row) const
     if(!preview_saved_msg(mid, pfn, is_file, full_size, local_time))
         return "";
     return pfn;
+}
+
+int
+msglist_raw::file_info(int row, QByteArray& user_fn, qint64& size, int& is_image) const
+{
+    user_fn = "";
+    size = 0;
+    is_image = 0;
+
+    dwyco_list_throw m(msg_idx);
+    QByteArray mid;
+    try {
+        mid = m.get<QByteArray>(row, DWYCO_MSG_IDX_MID);
+    }
+    catch(...)
+    {
+        return 0;
+    }
+
+    return msg_file_info(mid, user_fn, size, is_image);
 }

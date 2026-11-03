@@ -83,10 +83,30 @@ enum dwyco_sys_event {
     SE_IDENT_TO_UID,
 
     SE_SERVER_ATTR,
+
+    SE_TOX_FRIEND_REQUEST,
+    SE_TOX_MESSAGE,
+    SE_TOX_READ_RECEIPT,
+    SE_TOX_FRIEND_STATUS,
+    SE_TOX_FRIEND_NAME,
+    SE_TOX_FILE_REQUEST,
+    SE_TOX_FILE_CHUNK,
+    SE_TOX_SELF_CONNECTION_STATUS,
+    SE_TOX_READY,
+    SE_TOX_CRASHED,
+    SE_TOX_TYPING,
+    SE_TOX_FRIEND_USER_STATUS,
+    SE_TOX_AVATAR,
+    // another device in the group signed in with the tox identity this
+    // device was running, so this device stood down. carries no arguments.
+    SE_TOX_DISABLED_BY_REMOTE,
 };
 
 // at this point, the id can be a uid or a mid
 void se_emit(enum dwyco_sys_event cmd, const vc &uid);
+void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2);
+void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2, const vc &a3);
+void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2, const vc &a3, const vc &a4);
 void se_emit_msg(enum dwyco_sys_event cmd, const DwString &qid, const vc &uid);
 void se_emit_msg(enum dwyco_sys_event cmd, const vc &qid, const vc &uid);
 void se_emit_msg_status(const DwString &qid, const vc &ruid, const DwString &msg, int percent);

@@ -1,5 +1,5 @@
 #!/bin/sh
-export PATH=~/Qt/6.8.2/clang_64/bin:$PATH
+export PATH=~/Qt/6.11.1/macos/bin:$PATH
 D=$HOME
 SHADOW_NAME=$D/git/build-phoo
 

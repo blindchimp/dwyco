@@ -32,6 +32,9 @@ class Conversation : public QObject
     QML_READONLY_VAR_PROPERTY(bool, pal)
     QML_READONLY_VAR_PROPERTY(bool, has_hidden)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
+    QML_READONLY_VAR_PROPERTY(bool, is_tox)
+    QML_READONLY_VAR_PROPERTY(bool, is_tox_friend)
+    QML_READONLY_VAR_PROPERTY(QString, tox_section)
 
 
 public:
@@ -48,6 +51,9 @@ public:
         m_selected = false;
         m_pal = false;
         m_has_hidden = false;
+        m_is_tox = false;
+        m_is_tox_friend = false;
+        m_tox_section = "";
         update_counter = -1;
     }
     void load_external_state(const QByteArray& uid);
@@ -67,12 +73,19 @@ public:
     void redecorate();
     void reload_possible_changes(long time);
 
+    static void refresh_tox_friend_cache();
+    static bool is_uid_tox_friend(const QByteArray& uid);
+
     void set_all_selected(bool);
     void obliterate_all_selected();
     void trash_all_selected();
     void pal_all_selected(bool);
-    void block_all_selected();
+    void set_pal_uid(const QString &uid, bool b);
+    void block_all_selected(bool prompt_tox);
     bool at_least_one_selected();
+    int selected_count() const;
+    QString selected_display_names(int max_n = 3) const;
+    bool selected_has_tox_friend() const;
 
 signals:
 
@@ -81,6 +94,8 @@ public slots:
     // clear the internal cache of images that may refer to uid's profile.
     void uid_invalidate_profile(const QString& huid);
     void uid_resolved(const QString& huid);
+    void new_msg_received(QString huid, QString txt, QString mid);
+    void new_msg_uid(QString huid);
     void decorate(QString huid, QString txt, QString mid);
     void decorate(QString huid);
 };
@@ -112,11 +127,15 @@ public:
     Q_INVOKABLE void obliterate_all_selected();
     Q_INVOKABLE void trash_all_selected();
     Q_INVOKABLE void pal_all_selected(bool);
-    Q_INVOKABLE void block_all_selected();
-    Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE void set_pal_uid(const QString &uid, bool b);
     // bogus, fix me XXX this is for reloading when _trash tags change, which
     // should be handled in the client, not so much in the api
     Q_INVOKABLE void reload_convlist();
+    Q_INVOKABLE void block_all_selected(bool prompt_tox);
+    Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE int get_selected_count();
+    Q_INVOKABLE QString selected_display_names();
+    Q_INVOKABLE bool selected_has_tox_friend();
     Q_INVOKABLE void invalidate_model_filter();
 
 private:

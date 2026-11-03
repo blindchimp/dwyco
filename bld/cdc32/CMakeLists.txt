@@ -5,9 +5,11 @@ project(cdc32 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
+
 include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
+    ${CMAKE_CURRENT_SOURCE_DIR}/../toxd
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../crypto8
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
@@ -23,6 +25,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../libvorbis-1.3.7/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../miniupnp/miniupnp-master/miniupnpc
+    /opt/homebrew/include
     .
 )
 
@@ -54,7 +57,20 @@ if(APPLE AND NOT UNIX)
     add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
 
-if(${DWYCOBG} EQUAL 1)
+if(DWYCO_TESTING)
+    # Headless testing config. Same trimming as DWYCOBG, EXCEPT these three
+    # stay compiled in so tests can drive video with no camera and no peer:
+    #   DWYCO_NO_THEORA_CODEC  -- without a video codec coder_from_config()
+    #                              has nothing to instantiate and fails, so
+    #                              capture can never come up at all.
+    #   DWYCO_NO_VIDEO_FROM_PPM -- the built-in file-based capture source,
+    #                              needed to test capture without hardware.
+    #   DWYCO_NO_VIDEO_MSGS     -- dwyco_zap_create_preview (the PNG-writing
+    #                              variant of the zap preview api).
+    # See test_dwyco_cmake/conf.cmake for the matching set(DWYCO_TESTING 1).
+    add_compile_definitions(DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_ACQ_VIDEO_MEDIA
+)
+elseif(${DWYCOBG} EQUAL 1)
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS DWYCO_NO_ACQ_VIDEO_MEDIA
 )
 endif()
@@ -65,8 +81,8 @@ add_compile_definitions(
 	DWVEC_DOINIT
         DWYCO_USE_SQLITE
         DWYCO_USE_STATIC_SQLITE
-        DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME="${DWYCO_APP}"
+	#LOCAL_TOXCORE
 )
 
 
@@ -76,6 +92,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 # only use this if you really need the api tracing entries.
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_TRACE>)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 # define this if you are mucking with schema update debugging and just
 # want to make sure you don't get problems with old databases crashing thigs
 #add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_SCHEMA>)
@@ -219,6 +236,7 @@ add_library(cdc32 OBJECT
 	upnp.cpp 
 	aqkey.cpp 
 	netlog.cpp
+        toxbridge.cpp
         sqlite3.c
         ${EXTRA_FILES}
 )

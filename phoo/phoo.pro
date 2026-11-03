@@ -132,6 +132,7 @@ D = $${SHADOW}/../bld
 
 LIBS += \
 $${D}/cdc32/libcdc32.a \
+$${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -156,6 +157,7 @@ $${D}/qt6drv/libqt6drv.a \
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
+$${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -197,7 +199,8 @@ SHADOW=$${OUT_PWD}
 D = $${SHADOW}/../bld
 
 LIBS += \
-$${D}/cdc32/libcdc32.a \
+ ${D}/cdc32/libcdc32.a \
+ ${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -228,7 +231,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 D = $$OUT_PWD/../bld
 SHADOW=$$OUT_PWD/..
 LIBS += \
-$${D}/cdc32/libcdc32.a \
+ ${D}/cdc32/libcdc32.a \
+ ${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -251,7 +255,8 @@ $${D}/uv/libuv.a \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 
 PRE_TARGETDEPS += \
-$${D}/cdc32/libcdc32.a \
+ ${D}/cdc32/libcdc32.a \
+ ${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -281,7 +286,8 @@ DEFINES += DWYCO_IOS
 #QTPLUGIN += qmlstatemachine
 D = $$OUT_PWD/../bld
 LIBS += \
-$${D}/cdc32/libcdc32.a \
+ ${D}/cdc32/libcdc32.a \
+ ${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -302,7 +308,8 @@ $${D}/uv/libuv.a \
 $${D}/qt6drv/libqt6drv.a
 
 PRE_TARGETDEPS += \
-$${D}/cdc32/libcdc32.a \
+ ${D}/cdc32/libcdc32.a \
+ ${D}/toxd/libtoxd.a \
 $${D}/vc/libvc.a \
 $${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
@@ -405,7 +412,8 @@ CONFIG(release, debug|release) {
 }
 
 LIBS += \
-$${D}/cdc32/$${S}/cdc32.lib \
+ ${D}/cdc32/${S}/cdc32.lib \
+ ${D}/toxd/${S}/toxd.lib \
 $${D}/vc/$${S}/vc.lib \
 $${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \
@@ -428,7 +436,8 @@ winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.
 
 
 PRE_TARGETDEPS += \
-$${D}/cdc32/$${S}/cdc32.lib \
+ ${D}/cdc32/${S}/cdc32.lib \
+ ${D}/toxd/${S}/toxd.lib \
 $${D}/vc/$${S}/vc.lib \
 $${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \

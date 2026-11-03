@@ -19,6 +19,11 @@ ToolBar {
     property alias delete_warning_inf_text: confirm_delete.informativeText
     property url star_icon: mi("ic_star_black_24dp.png")
     property bool is_trash: false
+    property string base_delete_warning_text: ""
+
+    Component.onCompleted: {
+        base_delete_warning_text = delete_warning_text
+    }
 
     background: Rectangle {
         color: primary_light
@@ -86,6 +91,7 @@ ToolBar {
 
             onClicked: {
                 // remove whatever is selected
+                confirm_delete.text = base_delete_warning_text + " (" + model.get_selected_count() + " selected)"
                 confirm_delete.visible = true
             }
             MessageYN {

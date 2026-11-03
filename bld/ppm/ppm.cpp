@@ -36,7 +36,6 @@ ppm_freearray(pixel **arr, int rows)
     free(arr);
 }
 
-#if 0
 /* Reads a binary P6 PPM file. Returns pointer to pixel array or NULL on error. */
 pixel **
 ppm_readppm(FILE *fp, int *colsP, int *rowsP)
@@ -93,6 +92,7 @@ ppm_readppm(FILE *fp, int *colsP, int *rowsP)
     return img;
 }
 
+#if 0
 /* Writes a binary P6 PPM file. Returns 1 on success, 0 on failure. */
 int
 ppm_writeppm(FILE *fp, pixel **img, int cols, int rows)
