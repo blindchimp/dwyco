@@ -492,17 +492,17 @@ Page {
                                 }
                             }
                         }
-                        Repeater {
-                            model: core.is_tox_uid(to_uid) ? 0 : 1
-                            MenuItem {
-                                text: "Send video message"
-                                onTriggered: {
-                                    core.start_control(to_uid)
-                                    dwyco_vid_rec.uid = to_uid
-                                    stack.push(dwyco_vid_rec)
-                                }
-                            }
-                        }
+                        // Repeater {
+                        //     model: core.is_tox_uid(to_uid) ? 0 : 1
+                        //     MenuItem {
+                        //         text: "Send video message"
+                        //         onTriggered: {
+                        //             core.start_control(to_uid)
+                        //             dwyco_vid_rec.uid = to_uid
+                        //             stack.push(dwyco_vid_rec)
+                        //         }
+                        //     }
+                        // }
 
                         MenuItem {
                             text: "Browse Msgs"
@@ -1302,7 +1302,7 @@ Page {
                 source: mi("ic_add_a_photo_black_24dp.png")
             }
             checkable: false
-            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0) && !core.is_tox_uid(to_uid)
+            visible: /*!cam.visible &&*/ !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0) && !core.is_tox_uid(to_uid)
             onClicked: {
                //stack.push(cam, {"next_state" : "PhotoCapture"})
                 if(Qt.platform.os === "android") {
