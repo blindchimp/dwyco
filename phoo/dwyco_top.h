@@ -544,6 +544,9 @@ signals:
     // was running, so tox was stopped here. holder is the ascii hex dwyco
     // uid of that device, or empty if unknown.
     void tox_disabled_by_remote(QString holder);
+    // a remote device was rejected for syncing because its group hash or
+    // schema version did not match ours. uid is the offending device (hex).
+    void sync_schema_mismatch(QString uid, QString detail);
 
     // debounced: fires once when one or more pal tox contacts come online
     void pal_came_online();

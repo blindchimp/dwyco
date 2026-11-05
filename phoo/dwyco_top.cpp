@@ -799,6 +799,11 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->schedule_tox_saves_changed();
         break;
     }
+    case DWYCO_SE_SYNC_SCHEMA_MISMATCH:
+    {
+        emit TheDwycoCore->sync_schema_mismatch(huid, QString::fromUtf8(str_data));
+        break;
+    }
     default:
         break;
     }
