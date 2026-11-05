@@ -274,6 +274,7 @@ signals:
     void uid_info_event(DwOString);
     void uid_selected(DwOString, int);
     void invalidate_profile(DwOString);
+    void sync_schema_mismatch(DwOString uid, DwOString detail);
     void god_add(godrec);
     void god_del(QByteArray);
 

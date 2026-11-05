@@ -3602,6 +3602,9 @@ dwyco_sys_event_callback(int cmd, int id,
         TheConfigForm->ui.CDC_group__alt_name->setText("");
         TheConfigForm->ui.sync_enable->setChecked(false);
         break;
+    case DWYCO_SE_SYNC_SCHEMA_MISMATCH:
+        Mainwinform->emit sync_schema_mismatch(suid, str_data);
+        break;
     default:
         break;
     }
