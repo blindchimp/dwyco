@@ -18,6 +18,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/toxd ${CMAKE_CURRENT_BINARY_DIR}/bld
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/cdc32 ${CMAKE_CURRENT_BINARY_DIR}/bld/cdc32)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/uv ${CMAKE_CURRENT_BINARY_DIR}/bld/uv)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vc ${CMAKE_CURRENT_BINARY_DIR}/bld/vc)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/jhead ${CMAKE_CURRENT_BINARY_DIR}/bld/jhead)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/miniupnp/miniupnp-master/miniupnpc ${CMAKE_CURRENT_BINARY_DIR}/bld/miniupnp/miniupnp-master/miniupnpc)
 
 if(UNIX AND NOT APPLE)

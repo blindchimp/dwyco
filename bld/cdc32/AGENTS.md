@@ -12,3 +12,4 @@
 * EXTREMELY CRITICAL: the dwyco api in dlli.h is a vanilla C interface. uids are BINARY strings with associated lengths. message id's (mid's) are ASCII character strings that are 0 terminated. 
 * SUPER EXTREMELY CRITICAL: the hand-written database code stores all binary uid's as HEXADECIMAL ASCII strings (uid.toHex()). the reason this is done is to avoid having to use "blobs" everywhere for very commmon uid columns in tables. it is also a lot easier to debug a database with hex strings.
 * as a convention, convert uid's to hex only near the site where they are about to be stored in the database. when reading them out of the database, convert them back to binary for consumption by callers.
+* avoid searching using "find /" on this machine. search in /home/dwight/git first, and /home/dwight/Qt if necessary.
