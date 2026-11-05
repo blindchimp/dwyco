@@ -53,6 +53,7 @@
 #include "theoracol.h"
 #endif
 #include "aconn.h"
+#include "se.h"
 
 #include "dwrtlog.h"
 #include "ta.h"
@@ -2891,6 +2892,13 @@ MMChannel::recv_config(vc cfg)
                 send_error("sync wrong group or schema");
                 Netlog_signal.emit(tube->mklog("event", "wrong sync pw"));
                 GRTLOG("wrong group pw them %s us %s", (const char *)to_hex(pw), (const char *)to_hex(ipw));
+                // notify clients so they can tell the user which device needs
+                // updating to keep syncing working.
+                {
+                    DwString detail = "sync rejected: group or schema mismatch (update required)";
+                    vc d(VC_BSTRING, detail.c_str(), detail.length());
+                    se_emit(SE_SYNC_SCHEMA_MISMATCH, ruid, d, false);
+                }
                 goto cleanup;
             }
             cfg.del("pw");

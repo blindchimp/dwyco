@@ -91,6 +91,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_TOX_FRIEND_USER_STATUS,
     DWYCO_SE_TOX_AVATAR,
     DWYCO_SE_TOX_DISABLED_BY_REMOTE,
+    DWYCO_SE_SYNC_SCHEMA_MISMATCH,
     -1,
 };
 
@@ -133,6 +134,16 @@ se_emit(dwyco_sys_event cmd, const vc& a1, const vc& a2)
     vc v(VC_VECTOR);
     v[0] = cmd;
     v[1] = map_to_representative_uid(a1);
+    v[2] = a2;
+    Se_q.append(v);
+}
+
+void
+se_emit(dwyco_sys_event cmd, const vc& a1, const vc& a2, bool map_uid)
+{
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = map_uid ? map_to_representative_uid(a1) : a1;
     v[2] = a2;
     Se_q.append(v);
 }
@@ -586,6 +597,16 @@ se_process()
                                            0, 0,
                                            0, 0,
                                            0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_SYNC_SCHEMA_MISMATCH:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           0, 0,
+                                           DWYCO_TYPE_STRING, (const char *)Se_q[i][2], Se_q[i][2].len(),
                                            0, 0
                                           );
             break;

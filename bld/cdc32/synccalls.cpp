@@ -17,6 +17,7 @@
 #include "qmsgsql.h"
 #include "dirth.h"
 #include "cdcpal.h"
+#include "se.h"
 #ifdef _Windows
 #include <time.h>
 #endif
@@ -261,6 +262,16 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
     case DWYCO_CALLDISP_STARTED:
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
+        break;
+    case DWYCO_CALLDISP_REJECTED:
+        // the remote side rejected the sync call. detail is not available
+        // here, but signal the rejection so clients can warn the user.
+        if(uid && len_uid > 0)
+        {
+            vc u(VC_BSTRING, uid, len_uid);
+            vc d(VC_BSTRING, "", 0);
+            se_emit(SE_SYNC_SCHEMA_MISMATCH, u, d, false);
+        }
         break;
     default:
         break;
