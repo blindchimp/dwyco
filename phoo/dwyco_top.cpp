@@ -802,11 +802,35 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_SYNC_SCHEMA_MISMATCH:
     {
         emit TheDwycoCore->sync_schema_mismatch(huid, QString::fromUtf8(str_data));
+        TheDwycoCore->add_sync_schema_mismatch_uid(huid);
+        if(TheSyncDescModel)
+            TheSyncDescModel->mark_schema_mismatch(huid);
         break;
     }
     default:
         break;
     }
+}
+
+bool
+DwycoCore::is_sync_schema_mismatch(const QString &uid) const
+{
+    return m_sync_schema_mismatch_uids.contains(uid);
+}
+
+void
+DwycoCore::add_sync_schema_mismatch_uid(const QString &uid)
+{
+    if(uid.isEmpty())
+        return;
+    if(m_sync_schema_mismatch_uids.contains(uid))
+        return;
+    // keep a small set
+    if(m_sync_schema_mismatch_uids.count() >= 16)
+        m_sync_schema_mismatch_uids.removeFirst();
+    m_sync_schema_mismatch_uids.append(uid);
+    update_sync_schema_mismatch_uids(m_sync_schema_mismatch_uids);
+    update_sync_schema_mismatch_count(m_sync_schema_mismatch_uids.count());
 }
 
 void
