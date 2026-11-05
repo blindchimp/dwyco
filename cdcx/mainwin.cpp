@@ -1051,6 +1051,11 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     ui.statusBar->addWidget(archive_status);
     archive_status->hide();
 
+    sync_mismatch_status = new QLabel;
+    sync_mismatch_status->setFrameShape(QFrame::StyledPanel);
+    ui.statusBar->addWidget(sync_mismatch_status);
+    sync_mismatch_status->hide();
+
     lic_status = new QLabel;
     lic_status->setFrameShape(QFrame::StyledPanel);
 
@@ -1225,6 +1230,13 @@ mainwinform::show_archive_status(int n, int total)
     {
         archive_status->hide();
     }
+}
+
+bool
+mainwinform::is_sync_schema_mismatch(const DwOString &uid)
+{
+    QByteArray ba(uid.c_str(), uid.length());
+    return sync_mismatch_uids.contains(QString(ba.toHex()));
 }
 
 void
@@ -3603,7 +3615,13 @@ dwyco_sys_event_callback(int cmd, int id,
         TheConfigForm->ui.sync_enable->setChecked(false);
         break;
     case DWYCO_SE_SYNC_SCHEMA_MISMATCH:
-        Mainwinform->emit sync_schema_mismatch(suid, str_data);
+        {
+            QByteArray _ba(suid.c_str(), suid.length());
+            Mainwinform->sync_mismatch_uids.insert(QString(_ba.toHex()));
+            Mainwinform->sync_mismatch_status->setText(QString("<font color=\"#FF0000\">Sync mismatch (%1)</font>").arg(Mainwinform->sync_mismatch_uids.count()));
+            Mainwinform->sync_mismatch_status->show();
+            Mainwinform->emit sync_schema_mismatch(suid, str_data);
+        }
         break;
     default:
         break;

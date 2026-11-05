@@ -106,6 +106,8 @@ public:
     QLabel *invis_status;
     QLabel *pals_only_status;
     QLabel *archive_status;
+    QLabel *sync_mismatch_status;
+    QSet<QString> sync_mismatch_uids;
     QSystemTrayIcon *tray_icon;
     QIcon *blank_tray_icon;
     QIcon *gg_tray_icon;
@@ -135,6 +137,7 @@ public:
                          int qid, int extra_arg);
     void refetch_user_list();
     void show_archive_status(int ul, int total);
+    bool is_sync_schema_mismatch(const DwOString &uid);
 
 public slots:
     void on_usertree_view_doubleClicked(const QModelIndex& );
