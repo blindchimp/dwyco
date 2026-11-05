@@ -129,15 +129,24 @@ Page {
                 anchors.fill: parent
                 //spacing: mm(5)
 
-                ToolButton {
-                    contentItem: Image {
-                        source: mi("ic_menu_black_24dp.png")
-                        anchors.centerIn: parent
+                    ToolButton {
+                        contentItem: Image {
+                            source: mi("ic_menu_black_24dp.png")
+                            anchors.centerIn: parent
+                        }
+                        onClicked: drawer.open()
+                        visible: stack.depth === 1
+                        Layout.fillHeight: true
+                        Text {
+                            text: "!"
+                            color: "red"
+                            font.bold: true
+                            font.pixelSize: parent.height * 0.6
+                            anchors.centerIn: parent
+                            z: 10
+                            visible: core.sync_schema_mismatch_count > 0
+                        }
                     }
-                    onClicked: drawer.open()
-                    visible: stack.depth === 1
-                    Layout.fillHeight: true
-                }
                 Item {
 
                     Layout.fillWidth: true
