@@ -532,6 +532,9 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 // another device in the group signed in with the tox identity this device
 // was running, so this device stood down. no arguments.
 #define DWYCO_SE_TOX_DISABLED_BY_REMOTE 63
+// a sync connection was rejected because the remote device's group hash
+// or schema version did not match ours. carries the offending remote uid
+// (uid/len_uid) and a detail string (val/len_val, DWYCO_TYPE_STRING).
 #define DWYCO_SE_SYNC_SCHEMA_MISMATCH 64
 
 int DWYCOEXPORT dwyco_tox_accept_friend_request(const char *pubkey, int pubkey_len);
