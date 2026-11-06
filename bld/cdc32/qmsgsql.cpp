@@ -987,8 +987,18 @@ remove_sync_state()
         // make sense when you are outside a group, or when you re-enter a group.
         sql_simple("delete from mt.gmt where tag = '_leader'");
         // remove info we might have received from other clients regarding their tag state (which
-        // can be redundant)
-        sql_simple("delete from gmt where rowid not in (select max(rowid) from gmt group by mid,tag)");
+        // can be redundant). select the same winning row per (mid, tag) that readers select
+        // while in the group: prefer rows with a payload, then newest time, then guid tie-breaker.
+        sql_simple("delete from mt.gmt where rowid not in ("
+                   "select keep_rowid from ("
+                   "select gmt.rowid as keep_rowid, "
+                   "row_number() over ("
+                   "partition by gmt.mid, gmt.tag "
+                   "order by (gp.payload is not null) desc, gmt.time desc, gmt.guid desc, gmt.rowid desc"
+                   ") as rn "
+                   "from mt.gmt "
+                   "left join mt.gmt_payload as gp on gp.guid = gmt.guid"
+                   ") where rn = 1)");
         // make it look like we created all the tags
         sql_simple("update gmt set uid = ?1", to_hex(My_UID));
         // interesting question: should we redo all the guids? if we enter the same group again
@@ -1652,8 +1662,12 @@ setup_update_triggers()
     // setup_crdt_triggers, which are only created when in a group), since it is
     // local hygiene: payload rows must not outlive their gmt rows. all destruction
     // of gmt rows goes through "delete from gmt", so this covers every path.
+    // guard with "not exists" because gmt can hold multiple rows with the same
+    // guid (one per syncing uid), and deleting redundant rows during dedup must
+    // not destroy the payload while a surviving row still references that guid.
     sql_simple("create temp trigger pgmt_clean after delete on mt.gmt begin "
-               "delete from gmt_payload where guid = old.guid; end");
+               "delete from gmt_payload where guid = old.guid "
+               "and not exists (select 1 from gmt where guid = old.guid); end");
 #if 0
     sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
@@ -3239,7 +3253,8 @@ sql_get_tag_payload(vc mid, vc tag)
     vc res = sql_simple("select gp.payload from gmt, mt.gmt_payload as gp using(guid) "
                 "where gmt.mid = ?1 and tag = ?2 "
                 "and not exists(select 1 from mt.gtomb where guid = gmt.guid) "
-                "order by gmt.time desc limit 1", mid, tag);
+                "and gp.payload is not null "
+                "order by gmt.time desc, gmt.guid desc limit 1", mid, tag);
     if(res.num_elems() == 0)
         return vcnil;
     return res[0][0];
