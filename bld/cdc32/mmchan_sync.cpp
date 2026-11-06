@@ -68,19 +68,34 @@ MMChannel::assert_eager_pulls()
     {
         mids = sql_get_non_local_messages_at_uid_recent(uid, 20);
     }
-    if(mids.is_nil())
-        return;
-    if(mids.num_elems() == 0)
-    {
-        // we've reached the end of what we can fetch, at least until some
-        // new updates come in. so we just turn off the timer to avoid a
-        // bunch of queries that will likely return 0.
-        // the timer is turned back on when we detect an update to the global
-        // database.
-        eager_pull_timer.stop();
-        eager_pull_timer_active = false;
-        return;
-    }
+     if(mids.is_nil())
+         return;
+     // don't eagerly pull tox messages for clients that lack tox tag support
+     if(!remote_supports_tox_tags())
+     {
+         vc filtered(VC_VECTOR);
+         for(int i = 0; i < mids.num_elems(); ++i)
+         {
+             vc huid = sql_get_uid_from_mid(mids[i]);
+             if(!huid.is_nil() && sql_mid_has_tag(huid, "_tox"))
+                 continue;
+             filtered.append(mids[i]);
+         }
+         mids = filtered;
+     }
+     if(mids.is_nil())
+         return;
+     if(mids.num_elems() == 0)
+     {
+         // we've reached the end of what we can fetch, at least until some
+         // new updates come in. so we just turn off the timer to avoid a
+         // bunch of queries that will likely return 0.
+         // the timer is turned back on when we detect an update to the global
+         // database.
+         eager_pull_timer.stop();
+         eager_pull_timer_active = false;
+         return;
+     }
     else
     {
         eager_pull_timer_active = true;
@@ -226,14 +241,20 @@ MMChannel::process_pull(vc cmd)
         send_pull_error(mid, pri);
         return;
     }
-    vc huid = sql_get_uid_from_mid(mid);
-    if(huid.is_nil())
-    {
-        send_pull_error(mid, pri);
-        return;
-    }
-
-    vc body = load_body_by_id(from_hex(huid), mid);
+     vc huid = sql_get_uid_from_mid(mid);
+     if(huid.is_nil())
+     {
+         send_pull_error(mid, pri);
+         return;
+     }
+     // don't serve tox messages to clients that lack tox tag support
+     if(!remote_supports_tox_tags() && sql_mid_has_tag(huid, "_tox"))
+     {
+         send_pull_error(mid, pri);
+         return;
+     }
+ 
+     vc body = load_body_by_id(from_hex(huid), mid);
     if(body.is_nil())
     {
         send_pull_error(mid, pri);

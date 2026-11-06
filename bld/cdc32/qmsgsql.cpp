@@ -506,8 +506,11 @@ generate_delta(const vc& uid, const vc& delta_id, bool tox_ok)
         const vc& did = s.sql_simple("select delta_id from id");
         if(did.num_elems() != 1 || did[0][0] != delta_id)
             throw -1;
-        const vc& r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
-                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid", huid);
+         DwString r1q = "with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)";
+         if(!tox_ok)
+             r1q += " and assoc_uid not in (select mid from mt.gmt where tag = '_tox')";
+         r1q += ") insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid";
+         const vc& r1 = s.sql_simple(r1q.c_str(), huid);
         // just insert some dummy rows, since we know that we will never be resending this
         // index database again. if the delta_ids don't match, this gets recreated from scratch
         for(int i = 0; i < r1.num_elems(); ++i)
@@ -612,9 +615,14 @@ sql_dump_mi(bool tox_ok)
                "from_client_uid "
                ");"
               );
-    s.sql_simple("insert into dump.msg_idx select "
-               "*"
-               " from main.gi");
+     if(tox_ok)
+         s.sql_simple("insert into dump.msg_idx select "
+                    "*"
+                    " from main.gi");
+     else
+         s.sql_simple("insert into dump.msg_idx select "
+                    "*"
+                    " from main.gi where assoc_uid not in (select mid from mt.gmt where tag = '_tox')");
 
     s.sql_simple("create table dump.msg_tomb (mid, time)");
     s.sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
@@ -762,8 +770,11 @@ package_downstream_sends(const vc& remote_uid, bool tox_ok)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
-                             "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
+         DwString idxsq = "select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2";
+         if(!tox_ok)
+             idxsq += " and msg_idx.assoc_uid not in (select mid from mt.gmt where tag = '_tox')";
+         const vc idxs = sql_simple(idxsq.c_str(), huid, next_mid_sync);
         const vc mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
