@@ -50,6 +50,12 @@
 
 namespace dwyco {
 using namespace dwyco::qmsgsql;
+
+// the tox identity tags. builds that do not advertize the "tox tags" config key
+// are not sent any of these tags (or their payloads) during sync. everything
+// else syncs normally.
+#define TOX_TAGS "'_tox','_tox_device','_tox_friend','_tox_mid','_tox_save','_tox_active'"
+
 DwString Schema_version_hack;
 ssns::signal1<vc> Qmsg_update;
 
@@ -456,7 +462,7 @@ get_delta_id(const vc& uid)
 }
 
 bool
-generate_delta(const vc& uid, const vc& delta_id)
+generate_delta(const vc& uid, const vc& delta_id, bool tox_ok)
 {
     const vc& huid = to_hex(uid);
     DwString dbfn = DwString("minew%1.tdb").arg((const char *)huid);
@@ -508,9 +514,16 @@ generate_delta(const vc& uid, const vc& delta_id)
             s.sql_simple("insert into main.msg_tomb(mid) values(?1)", r2[i][0]);
         }
         // tags
-        const vc& r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
-                     "guid not in (select guid from main.msg_tags2)) "
-                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid", huid);
+        // when the remote does not advertize the "tox tags" config key (old software),
+        // withhold the tox tags entirely. since they are never recorded in main.msg_tags2,
+        // a later delta (from a peer that upgrades) re-sends all of them automatically.
+        DwString r3q = "with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
+                     "guid not in (select guid from main.msg_tags2)";
+        if(!tox_ok)
+            r3q += " and tag not in (" TOX_TAGS ")";
+        r3q += ") "
+                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid";
+        const vc& r3 = s.sql_simple(r3q.c_str(), huid);
         for(int i = 0; i < r3.num_elems(); ++i)
         {
             s.sql_simple("insert into main.msg_tags2(guid) values(?1)", r3[i][0]);
@@ -558,7 +571,7 @@ generate_delta(const vc& uid, const vc& delta_id)
 }
 
 vc
-sql_dump_mi()
+sql_dump_mi(bool tox_ok)
 {
     DwString fn = gen_random_filename();
     fn += ".tmp";
@@ -604,18 +617,32 @@ sql_dump_mi()
     s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer)");
     // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
-    s.sql_simple("insert into dump.msg_tags2 select "
+    // when the remote does not advertize the "tox tags" config key (old software),
+    // withhold the tox tags entirely; everything else still syncs.
+    {
+        DwString q = "insert into dump.msg_tags2 select "
                "mid, "
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag in (select * from mt.static_crdt_tags) group by guid");
+               "from mt.gmt where tag in (select * from mt.static_crdt_tags)";
+        if(!tox_ok)
+            q += " and tag not in (" TOX_TAGS ")";
+        q += " group by guid";
+        s.sql_simple(q.c_str());
+    }
     // note: payloads ride along with their tag items. old clients never reference
     // this table when importing a dump, so they ignore it entirely.
     s.sql_simple("create table dump.msg_payload(guid text collate nocase, mid text not null, payload blob)");
-    s.sql_simple("insert into dump.msg_payload select gp.guid, gp.mid, gp.payload from mt.gmt_payload as gp "
+    {
+        DwString q = "insert into dump.msg_payload select gp.guid, gp.mid, gp.payload from mt.gmt_payload as gp "
                "join mt.gmt on gp.guid = gmt.guid "
-               "where gmt.tag in (select * from mt.static_crdt_tags) group by gp.guid");
+               "where gmt.tag in (select * from mt.static_crdt_tags)";
+        if(!tox_ok)
+            q += " and gmt.tag not in (" TOX_TAGS ")";
+        q += " group by gp.guid";
+        s.sql_simple(q.c_str());
+    }
     s.sql_simple("insert into dump.tomb select * from mt.gtomb");
     //
     s.sql_simple("create table dump.id(delta_id text)");
@@ -676,7 +703,7 @@ msg_idx_updated(const vc& uid, int prepended)
 
 
 vc
-package_downstream_sends(const vc& remote_uid)
+package_downstream_sends(const vc& remote_uid, bool tox_ok)
 {
     try
     {
@@ -742,10 +769,19 @@ package_downstream_sends(const vc& remote_uid)
         // requires op to be the last element of the tupdate vector. old clients ignore
         // the extra element, new clients detect it by the number of elements.
 
-        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, gp.payload, tl.op from mt.gmt as mt2 "
+        // when the remote does not advertize the "tox tags" config key (old software),
+        // withhold the tox tags (and their payloads) entirely. note: the tombstone query
+        // and the delete below are deliberately unfiltered, so tombstones keep flowing and
+        // the withheld rows are simply acked and dropped; post-upgrade catch-up re-derives
+        // the full tox state from gmt/msg_tags2 via delta or dump.
+        DwString tagsq = "select mt2.mid, mt2.tag, mt2.time, mt2.guid, gp.payload, tl.op from mt.gmt as mt2 "
                              "join mt.taglog as tl on mt2.mid = tl.mid and mt2.tag = tl.tag "
                              "left join mt.gmt_payload as gp on gp.guid = mt2.guid "
-                             "where tl.to_uid = ?1 and tl.op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
+                             "where tl.to_uid = ?1 and tl.op = 'a' and tl.rowid < ?2";
+        if(!tox_ok)
+            tagsq += " and mt2.tag not in (" TOX_TAGS ")";
+        tagsq += " group by mt2.guid";
+        const vc tags = sql_simple(tagsq.c_str(), huid, next_tag_sync);
         const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())

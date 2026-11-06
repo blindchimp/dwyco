@@ -154,7 +154,7 @@ MMChannel::package_index()
 
     try
     {
-        fn = sql_dump_mi();
+        fn = sql_dump_mi(remote_supports_tox_tags());
     }
     catch(...)
     {
@@ -617,7 +617,7 @@ MMChannel::process_outgoing_sync()
         if(downstream_timer.is_expired())
         {
             downstream_timer.ack_expire();
-            vc ds = package_downstream_sends(remote_uid());
+            vc ds = package_downstream_sends(remote_uid(), remote_supports_tox_tags());
             if(!ds.is_nil())
             {
                 // NOTE: *may* want to consider sending tag updates
