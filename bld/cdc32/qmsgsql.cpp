@@ -145,7 +145,14 @@ QMsgSql::init_schema_fav()
         start_transaction();
         const vc& res = sql_simple("pragma mt.user_version");
         if((int)res[0][0] == 3)
+        {
+            // one-time reset: v3 only ever existed in pre-release debug
+            // databases; the wire-level capability gate replaced the bump.
+            // old (released) software expects 2 here.
+            sql_simple("pragma mt.user_version = 2");
+            commit_transaction();
             throw 0;
+        }
 #ifdef DWYCO_DBG_SCHEMA
         if((int)res[0][0] != 0)
         {
@@ -178,7 +185,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
         sql_simple("drop table mt.msg_tags2");
-        sql_simple("pragma mt.user_version = 3");
+        sql_simple("pragma mt.user_version = 2");
 
         commit_transaction();
     }
