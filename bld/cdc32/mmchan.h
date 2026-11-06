@@ -540,6 +540,9 @@ private:
     // are real-time only. might make sense to change this to use something
     // more msg oriented, but for now, this will be fine.
     bool is_sync_chan;
+    // set to 1 once we have notified the app (via SE_SYNC_SCHEMA_MISMATCH)
+    // that the remote sync client does not support tox tags.
+    bool tox_tags_mismatch_reported;
     int msync_chan;
     int msync_state;
 
