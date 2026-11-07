@@ -399,7 +399,17 @@ unified_backup(const char *fn, int include_account_info, int max_size_mb)
             // *live* row, which is what the current value of a tag means.
             sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
                 "and " GTOMB_LIVE " "
-                "and rowid in (select max(rowid) from mt.gmt where " GTOMB_LIVE " group by mid,tag) "
+                "and rowid in ("
+                "select keep_rowid from ("
+                "select gmt.rowid as keep_rowid, "
+                "row_number() over ("
+                "partition by gmt.mid, gmt.tag "
+                "order by (gp.payload is not null) desc, gmt.time desc, gmt.guid desc, gmt.rowid desc"
+                ") as rn "
+                "from mt.gmt "
+                "left join mt.gmt_payload as gp on gp.guid = gmt.guid "
+                "where " GTOMB_LIVE
+                ") where rn = 1) "
                 "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
                 );
             sql("update main.tags set uid = ?1", to_hex(My_UID));

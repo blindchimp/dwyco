@@ -529,6 +529,7 @@ MMChannel::MMChannel() :
     msync_chan = -1;
     msync_state = MEDIA_ERR;
     is_sync_chan = false;
+    tox_tags_mismatch_reported = false;
 
     auto_quality_boost = 0;
     private_chatbox_id = -1;
@@ -1812,6 +1813,28 @@ MMChannel::remote_call_type()
     return v;
 }
 
+bool
+MMChannel::remote_supports_tox_tags()
+{
+    if(remote_cfg.is_nil() || remote_cfg.is_atomic())
+        return false;
+    vc v;
+    if(remote_cfg.find("tox tags", v))
+        return true;
+    // the remote is a sync client that does not support tox tags (old software).
+    // report it once per channel so the app can tell the user which device needs updating.
+    if(!tox_tags_mismatch_reported)
+    {
+        tox_tags_mismatch_reported = true;
+        vc ruid = remote_uid();
+        GRTLOG("sync peer %s does not support tox tags", (const char *)to_hex(ruid), 0);
+        DwString detail = "sync peer does not support tox tags (update required)";
+        vc d(VC_BSTRING, detail.c_str(), detail.length());
+        se_emit(SE_SYNC_SCHEMA_MISMATCH, ruid, d, false);
+    }
+    return false;
+}
+
 // return background for older software that doesn't
 // have a disposition, because foreground is treated
 // specially and gets higher priority.
@@ -1965,6 +1988,10 @@ MMChannel::init_config(int caller)
     // most messages to bypass storage on the server if both users are online.
     config.add_kv("protocol version", MMCHAN_PROTOCOL_VERS);
     config.add_kv("cdc32 version", dwyco_get_version_string());
+    // advertised by builds that know how to transport tox identity tags.
+    // old builds do not send this key (absent means they cannot be trusted
+    // with the payloads); new builds gate tox tag sync on it.
+    config.add_kv("tox tags", 1);
     //config.add_kv("my listening port", (int)tube->listen_port);
 
     vc fw = make_fw_setup();

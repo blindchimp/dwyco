@@ -199,6 +199,7 @@ public:
     int remote_session_id();
     vc remote_call_type();
     vc remote_disposition();
+    bool remote_supports_tox_tags();
     DwCoder *coder_from_config();
     DwDecoder *decoder_from_config();
     static MMChannel *already_connected(vc uid, int is_msg_chan = 0, int is_user_control_chan = 0);
@@ -539,6 +540,9 @@ private:
     // are real-time only. might make sense to change this to use something
     // more msg oriented, but for now, this will be fine.
     bool is_sync_chan;
+    // set to 1 once we have notified the app (via SE_SYNC_SCHEMA_MISMATCH)
+    // that the remote sync client does not support tox tags.
+    bool tox_tags_mismatch_reported;
     int msync_chan;
     int msync_state;
 
