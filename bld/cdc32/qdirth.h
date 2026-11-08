@@ -158,6 +158,8 @@ void dirth_send_ack_get(vc id, vc mid, QckDone d);
 void dirth_send_ack_get2(vc id, vc mid, QckDone d);
 void dirth_send_query(vc uid, QckDone d);
 void dirth_send_query2(vc uid, QckDone d);
+// response: m[1] is the server's current unix time in seconds
+void dirth_send_get_server_time(vc uid, QckDone d);
 void dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone d);
 void dirth_send_get(vc id, vc which, QckDone d);
 void dirth_send_get2(vc id, vc which, QckDone d);

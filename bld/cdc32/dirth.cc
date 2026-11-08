@@ -757,6 +757,7 @@ start_encryption(vc m, void *, vc , ValidPtr vp)
         Reauthorize = 0;
     }
     Database_online = 1;
+    query_server_time();
 }
 
 void

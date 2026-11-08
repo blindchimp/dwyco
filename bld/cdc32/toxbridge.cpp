@@ -536,7 +536,7 @@ make_msg_body(const vc &from, const vc &text,
     body[QQM_BODY_EMSG] = vcnil;
     body[QQM_BODY_ESTIMATED_SIZE] = estimated_size;
     body[QQM_BODY_NO_DELIVERY_REPORT] = vcnil;
-    body[QQM_BODY_LOGICAL_CLOCK] = (int64_t)++Logical_clock;
+    body[QQM_BODY_LOGICAL_CLOCK] = qmsg_next_lc();
     body[QQM_BODY_FROM_GROUP] = vcnil;
     return body;
 }

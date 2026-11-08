@@ -46,7 +46,6 @@ int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
 
-extern int64_t Logical_clock;
 vc date_vector();
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
@@ -190,6 +189,18 @@ void debug_trash_empty();
 void boost_logical_clock();
 void update_global_logical_clock(int64_t lc);
 int64_t diff_logical_clock(int64_t tm);
+
+// Message ordering is presentation-only. The sort key is a packed
+// millisecond timestamp with a small per-millisecond counter, so it is
+// comparable across devices and has a stable tie-breaker. This is not a
+// Lamport clock: it does not measure causality, it approximates wall time.
+#define QMSG_LC_TIME_SHIFT 16
+#define QMSG_LC_COUNTER_MASK ((((int64_t)1) << QMSG_LC_TIME_SHIFT) - 1)
+int64_t qmsg_now_ms();
+int64_t qmsg_next_lc();
+int64_t qmsg_normalize_lc(int64_t lc, int64_t date_secs, const char *mid = 0);
+void qmsg_set_server_time(int64_t unix_secs);
+void query_server_time();
 
 #define VERF_AUTH_NO_INFO 0x1
 #define VERF_AUTH_FAILED 0x2

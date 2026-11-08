@@ -237,6 +237,28 @@ init_tag_data()
     }
 }
 
+// Rewrites legacy (seconds or small counter) logical clocks to the packed
+// millisecond scale used by qmsg_normalize_lc. The tie-breaker is derived
+// from the first four hex digits of the mid so every device agrees on the
+// normalized value for a given message.
+static
+DwString
+legacy_lc_update_sql(const char *table)
+{
+    static const char *counter_expr =
+        "((((instr('0123456789abcdef', lower(substr(mid,1,1)))-1) << 12) | "
+        "((instr('0123456789abcdef', lower(substr(mid,2,1)))-1) << 8) | "
+        "((instr('0123456789abcdef', lower(substr(mid,3,1)))-1) << 4) | "
+        "(instr('0123456789abcdef', lower(substr(mid,4,1)))-1)) & 65535)";
+    DwString upd("update ");
+    upd += table;
+    upd += " set logical_clock = "
+           "((((case when date is not null and date > 0 then date else coalesce(logical_clock,0) end) * 1000) << 16) | (";
+    upd += counter_expr;
+    upd += ")) where logical_clock is null or logical_clock < 4294967296";
+    return upd;
+}
+
 void
 QMsgSql::init_schema(const DwString& schema_name)
 {
@@ -245,6 +267,28 @@ QMsgSql::init_schema(const DwString& schema_name)
         try
         {
             sql_start_transaction();
+            // One-time conversion of legacy logical clocks (unix seconds or
+            // small counters) onto the packed millisecond scale. The marker
+            // table is used instead of a user_version bump so older clients
+            // can still sync; incoming legacy values are normalized on import.
+            auto migrate_lc = [&]() {
+                const vc done = sql_simple(
+                                    "select 1 from schema_sections where name = 'logical_clock_time_v1' limit 1");
+                if(done.num_elems() > 0)
+                    return;
+                sql_simple(legacy_lc_update_sql("gi").c_str());
+                // Keep the local index consistent with the global index for
+                // messages that exist in both.
+                sql_simple(
+                    "update msg_idx set logical_clock = "
+                    "(select logical_clock from gi where gi.mid = msg_idx.mid) "
+                    "where (logical_clock is null or logical_clock < 4294967296) "
+                    "and exists (select 1 from gi where gi.mid = msg_idx.mid)");
+                sql_simple(legacy_lc_update_sql("msg_idx").c_str());
+                sql_simple(
+                    "insert or replace into schema_sections(name, val) "
+                    "values('logical_clock_time_v1', 1)");
+            };
             {
                 // note: do something sensible here, this just keeps
                 // us from mistakenly running on a database we have
@@ -264,11 +308,13 @@ QMsgSql::init_schema(const DwString& schema_name)
                 sql_commit_transaction();
 
                 const vc& res = sql_simple("pragma user_version");
+                int schema_version = (int)(long long)res[0][0];
                 // note: from 6 to 7 were just index changes, so going to 7 then back to 6
                 // should be ok, except i forgot to comment out the debugging stuff below, so
                 // it will crash, oops.
-                if((int)res[0][0] == 6)
+                if(schema_version == 6)
                 {
+                    migrate_lc();
                     throw 0;
                 }
 #ifdef DWYCO_DBG_SCHEMA
@@ -367,6 +413,8 @@ QMsgSql::init_schema(const DwString& schema_name)
             // a simple map for presentation purposes that can be derived without talking to a server
             sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
             sql_simple("create index if not exists gmidx on group_map(gid)");
+
+            migrate_lc();
 
             sql_simple("pragma user_version = 6");
             sql_commit_transaction();
@@ -1159,10 +1207,12 @@ import_remote_mi(const vc& remote_uid)
         s.sql_simple("delete from current_clients where uid = ?1", huid);
 
         s.sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
+        // old peers may still export legacy logical clocks
+        s.sql_simple(legacy_lc_update_sql("main.gi").c_str());
         const vc res = s.sql_simple("select max(logical_clock) from gi");
         if(res[0][0].type() == VC_INT)
         {
-            long lc = (long)res[0][0];
+            int64_t lc = (int64_t)(long long)res[0][0];
             update_global_logical_clock(lc);
         }
         const vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
@@ -1310,6 +1360,15 @@ import_remote_iupdate(vc remote_uid, vc vals)
             // like the deletes below. we set this local flag, even though it isn't
             // used anywhere. but maybe it can be a hint if we put it in another
             // table at some point.
+            if(vals.num_elems() > QM_IDX_LOGICAL_CLOCK)
+            {
+                int64_t date = vals[QM_IDX_DATE].is_nil() ? 0 :
+                               (int64_t)(long long)vals[QM_IDX_DATE];
+                int64_t lc = vals[QM_IDX_LOGICAL_CLOCK].is_nil() ? 0 :
+                             (int64_t)(long long)vals[QM_IDX_LOGICAL_CLOCK];
+                vals[QM_IDX_LOGICAL_CLOCK] = qmsg_normalize_lc(
+                                                 lc, date, (const char *)vals[QM_IDX_MID]);
+            }
             vals.append(1);
             vals.append(huid);
             vc user_exists = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", vals[12]);
@@ -2025,13 +2084,13 @@ sql_attachment_already_received(const vc& att_name)
     return 1;
 }
 
-long
+int64_t
 sql_get_max_logical_clock()
 {
     const vc res = sql_simple("select max(logical_clock) from gi");
     if(res[0][0].type() != VC_INT)
         return 0;
-    return (long)res[0][0];
+    return (int64_t)(long long)res[0][0];
 }
 
 // what we need here is a "what was the system time locally of
@@ -2059,7 +2118,7 @@ sql_has_msg_recently(vc uid, long num_seconds)
     // drifted apart.
     if(res.num_elems() != 1)
         return false;
-    int64_t mlc = (long)res[0][0];
+    int64_t mlc = (int64_t)(long long)res[0][0];
     int64_t diff = diff_logical_clock(mlc);
     // diff should be positive, but if it isn't, it isn't
     // a big deal
@@ -2552,7 +2611,7 @@ sql_load_group_index(vc uid, int max_count)
            " (assoc_uid in (select * from uidset)"
             // messages from previous group members
                     " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
-                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) order by logical_clock desc limit ?2",
+                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) order by logical_clock desc, mid desc limit ?2",
                     gid.is_nil() ? vc("") : to_hex(gid),
                     max_count,
                     huid);
@@ -2575,7 +2634,7 @@ sql_load_index(vc uid, int max_count)
 
 //    vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
 //           "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-//           " from gi where assoc_uid = ?1 and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+//           " from gi where assoc_uid = ?1 and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc, mid desc limit ?2",
 //                        to_hex(uid), max_count);
 //    return res;
 }
@@ -2643,11 +2702,14 @@ index_from_body(const vc& recipient,  vc body, vc& att)
     att = body[QM_BODY_ATTACHMENT];
     nentry[QM_IDX_FROM_GROUP] = body[QM_BODY_FROM_GROUP];
     vc lc = body[QM_BODY_LOGICAL_CLOCK];
-    // older messages won't have logical clock, so just fall back on the
-    // date
-    if(lc.is_nil())
-        lc = date;
-    nentry[QM_IDX_LOGICAL_CLOCK] = lc;
+    // Fold legacy clocks and any missing clock onto the packed
+    // wall-clock scale. Older messages fall back to their creation date.
+    int64_t date_secs = date.is_nil() ? 0 : (int64_t)(long long)date;
+    int64_t lcv = qmsg_normalize_lc(
+                      lc.is_nil() ? 0 : (int64_t)(long long)lc,
+                      date_secs,
+                      (const char *)mid);
+    nentry[QM_IDX_LOGICAL_CLOCK] = lcv;
 
     if(!body[QM_BODY_ATTACHMENT].is_nil() && body[QM_BODY_FILE_ATTACHMENT].is_nil())
     {
@@ -2796,7 +2858,7 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
                "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
                " from gi where "
                " assoc_uid in (select * from uidset)"
-                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 order by logical_clock desc",
+                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 order by logical_clock desc, mid desc",
                             logical_clock,
                             huid);
         sql_commit_transaction();
@@ -2878,7 +2940,7 @@ sql_get_non_local_messages_at_uid(vc uid, int max_count)
         vc res = sql_simple("select mid from gi where "
                             "not exists(select 1 from pull_failed where gi.mid = mid and uid = ?1) "
                             "and not exists (select 1 from msg_idx where gi.mid = mid)"
-                            "and not exists (select 1 from msg_tomb where gi.mid = mid) order by logical_clock desc limit ?2",
+                            "and not exists (select 1 from msg_tomb where gi.mid = mid) order by logical_clock desc, mid desc limit ?2",
                             huid, max_count);
         sql_commit_transaction();
         return flatten(res);
@@ -2901,7 +2963,7 @@ sql_get_non_local_messages_at_uid_recent(vc uid, int max_count)
                             "date > strftime('%s', 'now') - 30 * 86400 "
                             "and not exists(select 1 from pull_failed where gi.mid = mid and uid = ?1) "
                             "and not exists (select 1 from msg_idx where gi.mid = mid)"
-                            "and not exists (select 1 from msg_tomb where gi.mid = mid) order by logical_clock desc limit ?2",
+                            "and not exists (select 1 from msg_tomb where gi.mid = mid) order by logical_clock desc, mid desc limit ?2",
                             huid, max_count);
         sql_commit_transaction();
         return flatten(res);
@@ -3397,7 +3459,7 @@ sql_get_tagged_mids(vc tag)
                    "and not exists(select 1 from mt.gtomb where gmt.guid = guid) "
                    "and not exists(select 1 from msg_tomb where mid = gi.mid)"
                          "group by mid "
-                         "order by logical_clock asc",
+                         "order by logical_clock asc, mid asc",
                          tag);
 
         for(int i = 0; i < res.num_elems(); ++i)
@@ -3477,9 +3539,9 @@ sql_get_tagged_idx(vc tag, int order_by_tag_time)
                     " and not exists(select 1 from msg_tomb where mid = gi.mid) "
                     "group by mid ");
         if(order_by_tag_time)
-            sql += " order by gmt.time desc, logical_clock desc";
+            sql += " order by gmt.time desc, logical_clock desc, mid desc";
         else
-            sql += " order by logical_clock desc";
+            sql += " order by logical_clock desc, mid desc";
         res = sql_simple(sql.c_str(), tag);
 
         sql_commit_transaction();
@@ -3501,7 +3563,7 @@ sql_get_all_idx()
         res = sql_simple("select "
                  "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                  "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-                 " from msg_idx order by logical_clock desc");
+                 " from msg_idx order by logical_clock desc, mid desc");
     }
     catch (...)
     {

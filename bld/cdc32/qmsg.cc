@@ -25,6 +25,8 @@
 #include "dwdate.h"
 
 #include <stdio.h>
+#include <chrono>
+#include <mutex>
 #include "mmchan.h"
 #include "filetube.h"
 #include "vc.h"
@@ -135,8 +137,6 @@ static vc In_progress;
 
 
 
-int64_t Logical_clock;
-
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
@@ -147,46 +147,212 @@ int save_msg(vc m, vc msg_id);
 
 #include "qmsgsql.h"
 
-// XXX there is a problem with just fetching the logical clock
-// from the msg index... there are paths through the code where
-// we create a message, use the logical clock (and increment it) but
-// then we never store the message (ie, a sent message that isn't saved.)
-// if we quit and restart, our logical clock will not reflect that we
-// sent that message. so, we really need to make sure the logical clock
-// is stored somewhere persistently to get the best presentation of the
-// message ordering.
-// note that using the max value from the index is a perfectly reasonable
-// estimate. likewise for the current system time, if it looks sane.
-//
+// Presentation ordering uses a packed wall-clock timestamp instead of a
+// Lamport counter. The high bits are milliseconds since the unix epoch and
+// the low QMSG_LC_TIME_SHIFT bits are a per-millisecond counter. Receiver
+// side code normalizes legacy/small values onto this scale, so messages
+// created on different devices (or while partitioned) still sort roughly
+// chronologically. This is deliberately approximate: it requires clocks to
+// be close, not perfect, and it does not encode causality.
+static int64_t Server_time_offset_ms;
+static int64_t Last_lc_ms;
+static int64_t Last_lc_counter;
+static std::mutex Lc_lock;
+
+static int64_t
+local_now_ms()
+{
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+// Keep the tie-breaker deterministic so the same message gets the same
+// normalized value on every device. This mirrors the SQL expression used by
+// the database migration (first four hex digits of the mid.)
+static int64_t
+mid_counter(const char *mid)
+{
+    if(!mid)
+        return 0;
+    int64_t v = 0;
+    for(int i = 0; i < 4 && mid[i]; ++i)
+    {
+        char c = mid[i];
+        int d;
+        if(c >= '0' && c <= '9')
+            d = c - '0';
+        else if(c >= 'a' && c <= 'f')
+            d = c - 'a' + 10;
+        else if(c >= 'A' && c <= 'F')
+            d = c - 'A' + 10;
+        else
+            d = 0;
+        v = (v << 4) | d;
+    }
+    return v & QMSG_LC_COUNTER_MASK;
+}
+
+static int64_t
+pack_lc(int64_t ms, int64_t counter)
+{
+    if(ms < 0)
+        ms = 0;
+    return (ms << QMSG_LC_TIME_SHIFT) | (counter & QMSG_LC_COUNTER_MASK);
+}
+
+int64_t
+qmsg_now_ms()
+{
+    std::lock_guard<std::mutex> lk(Lc_lock);
+    return local_now_ms() + Server_time_offset_ms;
+}
+
+void
+qmsg_set_server_time(int64_t unix_secs)
+{
+    if(unix_secs <= 0 || unix_secs > (((int64_t)1) << 40))
+        return;
+    int64_t server_ms = unix_secs * 1000;
+    int64_t local_ms = local_now_ms();
+    int64_t delta = server_ms - local_ms;
+    // Ignore nonsensical offsets (bad response, overflow, etc.)
+    if(delta < -365LL * 24 * 60 * 60 * 1000 ||
+            delta > 365LL * 24 * 60 * 60 * 1000)
+        return;
+    std::lock_guard<std::mutex> lk(Lc_lock);
+    Server_time_offset_ms = delta;
+}
+
+int64_t
+qmsg_next_lc()
+{
+    std::lock_guard<std::mutex> lk(Lc_lock);
+    int64_t now = local_now_ms() + Server_time_offset_ms;
+    if(now > Last_lc_ms)
+    {
+        Last_lc_ms = now;
+        Last_lc_counter = 0;
+    }
+    else
+    {
+        ++Last_lc_counter;
+        if(Last_lc_counter > QMSG_LC_COUNTER_MASK)
+        {
+            ++Last_lc_ms;
+            Last_lc_counter = 0;
+        }
+    }
+    return pack_lc(Last_lc_ms, Last_lc_counter);
+}
+
+// Fold legacy clocks (unix seconds, or a small logical counter) and
+// implausible future values onto the packed millisecond scale. If the value
+// is already a sane packed clock, leave it alone: it came from a peer that
+// used the same scheme.
+int64_t
+qmsg_normalize_lc(int64_t lc, int64_t date_secs, const char *mid)
+{
+    const int64_t packed_min = ((int64_t)1) << 32;
+    const int64_t now_ms = qmsg_now_ms();
+    const int64_t max_future_ms = now_ms + 7LL * 24 * 60 * 60 * 1000;
+
+    if(lc >= packed_min)
+    {
+        int64_t ms = lc >> QMSG_LC_TIME_SHIFT;
+        if(ms <= max_future_ms)
+            return lc;
+    }
+
+    int64_t ms = 0;
+    if(date_secs > 0)
+    {
+        if(date_secs > max_future_ms / 1000)
+            ms = max_future_ms + 1;
+        else
+            ms = date_secs * 1000;
+    }
+    else if(lc > 0 && lc < packed_min)
+        ms = lc * 1000;
+    if(ms <= 0)
+        return 0;
+    if(ms > max_future_ms)
+        ms = now_ms;
+    return pack_lc(ms, mid_counter(mid));
+}
+
+// Track the largest sane clock we have seen so new messages in this process
+// do not sort behind messages that were already stored.
+static void
+observe_lc(int64_t lc)
+{
+    if(lc < (((int64_t)1) << 32))
+        return;
+    int64_t ms = lc >> QMSG_LC_TIME_SHIFT;
+    std::lock_guard<std::mutex> lk(Lc_lock);
+    int64_t now_ms = local_now_ms() + Server_time_offset_ms;
+    // Only carry forward small skews. A wildly future clock from a broken
+    // peer must not drag this device's outgoing timestamps into the future.
+    if(ms > now_ms + 5LL * 60 * 1000)
+        return;
+    if(ms > Last_lc_ms)
+    {
+        Last_lc_ms = ms;
+        Last_lc_counter = 0;
+    }
+}
+
+static void
+got_server_time(vc m, void *, vc, ValidPtr)
+{
+    vc t = m[1];
+    if(t.is_nil())
+        return;
+    int64_t secs = 0;
+    if(t.type() == VC_INT)
+        secs = (int64_t)(long long)t;
+    else if(t.type() == VC_VECTOR && t.num_elems() >= 6 && !t[5].is_nil())
+        secs = (int64_t)(long long)t[5];
+    if(secs > 0)
+        qmsg_set_server_time(secs);
+}
+
+void
+query_server_time()
+{
+    QckDone d(got_server_time, 0);
+    d.set_timeout(15);
+    dirth_send_get_server_time(My_UID, d);
+}
 
 void
 update_global_logical_clock(int64_t lc)
 {
-    if(lc > Logical_clock)
-        Logical_clock = lc + 1;
+    observe_lc(lc);
 }
+
 void
 boost_logical_clock()
 {
-    long tmplc;
+    int64_t tmplc = 0;
     try {
         qmsgsql::sql_start_transaction();
         tmplc = sql_get_max_logical_clock();
         qmsgsql::sql_commit_transaction();
     } catch (...) {
         qmsgsql::sql_rollback_transaction();
-        ++Logical_clock;
         return;
     }
-
-    if(tmplc > Logical_clock)
-        Logical_clock = tmplc + 1;
+    observe_lc(tmplc);
 }
 
 int64_t
 diff_logical_clock(int64_t tm)
 {
-    return Logical_clock - tm;
+    if(tm <= 0)
+        return (((int64_t)1) << 62);
+    if(tm >= (((int64_t)1) << 32))
+        return (qmsg_now_ms() - (tm >> QMSG_LC_TIME_SHIFT)) / 1000;
+    return (int64_t)time(0) - tm;
 }
 
 #ifdef WIN32
@@ -444,9 +610,6 @@ init_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    // not perfect, but better than scanning for a max value
-    // somewhere.
-    Logical_clock = time(0);
 #if 0
     if(!load_info(Never_visible, "never"))
     {
@@ -659,10 +822,6 @@ resume_qmsg()
     //MsgFolders = vc(VC_TREE);
 
     In_progress = vc(VC_TREE);
-    
-    // not perfect, but better than scanning for a max value
-    // somewhere.
-    Logical_clock = time(0);
 
 #if 0
     if(!load_info(Never_visible, "never"))
@@ -768,9 +927,7 @@ resume_qmsg()
     Chat_ports = vc(VC_TREE);
 
     //init_qmsg_sql();
-    long tmplc = sql_get_max_logical_clock();
-    if(tmplc > Logical_clock)
-        Logical_clock = tmplc + 1;
+    boost_logical_clock();
     Cur_ignore = get_local_ignore();
     //init_fav_sql();
 
@@ -1378,6 +1535,21 @@ compare_date_vector(vc v1, vc v2)
             return -1;
         else if(v1[i] > v2[i])
             return 1;
+    return 0;
+}
+
+static
+int64_t
+date_secs_from(vc d)
+{
+    if(d.type() == VC_VECTOR)
+    {
+        if(d.num_elems() >= 6 && !d[5].is_nil())
+            return (int64_t)(long long)d[5];
+        return 0;
+    }
+    if(d.type() == VC_INT)
+        return (int64_t)(long long)d;
     return 0;
 }
 
@@ -2265,17 +2437,10 @@ query_done(vc m, void *, vc, ValidPtr)
 
         if(!Mid_to_logical_clock.contains(mid))
         {
-            long lc;
-            if(v[QM_LOGICAL_CLOCK].is_nil())
-                lc = ++Logical_clock;
-            else
-                lc = (long)v[QM_LOGICAL_CLOCK];
-            if(Logical_clock > lc)
-                lc = ++Logical_clock;
-            else if(lc > Logical_clock)
-            {
-                Logical_clock = lc + 1;
-            }
+            int64_t lc = qmsg_normalize_lc(
+                            v[QM_LOGICAL_CLOCK].is_nil() ? 0 : (int64_t)(long long)v[QM_LOGICAL_CLOCK],
+                            date_secs_from(v[QM_DATE_SENT]),
+                            (const char *)mid);
             Mid_to_logical_clock.add_kv(mid, lc);
         }
         // NOTE: here is a case where if we already have the msg
@@ -2381,11 +2546,10 @@ store_direct(MMChannel *m, vc msg, void *)
         msg[QQM_LOCAL_ID] = id;
     }
 
-    // note: doing the logical clock stuff here isn't quite right...
-    // we really need to do it when we actually receive the messages, not
-    // when it is fetched and stored.
-#if 1
-    // if the clock was set when we first saw the summary, use that
+    // If the clock was set when we first saw the summary, use that. For
+    // direct messages, normalize the sender's clock/date. Never re-stamp a
+    // message with our receive time: that is what caused messages to sort by
+    // when they happened to be downloaded rather than when they were sent.
     vc lc;
     if(Mid_to_logical_clock.find(id, lc))
     {
@@ -2393,28 +2557,14 @@ store_direct(MMChannel *m, vc msg, void *)
     }
     else
     {
-        // set our logical clock to the max, and re-write the clock
-        // value in the message
-        if(msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK].is_nil())
-        {
-            // just stick our clock value in there
-            msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK] = ++Logical_clock;
-        }
-        else
-        {
-            long rclock = (long)msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
-            if(rclock > Logical_clock)
-            {
-                Logical_clock = rclock + 1;
-
-            }
-            else
-            {
-                msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK] = ++Logical_clock;
-            }
-        }
+        vc body = msg[QQM_MSG_VEC];
+        int64_t lcval = qmsg_normalize_lc(
+                            body[QQM_BODY_LOGICAL_CLOCK].is_nil() ? 0 :
+                            (int64_t)(long long)body[QQM_BODY_LOGICAL_CLOCK],
+                            date_secs_from(body[QQM_BODY_DATE]),
+                            (const char *)id);
+        msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK] = lcval;
     }
-#endif
 
     // if this is a direct msg with attachment, the att is already here, so
     // we can put in the estimated size if needed
@@ -2997,7 +3147,10 @@ struct GroovyItem
         {
             if(item[QM_BODY_LOGICAL_CLOCK] > g.item[QM_BODY_LOGICAL_CLOCK])
                 return 1;
-            return 0;
+            if(item[QM_BODY_LOGICAL_CLOCK] < g.item[QM_BODY_LOGICAL_CLOCK])
+                return 0;
+            // equal clocks must still be a strict ordering
+            return item[QM_BODY_ID] > g.item[QM_BODY_ID];
         }
         else if(!item[QM_BODY_LOGICAL_CLOCK].is_nil() && g.item[QM_BODY_LOGICAL_CLOCK].is_nil())
             return 1;
@@ -3092,12 +3245,8 @@ boost_clock(vc mi)
 {
     if(mi.num_elems() > 0 && !mi[0][QM_IDX_LOGICAL_CLOCK].is_nil())
     {
-        if((long)mi[0][QM_IDX_LOGICAL_CLOCK] > Logical_clock)
-        {
-            Logical_clock = (long)mi[0][QM_IDX_LOGICAL_CLOCK] + 1;
-        }
+        observe_lc((int64_t)(long long)mi[0][QM_IDX_LOGICAL_CLOCK]);
     }
-
 }
 
 
@@ -3293,7 +3442,7 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         m[QQM_BODY_ATTACHMENT] = attachment;
 
     m[QQM_BODY_DATE] = date_vector();
-    m[QQM_BODY_LOGICAL_CLOCK] = ++Logical_clock;
+    m[QQM_BODY_LOGICAL_CLOCK] = qmsg_next_lc();
     m[QQM_BODY_FORWARDED_BODY] = body_to_forward;
     m[QQM_BODY_NEW_TEXT] = new_text;
 

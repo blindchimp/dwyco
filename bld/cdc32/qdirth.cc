@@ -598,6 +598,17 @@ dirth_send_query2(vc uid, QckDone d)
     dirth_send(m, d);
 }
 
+void
+dirth_send_get_server_time(vc uid, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get-server-time");
+    m[QTYPE] = reqtype("get-server-time", d);
+    m[QFROM] = uid;
+    dirth_send(m, d);
+}
+
 // NOTE: this is now "delete the message for everyone in group"
 void
 dirth_send_ack_get(vc uid, vc mid, QckDone d)

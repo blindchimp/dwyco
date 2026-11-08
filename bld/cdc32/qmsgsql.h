@@ -29,7 +29,7 @@ void update_group_map(const vc& alt_pk, const vc& uids);
 void remove_sync_state();
 
 vc load_msg_index(vc uid, int load_count);
-long sql_get_max_logical_clock();
+int64_t sql_get_max_logical_clock();
 vc sql_get_recent_users(int recent, int *total_count);
 vc sql_get_old_ignored_users();
 
