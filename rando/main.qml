@@ -145,10 +145,10 @@ ApplicationWindow {
     // SafeArea attached type (qt 6.9+) reflects the window insets reported by
     // the platform, and reports zero on desktop and once an ancestor has laid
     // out its children inside the safe area.
-    property real safeTop: is_mobile ? contentItem.SafeArea.margins.top : 0
-    property real safeBottom: is_mobile ? contentItem.SafeArea.margins.bottom : 0
-    property real safeLeft: is_mobile ? contentItem.SafeArea.margins.left : 0
-    property real safeRight: is_mobile ? contentItem.SafeArea.margins.right : 0
+    property real safeTop: is_mobile && contentItem && contentItem.parent ? contentItem.parent.SafeArea.margins.top : 0
+    property real safeBottom: is_mobile && contentItem && contentItem.parent ? contentItem.parent.SafeArea.margins.bottom : 0
+    property real safeLeft: is_mobile && contentItem && contentItem.parent ? contentItem.parent.SafeArea.margins.left : 0
+    property real safeRight: is_mobile && contentItem && contentItem.parent ? contentItem.parent.SafeArea.margins.right : 0
 
     is_mobile: {return Qt.platform.os === "android" || Qt.platform.os === "ios"}
 

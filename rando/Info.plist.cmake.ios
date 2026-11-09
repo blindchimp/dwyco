@@ -32,5 +32,7 @@
 	<string>${MACOSX_BUNDLE_COPYRIGHT}</string>
 	<key>NSCameraUsageDescription</key>
 	<string>${MACOSX_BUNDLE_EXECUTABLE_NAME} Camera usage</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 </dict>
 </plist>
