@@ -1197,6 +1197,13 @@ import_remote_mi(const vc& remote_uid)
             c2 = s.sql_simple("select count(*) from mt.gmt");
         if(c[0][0] != c2[0][0])
             update_tags = true;
+        // the import connection has no temp pgmt_clean trigger, so deleting
+        // gmt rows here would orphan their payloads. drop payloads whose
+        // every referencing gmt row is being removed by msg_tomb, but keep
+        // any payload still referenced by a surviving row (shared guid).
+        s.sql_simple("delete from mt.gmt_payload "
+                     "where guid in (select guid from mt.gmt where mid in (select mid from main.msg_tomb)) "
+                     "and guid not in (select guid from mt.gmt where mid not in (select mid from main.msg_tomb))");
         s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         // note: the gmt deletes above run on this separate connection, which
