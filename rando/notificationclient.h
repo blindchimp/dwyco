@@ -76,6 +76,51 @@ private:
     int allow_notification;
 };
 extern NotificationClient *notificationClient;
+#elif defined(DWYCO_IOS)
+#include <QObject>
+#include <QString>
+
+class NotificationClient : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString notification READ notification WRITE setNotification NOTIFY notificationChanged)
+public:
+    explicit NotificationClient(QObject *parent = 0);
+
+    void setNotification(const QString &notification);
+    QString notification() const;
+    void set_allow_notification(int);
+    QString get_token();
+    void postIosNotification(const QString& notification);
+
+signals:
+    void notificationChanged();
+
+public slots:
+    void updateIosNotification();
+    void cancel();
+    void set_msg_count_url(QString s);
+    void set_quiet(int i);
+    void set_service_params(int port, QString sys_pfx, QString user_pfx, QString tmp_pfx);
+    void start_background();
+    void load_contacts();
+    int open_image();
+    void vibrate(long ms);
+    void beep();
+    void log_event();
+    void log_event2(QString name, QString method);
+    void set_user_property(QString name, QString value);
+    void set_lastrun();
+    void share_to_mediastore(QString filename);
+    void takePicture();
+
+private:
+    QString m_notification;
+    int allow_notification;
+    int quiet_mode;
+    QString device_token;
+};
+extern NotificationClient *notificationClient;
 #endif
 
 #endif // NOTIFICATIONCLIENT_H

@@ -292,4 +292,191 @@ NotificationClient::get_token()
     return token.toString();
 }
 
+#elif defined(DWYCO_IOS)
+#include "notificationclient.h"
+
+#include <QString>
+#include <QSettings>
+
+#include "dlli.h"
+
+#import <UIKit/UIKit.h>
+#import <UserNotifications/UserNotifications.h>
+
+static NSString *const RandoDeviceTokenKey = @"rando_apns_device_token";
+
+NotificationClient::NotificationClient(QObject *parent)
+    : QObject(parent)
+    , allow_notification(1)
+    , quiet_mode(0)
+{
+    // Request notification permission and register with APNs.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+        [center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionBadge | UNAuthorizationOptionSound)
+                              completionHandler:^(BOOL granted, NSError *error) {
+            (void)granted; (void)error;
+        }];
+        [[UIApplication sharedApplication] registerForRemoteNotifications];
+    });
+
+    // Load cached device token.
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    NSString *tok = [ud stringForKey:RandoDeviceTokenKey];
+    if (tok != nil) {
+        device_token = QString::fromNSString(tok);
+    }
+}
+
+void NotificationClient::setNotification(const QString &notification)
+{
+    if (m_notification == notification)
+        return;
+    m_notification = notification;
+    emit notificationChanged();
+}
+
+QString NotificationClient::notification() const
+{
+    return m_notification;
+}
+
+void NotificationClient::updateIosNotification()
+{
+    if (m_notification.length() == 0)
+        return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+        content.title = @"Dwyco Rando";
+        content.body = m_notification.toNSString();
+        content.sound = [UNNotificationSound defaultSound];
+        UNNotificationRequest *req = [UNNotificationRequest requestWithIdentifier:@"rando"
+                                                                       content:content
+                                                                       trigger:nil];
+        [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:req
+                                                           withCompletionHandler:nil];
+    });
+}
+
+void NotificationClient::postIosNotification(const QString &notification)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+        content.title = @"Dwyco Rando";
+        content.body = notification.toNSString();
+        content.sound = [UNNotificationSound defaultSound];
+        UNNotificationRequest *req = [UNNotificationRequest requestWithIdentifier:@"rando"
+                                                                       content:content
+                                                                       trigger:nil];
+        [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:req
+                                                           withCompletionHandler:nil];
+    });
+}
+
+void NotificationClient::set_allow_notification(int a)
+{
+    allow_notification = a;
+}
+
+QString NotificationClient::get_token()
+{
+    if (device_token.isEmpty()) {
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        NSString *tok = [ud stringForKey:RandoDeviceTokenKey];
+        if (tok != nil) {
+            device_token = QString::fromNSString(tok);
+        }
+    }
+    return device_token;
+}
+
+void NotificationClient::set_device_token(const QString &token)
+{
+    device_token = token;
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    [ud setObject:token.toNSString() forKey:RandoDeviceTokenKey];
+    [ud synchronize];
+    // Persist to the dwyco profile so the server can push.
+    QByteArray b = token.toLatin1();
+    dwyco_write_token(b.constData());
+}
+
+void NotificationClient::cancel()
+{
+    m_notification = "";
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[UNUserNotificationCenter currentNotificationCenter] removeAllPendingNotificationRequests];
+        [[UNUserNotificationCenter currentNotificationCenter] removeAllDeliveredNotifications];
+    });
+}
+
+void NotificationClient::set_msg_count_url(QString s)
+{
+    (void)s;
+}
+
+void NotificationClient::set_quiet(int i)
+{
+    quiet_mode = i;
+}
+
+void NotificationClient::set_service_params(int port, QString sys_pfx, QString user_pfx, QString tmp_pfx)
+{
+    (void)port; (void)sys_pfx; (void)user_pfx; (void)tmp_pfx;
+}
+
+void NotificationClient::start_background()
+{
+    // iOS background processing is handled by IOSBackground; nothing here.
+}
+
+void NotificationClient::load_contacts()
+{
+}
+
+int NotificationClient::open_image()
+{
+    return 0;
+}
+
+void NotificationClient::vibrate(long ms)
+{
+    (void)ms;
+}
+
+void NotificationClient::beep()
+{
+}
+
+void NotificationClient::log_event()
+{
+}
+
+void NotificationClient::log_event2(QString name, QString method)
+{
+    (void)name; (void)method;
+}
+
+void NotificationClient::set_user_property(QString name, QString value)
+{
+    (void)name; (void)value;
+}
+
+void NotificationClient::set_lastrun()
+{
+    // store lastrun in NSUserDefaults for parity with Android
+    [[NSUserDefaults standardUserDefaults] setDouble:[[NSDate date] timeIntervalSince1970]
+                                             forKey:@"rando_lastrun"];
+}
+
+void NotificationClient::share_to_mediastore(QString filename)
+{
+    (void)filename;
+}
+
+void NotificationClient::takePicture()
+{
+}
+
+#endif
 #endif
