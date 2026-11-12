@@ -154,10 +154,9 @@ get_entropy()
     if(!Entropy_rng)
         init_entropy();
 
-    CryptoPP::byte buf[20];
-    Entropy_rng->GenerateBlock(buf, sizeof(buf));
-    vc ret(VC_BSTRING, (const char *)buf, sizeof(buf));
-    memset(buf, 0, sizeof(buf));
+    CryptoPP::SecByteBlock buf(20);
+    Entropy_rng->GenerateBlock(buf.BytePtr(), buf.SizeInBytes());
+    vc ret(VC_BSTRING, (const char *)buf.BytePtr(), buf.SizeInBytes());
     return ret;
 }
 

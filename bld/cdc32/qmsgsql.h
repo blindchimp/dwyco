@@ -84,16 +84,15 @@ bool sql_has_msg_recently(vc uid, long num_seconds);
 vc sql_last_recved_msg(vc uid);
 
 vc sql_run_sql(vc s, vc a1 = vcnil, vc a2 = vcnil, vc a3 = vcnil);
-vc package_downstream_sends(const vc &remote_uid);
+vc package_downstream_sends(const vc &remote_uid, bool tox_ok);
 vc import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(cvcr remote_uid, cvcr vals);
 vc sql_get_non_local_messages_at_uid(vc uid, int max_count);
 vc sql_get_non_local_messages_at_uid_recent(vc uid, int max_count);
-vc sql_untagged_mids_at_uid(const vc &uid, const vc &tag);
 vc sql_uid_updated_since(vc time);
 int sql_attachment_already_received(const vc& att_name);
 
-vc sql_dump_mi();
+vc sql_dump_mi(bool tox_ok);
 vc sql_dump_mt();
 
 void reindex_possible_changes();
@@ -116,7 +115,7 @@ void clean_pull_failed_uid(const vc& uid);
 bool pull_failed(const vc& mid, const vc& uid);
 
 vc get_delta_id(const vc &uid);
-bool generate_delta(const vc &uid, const vc &delta_id);
+bool generate_delta(const vc &uid, const vc &delta_id, bool tox_ok);
 void create_dump_indexes(const DwString& fn);
 void import_new_syncpoint(vc remote_uid, vc delta_id);
 

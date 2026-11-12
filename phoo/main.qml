@@ -632,11 +632,13 @@ ApplicationWindow {
     color: is_mobile ? primary_dark : Material.backgroundColor
     title: {
         qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
-                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
-                                                 (core.group_status === 1 ?
-                                                      "(Requesting " + core.active_group_name + ")" : "")) +
-                                             (core.tox_available && core.tox_enabled && core.tox_self_name.length > 0 ?
-                                                  " | Tox: " + core.tox_self_name : "")
+                                                  " (" + core.active_group_name + " " + core.percent_synced + "%)" :
+                                                  (core.group_status === 1 ?
+                                                       "(Requesting " + core.active_group_name + ")" : "")) +
+                                              (core.tox_available && core.tox_enabled && core.tox_self_name.length > 0 ?
+                                                   " | Tox: " + core.tox_self_name : "") +
+                                              (core.sync_schema_mismatch_count > 0 ?
+                                                   "  [WARNING: group sync member needs upgrading]" : "")
 
     }
     property int close_bounce: 0
@@ -1549,7 +1551,7 @@ ApplicationWindow {
             if(depth === 1)
                 simp_tag_browse.to_tag = ""
         }
-        
+
     }
 
 //    Migrate {

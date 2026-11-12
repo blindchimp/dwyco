@@ -219,6 +219,7 @@ set(BASELIBS
     jenkins
     qt-qml-models
     jhead
+    toxd
     Qt6::Quick
     Qt6::Network
     Qt6::QuickControls2Material

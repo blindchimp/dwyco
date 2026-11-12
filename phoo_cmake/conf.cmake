@@ -1,7 +1,14 @@
 set(DWYCO_APP "phoo")
 set(DWYCOBG 0)
-set(DWYCO_TOXCORE ON)
-add_compile_definitions(DWYCO_TOXCORE)
+
+option(DWYCO_TOXCORE "Enable Toxcore support" ON)
+if(IOS)
+    set(DWYCO_TOXCORE OFF)
+endif()
+
+if(DWYCO_TOXCORE)
+    add_compile_definitions(DWYCO_TOXCORE)
+endif()
 add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
 
 add_compile_definitions(VCCFG_FILE)

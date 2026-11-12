@@ -674,7 +674,12 @@ void configform::on_sync_refresh_button_clicked()
     for (int i = 0; i < numRows; ++i)
     {
         // Fetch data for each column from the API
-        auto w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_UID).toHex());
+        QByteArray uidbytes = qsm.get<QByteArray>(i, DWYCO_SM_UID);
+        QString uidhex = uidbytes.toHex();
+        bool needs_update = Mainwinform->sync_mismatch_uids.contains(uidhex);
+        auto w = new QTableWidgetItem(needs_update ? uidhex + "  (needs update)" : uidhex);
+        if (needs_update)
+            w->setForeground(QBrush(Qt::red));
         st->setItem(i, 0, w);
         w = new QTableWidgetItem(qsm.get<QByteArray>(i, DWYCO_SM_IP));
         st->setItem(i, 1, w);

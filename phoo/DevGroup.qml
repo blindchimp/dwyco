@@ -363,13 +363,18 @@ Page {
                         Layout.preferredWidth: cm(2)
                     }
 
-                    Label {
-                        id: handle_label
-                        elide: Text.ElideRight
-                        text: (orig ? "(" : "]") + uid.substring(0, 2) + (orig ? ")" : "[") + handle
-                        color: proxy ? "red" : "black"
-                        //Layout.preferredWidth: cm(2)
-                    }
+                     Label {
+                         id: handle_label
+                         elide: Text.ElideRight
+                         text: (orig ? "(" : "]") + uid.substring(0, 2) + (orig ? ")" : "[") + handle
+                         color: proxy ? "red" : "black"
+                         //Layout.preferredWidth: cm(2)
+                     }
+                     Label {
+                         text: "needs update"
+                         color: "red"
+                         visible: model.schema_mismatch === true
+                     }
                     Label {
                         id: conn_ip
                         text: ip

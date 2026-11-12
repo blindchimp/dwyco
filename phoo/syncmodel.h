@@ -27,6 +27,7 @@ class Sync_desc : public QObject
     QML_READONLY_VAR_PROPERTY(int, sendq_count)
     QML_READONLY_VAR_PROPERTY(int, percent_synced)
     QML_READONLY_VAR_PROPERTY(QString, adv_ip) // advertised ip
+    QML_READONLY_VAR_PROPERTY(bool, schema_mismatch)
 
 
 public:
@@ -35,6 +36,7 @@ public:
         m_proxy = false;
         m_sendq_count = 0;
         m_percent_synced = 0;
+        m_schema_mismatch = false;
         update_counter = -1;
     }
     void load_external_state(const QByteArray& uid);
@@ -52,6 +54,7 @@ public:
     ~SyncDescModel();
 
     Q_INVOKABLE void load_model();
+    Q_INVOKABLE void mark_schema_mismatch(const QString &uid);
 
 public slots:
     void update_connections(QString status);

@@ -185,12 +185,21 @@ Pane {
         //        }
         ItemDelegate {
             id: link_dev_button
-            text: qsTr("Link other device")
+            text: core.sync_schema_mismatch_count > 0 ? "  " + qsTr("Link other device") : qsTr("Link other device")
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
             //visible: false
             Layout.fillWidth: true
+            Text {
+                text: "!"
+                color: "red"
+                font.bold: true
+                anchors.left: parent.left
+                anchors.leftMargin: ctrl_pad
+                anchors.verticalCenter: parent.verticalCenter
+                visible: core.sync_schema_mismatch_count > 0
+            }
         }
         ItemDelegate {
             id: vid_preview_button
