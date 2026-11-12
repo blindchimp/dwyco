@@ -1938,7 +1938,8 @@ DwycoCore::init()
                     simple_scoped ssml(sml);
                     if(ssml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
                     {
-                        QByteArray txt = ssml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
+                        // fix: recover json from html-wrapped verdicts sent by reviewer
+                        QByteArray txt = json_txt_from_msg_text(ssml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2));
                         QJsonDocument qjd = QJsonDocument::fromJson(txt);
                         if(!qjd.isNull())
                         {

@@ -1361,8 +1361,13 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
 
         QByteArray h;
+        // fix: returning "" here made "no verdict" look like a verdict to
+        // QML code that checks (REVIEW_RESULTS != "Unknown"), which made the
+        // failed-review icon flash on rows that have no verdict (like
+        // unfetched text msgs). return "Unknown" so no-verdict rows behave
+        // the same as rows with no hash at all.
         if(!att_file_hash(mid, h))
-            return QByteArray("");
+            return QByteArray("Unknown");
         QByteArray l = Hash_to_review.value(h, "Unknown");
         return l;
     }
