@@ -1683,6 +1683,43 @@ DwycoCore::update_dwyco_client_name(QString name)
     dwyco_set_client_version(nm.constData(), nm.length());
 }
 
+// fix: one-time aggressive rescan to re-instate "_json" tags that were lost
+// when the reviewer app sent verdict/geo text wrapped in html. those messages
+// failed to parse as json, so they were never tagged "_json"/favorited and
+// their hashes were never loaded. this walks every saved text-only message
+// and re-processes any that weren't tagged, using the same logic as normal
+// ingestion (load_to_hash). gated by a single-run setting so it only
+// happens once.
+static void
+aggressive_json_rescan()
+{
+    int total;
+    dwyco_load_users2(0, &total);
+    DWYCO_USER_LIST ul;
+    int n;
+    if(!dwyco_get_user_list2(&ul, &n))
+        return;
+    simple_scoped sul(ul);
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray uid = sul.get<QByteArray>(i);
+        DWYCO_MSG_IDX mi;
+        if(!dwyco_get_message_index(&mi, uid.constData(), uid.length()))
+            continue;
+        simple_scoped smi(mi);
+        for(int j = 0; j < smi.rows(); ++j)
+        {
+            // verdicts/geo info arrive as text-only messages
+            if(!smi.is_nil(j, DWYCO_MSG_IDX_HAS_ATTACHMENT))
+                continue;
+            QByteArray mid = smi.get<QByteArray>(j, DWYCO_MSG_IDX_MID);
+            if(dwyco_mid_has_tag(mid.constData(), "_json"))
+                continue;
+            load_to_hash(uid, mid);
+        }
+    }
+}
+
 
 void
 DwycoCore::init()
@@ -1980,6 +2017,17 @@ DwycoCore::init()
                     }
                 }
             }
+        }
+    }
+
+    // fix: single-run gate for the aggressive rescan described in
+    // aggressive_json_rescan().
+    {
+        QString json_rescan1;
+        if(!setting_get("json_rescan1", json_rescan1))
+        {
+            aggressive_json_rescan();
+            setting_put("json_rescan1", "");
         }
     }
 
