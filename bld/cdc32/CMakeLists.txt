@@ -57,8 +57,12 @@ if(ANDROID)
 endif()
 
 
-if(APPLE AND NOT UNIX)
-    add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
+if(APPLE)
+    if(IOS)
+	add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=8000)
+    else()
+	add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
+    endif()
 endif()
 
 if(DWYCO_TESTING)

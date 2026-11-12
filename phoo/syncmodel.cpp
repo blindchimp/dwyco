@@ -84,6 +84,7 @@ SyncDescModel::load_model()
         c->update_asserts(sl.get_long(i, DWYCO_SM_PULLS_ASSERT));
         c->update_sendq_count(sl.get_long(i, DWYCO_SM_SENDQ_COUNT));
         c->update_percent_synced(sl.get_long(i, DWYCO_SM_PERCENT_SYNCED));
+        c->update_schema_mismatch(TheDwycoCore->is_sync_schema_mismatch(huid));
         int can_do_direct = 0;
         char *ip_out;
         int o = dwyco_uid_to_ip2(uid.constData(), uid.length(), &can_do_direct, &ip_out);
@@ -125,6 +126,14 @@ SyncDescModel::load_model()
     }
 #endif
 
+}
+
+void
+SyncDescModel::mark_schema_mismatch(const QString &uid)
+{
+    Sync_desc *c = getByUid(uid);
+    if(c)
+        c->update_schema_mismatch(true);
 }
 
 void

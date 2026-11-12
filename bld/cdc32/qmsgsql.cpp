@@ -50,6 +50,12 @@
 
 namespace dwyco {
 using namespace dwyco::qmsgsql;
+
+// the tox identity tags. builds that do not advertize the "tox tags" config key
+// are not sent any of these tags (or their payloads) during sync. everything
+// else syncs normally.
+#define TOX_TAGS "'_tox','_tox_device','_tox_friend','_tox_mid','_tox_save','_tox_active'"
+
 DwString Schema_version_hack;
 ssns::signal1<vc> Qmsg_update;
 
@@ -139,7 +145,14 @@ QMsgSql::init_schema_fav()
         start_transaction();
         const vc& res = sql_simple("pragma mt.user_version");
         if((int)res[0][0] == 3)
+        {
+            // one-time reset: v3 only ever existed in pre-release debug
+            // databases; the wire-level capability gate replaced the bump.
+            // old (released) software expects 2 here.
+            sql_simple("pragma mt.user_version = 2");
+            commit_transaction();
             throw 0;
+        }
 #ifdef DWYCO_DBG_SCHEMA
         if((int)res[0][0] != 0)
         {
@@ -172,7 +185,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
         sql_simple("drop table mt.msg_tags2");
-        sql_simple("pragma mt.user_version = 3");
+        sql_simple("pragma mt.user_version = 2");
 
         commit_transaction();
     }
@@ -456,7 +469,7 @@ get_delta_id(const vc& uid)
 }
 
 bool
-generate_delta(const vc& uid, const vc& delta_id)
+generate_delta(const vc& uid, const vc& delta_id, bool tox_ok)
 {
     const vc& huid = to_hex(uid);
     DwString dbfn = DwString("minew%1.tdb").arg((const char *)huid);
@@ -493,8 +506,11 @@ generate_delta(const vc& uid, const vc& delta_id)
         const vc& did = s.sql_simple("select delta_id from id");
         if(did.num_elems() != 1 || did[0][0] != delta_id)
             throw -1;
-        const vc& r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
-                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid", huid);
+         DwString r1q = "with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)";
+         if(!tox_ok)
+             r1q += " and assoc_uid not in (select mid from mt.gmt where tag = '_tox')";
+         r1q += ") insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid";
+         const vc& r1 = s.sql_simple(r1q.c_str(), huid);
         // just insert some dummy rows, since we know that we will never be resending this
         // index database again. if the delta_ids don't match, this gets recreated from scratch
         for(int i = 0; i < r1.num_elems(); ++i)
@@ -508,9 +524,16 @@ generate_delta(const vc& uid, const vc& delta_id)
             s.sql_simple("insert into main.msg_tomb(mid) values(?1)", r2[i][0]);
         }
         // tags
-        const vc& r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
-                     "guid not in (select guid from main.msg_tags2)) "
-                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid", huid);
+        // when the remote does not advertize the "tox tags" config key (old software),
+        // withhold the tox tags entirely. since they are never recorded in main.msg_tags2,
+        // a later delta (from a peer that upgrades) re-sends all of them automatically.
+        DwString r3q = "with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
+                     "guid not in (select guid from main.msg_tags2)";
+        if(!tox_ok)
+            r3q += " and tag not in (" TOX_TAGS ")";
+        r3q += ") "
+                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid";
+        const vc& r3 = s.sql_simple(r3q.c_str(), huid);
         for(int i = 0; i < r3.num_elems(); ++i)
         {
             s.sql_simple("insert into main.msg_tags2(guid) values(?1)", r3[i][0]);
@@ -558,7 +581,7 @@ generate_delta(const vc& uid, const vc& delta_id)
 }
 
 vc
-sql_dump_mi()
+sql_dump_mi(bool tox_ok)
 {
     DwString fn = gen_random_filename();
     fn += ".tmp";
@@ -592,9 +615,14 @@ sql_dump_mi()
                "from_client_uid "
                ");"
               );
-    s.sql_simple("insert into dump.msg_idx select "
-               "*"
-               " from main.gi");
+     if(tox_ok)
+         s.sql_simple("insert into dump.msg_idx select "
+                    "*"
+                    " from main.gi");
+     else
+         s.sql_simple("insert into dump.msg_idx select "
+                    "*"
+                    " from main.gi where assoc_uid not in (select mid from mt.gmt where tag = '_tox')");
 
     s.sql_simple("create table dump.msg_tomb (mid, time)");
     s.sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
@@ -604,18 +632,32 @@ sql_dump_mi()
     s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer)");
     // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
-    s.sql_simple("insert into dump.msg_tags2 select "
+    // when the remote does not advertize the "tox tags" config key (old software),
+    // withhold the tox tags entirely; everything else still syncs.
+    {
+        DwString q = "insert into dump.msg_tags2 select "
                "mid, "
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag in (select * from mt.static_crdt_tags) group by guid");
+               "from mt.gmt where tag in (select * from mt.static_crdt_tags)";
+        if(!tox_ok)
+            q += " and tag not in (" TOX_TAGS ")";
+        q += " group by guid";
+        s.sql_simple(q.c_str());
+    }
     // note: payloads ride along with their tag items. old clients never reference
     // this table when importing a dump, so they ignore it entirely.
     s.sql_simple("create table dump.msg_payload(guid text collate nocase, mid text not null, payload blob)");
-    s.sql_simple("insert into dump.msg_payload select gp.guid, gp.mid, gp.payload from mt.gmt_payload as gp "
+    {
+        DwString q = "insert into dump.msg_payload select gp.guid, gp.mid, gp.payload from mt.gmt_payload as gp "
                "join mt.gmt on gp.guid = gmt.guid "
-               "where gmt.tag in (select * from mt.static_crdt_tags) group by gp.guid");
+               "where gmt.tag in (select * from mt.static_crdt_tags)";
+        if(!tox_ok)
+            q += " and gmt.tag not in (" TOX_TAGS ")";
+        q += " group by gp.guid";
+        s.sql_simple(q.c_str());
+    }
     s.sql_simple("insert into dump.tomb select * from mt.gtomb");
     //
     s.sql_simple("create table dump.id(delta_id text)");
@@ -676,7 +718,7 @@ msg_idx_updated(const vc& uid, int prepended)
 
 
 vc
-package_downstream_sends(const vc& remote_uid)
+package_downstream_sends(const vc& remote_uid, bool tox_ok)
 {
     try
     {
@@ -728,8 +770,11 @@ package_downstream_sends(const vc& remote_uid)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
-                             "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
+         DwString idxsq = "select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2";
+         if(!tox_ok)
+             idxsq += " and msg_idx.assoc_uid not in (select mid from mt.gmt where tag = '_tox')";
+         const vc idxs = sql_simple(idxsq.c_str(), huid, next_mid_sync);
         const vc mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
@@ -742,10 +787,19 @@ package_downstream_sends(const vc& remote_uid)
         // requires op to be the last element of the tupdate vector. old clients ignore
         // the extra element, new clients detect it by the number of elements.
 
-        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, gp.payload, tl.op from mt.gmt as mt2 "
+        // when the remote does not advertize the "tox tags" config key (old software),
+        // withhold the tox tags (and their payloads) entirely. note: the tombstone query
+        // and the delete below are deliberately unfiltered, so tombstones keep flowing and
+        // the withheld rows are simply acked and dropped; post-upgrade catch-up re-derives
+        // the full tox state from gmt/msg_tags2 via delta or dump.
+        DwString tagsq = "select mt2.mid, mt2.tag, mt2.time, mt2.guid, gp.payload, tl.op from mt.gmt as mt2 "
                              "join mt.taglog as tl on mt2.mid = tl.mid and mt2.tag = tl.tag "
                              "left join mt.gmt_payload as gp on gp.guid = mt2.guid "
-                             "where tl.to_uid = ?1 and tl.op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
+                             "where tl.to_uid = ?1 and tl.op = 'a' and tl.rowid < ?2";
+        if(!tox_ok)
+            tagsq += " and mt2.tag not in (" TOX_TAGS ")";
+        tagsq += " group by mt2.guid";
+        const vc tags = sql_simple(tagsq.c_str(), huid, next_tag_sync);
         const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
@@ -933,8 +987,18 @@ remove_sync_state()
         // make sense when you are outside a group, or when you re-enter a group.
         sql_simple("delete from mt.gmt where tag = '_leader'");
         // remove info we might have received from other clients regarding their tag state (which
-        // can be redundant)
-        sql_simple("delete from gmt where rowid not in (select max(rowid) from gmt group by mid,tag)");
+        // can be redundant). select the same winning row per (mid, tag) that readers select
+        // while in the group: prefer rows with a payload, then newest time, then guid tie-breaker.
+        sql_simple("delete from mt.gmt where rowid not in ("
+                   "select keep_rowid from ("
+                   "select gmt.rowid as keep_rowid, "
+                   "row_number() over ("
+                   "partition by gmt.mid, gmt.tag "
+                   "order by (gp.payload is not null) desc, gmt.time desc, gmt.guid desc, gmt.rowid desc"
+                   ") as rn "
+                   "from mt.gmt "
+                   "left join mt.gmt_payload as gp on gp.guid = gmt.guid"
+                   ") where rn = 1)");
         // make it look like we created all the tags
         sql_simple("update gmt set uid = ?1", to_hex(My_UID));
         // interesting question: should we redo all the guids? if we enter the same group again
@@ -1133,6 +1197,13 @@ import_remote_mi(const vc& remote_uid)
             c2 = s.sql_simple("select count(*) from mt.gmt");
         if(c[0][0] != c2[0][0])
             update_tags = true;
+        // the import connection has no temp pgmt_clean trigger, so deleting
+        // gmt rows here would orphan their payloads. drop payloads whose
+        // every referencing gmt row is being removed by msg_tomb, but keep
+        // any payload still referenced by a surviving row (shared guid).
+        s.sql_simple("delete from mt.gmt_payload "
+                     "where guid in (select guid from mt.gmt where mid in (select mid from main.msg_tomb)) "
+                     "and guid not in (select guid from mt.gmt where mid not in (select mid from main.msg_tomb))");
         s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         // note: the gmt deletes above run on this separate connection, which
@@ -1598,8 +1669,12 @@ setup_update_triggers()
     // setup_crdt_triggers, which are only created when in a group), since it is
     // local hygiene: payload rows must not outlive their gmt rows. all destruction
     // of gmt rows goes through "delete from gmt", so this covers every path.
+    // guard with "not exists" because gmt can hold multiple rows with the same
+    // guid (one per syncing uid), and deleting redundant rows during dedup must
+    // not destroy the payload while a surviving row still references that guid.
     sql_simple("create temp trigger pgmt_clean after delete on mt.gmt begin "
-               "delete from gmt_payload where guid = old.guid; end");
+               "delete from gmt_payload where guid = old.guid "
+               "and not exists (select 1 from gmt where guid = old.guid); end");
 #if 0
     sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
@@ -2845,30 +2920,6 @@ sql_get_non_local_messages_at_uid_recent(vc uid, int max_count)
     }
 }
 
-// returns all mids stored at uid (both sent and received) that do not
-// already carry a live (untombstoned) row for the given tag.
-// used by the tox _tox_mid backfill on first run after the tag was added.
-vc
-sql_untagged_mids_at_uid(const vc &uid, const vc &tag)
-{
-    try
-    {
-        sql_start_transaction();
-        vc res = sql_simple("select mid from gi where assoc_uid = ?1 "
-                            "and not exists(select 1 from msg_tomb where mid = gi.mid) "
-                            "and not exists(select 1 from gmt where gmt.mid = gi.mid and gmt.tag = ?2 "
-                            "and not exists(select 1 from mt.gtomb where guid = gmt.guid))",
-                            to_hex(uid), tag);
-        sql_commit_transaction();
-        return flatten(res);
-    }
-    catch (...)
-    {
-        sql_rollback_transaction();
-        return vc(VC_VECTOR);
-    }
-}
-
 
 int
 msg_index_count(vc uid)
@@ -3185,7 +3236,8 @@ sql_get_tag_payload(vc mid, vc tag)
     vc res = sql_simple("select gp.payload from gmt, mt.gmt_payload as gp using(guid) "
                 "where gmt.mid = ?1 and tag = ?2 "
                 "and not exists(select 1 from mt.gtomb where guid = gmt.guid) "
-                "order by gmt.time desc limit 1", mid, tag);
+                "and gp.payload is not null "
+                "order by gmt.time desc, gmt.guid desc limit 1", mid, tag);
     if(res.num_elems() == 0)
         return vcnil;
     return res[0][0];

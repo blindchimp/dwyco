@@ -339,7 +339,7 @@ DwQSend::qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
             e = 1;
         int p = (int)(((double)mc->total_got * 100) / e);
         vc r = q->msg[QQM_RECIP_VEC][0];
-        q->status_sig.emit(q->qfn, r, (const char *)msg, p);
+        q->status_sig.emit(q->qfn, r, msg, p);
     }
 }
 

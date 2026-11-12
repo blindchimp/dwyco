@@ -100,11 +100,18 @@ enum dwyco_sys_event {
     // another device in the group signed in with the tox identity this
     // device was running, so this device stood down. carries no arguments.
     SE_TOX_DISABLED_BY_REMOTE,
+    // a sync connection was rejected because the remote device's group
+    // hash or schema version did not match ours. carries the offending
+    // remote uid and a detail string.
+    SE_SYNC_SCHEMA_MISMATCH,
 };
 
 // at this point, the id can be a uid or a mid
 void se_emit(enum dwyco_sys_event cmd, const vc &uid);
 void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2);
+// map_uid controls whether a1 (typically a uid) is mapped to its group
+// representative. pass false to preserve the actual device uid.
+void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2, bool map_uid);
 void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2, const vc &a3);
 void se_emit(enum dwyco_sys_event cmd, const vc &a1, const vc &a2, const vc &a3, const vc &a4);
 void se_emit_msg(enum dwyco_sys_event cmd, const DwString &qid, const vc &uid);

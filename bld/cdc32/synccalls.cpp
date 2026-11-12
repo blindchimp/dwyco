@@ -17,6 +17,7 @@
 #include "qmsgsql.h"
 #include "dirth.h"
 #include "cdcpal.h"
+#include "se.h"
 #ifdef _Windows
 #include <time.h>
 #endif
@@ -261,6 +262,25 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
     case DWYCO_CALLDISP_STARTED:
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
+        break;
+    case DWYCO_CALLDISP_REJECTED:
+        // only treat this as a schema/group mismatch when the recipient's
+        // reject reason actually says so. duplicate connects and other
+        // rejections must not trigger the warning.
+        if(uid && len_uid > 0 && chan_id >= 0)
+        {
+            MMChannel *mc = MMChannel::channel_by_id(chan_id);
+            if(mc && !mc->fail_reason.is_nil())
+            {
+                DwString reason((const char *)mc->fail_reason, 0, mc->fail_reason.len());
+                if(reason.contains("wrong group") || reason.contains("schema"))
+                {
+                    vc u(VC_BSTRING, uid, len_uid);
+                    vc d(VC_BSTRING, "", 0);
+                    se_emit(SE_SYNC_SCHEMA_MISMATCH, u, d, false);
+                }
+            }
+        }
         break;
     default:
         break;

@@ -59,6 +59,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, percent_synced)
     QML_READONLY_VAR_PROPERTY(int, eager_pull)
     QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
+    QML_READONLY_VAR_PROPERTY(QStringList, sync_schema_mismatch_uids)
+    QML_READONLY_VAR_PROPERTY(int, sync_schema_mismatch_count)
 
     QML_READONLY_VAR_PROPERTY(bool, invisible)
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
@@ -222,6 +224,7 @@ public:
     Q_INVOKABLE void send_chat(QString text);
 
     Q_INVOKABLE QString uid_to_name(QString uid);
+    Q_INVOKABLE bool is_sync_schema_mismatch(const QString &uid) const;
     Q_INVOKABLE QString uid_to_profile_info(QString uid, enum Profile_info field);
     Q_INVOKABLE bool uid_profile_regular(QString uid);
     Q_INVOKABLE QUrl uid_to_profile_preview(QString uid);
@@ -544,6 +547,9 @@ signals:
     // was running, so tox was stopped here. holder is the ascii hex dwyco
     // uid of that device, or empty if unknown.
     void tox_disabled_by_remote(QString holder);
+    // a remote device was rejected for syncing because its group hash or
+    // schema version did not match ours. uid is the offending device (hex).
+    void sync_schema_mismatch(QString uid, QString detail);
 
     // debounced: fires once when one or more pal tox contacts come online
     void pal_came_online();
@@ -558,6 +564,7 @@ private:
     void schedule_tox_saves_changed();
 
     QSet<QString> m_tox_online_uids;
+    void add_sync_schema_mismatch_uid(const QString &uid);
     QTimer *m_tox_plink_timer = nullptr;
     QTimer *m_tox_saves_timer = nullptr;
 

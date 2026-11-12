@@ -329,50 +329,6 @@ tag_msg_tox_mid(const vc &mid, const vc &peer_pseudo)
     sql_add_tag(mid, "_tox_mid", self);
 }
 
-// first-run backfill: messages stored under a tox friend's uid before
-// _tox_mid tagging existed get attributed to this device's tox client.
-// idempotent: mids that already carry the tag are skipped, so later
-// runs find nothing to do.
-static void
-backfill_tox_mid_tags()
-{
-    if(!sql_is_initialized())
-        return;
-    vc self = self_tox_pseudo();
-    if(self.is_nil() || Friend_cache.is_nil())
-        return;
-    int n = Friend_cache.num_elems();
-    int ntagged = 0;
-    try
-    {
-        qmsgsql::sql_start_transaction();
-        for(int i = 0; i < n; ++i)
-        {
-            vc entry = Friend_cache[i];
-            vc pubkey;
-            if(!entry.find("pubkey", pubkey))
-                continue;
-            vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
-            if(pseudo.is_nil() || uid_ignored(pseudo))
-                continue;
-            vc mids = sql_untagged_mids_at_uid(pseudo, "_tox_mid");
-            for(int j = 0; j < mids.num_elems(); ++j)
-            {
-                sql_add_tag(mids[j], "_tox_mid", self);
-                ++ntagged;
-            }
-        }
-        qmsgsql::sql_commit_transaction();
-    }
-    catch(...)
-    {
-        qmsgsql::sql_rollback_transaction();
-        GRTLOG("tox: backfill of _tox_mid tags failed", 0, 0);
-        return;
-    }
-    GRTLOG("tox: backfilled %d messages with _tox_mid", ntagged, 0);
-}
-
 static void
 cancel_outgoing_avatar_for(uint32_t fn)
 {
@@ -1661,7 +1617,6 @@ if(!self_pseudo.is_nil())
     set_settings_value("tox/self_name", tox_bridge_get_name());
 }
 safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
-    backfill_tox_mid_tags();
     publish_active_claim();
     // note: the identity is *not* published here. sharing is something the
     // user asks for explicitly (see tox_bridge_publish_save), so signing in
