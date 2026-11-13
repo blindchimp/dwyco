@@ -13,6 +13,7 @@
 #include <QDataStream>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTextDocument>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
 #include "dwycolist2.h"
@@ -43,6 +44,26 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid)
     Got_msg_from_this_session.insert(uid);
 }
 
+// fix: the reviewer app has a bug where it sends the verdict text as
+// it is displayed in the rich text viewer (an HTML document) instead of
+// sending the original unadorned JSON text of the message. recover the
+// JSON from the HTML wrapper before parsing, so verdicts and geo info
+// that arrive like this are still processed.
+QByteArray
+json_txt_from_msg_text(const QByteArray& txt)
+{
+    if(!QJsonDocument::fromJson(txt).isNull() || !txt.contains('<'))
+        return txt;
+    QTextDocument td;
+    td.setHtml(QString::fromUtf8(txt));
+    QByteArray plain = td.toPlainText().toUtf8();
+    int b = plain.indexOf('{');
+    int e = plain.lastIndexOf('}');
+    if(b >= 0 && e > b)
+        return plain.mid(b, e - b + 1);
+    return txt;
+}
+
 void
 load_to_hash(const QByteArray& uid, const QByteArray& mid)
 {
@@ -50,7 +71,8 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
     if(dwyco_get_saved_message(&sml, uid.constData(), uid.length(), mid.constData()))
     {
         simple_scoped qsml(sml);
-        QByteArray txt = qsml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
+        // fix: recover json from html-wrapped verdicts sent by reviewer
+        QByteArray txt = json_txt_from_msg_text(qsml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2));
         QJsonDocument qjd = QJsonDocument::fromJson(txt);
         if(!qjd.isNull())
         {

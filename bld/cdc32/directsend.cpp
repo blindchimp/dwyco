@@ -230,7 +230,7 @@ DirectSend::set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
         if(e == 0)
             e = 1;
         int p = (int)(((double)mc->total_got * 100) / e);
-        q->status_sig.emit(q->qfn, q->uid, (const char *)msg, p);
+        q->status_sig.emit(q->qfn, q->uid, msg, p);
     }
 }
 

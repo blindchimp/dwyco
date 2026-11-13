@@ -214,8 +214,8 @@ se_emit_msg_status(const DwString& qid, const vc& ruid, const DwString& msg, int
     vc v(VC_VECTOR);
     v[0] = SE_MSG_SEND_STATUS;
     v[1] = ruid;
-    v[2] = qid.c_str();
-    v[3] = msg.c_str();
+    v[2] = qid;
+    v[3] = msg;
     v[4] = percent;
     Se_q.append(v);
     GRTLOG("se_emit_msg_status ", 0, 0);
