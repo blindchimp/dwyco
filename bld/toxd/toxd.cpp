@@ -338,11 +338,25 @@ toxd_on_friend_status(Tox *tox, uint32_t fn, Tox_User_Status status, void *ud)
 
 // --- internal helpers ---
 
+// the user status (none/away/busy) is per-device state, it is not part of
+// the identity. in particular the auto-away feature sets it to "away" while
+// the user is idle, and that must never end up in the save file: it would
+// come back as "away" the next time the identity is loaded and stay there
+// forever. so the status is written as "none" and the app re-applies the
+// status the user actually picked when it signs in.
+//
+// note this only touches the bytes that get written out. the status in the
+// running tox is put back right after, so nothing is visible to the user
+// and no friend gets a bogus status update.
 static void
 save_tox_state(ToxPlugin *p)
 {
     DwString save_path = dwyco::newfn(p->save_file);
     DwString tmp_path = save_path + ".new";
+
+    Tox_User_Status saved_status = tox_self_get_status(p->tox);
+    if(saved_status != TOX_USER_STATUS_NONE)
+        tox_self_set_status(p->tox, TOX_USER_STATUS_NONE);
 
     size_t sz = tox_get_savedata_size(p->tox);
     uint8_t *data = (uint8_t *)malloc(sz);
@@ -361,6 +375,8 @@ save_tox_state(ToxPlugin *p)
             fprintf(stderr, "toxd: save encrypt failed\n");
             free(enc_data);
             free(data);
+            if(saved_status != TOX_USER_STATUS_NONE)
+                tox_self_set_status(p->tox, saved_status);
             return;
         }
         out_data = enc_data;
@@ -376,6 +392,9 @@ save_tox_state(ToxPlugin *p)
     if(enc_data)
         free(enc_data);
     free(data);
+
+    if(saved_status != TOX_USER_STATUS_NONE)
+        tox_self_set_status(p->tox, saved_status);
 }
 
 static void
@@ -697,6 +716,12 @@ toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_b
         return 0;
     }
 
+    // same as save_tox_state: an exported save is a save file, so it must
+    // not carry a transient status (eg. the auto-away's "away") either.
+    Tox_User_Status saved_status = tox_self_get_status(p->tox);
+    if(saved_status != TOX_USER_STATUS_NONE)
+        tox_self_set_status(p->tox, TOX_USER_STATUS_NONE);
+
     size_t sz = tox_get_savedata_size(p->tox);
     uint8_t *data = (uint8_t *)malloc(sz);
     tox_get_savedata(p->tox, data);
@@ -715,6 +740,8 @@ toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_b
             free(enc_data);
             free(data);
             snprintf(err_buf, (size_t)err_buf_len, "encryption failed");
+            if(saved_status != TOX_USER_STATUS_NONE)
+                tox_self_set_status(p->tox, saved_status);
             return 0;
         }
         out_data = enc_data;
@@ -734,6 +761,10 @@ toxp_export_to_file(ToxPlugin *p, const char *dst_path, char *err_buf, int err_b
     if(enc_data)
         free(enc_data);
     free(data);
+
+    if(saved_status != TOX_USER_STATUS_NONE)
+        tox_self_set_status(p->tox, saved_status);
+
     return ret;
 }
 

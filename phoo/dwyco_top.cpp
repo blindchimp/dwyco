@@ -2210,7 +2210,7 @@ DwycoCore::init()
         } else {
             set_tox_enabled(true);
             dwyco_enable_tox("tox_save.tox");
-            set_user_status_impl(QStringLiteral("none"));
+            apply_user_tox_status();
             update_tox_self_address(tox_get_self_address());
             update_tox_self_name(tox_get_name());
         }
@@ -3128,7 +3128,7 @@ DwycoCore::enable_tox()
         return;
     set_tox_enabled(true);
     dwyco_enable_tox("tox_save.tox");
-    set_user_status_impl(QStringLiteral("none"));
+    apply_user_tox_status();
     update_tox_self_address(tox_get_self_address());
     update_tox_self_name(tox_get_name());
     reload_conv_list();
@@ -3247,18 +3247,59 @@ DwycoCore::set_user_status_impl(const QString& status)
     emit tox_user_status_changed(status);
 }
 
+// the settings key the remembered status lives under. it is per identity,
+// so switching tox identities doesn't carry the status over.
+QString
+DwycoCore::user_tox_status_key()
+{
+    QString pk = tox_get_self_public_key();
+    if(pk.isEmpty())
+        return QString();
+    return QStringLiteral("tox_user_status_") + pk;
+}
+
+// the tox save file carries a status byte, so a status that was set at
+// some point (eg. "away" by the auto-away) comes back when the identity
+// is loaded. the status the user actually chose is what we remember, so
+// re-apply it whenever tox comes up.
+void
+DwycoCore::apply_user_tox_status()
+{
+    m_user_tox_status = "none";
+    QString key = user_tox_status_key();
+    if(!key.isEmpty())
+    {
+        QString s = get_local_setting(key);
+        if(s == "none" || s == "away" || s == "busy")
+            m_user_tox_status = s;
+    }
+    set_user_status_impl(m_user_tox_status);
+    // whatever the auto-away was doing is over, the status the user chose
+    // is the one that counts now.
+    if(m_is_auto_away)
+    {
+        m_is_auto_away = false;
+        emit auto_away_state_changed(false);
+    }
+}
+
 int
 DwycoCore::tox_set_user_status(const QString& status)
 {
+    if(status != "none" && status != "away" && status != "busy")
+        return 0;
     set_user_status_impl(status);
-    if(m_auto_away_enabled)
+    // this is the user picking a status, so this is the one that gets
+    // remembered. the auto-away never comes through here, so it can never
+    // overwrite what the user chose.
+    m_user_tox_status = status;
+    QString key = user_tox_status_key();
+    if(!key.isEmpty())
+        set_local_setting(key, status);
+    if(m_is_auto_away)
     {
-        m_saved_tox_status = status;
-        if(m_is_auto_away)
-        {
-            m_is_auto_away = false;
-            emit auto_away_state_changed(false);
-        }
+        m_is_auto_away = false;
+        emit auto_away_state_changed(false);
     }
     return 1;
 }
@@ -3369,6 +3410,12 @@ DwycoCore::tox_unlock(const QString& pw)
     int ret = dwyco_tox_unlock(bpw.constData(), bpw.length());
     if(ret)
     {
+        // this is the path where the identity actually comes up when the
+        // save is password protected. the save file carries a status byte,
+        // so the identity that just came up may be sitting in a stale
+        // status (eg. "away" left behind by the auto-away). re-apply the
+        // status the user actually chose.
+        apply_user_tox_status();
         update_tox_self_address(tox_get_self_address());
         update_tox_self_name(tox_get_name());
         reload_conv_list();
@@ -3808,8 +3855,10 @@ DwycoCore::dwyco_activity_callback(int /*timeout*/)
         return;
     if(TheDwycoCore->m_is_auto_away)
         return;
-    TheDwycoCore->m_saved_tox_status = TheDwycoCore->tox_get_user_status();
-    if (TheDwycoCore->m_saved_tox_status == "busy" || TheDwycoCore->m_saved_tox_status == "away")
+    // the status the user picked explicitly always wins: if they said
+    // "busy" or "away", don't second guess it. note the status the auto-away
+    // sets is transient, it is never stored, so it can't survive a restart.
+    if(TheDwycoCore->m_user_tox_status != "none")
         return;
     TheDwycoCore->set_user_status_impl(QStringLiteral("away"));
     TheDwycoCore->m_is_auto_away = true;
@@ -3826,7 +3875,7 @@ DwycoCore::eventFilter(QObject *obj, QEvent *event)
     {
         if(m_is_auto_away)
         {
-            set_user_status_impl(m_saved_tox_status);
+            set_user_status_impl(m_user_tox_status);
             m_is_auto_away = false;
             emit auto_away_state_changed(false);
         }
@@ -3841,7 +3890,6 @@ DwycoCore::start_auto_away()
 {
     if(!m_tox_enabled || !m_auto_away_enabled)
         return;
-    m_saved_tox_status = tox_get_user_status();
     m_is_auto_away = false;
     if(m_auto_away_timeout > 0)
         dwyco_enable_activity_checking(1, m_auto_away_timeout, dwyco_activity_callback);
@@ -3855,7 +3903,7 @@ DwycoCore::stop_auto_away()
     qGuiApp->removeEventFilter(this);
     if(m_is_auto_away)
     {
-        set_user_status_impl(m_saved_tox_status);
+        set_user_status_impl(m_user_tox_status);
         m_is_auto_away = false;
     }
 }
