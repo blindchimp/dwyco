@@ -1632,15 +1632,15 @@ tox_bridge_init(const char *save_file)
     if(Tox_q)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
-tox_bridge_rebuild_friend_cache();
-vc self_pseudo = self_tox_pseudo();
-if(!self_pseudo.is_nil())
-{
-    tox_uid_tag_add(self_pseudo);
-    set_settings_value("tox/self_pseudo", self_pseudo);
-    set_settings_value("tox/self_name", tox_bridge_get_name());
-}
-safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
+    tox_bridge_rebuild_friend_cache();
+    vc self_pseudo = self_tox_pseudo();
+    if(!self_pseudo.is_nil())
+    {
+        tox_uid_tag_add(self_pseudo);
+        set_settings_value("tox/self_pseudo", self_pseudo);
+        set_settings_value("tox/self_name", tox_bridge_get_name());
+    }
+    safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     publish_active_claim();
     // note: the identity is *not* published here. sharing is something the
     // user asks for explicitly (see tox_bridge_publish_save), so signing in
