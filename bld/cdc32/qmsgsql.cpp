@@ -3338,6 +3338,53 @@ sql_remove_mid_tag(vc mid, vc tag)
     }
 }
 
+// remove superseded '_tox_active' claims so the per-sign-in history doesn't
+// grow without bound. every sign-in writes a new row (see publish_active_claim
+// in toxbridge.cpp), so a device that signs in often accumulates redundant
+// rows that can never win.
+//
+// only rows older than max_age_secs are considered, and the newest live row
+// for each (mid, payload) pair is always kept. the payload is hex(uid) of the
+// device that made the claim, which is the stable origin identity; gmt.uid is
+// the relaying peer on sync import, so it must not be used to group here.
+//
+// deletions go through "delete from gmt" so the normal tombstone/sync triggers
+// run (dgmt) and the payloads are cleaned (pgmt_clean).
+void
+sql_prune_tox_active_claims(int max_age_secs)
+{
+    if(max_age_secs <= 0)
+        return;
+    try
+    {
+        sql_start_transaction();
+        sql_simple(
+            "delete from mt.gmt "
+            "where tag = '_tox_active' "
+            "and time < strftime('%s','now') - ?1 "
+            "and guid in ("
+            "  select g.guid from mt.gmt as g "
+            "  join mt.gmt_payload as gp on gp.guid = g.guid "
+            "  where g.tag = '_tox_active' "
+            "  and not exists(select 1 from mt.gtomb as t where t.guid = g.guid) "
+            "  and exists("
+            "    select 1 from mt.gmt as g2 "
+            "    join mt.gmt_payload as gp2 on gp2.guid = g2.guid "
+            "    where g2.tag = '_tox_active' "
+            "    and g2.mid = g.mid "
+            "    and gp2.payload = gp.payload "
+            "    and not exists(select 1 from mt.gtomb as t2 where t2.guid = g2.guid) "
+            "    and (g2.time > g.time or (g2.time = g.time and g2.guid > g.guid))"
+            "  )"
+            ")", max_age_secs);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
 void
 sql_fav_set_fav(vc mid, int fav)
 {

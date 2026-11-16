@@ -2144,6 +2144,19 @@ tox_bridge_poll()
     if(!Started || !Tox_plugin)
         return;
 
+    // periodically drop superseded '_tox_active' claims. every sign-in writes
+    // a new row, so a device that signs in repeatedly accumulates rows that
+    // can never win; this keeps only the newest claim per device. once a day
+    // is plenty (and it runs on the first poll after launch).
+    static long long last_claim_prune = 0;
+    static const long long claim_prune_interval = 24 * 3600;
+    long long now = (long long)time(0);
+    if(sql_is_initialized() && now - last_claim_prune >= claim_prune_interval)
+    {
+        sql_prune_tox_active_claims((int)claim_prune_interval);
+        last_claim_prune = now;
+    }
+
     // reset stale in-progress text-only messages so they get retried
     // (handles lost read receipts). file transfers are one-shot and must
     // not be retried.
