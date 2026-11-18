@@ -136,20 +136,25 @@ msglist_raw::msg_send_progress(QString mid, QString, QString, int percent_done)
 }
 
 void
-msglist_raw::msg_send_status(int, QString, QString mid)
+msglist_raw::msg_send_status(int cmd, QString, QString mid)
 {
     QByteArray bmid = mid.toLatin1();
-    if(!Send_to_percent.contains(bmid))
-        return;
-    Send_to_percent.remove(bmid);
     int midi = mid_to_index(bmid);
-    if(midi == -1)
-        return;
-    QModelIndex mi = index(midi, 0);
-    QVector<int> roles;
-    roles.append(IS_ACTIVE);
-    roles.append(ATTACHMENT_PERCENT);
-    emit dataChanged(mi, mi, roles);
+    if(Send_to_percent.contains(bmid))
+    {
+        Send_to_percent.remove(bmid);
+        if(midi != -1)
+        {
+            QModelIndex mi = index(midi, 0);
+            QVector<int> roles;
+            roles.append(IS_ACTIVE);
+            roles.append(ATTACHMENT_PERCENT);
+            emit dataChanged(mi, mi, roles);
+        }
+    }
+    if(midi != -1 &&
+       (cmd == DWYCO_SE_MSG_SEND_FAIL || cmd == DWYCO_SE_MSG_SEND_CANCELED))
+        reload_model(1);
 }
 
 void
