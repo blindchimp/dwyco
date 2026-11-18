@@ -97,6 +97,8 @@ add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_TRACE>)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_CHECK_SQL>)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_FIELD_DEBUG>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_NO_CLEANUP_ON_EXIT>)
 # define this if you are mucking with schema update debugging and just
 # want to make sure you don't get problems with old databases crashing thigs
 #add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DBG_SCHEMA>)
