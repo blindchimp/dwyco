@@ -229,6 +229,10 @@ Page {
                     }
                 }
 
+                TransferToolButton {
+                    id: transfers_button
+                }
+
             }
         }
     }

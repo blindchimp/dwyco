@@ -212,6 +212,8 @@ qt_add_qml_module(phoo
         FName.qml
         MsgReport.qml
         FileChip.qml
+        SendProgressOverlay.qml
+        TransferToolButton.qml
         Warning.qml
         TextFieldX.qml
         VidCamPreview.qml

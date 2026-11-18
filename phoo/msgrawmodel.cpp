@@ -121,6 +121,38 @@ msglist_raw::msg_recv_progress(QString mid, QString huid, QString msg, int perce
 }
 
 void
+msglist_raw::msg_send_progress(QString mid, QString, QString, int percent_done)
+{
+    QByteArray bmid = mid.toLatin1();
+    Send_to_percent.insert(bmid, percent_done);
+    int midi = mid_to_index(bmid);
+    if(midi == -1)
+        return;
+    QModelIndex mi = index(midi, 0);
+    QVector<int> roles;
+    roles.append(IS_ACTIVE);
+    roles.append(ATTACHMENT_PERCENT);
+    emit dataChanged(mi, mi, roles);
+}
+
+void
+msglist_raw::msg_send_status(int, QString, QString mid)
+{
+    QByteArray bmid = mid.toLatin1();
+    if(!Send_to_percent.contains(bmid))
+        return;
+    Send_to_percent.remove(bmid);
+    int midi = mid_to_index(bmid);
+    if(midi == -1)
+        return;
+    QModelIndex mi = index(midi, 0);
+    QVector<int> roles;
+    roles.append(IS_ACTIVE);
+    roles.append(ATTACHMENT_PERCENT);
+    emit dataChanged(mi, mi, roles);
+}
+
+void
 msglist_raw::invalidate_mid(const QByteArray& mid, const QString& huid)
 {
     //if(huid != uid())
@@ -763,7 +795,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case IS_QD:
         return 1;
     case IS_ACTIVE:
-        return false;
+        return Send_to_percent.contains(pers_id);
     case MSG_TEXT:
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
@@ -846,7 +878,9 @@ msglist_raw::qd_data ( int r, int role ) const
     }
 
     case ATTACHMENT_PERCENT:
-        return -1.0;
+        if(!Send_to_percent.contains(pers_id))
+            return -1.0;
+        return (double)Send_to_percent.value(pers_id);
     case FETCH_STATE:
         return QString("none");
 

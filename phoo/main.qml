@@ -1556,6 +1556,15 @@ ApplicationWindow {
 
     }
 
+    SendProgressOverlay {
+        id: send_progress_overlay
+        anchors.right: parent.right
+        anchors.rightMargin: safeRight + mm(1)
+        anchors.verticalCenter: parent.verticalCenter
+        width: Math.min(360, parent.width * 0.38)
+        z: 60
+    }
+
 //    Migrate {
 //        id: migrate_page
 //        visible: false
@@ -1726,11 +1735,6 @@ ApplicationWindow {
                     chatbox.showToast("Tox message could not be sent (likely it is too long.)")
                 }
             }
-        }
-
-        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
-            console.log(pers_id, msg, percent_done)
-            //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
         onProfile_update: (success)=> {

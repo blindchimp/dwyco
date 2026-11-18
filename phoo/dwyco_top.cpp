@@ -2258,6 +2258,8 @@ DwycoCore::init()
     connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     connect(this, SIGNAL(msg_recv_progress(QString,QString,QString,int)), mlm, SLOT(msg_recv_progress(QString,QString,QString,int)));
+    connect(this, SIGNAL(msg_progress(QString,QString,QString,int)), mlm, SLOT(msg_send_progress(QString,QString,QString,int)));
+    connect(this, SIGNAL(msg_send_status(int,QString,QString)), mlm, SLOT(msg_send_status(int,QString,QString)));
     connect(this, SIGNAL(msg_pull_ok(QByteArray,QString)), mlm, SLOT(invalidate_mid(QByteArray,QString)));
     connect(this, SIGNAL(msg_tag_change_global(QByteArray,QString)), mlm, SLOT(invalidate_mid_or_reload(QByteArray,QString)));
     connect(this, &DwycoCore::msg_tag_change_global, Conv_sort_proxy, []() {
@@ -4038,6 +4040,29 @@ DwycoCore::is_queued_message(QString mid)
     if(ret)
         dwyco_list_release(l);
     return ret;
+}
+
+QVariantMap
+DwycoCore::qd_msg_info(QString pers_id)
+{
+    QVariantMap info;
+    QByteArray bmid = pers_id.toLatin1();
+    DWYCO_SAVED_MSG_LIST sm;
+    if(!dwyco_qd_message_to_body(&sm, bmid.constData(), bmid.length()))
+        return info;
+
+    simple_scoped qsm(sm);
+    QByteArray user_fn;
+    qint64 size = 0;
+    int is_image = 0;
+    if(!msg_body_file_info(qsm, user_fn, size, is_image))
+        return info;
+
+    info["file_name"] = QString::fromUtf8(user_fn);
+    info["file_size"] = (double)size;
+    info["is_image"] = is_image;
+    info["has_file"] = 1;
+    return info;
 }
 
 int

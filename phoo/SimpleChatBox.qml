@@ -440,6 +440,9 @@ Page {
 
                 }
 
+                TransferToolButton {
+                    id: transfers_button
+                }
 
                 TipButton {
                     contentItem: Image {
@@ -1057,6 +1060,9 @@ Page {
                     visible: is_plain_file
                     fileName: FILE_NAME
                     fileSize: FILE_SIZE
+                    sending: IS_ACTIVE
+                    progress: ATTACHMENT_PERCENT
+                    sendingWord: SENT === 0 ? "Receiving" : "Sending"
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     Layout.alignment: Qt.AlignHCenter
@@ -1110,8 +1116,9 @@ Page {
                     color: "white"
                 }
             }
-            visible: IS_ACTIVE
-            active: IS_ACTIVE
+            // plain files draw their own progress strip inside FileChip
+            visible: IS_ACTIVE && !is_plain_file
+            active: IS_ACTIVE && !is_plain_file
         }
 
         MouseArea {

@@ -9,6 +9,7 @@
 #ifndef MSGRAWMODEL_H
 #define MSGRAWMODEL_H
 #include <QAbstractListModel>
+#include <QMap>
 #include "QQmlVarPropertyHelpers.h"
 #include "dlli.h"
 
@@ -74,6 +75,8 @@ public slots:
     void msg_recv_status(int cmd, const QString& mid, const QString& huid);
     void mid_tag_changed(QString mid);
     void msg_recv_progress(QString mid, QString huid, QString msg, int percent);
+    void msg_send_progress(QString mid, QString huid, QString msg, int percent);
+    void msg_send_status(int cmd, QString huid, QString mid);
     void invalidate_mid(const QByteArray& mid, const QString& huid);
     void invalidate_mid_or_reload(const QByteArray& mid, const QString& huid);
 
@@ -91,6 +94,7 @@ private:
     int count_msg_idx;
     int count_qd_msgs;
     int count_inbox_msgs;
+    QMap<QByteArray, int> Send_to_percent;
 
     QVariant qd_data (int r, int role = Qt::DisplayRole ) const;
     QVariant inbox_data (int r, int role = Qt::DisplayRole ) const;

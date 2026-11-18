@@ -24,6 +24,11 @@ Item {
     // extra line shown after the size. leave it empty when there's nothing
     // useful for the user to click on in this particular spot.
     property string hintText: "click to save"
+    // shown while this attachment is being uploaded or downloaded
+    property bool sending: false
+    // 0..100 when we know the percentage, negative when it is indeterminate
+    property real progress: -1
+    property string sendingWord: "Sending"
 
     readonly property real padding: dp(6)
     readonly property real iconSize: dp(compact ? 18 : 24)
@@ -31,6 +36,13 @@ Item {
     readonly property real infoFontSize: dp(compact ? 9 : 11)
 
     readonly property string sizeText: fileSize > 0 ? fmtBytes(fileSize) : "unknown size"
+    readonly property string infoText: {
+        if(sending) {
+            var pct = progress >= 0 ? " · " + Math.round(progress) + "%" : ""
+            return sendingWord + "…" + pct
+        }
+        return hintText.length > 0 ? sizeText + " · " + hintText : sizeText
+    }
 
     function fmtBytes(n) {
         var units = ["B", "KB", "MB", "GB", "TB"]
@@ -46,11 +58,15 @@ Item {
     // width from us. do not try to compute the layout's width from
     // implicitWidth or the texts end up with no width at all.
     implicitWidth: Math.max(chip_row.implicitWidth, dp(48)) + padding * 2
-    implicitHeight: Math.max(chip_row.implicitHeight, iconSize) + padding * 2
+    implicitHeight: Math.max(chip_row.implicitHeight, iconSize) + padding * 2 +
+                    (sending ? progress_track.height + dp(4) : 0)
 
     RowLayout {
         id: chip_row
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: sending ? progress_track.top : parent.bottom
         anchors.margins: chip.padding
         spacing: dp(6)
 
@@ -84,11 +100,60 @@ Item {
             Text {
                 Layout.fillWidth: true
                 Layout.minimumWidth: 0
-                text: chip.hintText.length > 0 ? chip.sizeText + " · " + chip.hintText : chip.sizeText
+                text: chip.infoText
                 color: chip.textColor
                 opacity: 0.75
                 font.pixelSize: chip.infoFontSize
                 elide: Text.ElideRight
+            }
+        }
+    }
+
+    Rectangle {
+        id: progress_track
+        visible: sending
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: chip.padding
+        anchors.rightMargin: chip.padding
+        anchors.bottomMargin: chip.padding
+        height: dp(3)
+        radius: height / 2
+        color: Qt.rgba(0, 0, 0, 0.15)
+        clip: true
+
+        Rectangle {
+            id: progress_fill
+            width: chip.progress >= 0
+                   ? progress_track.width * Math.min(100, Math.max(0, chip.progress)) / 100
+                   : progress_track.width * 0.3
+            height: parent.height
+            radius: parent.radius
+            clip: true
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: accent }
+                GradientStop { position: 1.0; color: primary_light }
+            }
+            Behavior on width {
+                NumberAnimation { duration: 350; easing.type: Easing.OutCubic }
+            }
+
+            Rectangle {
+                id: progress_shimmer
+                width: Math.max(dp(16), progress_fill.width * 0.28)
+                height: parent.height
+                color: "white"
+                opacity: 0.28
+                NumberAnimation on x {
+                    running: chip.sending && progress_fill.width > 0
+                    loops: Animation.Infinite
+                    from: -progress_shimmer.width
+                    to: progress_fill.width
+                    duration: 1200
+                    easing.type: Easing.InOutQuad
+                }
             }
         }
     }
