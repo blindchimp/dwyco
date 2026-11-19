@@ -11,6 +11,7 @@
 #include "qauth.h"
 #include "qmsgsql.h"
 #include "aconn.h"
+#include "dwrtlog.h"
 
 extern vc Online;
 extern vc Chat_ips;
@@ -47,6 +48,7 @@ find_best_candidate_for_initial_send(vc uid, int& skip_direct)
         MMChannel *mc = MMChannel::already_connected(muid, 1);
         if(mc && mc->remote_disposition() == vc("foreground"))
         {
+            GRTLOG("slam dunk %s", (const char *)last_recv[i][0], 0);
             return muid;
         }
     }

@@ -16,6 +16,8 @@
 #include "xinfo.h"
 #include "ezset.h"
 #include "activeuid.h"
+#include "qauth.h"
+#include "dwrtlog.h"
 
 namespace dwyco {
 
@@ -177,6 +179,7 @@ send_best_way(const DwString& qfn, vc ruid)
     // it seems like a good idea.
     int skip_direct = 0;
     vc best_uid = find_best_candidate_for_initial_send(ruid, skip_direct);
+    GRTLOG("best uid %s skip_direct %d", (const char *)to_hex(best_uid), skip_direct);
     vc m;
     // kluge: update recipient
     if(!load_info(m, qfn.c_str()))
