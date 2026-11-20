@@ -3172,6 +3172,9 @@ bounce_mmcall_callback2(MMCall *ammc, int status, void *user_arg, ValidPtr)
     case MMCALL_STARTED:
         dwyco_status = DWYCO_CALLDISP_STARTED;
         break;
+    case MMCALL_TRYING_SAC:
+        dwyco_status = DWYCO_CALLDISP_TRYING_SAC;
+        break;
     case MMCALL_ESTABLISHED:
         dwyco_status = DWYCO_CALLDISP_ESTABLISHED;
         break;

@@ -72,6 +72,7 @@ MMCall::MMCall(vc auid, vc ahost, vc aport, vc aproxinfo, int amsg_chan,
     pub_chat = 0;
     user_control_chan = auser_control;
     established = 0;
+    sac_pending = 0;
     MMCalls.append(vp);
     MMCalls_qbm.add(this);
 }
@@ -214,9 +215,19 @@ MMCall::call_started()
     call_sig.emit(this, MMCALL_STARTED, scb_arg1, scb_arg2);
 }
 void
+MMCall::sac_attempting()
+{
+    GRTLOG("trying SAC call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 1;
+    if(scb)
+        (*scb)(this, MMCALL_TRYING_SAC, scb_arg1, scb_arg2);
+    call_sig.emit(this, MMCALL_TRYING_SAC, scb_arg1, scb_arg2);
+}
+void
 MMCall::stun_connect_failed()
 {
     GRTLOG("stun_connect_failed call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     if(scb)
         (*scb)(this, MMCALL_FAILED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_FAILED, scb_arg1, scb_arg2);
@@ -225,6 +236,7 @@ void
 MMCall::stun_setup_timeout()
 {
     GRTLOG("stun_setup_timeout call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     if(scb)
         (*scb)(this, MMCALL_FAILED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_FAILED, scb_arg1, scb_arg2);
@@ -233,6 +245,7 @@ void
 MMCall::timer1_stun_expired()
 {
     GRTLOG("timer1_stun_expired call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     if(scb)
         (*scb)(this, MMCALL_FAILED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_FAILED, scb_arg1, scb_arg2);
@@ -241,6 +254,7 @@ void
 MMCall::call_locally_canceled()
 {
     GRTLOG("call_locally_canceled call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     if(scb)
         (*scb)(this, MMCALL_CANCELED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_CANCELED, scb_arg1, scb_arg2);
@@ -249,6 +263,8 @@ void
 MMCall::direct_call_failed(int stop)
 {
     GRTLOG("direct_call_failed call_id %d chan_id %d", vp.cookie, chan_id);
+    if(stop)
+        sac_pending = 0;
     if(scb && stop)
         (*scb)(this, MMCALL_FAILED, scb_arg1, scb_arg2);
     if(stop)
@@ -258,6 +274,7 @@ void
 MMCall::direct_call_ok()
 {
     GRTLOG("direct_call_ok call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     established = 1;
     if(scb)
         (*scb)(this, MMCALL_ESTABLISHED, scb_arg1, scb_arg2);
@@ -268,6 +285,7 @@ void
 MMCall::stun_established()
 {
     GRTLOG("stun_established call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     established = 1;
     if(scb)
         (*scb)(this, MMCALL_ESTABLISHED, scb_arg1, scb_arg2);
@@ -284,6 +302,7 @@ void
 MMCall::call_terminated()
 {
     GRTLOG("call_terminated call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     if(scb)
         (*scb)(this, MMCALL_TERMINATED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_TERMINATED, scb_arg1, scb_arg2);
@@ -292,6 +311,7 @@ void
 MMCall::stun_servass_failure()
 {
     GRTLOG("stun_servass_failure call_id %d chan_id %d", vp.cookie, chan_id);
+    sac_pending = 0;
     if(scb)
         (*scb)(this, MMCALL_FAILED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_FAILED, scb_arg1, scb_arg2);
@@ -301,6 +321,7 @@ void
 MMCall::call_rejected(const char *why)
 {
     GRTLOGA("call_rejected call_id %d chan_id %d (%s)", vp.cookie, chan_id, why, 0, 0);
+    sac_pending = 0;
     reject_reason = why;
     if(scb)
         (*scb)(this, MMCALL_REJECTED, scb_arg1, scb_arg2);

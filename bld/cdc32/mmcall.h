@@ -103,8 +103,12 @@ public:
     // that is currently in the process of being setup, and one that
     // is ready to accept data.
     int established;
+    // set while the direct attempt has given up and SAC is being
+    // attempted. this is a non-terminal progress state.
+    int sac_pending;
 
     virtual void call_started();
+    virtual void sac_attempting();
     virtual void stun_established();
     virtual void stun_connect_failed();
     virtual void stun_setup_timeout();
@@ -125,5 +129,6 @@ public:
 #define MMCALL_TERMINATED 4		// call is gracefully shutdown (by either side.)
 #define MMCALL_REJECTED 5 		// call is declined from remote side.
 #define MMCALL_STARTED 6		// call initiated
+#define MMCALL_TRYING_SAC 7		// direct setup timed out; SAC setup in progress
 
 #endif

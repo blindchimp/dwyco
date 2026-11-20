@@ -497,6 +497,11 @@ DirectSend::call_disposition(MMCall *, int what, void *, ValidPtr vp)
     {
     case MMCALL_STARTED:
         break;
+    case MMCALL_TRYING_SAC:
+        // direct setup failed, but the call is still trying via the
+        // proxy. keep the message and this object alive so we can use
+        // the channel if SAC succeeds.
+        break;
     case MMCALL_ESTABLISHED:
         start_send();
         break;
