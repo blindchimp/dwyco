@@ -16,6 +16,7 @@
 #include <QTimer>
 #include <QAudioSink>
 #include <QMediaDevices>
+#include <QThread>
 
 #include "dlli.h"
 
@@ -288,14 +289,28 @@ audout_qt_delete(void *)
     QMutexLocker ml(&audio_mutex);
 
     GRTLOG("qt del", 0, 0);
-    delete m;
+    Init = 0;
+    if(m)
+    {
+        if(QThread::currentThread() == m->thread())
+        {
+            delete m;
+        }
+        else
+        {
+            mumble *mm = m;
+            QMetaObject::invokeMethod(mm, [mm]() {
+                mm->audio_poll_timer->stop();
+                mm->deleteLater();
+            }, Qt::QueuedConnection);
+        }
+        m = 0;
+    }
     delete devq_p;
     delete doneq;
 
     devq_p = 0;
     doneq = 0;
-    m = 0;
-    Init = 0;
 }
 
 int

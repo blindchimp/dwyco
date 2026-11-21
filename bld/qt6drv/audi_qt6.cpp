@@ -19,6 +19,7 @@
 #include <QMediaDevices>
 #include <QAudioDevice>
 #include <QAudioSource>
+#include <QThread>
 
 #ifdef ANDROID
 //#include <QtAndroid>
@@ -121,12 +122,14 @@ InputTest::InputTest() :
 
 InputTest::~InputTest()
 {
+    if(m_audioInput)
+    {
+        m_audioInput->reset();
+        m_audioInput->deleteLater();
+        m_audioInput = 0;
+    }
     delete m_audioInfo;
-	if(!m_audioInput)
-		return;
-    m_audioInput->reset();
-    m_audioInput->deleteLater();
-    m_audioInput = 0;
+    m_audioInfo = 0;
 }
 
 int InputTest::initializeAudio()
@@ -334,8 +337,8 @@ audi_qt_new(void *, int buflen, int nbufs)
     Cur_time = 0;
 
 }
-void DWYCOCALLCONV
-audi_qt_delete(void *)
+static void
+audi_qt_clear_bufs()
 {
     for(int i = 0; i < Bufs.count(); ++i)
     {
@@ -343,11 +346,28 @@ audi_qt_delete(void *)
     }
     Bufs.clear();
     Buf_times.clear();
-    //delete Audi;
-    if(Audi)
+}
+
+void DWYCOCALLCONV
+audi_qt_delete(void *)
+{
+    InputTest *a = Audi;
+    if(!a)
+        return;
+    Audi = 0;
+    if(QThread::currentThread() == a->thread())
     {
-        Audi->deleteLater();
-        Audi = 0;
+        delete a;
+        audi_qt_clear_bufs();
+    }
+    else
+    {
+        QMetaObject::invokeMethod(a, [a]() {
+            if(a->m_audioInput)
+                a->m_audioInput->reset();
+            audi_qt_clear_bufs();
+            a->deleteLater();
+        }, Qt::QueuedConnection);
     }
 }
 
@@ -429,18 +449,7 @@ void DWYCOCALLCONV audi_qt_off(void *)
 }
 void DWYCOCALLCONV audi_qt_reset(void *)
 {
-    if(!Audi)
-        return;
-    if(Audi->m_audioInput)
-        Audi->m_audioInput->stop();
-//    for(int i = 0; i < Bufs.count(); ++i)
-//    {
-//        delete [] Bufs[i];
-//    }
-//    Bufs.clear();
-//    Buf_times.clear();
     audi_qt_delete(0);
-
 }
 int DWYCOCALLCONV audi_qt_status(void *)
 {
