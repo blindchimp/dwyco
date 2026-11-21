@@ -333,6 +333,10 @@ DirectSend::send_with_attachment()
         return;
     }
 
+    vc display_name;
+    if(!msg_to_send[QQM_MSG_VEC][QQM_BODY_FILE_ATTACHMENT].is_nil())
+        display_name = sanitize_attachment_display_name(msg_to_send[QQM_MSG_VEC][QQM_BODY_FILE_ATTACHMENT]);
+
     if(!mp->proxy_info.is_nil())
     {
         GRTLOG("xfer path proxy port %d", (int)mp->proxy_info[1], 0);
@@ -345,6 +349,7 @@ DirectSend::send_with_attachment()
         mp->send_ctrl(aux);
 
         MMChannel *m = new MMChannel;
+        m->xfer_display_name = display_name;
         m->tube = new DummyTube;
         DwString proxy_ip((const char *)mp->proxy_info[0]);
         int proxy_port = (int)mp->proxy_info[1];
@@ -402,6 +407,7 @@ DirectSend::send_with_attachment()
     GRTLOG("xfer path direct chan %d", (int)mp->remote_listening_port(), 0);
 
     MMChannel *m = new MMChannel;
+    m->xfer_display_name = display_name;
     m->tube = new DummyTube;
     DwString remote((const char *)mp->tube->remote_addr_ctrl());
     int c = remote.find(":");

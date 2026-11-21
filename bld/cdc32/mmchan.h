@@ -595,6 +595,8 @@ private:
 public:
     vc remote_filename;
     vc local_filename;
+    vc xfer_display_name;
+    vc remote_display_name;
     int zap_send;
     int zap_recv;
     int direct_zap_attachment_declined;

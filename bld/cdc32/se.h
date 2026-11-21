@@ -104,6 +104,12 @@ enum dwyco_sys_event {
     // hash or schema version did not match ours. carries the offending
     // remote uid and a detail string.
     SE_SYNC_SCHEMA_MISMATCH,
+
+    // incoming direct attachment transfer (not a server download)
+    SE_MSG_ATTACHMENT_RECEIVE_START,
+    SE_MSG_ATTACHMENT_RECEIVE_STATUS,
+    SE_MSG_ATTACHMENT_RECEIVE_OK,
+    SE_MSG_ATTACHMENT_RECEIVE_FAILED,
 };
 
 // at this point, the id can be a uid or a mid
@@ -118,6 +124,10 @@ void se_emit_msg(enum dwyco_sys_event cmd, const DwString &qid, const vc &uid);
 void se_emit_msg(enum dwyco_sys_event cmd, const vc &qid, const vc &uid);
 void se_emit_msg_status(const DwString &qid, const vc &ruid, const DwString &msg, int percent);
 void se_emit_msg_progress(const DwString &mid, const vc &ruid, const DwString &msg, int percent);
+void se_emit_incoming_attachment_start(const vc &uid, const vc &xfer_id, const vc &display_name);
+void se_emit_incoming_attachment_status(const vc &uid, const vc &xfer_id, const vc &display_name, int percent);
+void se_emit_incoming_attachment_ok(const vc &uid, const vc &xfer_id, const vc &display_name);
+void se_emit_incoming_attachment_failed(const vc &uid, const vc &xfer_id, const vc &display_name);
 void se_emit_msg_pull_ok(const vc &mid, const vc &uid);
 void se_emit_msg_tag_change(const vc &mid, const vc &uid);
 void se_emit_join(const vc &gname, int res);

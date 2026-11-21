@@ -20,6 +20,7 @@ DwString prepend_pfx(const char *subdir, const vc& fn);
 DwString dwbasename(const DwString& name);
 int is_attachment(const vc& fn);
 int is_attachment(const DwString& fn);
+vc sanitize_attachment_display_name(const vc& fn);
 int is_msg_fn(const vc& fn);
 int is_msg_fn(const DwString& fn);
 int is_user_dir(const DwString& fn);

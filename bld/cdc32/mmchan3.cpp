@@ -22,6 +22,7 @@
 #include "qauth.h"
 #include "dhgsetup.h"
 #include "qmsgsql.h"
+#include "se.h"
 
 using namespace dwyco;
 
@@ -237,6 +238,8 @@ MMChannel::send_file_info(int subchan, sproto *p, const char *ev)
         v2[1] = (long)s.st_size;
         expected_size = s.st_size;
     }
+    if(!xfer_display_name.is_nil())
+        v2[2] = xfer_display_name;
     if(zap_send)
         v[0] = "zfile";
     else
@@ -653,6 +656,29 @@ MMChannel::wait_for_ok(int subchan, sproto *p, const char *ev)
 
 }
 
+static
+void
+incoming_attachment_status(MMChannel *mc, vc msg, void *, ValidPtr)
+{
+    if(!mc || !mc->zap_recv)
+        return;
+    DwString s((const char *)msg);
+    if(s.find("Failed") == 0)
+    {
+        se_emit_incoming_attachment_failed(mc->remote_uid(), mc->remote_filename,
+                                           mc->remote_display_name);
+        return;
+    }
+    int e = mc->expected_size;
+    if(e <= 0)
+        e = 1;
+    int p = (int)(((double)mc->total_got * 100) / e);
+    if(p > 100)
+        p = 100;
+    se_emit_incoming_attachment_status(mc->remote_uid(), mc->remote_filename,
+                                       mc->remote_display_name, p);
+}
+
 int
 MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
 {
@@ -699,6 +725,7 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
                 //newchan->file_xferchan = nc;
                 newchan->zap_recv = 1;
                 newchan->file_xfer = 1;
+                newchan->status_callback = incoming_attachment_status;
                 pmc->simple_protos[nc] = 0;
 
                 //newchan->protos[nc] = CHAN_OK;
@@ -791,6 +818,9 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
     // compat, for now. these are in the channel and will be overwritten
     // if we ever transfer more than one file at a time.
     remote_filename = remote_fn;
+    remote_display_name = vcnil;
+    if(p->user_info.num_elems() > 2)
+        remote_display_name = sanitize_attachment_display_name(p->user_info[2]);
     expected_size = p->user_info[1];
 
     if(!is_attachment(remote_fn))
@@ -815,6 +845,7 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     }
 
+    se_emit_incoming_attachment_start(remote_uid(), remote_filename, remote_display_name);
     return sproto::next;
 }
 
@@ -1122,6 +1153,8 @@ MMChannel::send_ok(int subchan, sproto *p, const char *ev)
         }
     }
 
+    if(zap_recv)
+        se_emit_incoming_attachment_ok(remote_uid(), remote_filename, remote_display_name);
     xfer_failed = 0;
     schedule_destroy();
     return sproto::next;

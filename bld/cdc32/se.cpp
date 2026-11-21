@@ -92,6 +92,10 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_TOX_AVATAR,
     DWYCO_SE_TOX_DISABLED_BY_REMOTE,
     DWYCO_SE_SYNC_SCHEMA_MISMATCH,
+    DWYCO_SE_MSG_ATTACHMENT_RECEIVE_START,
+    DWYCO_SE_MSG_ATTACHMENT_RECEIVE_STATUS,
+    DWYCO_SE_MSG_ATTACHMENT_RECEIVE_OK,
+    DWYCO_SE_MSG_ATTACHMENT_RECEIVE_FAILED,
     -1,
 };
 
@@ -238,6 +242,46 @@ se_emit_msg_progress(const DwString& mid, const vc& ruid, const DwString& msg, i
 
 }
 
+static
+void
+se_emit_incoming_attachment(dwyco_sys_event cmd, const vc& uid, const vc& xfer_id,
+                            const vc& display_name, int percent)
+{
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = map_to_representative_uid(uid);
+    v[2] = xfer_id;
+    v[3] = display_name;
+    v[4] = percent;
+    Se_q.append(v);
+    GRTLOG("se_emit_incoming_attachment ", 0, 0);
+    GRTLOGVC(v);
+}
+
+void
+se_emit_incoming_attachment_start(const vc& uid, const vc& xfer_id, const vc& display_name)
+{
+    se_emit_incoming_attachment(SE_MSG_ATTACHMENT_RECEIVE_START, uid, xfer_id, display_name, 0);
+}
+
+void
+se_emit_incoming_attachment_status(const vc& uid, const vc& xfer_id, const vc& display_name, int percent)
+{
+    se_emit_incoming_attachment(SE_MSG_ATTACHMENT_RECEIVE_STATUS, uid, xfer_id, display_name, percent);
+}
+
+void
+se_emit_incoming_attachment_ok(const vc& uid, const vc& xfer_id, const vc& display_name)
+{
+    se_emit_incoming_attachment(SE_MSG_ATTACHMENT_RECEIVE_OK, uid, xfer_id, display_name, 100);
+}
+
+void
+se_emit_incoming_attachment_failed(const vc& uid, const vc& xfer_id, const vc& display_name)
+{
+    se_emit_incoming_attachment(SE_MSG_ATTACHMENT_RECEIVE_FAILED, uid, xfer_id, display_name, -1);
+}
+
 void
 se_emit_msg_pull_ok(const vc& mid, const vc& uid)
 {
@@ -382,6 +426,10 @@ se_process()
 
         case SE_MSG_SEND_STATUS:
         case SE_MSG_DOWNLOAD_PROGRESS:
+        case SE_MSG_ATTACHMENT_RECEIVE_START:
+        case SE_MSG_ATTACHMENT_RECEIVE_STATUS:
+        case SE_MSG_ATTACHMENT_RECEIVE_OK:
+        case SE_MSG_ATTACHMENT_RECEIVE_FAILED:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),

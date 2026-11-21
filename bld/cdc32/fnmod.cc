@@ -17,6 +17,7 @@
 // have no absolute path information on it
 // and it is relative to "." (the cwd)
 
+#include "fnmod.h"
 #include "dwstr.h"
 #include "sepstr.h"
 #ifndef STANDALONE
@@ -347,6 +348,44 @@ is_attachment(const DwString& fn)
     if(a.rfind(".dyc") != 20 && a.rfind(".jpg") != 20 && a.rfind(".fle") != 20)
         return 0;
     return 1;
+}
+
+vc
+sanitize_attachment_display_name(const vc& fn)
+{
+    if(fn.is_nil())
+        return vcnil;
+    if(fn.type() != VC_STRING && fn.type() != VC_BSTRING)
+        return vcnil;
+    const char *s = (const char *)fn;
+    int len = fn.len();
+    int start = 0;
+    for(int i = 0; i < len; ++i)
+    {
+        if(s[i] == '/' || s[i] == '\\')
+            start = i + 1;
+    }
+    DwString out;
+    for(int i = start; i < len && out.length() < 128; ++i)
+    {
+        unsigned char c = (unsigned char)s[i];
+        if(c < 0x20 || c == 0x7f || c == '/' || c == '\\')
+            continue;
+        out += (char)c;
+    }
+    while(out.length() > 0 && (out.at(0) == ' ' || out.at(0) == '\t'))
+        out.remove(0, 1);
+    while(out.length() > 0)
+    {
+        char c = out.at(out.length() - 1);
+        if(c == ' ' || c == '\t' || c == '.')
+            out.remove(out.length() - 1, 1);
+        else
+            break;
+    }
+    if(out.length() == 0)
+        return vcnil;
+    return vc(VC_BSTRING, out.c_str(), out.length());
 }
 
 DwString
