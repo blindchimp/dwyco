@@ -143,7 +143,11 @@ public:
         MSG_SEND_SUCCESS = DWYCO_SE_MSG_SEND_SUCCESS,
         MSG_SEND_STATUS = DWYCO_SE_MSG_SEND_STATUS,
         MSG_SEND_DELIVERY_SUCCESS = DWYCO_SE_MSG_SEND_DELIVERY_SUCCESS,
-        MSG_SEND_CANCELED = DWYCO_SE_MSG_SEND_CANCELED
+        MSG_SEND_CANCELED = DWYCO_SE_MSG_SEND_CANCELED,
+        INCOMING_ATTACHMENT_START = DWYCO_SE_MSG_ATTACHMENT_RECEIVE_START,
+        INCOMING_ATTACHMENT_STATUS = DWYCO_SE_MSG_ATTACHMENT_RECEIVE_STATUS,
+        INCOMING_ATTACHMENT_OK = DWYCO_SE_MSG_ATTACHMENT_RECEIVE_OK,
+        INCOMING_ATTACHMENT_FAILED = DWYCO_SE_MSG_ATTACHMENT_RECEIVE_FAILED
     };
 
     enum Profile_info {
@@ -453,6 +457,8 @@ signals:
     void new_msg(const QString& from_uid, const QString& txt, const QString& mid);
     void msg_send_status(int status, const QString& recipient, const QString& pers_id);
     void msg_progress(const QString& pers_id, const QString& recipient, const QString& msg, int percent_done);
+    void incoming_attachment_status(int status, const QString& sender, const QString& xfer_id,
+                                    const QString& display_name, int percent);
     void sys_invalidate_profile(const QString& uid);
     void sys_msg_idx_updated(const QString& uid);
     void sys_uid_resolved(const QString& uid);

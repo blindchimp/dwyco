@@ -641,6 +641,12 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_DOWNLOAD_PROGRESS:
         emit TheDwycoCore->msg_recv_progress(str_data, huid, namestr, extra_arg);
         break;
+    case DWYCO_SE_MSG_ATTACHMENT_RECEIVE_START:
+    case DWYCO_SE_MSG_ATTACHMENT_RECEIVE_STATUS:
+    case DWYCO_SE_MSG_ATTACHMENT_RECEIVE_OK:
+    case DWYCO_SE_MSG_ATTACHMENT_RECEIVE_FAILED:
+        emit TheDwycoCore->incoming_attachment_status(cmd, huid, str_data, namestr, extra_arg);
+        break;
     case DWYCO_SE_MSG_DOWNLOAD_START:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED:
     case DWYCO_SE_MSG_DOWNLOAD_FETCHING_ATTACHMENT:

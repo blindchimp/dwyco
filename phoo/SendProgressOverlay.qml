@@ -55,6 +55,46 @@ Item {
         return mins + "m " + rem + "s left"
     }
 
+    function looksLikeImage(fn) {
+        var a = String(fn).toLowerCase()
+        return a.endsWith(".jpg") || a.endsWith(".jpeg") || a.endsWith(".png")
+                || a.endsWith(".gif") || a.endsWith(".webp")
+    }
+
+    function onIncomingStart(xfer_id, sender, display_name) {
+        var i = indexOf(xfer_id)
+        if(i >= 0)
+            return
+        var has_name = display_name && display_name.length > 0
+        var name = has_name ? display_name : "Incoming video/audio"
+        dock_model.insert(0, {
+            pers_id: xfer_id,
+            recipient: sender,
+            who: core.uid_to_name(sender),
+            filename: name,
+            file_size: 0,
+            is_image: has_name && looksLikeImage(name),
+            incoming: true,
+            generic: !has_name,
+            percent: 0,
+            status: "receiving",
+            status_text: "",
+            speed: 0,
+            eta: -1,
+            last_pct: -1,
+            last_ms: Date.now()
+        })
+    }
+
+    function onIncomingProgress(xfer_id, percent_done) {
+        var i = indexOf(xfer_id)
+        if(i < 0)
+            return
+        var pct = Math.max(0, Math.min(100, percent_done))
+        dock_model.setProperty(i, "percent", pct)
+        dock_model.setProperty(i, "status", "receiving")
+    }
+
     function indexOf(pid) {
         for(var i = 0; i < dock_model.count; ++i) {
             if(dock_model.get(i).pers_id === pid)
@@ -83,6 +123,8 @@ Item {
                 filename: info.file_name.length > 0 ? info.file_name : "(unnamed file)",
                 file_size: info.file_size,
                 is_image: info.is_image,
+                incoming: false,
+                generic: false,
                 percent: 0,
                 status: "sending",
                 status_text: msg,
@@ -189,9 +231,10 @@ Item {
 
             readonly property string detailText: {
                 if(model.status === "done")
-                    return "Sent · " + root.fmtBytes(model.file_size)
+                    return (model.incoming ? "Received" : "Sent")
+                            + (model.file_size > 0 ? " · " + root.fmtBytes(model.file_size) : "")
                 if(model.status === "failed")
-                    return "Failed to send"
+                    return model.incoming ? "Failed to receive" : "Failed to send"
                 var parts = [Math.round(model.percent) + "%"]
                 if(model.speed > 0)
                     parts.push(root.fmtSpeed(model.speed))
@@ -231,6 +274,7 @@ Item {
                             Layout.fillWidth: true
                             Layout.minimumWidth: 0
                             text: model.filename
+                            textFormat: Text.PlainText
                             color: "white"
                             font.pixelSize: dp(13)
                             font.bold: true
@@ -239,7 +283,12 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             Layout.minimumWidth: 0
-                            text: (model.is_image ? "Sending photo to " : "Sending file to ") + model.who
+                            text: model.generic
+                                  ? "Receiving media from " + model.who
+                                  : (model.incoming
+                                     ? (model.is_image ? "Receiving photo from " : "Receiving file from ")
+                                     : (model.is_image ? "Sending photo to " : "Sending file to ")) + model.who
+                            textFormat: Text.PlainText
                             color: primary_light
                             opacity: 0.85
                             font.pixelSize: dp(10)
@@ -255,7 +304,7 @@ Item {
                         color: model.status === "failed" ? "#EF5350"
                                 : model.status === "done" ? "#66BB6A"
                                 : "white"
-                        font.pixelSize: model.status === "sending" ? dp(15) : dp(18)
+                        font.pixelSize: (model.status === "sending" || model.status === "receiving") ? dp(15) : dp(18)
                         font.bold: true
                     }
                 }
@@ -343,7 +392,7 @@ Item {
             }
 
             Timer {
-                running: model.status !== "sending"
+                running: model.status === "done" || model.status === "failed"
                 interval: model.status === "done" ? 1300 : 4000
                 onTriggered: root.removeTransfer(model.pers_id)
             }
@@ -366,6 +415,17 @@ Item {
                 root.finishTransfer(pers_id, "failed")
             else if(status === DwycoCore.MSG_SEND_CANCELED)
                 root.finishTransfer(pers_id, "cancel")
+        }
+
+        function onIncoming_attachment_status(status, sender, xfer_id, display_name, percent) {
+            if(status === DwycoCore.INCOMING_ATTACHMENT_START)
+                root.onIncomingStart(xfer_id, sender, display_name)
+            else if(status === DwycoCore.INCOMING_ATTACHMENT_STATUS)
+                root.onIncomingProgress(xfer_id, percent)
+            else if(status === DwycoCore.INCOMING_ATTACHMENT_OK)
+                root.finishTransfer(xfer_id, "done")
+            else if(status === DwycoCore.INCOMING_ATTACHMENT_FAILED)
+                root.finishTransfer(xfer_id, "failed")
         }
     }
 }

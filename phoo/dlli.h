@@ -506,6 +506,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 
 #define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
 
+// incoming direct attachment transfer (not a server download)
+#define DWYCO_SE_MSG_ATTACHMENT_RECEIVE_START 65
+#define DWYCO_SE_MSG_ATTACHMENT_RECEIVE_STATUS 66
+#define DWYCO_SE_MSG_ATTACHMENT_RECEIVE_OK 67
+#define DWYCO_SE_MSG_ATTACHMENT_RECEIVE_FAILED 68
+
 
 // you get this message to indicate a message has content that is now locally accessible
 #define DWYCO_SE_MSG_PULL_OK 36
