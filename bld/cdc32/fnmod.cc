@@ -353,39 +353,33 @@ is_attachment(const DwString& fn)
 vc
 sanitize_attachment_display_name(const vc& fn)
 {
-    if(fn.is_nil())
+    if(fn.type() != VC_STRING || fn.len() > 64)
         return vcnil;
-    if(fn.type() != VC_STRING && fn.type() != VC_BSTRING)
-        return vcnil;
-    const char *s = (const char *)fn;
-    int len = fn.len();
-    int start = 0;
-    for(int i = 0; i < len; ++i)
-    {
-        if(s[i] == '/' || s[i] == '\\')
-            start = i + 1;
+
+    // Find basename (handle both Unix and Windows separators)
+    const char * const path = (const char *)fn;
+    const char *base = path;
+    for (const char *p = path; *p; ++p) {
+        if (*p == '/' || *p == '\\')
+            base = p + 1;
     }
+
     DwString out;
-    for(int i = start; i < len && out.length() < 128; ++i)
-    {
-        unsigned char c = (unsigned char)s[i];
-        if(c < 0x20 || c == 0x7f || c == '/' || c == '\\')
-            continue;
-        out += (char)c;
-    }
-    while(out.length() > 0 && (out.at(0) == ' ' || out.at(0) == '\t'))
-        out.remove(0, 1);
-    while(out.length() > 0)
-    {
-        char c = out.at(out.length() - 1);
-        if(c == ' ' || c == '\t' || c == '.')
-            out.remove(out.length() - 1, 1);
-        else
-            break;
+    while (*base) {
+        unsigned char c = (unsigned char)*base++;
+
+        if ((c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9') ||
+            c == '.' || c == '-' || c == '_' || c == ' ') {
+            out += c;
+        } else {
+            out += '_';
+        }
     }
     if(out.length() == 0)
         return vcnil;
-    return vc(VC_BSTRING, out.c_str(), out.length());
+    return out;
 }
 
 DwString
