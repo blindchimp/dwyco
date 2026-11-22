@@ -9,8 +9,10 @@
 #include "mmchan.h"
 #include "activeuid.h"
 #include "qauth.h"
+#include "qmsg.h"
 #include "qmsgsql.h"
 #include "aconn.h"
+#include "dwrtlog.h"
 
 extern vc Online;
 extern vc Chat_ips;
@@ -44,12 +46,48 @@ find_best_candidate_for_initial_send(vc uid, int& skip_direct)
         // be NULL (thanks to sql). if you update this to include
         // checking the times, take that into account.
         vc muid = from_hex(last_recv[i][0]);
+        if(No_direct_msgs.contains(muid))
+            continue;
         MMChannel *mc = MMChannel::already_connected(muid, 1);
         if(mc && mc->remote_disposition() == vc("foreground"))
         {
+            GRTLOG("slam dunk %s", (const char *)last_recv[i][0], 0);
             return muid;
         }
     }
+
+    // Even if no recently active foreground channel exists, a recipient
+    // device that is currently online and marked foreground is still a
+    // reasonable direct-send target. Prefer devices we already have a
+    // channel to, but otherwise let DirectSend try to establish one; its
+    // failure path falls back to the server automatically.
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        vc muid = uids[i];
+        if(No_direct_msgs.contains(muid))
+            continue;
+        MMChannel *mc = MMChannel::already_connected(muid, 1);
+        if(mc && mc->remote_disposition() == vc("foreground"))
+        {
+            GRTLOG("online fg connected %s", (const char *)to_hex(muid), 0);
+            return muid;
+        }
+    }
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        vc muid = uids[i];
+        if(No_direct_msgs.contains(muid))
+            continue;
+        vc cd;
+        if(Online.contains(muid) &&
+                Client_disposition.find(muid, cd) &&
+                cd == vc("foreground"))
+        {
+            GRTLOG("online fg candidate %s", (const char *)to_hex(muid), 0);
+            return muid;
+        }
+    }
+
     // for now, just keep it simple, and send it via server.
     // this will avoid situations where a message gets sent to
     // a background receiver, only to get "stuck". we might be

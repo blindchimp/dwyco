@@ -84,11 +84,13 @@ DirectSend::send_done(vc m, void *, vc, ValidPtr vp)
     }
     if(m[1].is_nil())
     {
+        GRTLOG("msg send fail qfn %s", q->qfn.c_str(), 0);
         move_back_to_outbox(q->qfn);
         q->fail();
     }
     else
     {
+        GRTLOG("msg send ok qfn %s", q->qfn.c_str(), 0);
         q->cleanup_after_send();
         q->succeed();
     }
@@ -156,6 +158,7 @@ DirectSend::send_direct()
     QckDone d(send_done, 0, vcnil, vp);
     d.set_timeout(10);
     d.type = ReqType("msg");
+    d.channel = send_channel->myid;
     v[0] = d.type.response_type();
     v[1] = msg_to_send;
     v[2] = small_attachment;
@@ -176,6 +179,7 @@ DirectSend::eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
     // this channel, so make sure the teardown can't re-enter us.
     // this avoids a second fail/refile behind an in-flight retry.
     mc->destroy_callback = 0;
+    GRTLOGA("eo_direct_xfer chan %d xfail %d cfail %d decl %d", mc->myid, mc->xfer_failed, mc->connect_failed, mc->direct_zap_attachment_declined, 0);
     if(!vp.is_valid())
         return;
     DirectSend *q = (DirectSend *)(void *)vp;
@@ -246,6 +250,7 @@ xfer_chan_call_succeeded(MMChannel *mc, int chan, vc, void *, ValidPtr)
     // set up, and use that as a watchdog on the transfer
     mc->timer1.start(DwTimer::ONESHOT, XFER_WATCHDOG_TIMEOUT);
     // timer1 callback still set to xfer_chan_setup_timeout
+    GRTLOG("xfer chan established chan %d", mc->myid, 0);
 }
 
 void
@@ -328,8 +333,13 @@ DirectSend::send_with_attachment()
         return;
     }
 
+    vc display_name;
+    if(!msg_to_send[QQM_MSG_VEC][QQM_BODY_FILE_ATTACHMENT].is_nil())
+        display_name = sanitize_attachment_display_name(msg_to_send[QQM_MSG_VEC][QQM_BODY_FILE_ATTACHMENT]);
+
     if(!mp->proxy_info.is_nil())
     {
+        GRTLOG("xfer path proxy port %d", (int)mp->proxy_info[1], 0);
         // proxy path: use relay to carry a secondary reliable channel
         // for the file. This mirrors the media aux-channel setup
         // (mmchan.cc:local_media_setup_new) where an "aux_r" ctrl
@@ -339,6 +349,7 @@ DirectSend::send_with_attachment()
         mp->send_ctrl(aux);
 
         MMChannel *m = new MMChannel;
+        m->xfer_display_name = display_name;
         m->tube = new DummyTube;
         DwString proxy_ip((const char *)mp->proxy_info[0]);
         int proxy_port = (int)mp->proxy_info[1];
@@ -393,8 +404,10 @@ DirectSend::send_with_attachment()
         }
         return;
     }
+    GRTLOG("xfer path direct chan %d", (int)mp->remote_listening_port(), 0);
 
     MMChannel *m = new MMChannel;
+    m->xfer_display_name = display_name;
     m->tube = new DummyTube;
     DwString remote((const char *)mp->tube->remote_addr_ctrl());
     int c = remote.find(":");
@@ -489,6 +502,11 @@ DirectSend::call_disposition(MMCall *, int what, void *, ValidPtr vp)
     switch(what)
     {
     case MMCALL_STARTED:
+        break;
+    case MMCALL_TRYING_SAC:
+        // direct setup failed, but the call is still trying via the
+        // proxy. keep the message and this object alive so we can use
+        // the channel if SAC succeeds.
         break;
     case MMCALL_ESTABLISHED:
         start_send();

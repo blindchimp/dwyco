@@ -115,6 +115,17 @@ int Media_select = MEDIA_VIA_HANDSHAKE;
 namespace dwyco {
 
 int Disable_outgoing_SAC = 0;
+
+static int
+will_try_sac(MMCall *mmc)
+{
+    if(Disable_outgoing_SAC)
+        return 0;
+    if(mmc && mmc->media_select == MEDIA_TCP_DIRECT)
+        return 0;
+    return 1;
+}
+
 void
 call_terminated(MMChannel *mc, vc, void *, ValidPtr vp)
 {
@@ -456,6 +467,7 @@ direct_call_failed(MMChannel *mc, vc, void *, ValidPtr vp)
     MMCall *mmc = 0;
     if(vp.is_valid())
         mmc = (MMCall *)(void *)vp;
+    int try_sac = will_try_sac(mmc);
     // call may have been rejected
     if(!mc->fail_reason.is_nil() && mc->rejected)
     {
@@ -485,10 +497,12 @@ direct_call_failed(MMChannel *mc, vc, void *, ValidPtr vp)
         // if the call fails at this point, it is just because
         // the protocol isn't advancing quick enough, so just
         // call it a fail and continue on.
-        mc->msg_out("Call failed, taking too long.");
-        if(mmc)
+        mc->msg_out(try_sac ? "Direct setup timed out, trying server assist." :
+                              "Call failed, taking too long.");
+        if(mmc && try_sac)
         {
-            mmc->call_rejected("protocol taking too long");
+            mmc->chan_id = -2;
+            mmc->sac_attempting();
         }
         TRACK_ADD(CL_call_setup_taking_too_long, 1);
     }
@@ -507,7 +521,7 @@ direct_call_failed(MMChannel *mc, vc, void *, ValidPtr vp)
         delete mmc;
         return;
     }
-    if(Disable_outgoing_SAC || (mmc && (mmc->media_select == MEDIA_TCP_DIRECT)))
+    if(!try_sac)
     {
         // signal call failure and stop the progression
         if(mmc)

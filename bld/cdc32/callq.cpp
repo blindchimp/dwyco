@@ -162,6 +162,9 @@ CallQ::cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
     case MMCALL_ESTABLISHED:
         cq[i]->status = CQ_CONNECTED;
         break;
+    case MMCALL_TRYING_SAC:
+        cq[i]->status = CQ_CONNECTING;
+        break;
     case MMCALL_TERMINATED:
         cq[i]->status = CQ_TERMINATED;
         break;

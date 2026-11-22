@@ -1364,6 +1364,9 @@ int DWYCOEXPORT dwyco_set_max_established_originated_calls(int n);
 #define DWYCO_CALLDISP_REJECTED_BUSY 6 // call screened by resource limitation, or specific user action
 #define DWYCO_CALLDISP_CANCELED 7		// call setup was canceled locally before connect succeeded
 #define DWYCO_CALLDISP_STARTED 8		// call initiated
+#define DWYCO_CALLDISP_TRYING_SAC 9		// direct setup timed out; SAC setup is now in progress
+										// (non-terminal: chan_id is invalid/transitional, wait for
+										// ESTABLISHED, REJECTED or FAILED)
 
 // create a full duplex channel to uid.
 int DWYCOEXPORT

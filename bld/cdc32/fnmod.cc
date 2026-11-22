@@ -17,6 +17,7 @@
 // have no absolute path information on it
 // and it is relative to "." (the cwd)
 
+#include "fnmod.h"
 #include "dwstr.h"
 #include "sepstr.h"
 #ifndef STANDALONE
@@ -347,6 +348,38 @@ is_attachment(const DwString& fn)
     if(a.rfind(".dyc") != 20 && a.rfind(".jpg") != 20 && a.rfind(".fle") != 20)
         return 0;
     return 1;
+}
+
+vc
+sanitize_attachment_display_name(const vc& fn)
+{
+    if(fn.type() != VC_STRING || fn.len() > 64)
+        return vcnil;
+
+    // Find basename (handle both Unix and Windows separators)
+    const char * const path = (const char *)fn;
+    const char *base = path;
+    for (const char *p = path; *p; ++p) {
+        if (*p == '/' || *p == '\\')
+            base = p + 1;
+    }
+
+    DwString out;
+    while (*base) {
+        unsigned char c = (unsigned char)*base++;
+
+        if ((c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9') ||
+            c == '.' || c == '-' || c == '_' || c == ' ') {
+            out += c;
+        } else {
+            out += '_';
+        }
+    }
+    if(out.length() == 0)
+        return vcnil;
+    return out;
 }
 
 DwString

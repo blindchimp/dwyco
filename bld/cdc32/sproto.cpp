@@ -260,6 +260,7 @@ sproto::crank()
     if(ret == fail)
     {
         running = 0;
+        GRTLOG("sproto fail subchan %d state %s", subchan, trans[cur_state].state);
         m->tube->drop_channel(subchan);
         m->schedule_destroy();
         return -1;

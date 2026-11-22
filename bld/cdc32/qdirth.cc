@@ -189,10 +189,12 @@ void
 dirth_dead_channel_cleanup(int chan)
 {
     const QckDone *wp;
+    int n = 0;
     dwlista_foreach_peek(wp, Waitq)
     {
         if(wp->channel == chan)
         {
+            ++n;
             vc resp(VC_VECTOR);
             resp.append(wp->type.response_type());
             // note: rest of response will look like
@@ -202,6 +204,8 @@ dirth_dead_channel_cleanup(int chan)
             Response_q.append(resp);
         }
     }
+    if(n > 0)
+        GRTLOG("dead chan %d fabricated %d errors", chan, n);
 }
 
 // when canceling a server operation, call this function
@@ -282,6 +286,7 @@ dirth_poll_response()
             // makes me think it is due to some sporadic network issue.
             // so instead of crashing, just drop the response
             //oopanic("debug proto fail");
+            GRTLOG("dropping malformed response", 0, 0);
             continue;
         }
         if(find_in_q(v, Waitq))

@@ -263,6 +263,9 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
         break;
+    case DWYCO_CALLDISP_TRYING_SAC:
+        // non-terminal progress; the local connect timer can keep running
+        break;
     case DWYCO_CALLDISP_REJECTED:
         // only treat this as a schema/group mismatch when the recipient's
         // reject reason actually says so. duplicate connects and other

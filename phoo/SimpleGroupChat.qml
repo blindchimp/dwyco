@@ -330,6 +330,9 @@ Page {
 
                 }
 
+                TransferToolButton {
+                    id: transfers_button
+                }
 
                 TipButton {
                     contentItem: Image {

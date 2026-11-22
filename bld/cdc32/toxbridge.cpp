@@ -142,6 +142,7 @@ struct OutgoingFileTransfer {
     vc recipient_pseudo;
     uint32_t tox_fn;
     uint32_t tox_fnum;
+    int last_percent;
 };
 static std::map<DwString, OutgoingFileTransfer> Outgoing_xfers;
 
@@ -303,6 +304,21 @@ static DwString
 xfer_key(uint32_t fn, uint32_t fnum)
 {
     return DwString::fromInt(fn) + "_" + DwString::fromInt(fnum);
+}
+
+static void
+emit_file_send_progress(OutgoingFileTransfer &xfer)
+{
+    int percent = 0;
+    if(xfer.file_size > 0)
+        percent = (int)((xfer.sent_size * 100) / xfer.file_size);
+    if(percent > 100)
+        percent = 100;
+    if(percent == xfer.last_percent)
+        return;
+    xfer.last_percent = percent;
+    DwString mid((const char *)xfer.local_mid, xfer.local_mid.len());
+    se_emit_msg_status(mid, xfer.recipient_pseudo, DwString("Sending"), percent);
 }
 
 static vc
@@ -895,6 +911,7 @@ process_tox_event(const char *type, const vc &args)
                 Tox_q->mark_sent(xfer.row_id);
             }
 
+            se_emit_msg(SE_MSG_SEND_SUCCESS, xfer.local_mid, xfer.recipient_pseudo);
             Outgoing_xfers.erase(oit);
             return;
         }
@@ -930,6 +947,7 @@ process_tox_event(const char *type, const vc &args)
         if(toxp_file_send_data(Tox_plugin, fn, fnum, position, chunk))
         {
             xfer.sent_size += n;
+            emit_file_send_progress(xfer);
         }
         else
         {
@@ -2981,6 +2999,8 @@ tox_bridge_send_queued()
         xfer.recipient_pseudo = recipient_pseudo;
         xfer.tox_fn = fn;
         xfer.tox_fnum = fnum;
+        xfer.last_percent = -1;
+        emit_file_send_progress(xfer);
         Outgoing_xfers[xfer_key(fn, fnum)] = xfer;
         GRTLOG("tox: file send initiated fn=%d fnum=%d", (int)fn, (int)fnum);
         return;

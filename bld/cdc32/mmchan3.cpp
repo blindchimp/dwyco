@@ -22,6 +22,7 @@
 #include "qauth.h"
 #include "dhgsetup.h"
 #include "qmsgsql.h"
+#include "se.h"
 
 using namespace dwyco;
 
@@ -229,6 +230,7 @@ MMChannel::send_file_info(int subchan, sproto *p, const char *ev)
     {
         v2[1] = 0;
         expected_size = 0;
+        GRTLOG("send_file_info stat fail %s", p->fn_to_send.c_str(), 0);
         return sproto::fail;
     }
     else
@@ -236,6 +238,8 @@ MMChannel::send_file_info(int subchan, sproto *p, const char *ev)
         v2[1] = (long)s.st_size;
         expected_size = s.st_size;
     }
+    if(!xfer_display_name.is_nil())
+        v2[2] = xfer_display_name;
     if(zap_send)
         v[0] = "zfile";
     else
@@ -351,18 +355,29 @@ MMChannel::check_file_response(int subchan, sproto *p, const char *ev)
     if(rvc.type() == VC_VECTOR)
     {
         if(rvc[0] != vc("restart"))
+        {
+            GRTLOGVC(rvc);
+            GRTLOG("check_file_response bad vector", 0, 0);
             return sproto::fail;
+        }
         seekto = (off_t)(long)rvc[1];
+        GRTLOG("check_file_response restart %d", (int)seekto, 0);
         return sproto::stay;
     }
     if(rvc == vc("zreject"))
     {
         zreject = 1;
+        GRTLOG("check_file_response zreject", 0, 0);
         return sproto::alt_next;
     }
 
     if(rvc != vc("fileok"))
+    {
+        GRTLOGVC(rvc);
+        GRTLOG("check_file_response unexpected response", 0, 0);
         return sproto::fail;
+    }
+    GRTLOG("check_file_response fileok", 0, 0);
 
     total_got = seekto;
 
@@ -622,6 +637,7 @@ MMChannel::wait_for_ok(int subchan, sproto *p, const char *ev)
 
     if((i = tube->recv_data(rvc, subchan)) == SSERR)
     {
+        GRTLOG("wait_for_ok recv error subchan %d", subchan, 0);
         return sproto::fail;
     }
     if(i == SSTRYAGAIN)
@@ -629,12 +645,38 @@ MMChannel::wait_for_ok(int subchan, sproto *p, const char *ev)
     if(rvc == vc("frok"))
     {
         // file xfers are started inside dedicated channels
+        GRTLOG("wait_for_ok frok subchan %d", subchan, 0);
         xfer_failed = 0;
         schedule_destroy(HARD);
         return sproto::next;
     }
+    GRTLOGVC(rvc);
+    GRTLOG("wait_for_ok unexpected response subchan %d", subchan, 0);
     return sproto::fail;
 
+}
+
+static
+void
+incoming_attachment_status(MMChannel *mc, vc msg, void *, ValidPtr)
+{
+    if(!mc || !mc->zap_recv)
+        return;
+    DwString s((const char *)msg);
+    if(s.find("Failed") == 0)
+    {
+        se_emit_incoming_attachment_failed(mc->remote_uid(), mc->remote_filename,
+                                           mc->remote_display_name);
+        return;
+    }
+    int e = mc->expected_size;
+    if(e <= 0)
+        e = 1;
+    int p = (int)(((double)mc->total_got * 100) / e);
+    if(p > 100)
+        p = 100;
+    se_emit_incoming_attachment_status(mc->remote_uid(), mc->remote_filename,
+                                       mc->remote_display_name, p);
 }
 
 int
@@ -664,8 +706,10 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
                 MMChannel *pmc = get_channel_by_session_id(sid);
                 if(!pmc)
                 {
+                    GRTLOG("zfile no parent for session %d", sid, 0);
                     return sproto::fail;
                 }
+                GRTLOG("zfile recv session %d", sid, 0);
                 int nc = pmc->tube->find_chan();
                 pmc->tube->set_channel(tube->get_chan_sock(subchan),
                                        tube->get_encrypt_chan(subchan),
@@ -681,6 +725,7 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
                 //newchan->file_xferchan = nc;
                 newchan->zap_recv = 1;
                 newchan->file_xfer = 1;
+                newchan->status_callback = incoming_attachment_status;
                 pmc->simple_protos[nc] = 0;
 
                 //newchan->protos[nc] = CHAN_OK;
@@ -765,6 +810,7 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
     {
         if(uid_ignored(u))
         {
+            GRTLOG("accept_att uid ignored", 0, 0);
             return sproto::alt_next;
         }
     }
@@ -772,14 +818,23 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
     // compat, for now. these are in the channel and will be overwritten
     // if we ever transfer more than one file at a time.
     remote_filename = remote_fn;
+    remote_display_name = vcnil;
+    if(p->user_info.num_elems() > 2)
+        remote_display_name = sanitize_attachment_display_name(p->user_info[2]);
     expected_size = p->user_info[1];
 
     if(!is_attachment(remote_fn))
+    {
+        GRTLOG("accept_att not attachment %s", (const char *)remote_fn, 0);
         return sproto::alt_next;
+    }
     // this is a hack to avoid having messages with attachments
     // coming from two paths referencing the same file.
     if(sql_attachment_already_received(remote_fn))
+    {
+        GRTLOG("accept_att already received %s", (const char *)remote_fn, 0);
         return sproto::alt_next;
+    }
 
     DwString actual_fn = newfn(remote_fn);
     write_fd = fopen(actual_fn.c_str(), "wb");
@@ -790,6 +845,7 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     }
 
+    se_emit_incoming_attachment_start(remote_uid(), remote_filename, remote_display_name);
     return sproto::next;
 }
 
@@ -920,9 +976,11 @@ MMChannel::recv_chunk(int subchan, sproto *p, const char *ev)
             {
                 set_progress_abort("received file size wrong");
                 write_fd = 0;
+                GRTLOG("recv size mismatch got %d want %d", total_got, expected_size);
                 return sproto::fail;
             }
 
+            GRTLOG("recv complete got %d", total_got, 0);
             set_progress_status("Sending final ack...");
             // send back an indicator that we actually
             // committed the file (as much as we can
@@ -1061,6 +1119,7 @@ MMChannel::send_recv_ok(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     if(i == SSTRYAGAIN)
         return sproto::stay;
+    GRTLOG("sent fileok subchan %d", subchan, 0);
     return sproto::next;
 }
 
@@ -1072,6 +1131,7 @@ MMChannel::send_recv_reject(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     if(i == SSTRYAGAIN)
         return sproto::stay;
+    GRTLOG("sent zreject subchan %d", subchan, 0);
     return sproto::next;
 }
 
@@ -1079,6 +1139,7 @@ int
 MMChannel::send_ok(int subchan, sproto *p, const char *ev)
 {
     int i;
+    GRTLOG("send frok subchan %d", subchan, 0);
     if((i = tube->send_data(vc("frok"), subchan)) == SSERR)
         return sproto::fail;
     if(i == SSTRYAGAIN)
@@ -1092,6 +1153,8 @@ MMChannel::send_ok(int subchan, sproto *p, const char *ev)
         }
     }
 
+    if(zap_recv)
+        se_emit_incoming_attachment_ok(remote_uid(), remote_filename, remote_display_name);
     xfer_failed = 0;
     schedule_destroy();
     return sproto::next;

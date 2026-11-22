@@ -75,7 +75,6 @@ save_info(vc info, const DwString& filename, int nomodify)
     else
     {
         TRACK_ADD_nosave(SI_open_failed, 1);
-        TRACK_ADD_VC_nosave(v, 1);
     }
 err:
     f.close();
