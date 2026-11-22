@@ -525,6 +525,27 @@ tox_uid_tag_add(const vc &pseudo_uid)
         sql_add_tag(hex_uid, "_tox");
 }
 
+// keep the friend cache in step with a per-friend event. without this,
+// dwyco_uid_to_info() and the friend model keep handing out values from the
+// last full rebuild, so a change only shows up after something else happens
+// to rebuild the cache.
+static void
+tox_friend_cache_update_field(const vc &pubkey, const char *field, const vc &value)
+{
+    if(Friend_cache.is_nil())
+        return;
+    int n = Friend_cache.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc pk;
+        if(Friend_cache[i].find("pubkey", pk) && pk == pubkey)
+        {
+            Friend_cache[i].add_kv(field, value);
+            return;
+        }
+    }
+}
+
 static void
 process_tox_event(const char *type, const vc &args)
 {
@@ -619,6 +640,7 @@ process_tox_event(const char *type, const vc &args)
         vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
         tox_uid_tag_add(pseudo);
         (void)fn;
+        tox_friend_cache_update_field(pubkey, "name", name);
         se_emit(SE_TOX_FRIEND_NAME, pseudo, name);
         if(!name.is_nil() && name != vc(""))
         {
@@ -629,6 +651,14 @@ process_tox_event(const char *type, const vc &args)
                 save_info(Session_infos, "sinfo");
             safe_add_crdt_tag(to_hex(pseudo), "_tox_friend", name);
         }
+
+    } else if(strcmp(type, "friend_status_message") == 0 && args.num_elems() >= 3) {
+        vc pubkey = args[1];
+        vc status_message = args[2];
+        vc pseudo = tox_pubkey_to_pseudo_uid(pubkey);
+        tox_uid_tag_add(pseudo);
+        tox_friend_cache_update_field(pubkey, "status_message", status_message);
+        se_emit(SE_TOX_FRIEND_STATUS_MESSAGE, pseudo, status_message);
 
     } else if(strcmp(type, "file_request") == 0 && args.num_elems() >= 5) {
         uint32_t fn = (uint32_t)(int)args[0];

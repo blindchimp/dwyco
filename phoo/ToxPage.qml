@@ -228,6 +228,12 @@ Page {
             if(statusIdx >= 0)
                 userStatusCombo.currentIndex = statusIdx
         }
+        function onTox_friend_name_changed(pseudo_uid) {
+            ToxFriendModel.load_friends()
+        }
+        function onTox_friend_status_message_changed(pseudo_uid) {
+            ToxFriendModel.load_friends()
+        }
         function onTox_import_finished() {
             refreshToxIdentity()
         }
@@ -936,11 +942,12 @@ Page {
                             }
 
                             Text {
-                                text: pubkey.substring(0, 8)
-                                font.family: "monospace"
+                                text: status_message
+                                visible: status_message.length > 0
                                 font.pixelSize: dp(10)
                                 color: secondary_text
                                 elide: Text.ElideRight
+                                maximumLineCount: 1
                                 Layout.fillWidth: true
                             }
                         }

@@ -96,6 +96,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_MSG_ATTACHMENT_RECEIVE_STATUS,
     DWYCO_SE_MSG_ATTACHMENT_RECEIVE_OK,
     DWYCO_SE_MSG_ATTACHMENT_RECEIVE_FAILED,
+    DWYCO_SE_TOX_FRIEND_STATUS_MESSAGE,
     -1,
 };
 
@@ -619,6 +620,16 @@ se_process()
             break;
 
         case SE_TOX_FRIEND_USER_STATUS:
+            (*dwyco_system_event_callback)(api_cmd,
+                                            0,
+                                            Se_q[i][1], Se_q[i][1].len(),
+                                            Se_q[i][2], Se_q[i][2].len(),
+                                            0, 0, 0,
+                                            0, 0
+                                           );
+            break;
+
+        case SE_TOX_FRIEND_STATUS_MESSAGE:
             (*dwyco_system_event_callback)(api_cmd,
                                             0,
                                             Se_q[i][1], Se_q[i][1].len(),

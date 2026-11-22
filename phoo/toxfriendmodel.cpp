@@ -49,6 +49,7 @@ ToxFriendModel::load_friends()
         f->update_name(nm);
         f->update_status(qfl.get<QByteArray>(i, DWYCO_TF_STATUS));
         f->update_user_status(qfl.get<QByteArray>(i, DWYCO_TF_USER_STATUS));
+        f->update_status_message(qfl.get<QByteArray>(i, DWYCO_TF_STATUS_MESSAGE));
         f->update_counter = cnt;
     }
     QList<ToxFriend *> dead;

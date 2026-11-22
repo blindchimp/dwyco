@@ -541,8 +541,10 @@ signals:
     void emergency_exit_signal(int what, int must_exit, QString msg);
 
     void tox_connection_status_changed(int connected);
+    void tox_friend_name_changed(QString pseudo_uid);
     void tox_friend_status_changed(QString pseudo_uid, QString status);
     void tox_friend_user_status_changed(QString pseudo_uid, QString user_status);
+    void tox_friend_status_message_changed(QString pseudo_uid);
     void tox_user_status_changed(QString user_status);
     void tox_import_finished();
     void auto_away_state_changed(bool is_away);

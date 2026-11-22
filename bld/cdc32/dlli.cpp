@@ -10189,6 +10189,7 @@ dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out)
         row.append(entry.find("name", tmp) ? tmp : vc(""));
         row.append(entry.find("status", tmp) ? tmp : vc(""));
         row.append(entry.find("user_status", tmp) ? tmp : vc("none"));
+        row.append(entry.find("status_message", tmp) ? tmp : vc(""));
         result.append(row);
     }
     if(list_out)
