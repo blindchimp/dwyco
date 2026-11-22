@@ -1495,6 +1495,12 @@ dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg, const char 
         c->mute_state_machine->start();
     }
     break;
+    case DWYCO_CALLDISP_TRYING_SAC:
+        // non-terminal progress: direct setup timed out and SAC is being
+        // attempted. chan_id is transitional, so leave the call in place
+        // and wait for ESTABLISHED/REJECTED/FAILED/TERMINATED.
+        break;
+
     case DWYCO_CALLDISP_FAILED:
     case DWYCO_CALLDISP_CANCELED:
     case DWYCO_CALLDISP_REJECTED:
