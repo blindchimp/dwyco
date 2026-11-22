@@ -30,17 +30,20 @@ Page {
         color: amber_light
     }
 
+    // one layout that adapts to the width it is given, rather than a separate
+    // phone layout. a narrow desktop window takes the same path as a phone.
+    readonly property bool compact: width < 600
+
     // ---- state ----
 
     property var allSavesList: []
     // just the group-shared rows (the _tox_mid tag payloads). the local save
     // is not in here: it has its own hero card at the top of the page.
     property var sharedSaves: []
-    property string selectedKey: ""
-    property bool selectedEncrypted: false
     // the row a confirmation dialog is about. the list can refresh while a
     // dialog is open, so the dialog must not read a live list index.
     property var pendingRow: null
+    property var pendingUseRow: null
 
     // pubkey of the save on this device, for the hero's avatar tint and the
     // fallback copy. the local row carries it even when signed out or locked,
@@ -57,35 +60,6 @@ Page {
     function doRefresh() {
         tox_state.refresh()
         refreshAllSaves()
-    }
-
-    function indexOfKey(k) {
-        for(var i = 0; i < allSavesList.length; ++i) {
-            if(allSavesList[i].key === k)
-                return i
-        }
-        return -1
-    }
-
-    // derive the password-field state from the selected row, so it can't
-    // drift out of sync with what is actually selected.
-    function syncSelected() {
-        var i = indexOfKey(selectedKey)
-        if(i < 0) {
-            selectedEncrypted = false
-            return
-        }
-        selectedEncrypted = allSavesList[i].encrypted === true
-    }
-
-    // the selected shared row, or null when the selection is the local save
-    // (or nothing). the hero card owns the local save, so the shared list's
-    // action strip only ever acts on a shared row.
-    function selectedSharedRow() {
-        var i = indexOfKey(selectedKey)
-        if(i < 0 || allSavesList[i].local === true)
-            return null
-        return allSavesList[i]
     }
 
     function shortPub(pk) {
@@ -124,13 +98,6 @@ Page {
     function refreshAllSaves() {
         allSavesList = core.tox_list_all_saves()
         sharedSaves = allSavesList.filter(function(r) { return r.local !== true })
-        // keep the current selection across a refresh if that row still exists,
-        // otherwise fall back to the first row.
-        if(selectedKey !== "" && indexOfKey(selectedKey) < 0)
-            selectedKey = ""
-        if(selectedKey === "" && allSavesList.length > 0)
-            selectedKey = allSavesList[0].key
-        syncSelected()
     }
 
     // small helper for the local save's title. no row object exists for it,
@@ -249,7 +216,7 @@ Page {
 
     // signing in to the local save: the mid is empty, same as the local row
     // used to be. kept separate from the shared-row flow so the hero's button
-    // does not have to touch the shared list's selection.
+    // does not have to touch the shared list.
     function signInLocal() {
         var err = core.tox_sign_in("", heroPwInput.text)
         if(err.length > 0) {
@@ -264,27 +231,43 @@ Page {
         doRefresh()
     }
 
-    // sign in to a shared tox-id. the row is passed in because the list
-    // refreshes out from under any live index while dialogs are open.
-    function doSignIn(row) {
+    // using a shared tox-id. the row is passed in because the list refreshes
+    // out from under any live index while dialogs are open. the password comes
+    // from the confirm dialog instead of an inline field, so the row and its
+    // controls fit a phone.
+    function openUseSave(row) {
         if(!row) {
             showBanner("Pick a Tox save first.", true)
             return
         }
+        pendingUseRow = row
+        usePwInput.text = ""
+        usePwError.text = ""
+        useSaveConfirmDlg.open()
+        if(row.encrypted)
+            usePwInput.forceActiveFocus()
+    }
+
+    function confirmUseSave() {
+        if(!pendingUseRow)
+            return
+        usePwError.text = ""
         // picking a shared identity overwrites the save on disk, so the
         // remembered name/address describe the identity being replaced. drop
         // them up front; if the sign in then fails the next refresh re-caches
         // nothing and the boxes correctly show blank.
         tox_state.forgetCachedIdentity()
-        var err = core.tox_sign_in(row.mid, pwInput.text)
+        var err = core.tox_sign_in(pendingUseRow.mid, usePwInput.text)
         if(err.length > 0) {
-            showBanner(err, true)
-            pwInput.text = ""
-            pwInput.forceActiveFocus()
+            usePwError.text = err
+            usePwInput.text = ""
+            usePwInput.forceActiveFocus()
             doRefresh()
             return
         }
-        pwInput.text = ""
+        useSaveConfirmDlg.close()
+        pendingUseRow = null
+        usePwInput.text = ""
         showBanner("Signed in.")
         doRefresh()
     }
@@ -395,11 +378,6 @@ function doUnshare(row) {
             return
         var removed = core.tox_depublish_save(row.mid)
         if(removed) {
-            // the row we are about to remove may be the selected one, so let
-            // the refresh fall back to the local save rather than leaving the
-            // selection pointing at something that no longer exists.
-            if(selectedKey === row.key)
-                selectedKey = ""
             showBanner(rowTitle(row) + " is no longer shared with your devices.")
         } else {
             showBanner("That save was already not shared.")
@@ -487,7 +465,7 @@ function doUnshare(row) {
     ScrollView {
         id: acct_scroll
         anchors.fill: parent
-        anchors.margins: mm(2)
+        anchors.margins: tox_acct.compact ? mm(1.5) : mm(2)
         clip: true
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -509,17 +487,12 @@ function doUnshare(row) {
                     border.color: tox_acct.bannerError ? "#e3b0b0" : "#b3d6b8"
                 }
 
-                ColumnLayout {
-                    width: parent.width
-                    spacing: 0
-
-                    Label {
-                        text: tox_acct.bannerText
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                        font.pixelSize: dp(12)
-                        color: tox_acct.bannerError ? "#a00" : "#060"
-                    }
+                Label {
+                    text: tox_acct.bannerText
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    font.pixelSize: dp(12)
+                    color: tox_acct.bannerError ? "#a00" : "#060"
                 }
             }
 
@@ -593,7 +566,7 @@ function doUnshare(row) {
                                 text: "This device has no Tox save yet."
                                 font.pixelSize: dp(11)
                                 color: secondary_text
-                                elide: Text.ElideRight
+                                wrapMode: Text.WordWrap
                             }
 
                             Label {
@@ -605,40 +578,31 @@ function doUnshare(row) {
                                 font.family: "monospace"
                                 font.pixelSize: dp(11)
                                 color: secondary_text
-                                elide: Text.ElideRight
+                                wrapMode: Text.WrapAnywhere
                             }
-                        }
-
-                        Button {
-                            text: "Copy"
-                            flat: true
-                            visible: tox_state.state !== "empty"
-                            onClicked: core.copy_to_clipboard(
-                                          core.tox_self_address.length > 0
-                                          ? core.tox_self_address
-                                          : tox_acct.heroPubkey)
                         }
                     }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: mm(1)
-
-                        Pane {
+                    ResponsiveRow {
+                        Rectangle {
                             visible: tox_state.state !== "empty"
-                            padding: mm(0.75)
-                            background: Rectangle {
-                                color: tox_state.dotColor
-                                radius: mm(3.5)
-                            }
+                            width: statusPill.implicitWidth + mm(2)
+                            height: mm(5)
+                            radius: height / 2
+                            color: tox_state.dotColor
+
                             RowLayout {
+                                id: statusPill
+                                anchors.centerIn: parent
                                 spacing: mm(1)
+
                                 Rectangle {
                                     Layout.preferredWidth: mm(1.75)
                                     Layout.preferredHeight: mm(1.75)
                                     radius: width / 2
                                     color: "white"
                                 }
+
                                 Label {
                                     text: tox_state.statusText
                                     color: "white"
@@ -651,11 +615,13 @@ function doUnshare(row) {
                         RowLayout {
                             visible: tox_state.encrypted
                             spacing: mm(0.5)
+
                             Image {
                                 source: mi("ic_lock_black_24dp.png")
                                 sourceSize.width: mm(3.5)
                                 sourceSize.height: mm(3.5)
                             }
+
                             Label {
                                 text: "Password protected"
                                 font.pixelSize: dp(10)
@@ -663,7 +629,15 @@ function doUnshare(row) {
                             }
                         }
 
-                        Item { Layout.fillWidth: true }
+                        Button {
+                            text: "Copy"
+                            flat: true
+                            visible: tox_state.state !== "empty"
+                            onClicked: core.copy_to_clipboard(
+                                          core.tox_self_address.length > 0
+                                          ? core.tox_self_address
+                                          : tox_acct.heroPubkey)
+                        }
 
                         Button {
                             text: "Sign out"
@@ -762,7 +736,7 @@ function doUnshare(row) {
                     }
 
                     // password entry, only when a save is loaded but locked
-                    RowLayout {
+                    ColumnLayout {
                         visible: tox_state.state === "locked"
                         Layout.fillWidth: true
                         spacing: mm(1)
@@ -775,17 +749,22 @@ function doUnshare(row) {
                             Layout.fillWidth: true
                         }
 
-                        TextField {
-                            id: heroPwInput
-                            echoMode: TextInput.Password
-                            placeholderText: "Password"
+                        RowLayout {
                             Layout.fillWidth: true
-                            onAccepted: signInLocal()
-                        }
+                            spacing: mm(1)
 
-                        Button {
-                            text: "Unlock"
-                            onClicked: signInLocal()
+                            TextField {
+                                id: heroPwInput
+                                echoMode: TextInput.Password
+                                placeholderText: "Password"
+                                Layout.fillWidth: true
+                                onAccepted: signInLocal()
+                            }
+
+                            Button {
+                                text: "Unlock"
+                                onClicked: signInLocal()
+                            }
                         }
                     }
                 }
@@ -801,56 +780,25 @@ function doUnshare(row) {
                 Layout.topMargin: mm(1)
             }
 
-            // import from a file
+            // one compact list of actions instead of a stack of wide cards.
+            // each one opens the existing confirmation or file picker, so the
+            // page stays short on a phone and still reads like settings.
             Pane {
                 Layout.fillWidth: true
-                padding: mm(2)
+                padding: mm(1)
                 background: Rectangle {
                     color: "white"
                     radius: mm(1)
                     border.color: "#e6ddc6"
                 }
 
-                RowLayout {
+                ColumnLayout {
                     width: parent.width
-                    spacing: mm(1.5)
+                    spacing: 0
 
-                    Rectangle {
-                        Layout.preferredWidth: mm(9)
-                        Layout.preferredHeight: mm(9)
-                        radius: width / 2
-                        color: amber_light
-
-                        Image {
-                            anchors.centerIn: parent
-                            source: mi("ic_cloud_download_black_24dp.png")
-                            sourceSize.width: mm(5)
-                            sourceSize.height: mm(5)
-                        }
-                    }
-
-                    ColumnLayout {
+                    ItemDelegate {
                         Layout.fillWidth: true
-                        spacing: 0
-
-                        Label {
-                            text: "Import from a file…"
-                            font.bold: true
-                            font.pixelSize: dp(13)
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: "Pick a .tox file saved on this device. Your current "
-                                  + "save is backed up first."
-                            font.pixelSize: dp(10)
-                            color: secondary_text
-                            wrapMode: Text.WordWrap
-                        }
-                    }
-
-                    Button {
-                        text: "Choose…"
+                        text: "Import from a .tox file…"
                         enabled: tox_state.state !== "signedin"
                         onClicked: {
                             importPath = ""
@@ -858,60 +806,87 @@ function doUnshare(row) {
                             importFileDialog.open()
                         }
                     }
-                }
-            }
 
-            // brand new identity
-            Pane {
-                Layout.fillWidth: true
-                padding: mm(2)
-                background: Rectangle {
-                    color: "white"
-                    radius: mm(1)
-                    border.color: "#e6ddc6"
-                }
-
-                RowLayout {
-                    width: parent.width
-                    spacing: mm(1.5)
-
-                    Rectangle {
-                        Layout.preferredWidth: mm(9)
-                        Layout.preferredHeight: mm(9)
-                        radius: width / 2
-                        color: amber_light
-
-                        Image {
-                            anchors.centerIn: parent
-                            source: mi("ic_create_black_24dp.png")
-                            sourceSize.width: mm(5)
-                            sourceSize.height: mm(5)
-                        }
-                    }
-
-                    ColumnLayout {
+                    ItemDelegate {
                         Layout.fillWidth: true
-                        spacing: 0
-
-                        Label {
-                            text: "Create a brand new tox-id…"
-                            font.bold: true
-                            font.pixelSize: dp(13)
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: "Start over with a fresh identity and friend list."
-                            font.pixelSize: dp(10)
-                            color: secondary_text
-                            wrapMode: Text.WordWrap
-                        }
-                    }
-
-                    Button {
-                        text: "Create…"
+                        text: "Create a new tox-id…"
                         enabled: tox_state.state !== "signedin"
                         onClicked: createNewConfirmDlg.open()
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                        color: "#eee6d2"
+                    }
+
+                    ItemDelegate {
+                        Layout.fillWidth: true
+                        text: tox_state.state === "signedin"
+                              ? "Share with my devices"
+                              : "Share with my devices (sign in first)"
+                        enabled: tox_state.state === "signedin"
+                        onClicked: {
+                            if (core.tox_publish_save()) {
+                                showBanner("Shared with your other devices.")
+                                // publishing is what changes the sync state, so the
+                                // indicator has to be re-read or it still reads
+                                // "this device is newer" right after it stopped
+                                // being true.
+                                doRefresh()
+                            }
+                            else
+                                showBanner("Could not share. Sign in to your Tox save first.", true)
+                        }
+                    }
+
+                    ItemDelegate {
+                        Layout.fillWidth: true
+                        text: "Export to file…"
+                        onClicked: {
+                            var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
+                            if (locs.length > 0) {
+                                exportFileDialog.currentFolder = locs[0]
+                                exportFileDialog.currentFile = locs[0].toString() + "/" + exportDefaultName()
+                            }
+                            exportFileDialog.open()
+                        }
+                    }
+
+                    ItemDelegate {
+                        Layout.fillWidth: true
+                        text: tox_state.state === "signedin"
+                              ? (tox_state.encrypted ? "Remove password… (sign out first)"
+                                                     : "Add a password… (sign out first)")
+                              : (tox_state.encrypted ? "Remove password…"
+                                                     : "Add a password…")
+                        enabled: tox_state.state !== "signedin"
+                                  && tox_state.state !== "empty"
+                        onClicked: tox_state.encrypted
+                                  ? openRemoveSavePassword()
+                                  : openAddSavePassword()
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                        color: "#eee6d2"
+                    }
+
+                    ItemDelegate {
+                        Layout.fillWidth: true
+                        enabled: tox_state.state !== "signedin"
+                        onClicked: deleteConfirmDlg.open()
+
+                        contentItem: Label {
+                            text: tox_state.state === "signedin"
+                                  ? "Delete this tox-id (sign out first)"
+                                  : "Delete this tox-id"
+                            color: tox_state.state === "signedin" ? "#c88" : "#c00"
+                            horizontalAlignment: Text.AlignLeft
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
                     }
                 }
             }
@@ -939,40 +914,19 @@ function doUnshare(row) {
                     width: parent.width
                     spacing: mm(1)
 
-                    ListView {
-                        id: sharedSavesListView
+                    // a short list, so it lives in the page's one scroll
+                    // surface instead of being a nested flickable.
+                    Repeater {
                         model: tox_acct.sharedSaves
-                        visible: sharedSavesListView.count > 0
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Math.min(sharedSavesListView.contentHeight, mm(72))
-                        clip: true
-                        boundsBehavior: Flickable.StopAtBounds
-                        spacing: mm(1)
-                        ScrollBar.vertical: ScrollBar { }
 
-                        delegate: Item {
+                        delegate: Rectangle {
                             id: sharedRow
-                            width: ListView.view.width
-                            height: sharedRowCol.implicitHeight + mm(2)
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: mm(1)
-                                color: modelData.key === selectedKey ? "#fdf3d8" : "#faf8f1"
-                                border.color: modelData.key === selectedKey ? amber_dark : "#e9e3d1"
-                                border.width: 1
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    if(selectedKey !== modelData.key) {
-                                        selectedKey = modelData.key
-                                        syncSelected()
-                                        pwInput.text = ""
-                                    }
-                                }
-                            }
+                            Layout.fillWidth: true
+                            implicitHeight: sharedRowCol.implicitHeight + mm(2)
+                            radius: mm(1)
+                            color: "#faf8f1"
+                            border.color: "#e9e3d1"
+                            border.width: 1
 
                             ColumnLayout {
                                 id: sharedRowCol
@@ -1033,118 +987,72 @@ function doUnshare(row) {
                                         sourceSize.height: mm(4)
                                     }
 
-                                    // the identity on this device shows up in
-                                    // this list too (once it's been shared), so
-                                    // it needs saying: without this the same
-                                    // tox-id appears twice with nothing to
-                                    // connect the two.
-                                    Rectangle {
-                                        visible: modelData.is_current === true
-                                        Layout.preferredWidth: badgeRow.implicitWidth + mm(1.5)
-                                        Layout.preferredHeight: mm(4.5)
-                                        radius: mm(2.25)
-                                        color: "#e6f0e6"
-
-                                        RowLayout {
-                                            id: badgeRow
-                                            anchors.centerIn: parent
-                                            spacing: mm(0.5)
-
-                                            Rectangle {
-                                                Layout.preferredWidth: mm(1.5)
-                                                Layout.preferredHeight: mm(1.5)
-                                                radius: width / 2
-                                                color: "#3a8"
-                                            }
-
-                                            Text {
-                                                text: "this device"
-                                                color: "#2a6"
-                                                font.pixelSize: dp(10)
-                                            }
-                                        }
-
-                                        ToolTip.visible: badgeHover.hovered
-                                        ToolTip.text: "This is the tox-id on this device"
-                                        HoverHandler { id: badgeHover }
-                                    }
-
-                                    // this row is the published copy of the identity that
-                                    // is on this device, and the two genuinely
-                                    // differ. flag it here as well as in the
-                                    // hero card, or the row looks like just
-                                    // another shared identity.
-                                    Rectangle {
-                                        visible: modelData.is_current === true
-                                                 && tox_state.diffState === tox_state.diffDifferent
-                                        Layout.preferredWidth: newerRow.implicitWidth + mm(1.5)
-                                        Layout.preferredHeight: mm(4.5)
-                                        radius: mm(2.25)
-                                        color: "#fdf0dc"
-
-                                        RowLayout {
-                                            id: newerRow
-                                            anchors.centerIn: parent
-                                            spacing: mm(0.5)
-
-                                            Rectangle {
-                                                Layout.preferredWidth: mm(1.5)
-                                                Layout.preferredHeight: mm(1.5)
-                                                radius: width / 2
-                                                color: "#c80"
-                                            }
-
-                                            Text {
-                                                text: "differs"
-                                                color: "#a60"
-                                                font.pixelSize: dp(10)
-                                            }
-                                        }
-
-                                        ToolTip.visible: newerHover.hovered
-                                        ToolTip.text: "This shared copy differs from "
-                                                      + "the save on this device"
-                                        HoverHandler { id: newerHover }
-                                    }
-
-                                    // unpublish. drop this tox-id from every
-                                    // device's shared list; nobody is signed
-                                    // out and no settings change.
                                     ToolButton {
-                                        Layout.preferredWidth: mm(6)
-                                        Layout.preferredHeight: mm(6)
-                                        padding: 0
-                                        contentItem: Image {
-                                            anchors.centerIn: parent
-                                            source: mi("ic_delete_black_24dp.png")
-                                            sourceSize.width: mm(4)
-                                            sourceSize.height: mm(4)
-                                        }
-                                        ToolTip.visible: hovered
-                                        ToolTip.text: "Stop sharing this save"
-                                        onClicked: tox_acct.openUnshareConfirm(modelData)
+                                        icon.source: mi("ic_more_vert_black_24dp.png")
+                                        icon.width: dp(20)
+                                        icon.height: dp(20)
+                                        Layout.preferredWidth: dp(40)
+                                        Layout.preferredHeight: dp(40)
+                                        onClicked: sharedRowMenu.popup()
                                     }
                                 }
 
-                                // selected: say what it costs, right on the
-                                // row, before the user commits to it.
-                                Label {
-                                    Layout.fillWidth: true
-                                    Layout.leftMargin: mm(9)
-                                    text: tox_acct.replaceWarning(modelData)
-                                    font.pixelSize: dp(10)
-                                    font.italic: true
-                                    color: amber_dark
-                                    wrapMode: Text.WordWrap
-                                    visible: modelData.key === selectedKey
-                                            && text.length > 0
+                                ResponsiveRow {
+                                    visible: modelData.is_current === true
+
+                                    Rectangle {
+                                        visible: modelData.is_current === true
+                                        width: thisBadge.implicitWidth + mm(1.5)
+                                        height: mm(4.5)
+                                        radius: mm(2.25)
+                                        color: "#e6f0e6"
+
+                                        Text {
+                                            id: thisBadge
+                                            anchors.centerIn: parent
+                                            text: "this device"
+                                            color: "#2a6"
+                                            font.pixelSize: dp(10)
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        visible: modelData.is_current === true
+                                                 && tox_state.diffState === tox_state.diffDifferent
+                                        width: diffBadge.implicitWidth + mm(1.5)
+                                        height: mm(4.5)
+                                        radius: mm(2.25)
+                                        color: "#fdf0dc"
+
+                                        Text {
+                                            id: diffBadge
+                                            anchors.centerIn: parent
+                                            text: "differs from this device"
+                                            color: "#a60"
+                                            font.pixelSize: dp(10)
+                                        }
+                                    }
+                                }
+                            }
+
+                            Menu {
+                                id: sharedRowMenu
+
+                                MenuItem {
+                                    text: "Use this tox-id"
+                                    onTriggered: tox_acct.openUseSave(modelData)
+                                }
+
+                                MenuItem {
+                                    text: "Stop sharing"
+                                    onTriggered: tox_acct.openUnshareConfirm(modelData)
                                 }
                             }
                         }
                     }
 
                     Label {
-                        visible: sharedSavesListView.count === 0
+                        visible: tox_acct.sharedSaves.length === 0
                         text: "Nothing here yet. Share a tox-id with your devices and "
                               + "it shows up here on this device."
                         wrapMode: Text.WordWrap
@@ -1153,50 +1061,11 @@ function doUnshare(row) {
                         font.pixelSize: dp(11)
                     }
 
-                    // the selected row's action strip. picking a shared tox-id
-                    // replaces the save on this device, so the confirm lives
-                    // here, next to the warning above the row, instead of in a
-                    // modal.
-                    RowLayout {
-                        visible: sharedSavesListView.count > 0
-                        Layout.fillWidth: true
-                        spacing: mm(1)
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: tox_acct.selectedSharedRow()
-                                  ? "Use " + tox_acct.rowTitle(tox_acct.selectedSharedRow()) + "?"
-                                  : "Pick one above to use it."
-                            font.pixelSize: dp(10)
-                            color: secondary_text
-                            wrapMode: Text.WordWrap
-                        }
-
-                        TextField {
-                            id: pwInput
-                            visible: tox_acct.selectedSharedRow() !== null
-                                     && tox_acct.selectedEncrypted
-                            echoMode: TextInput.Password
-                            placeholderText: "Password"
-                            Layout.preferredWidth: mm(28)
-                            onAccepted: tox_acct.doSignIn(tox_acct.selectedSharedRow())
-                        }
-
-                        Button {
-                            text: "Use this tox-id"
-                            enabled: tox_acct.selectedSharedRow() !== null
-                            ToolTip.visible: hovered
-                            ToolTip.text: "Copies this shared save over the save "
-                                          + "on this device"
-                            onClicked: tox_acct.doSignIn(tox_acct.selectedSharedRow())
-                        }
-                    }
-
-                    // spell out the direction of both copy buttons. they write
+                    // spell out the direction of both copy actions. they write
                     // the same file in opposite directions, and the labels
                     // alone don't make that obvious.
                     Label {
-                        visible: sharedSavesListView.count > 0
+                        visible: tox_acct.sharedSaves.length > 0
                         Layout.fillWidth: true
                         Layout.topMargin: mm(0.5)
                         text: tox_state.copyDirectionNote()
@@ -1209,102 +1078,26 @@ function doUnshare(row) {
 
             // ---- 4. quiet manage footer ----
 
-            Rectangle {
+            CollapsibleSection {
                 Layout.fillWidth: true
-                Layout.topMargin: mm(1)
-                implicitHeight: 1
-                color: "#ddd3b2"
-            }
+                title: "About saves and sharing"
+                subtitle: "Export, sharing, passwords and deleting"
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: mm(1)
-
-                Button {
-                    text: "Export to file…"
-                    flat: true
-                    onClicked: {
-                        var locs = StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
-                        if (locs.length > 0) {
-                            exportFileDialog.currentFolder = locs[0]
-                            exportFileDialog.currentFile = locs[0].toString() + "/" + exportDefaultName()
-                        }
-                        exportFileDialog.open()
-                    }
+                Label {
+                    Layout.fillWidth: true
+                    text: "Export writes a .tox file you can import on another device. "
+                          + "Sharing copies this device's tox_save.tox out to the "
+                          + "other devices in your group; using a shared tox-id copies "
+                          + "one back in over tox_save.tox here. Neither happens on its "
+                          + "own, so the save on this device is always the one that runs. "
+                          + "Password protecting the save also protects every .tox "
+                          + "file you export from it. Deleting removes it from this device "
+                          + "only — your messages, contacts and Dwyco account are not "
+                          + "affected, and a copy is saved to disk first."
+                    wrapMode: Text.WordWrap
+                    color: secondary_text
+                    font.pixelSize: dp(10)
                 }
-
-                Button {
-                    text: "Share with my devices"
-                    flat: true
-                    enabled: tox_state.state === "signedin"
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Copies this device's Tox save (tox_save.tox) "
-                                  + "out to your other devices"
-                    onClicked: {
-                        if (core.tox_publish_save()) {
-                            showBanner("Shared with your other devices.")
-                            // publishing is what changes the sync state, so the
-                            // indicator has to be re-read or it still reads
-                            // "this device is newer" right after it stopped
-                            // being true.
-                            doRefresh()
-                        }
-                        else
-                            showBanner("Could not share. Sign in to your Tox save first.", true)
-                    }
-                }
-
-                // add or remove the file-level password on the local save.
-                // the bridge refuses while tox is running, so this is only
-                // offered when signed out, like the other file operations.
-                Button {
-                    text: tox_state.encrypted ? "Remove password…" : "Add a password…"
-                    flat: true
-                    enabled: tox_state.state !== "signedin"
-                              && tox_state.state !== "empty"
-                    ToolTip.visible: hovered
-                    ToolTip.text: tox_state.state === "signedin"
-                                  ? "Sign out first to change the save's password"
-                                  : (tox_state.encrypted
-                                     ? "Take the password off this device's tox save"
-                                     : "Password protect this device's tox save")
-                    onClicked: tox_state.encrypted
-                              ? openRemoveSavePassword()
-                              : openAddSavePassword()
-                }
-
-                Item { Layout.fillWidth: true }
-
-                Button {
-                    text: "Delete this tox-id"
-                    flat: true
-                    enabled: tox_state.state !== "signedin"
-                    opacity: tox_state.state === "signedin" ? 0.4 : 1
-                    contentItem: Label {
-                        text: "Delete this tox-id"
-                        color: "#c00"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        elide: Text.ElideRight
-                    }
-                    onClicked: deleteConfirmDlg.open()
-                }
-            }
-
-            Label {
-                text: "Export writes a .tox file you can import on another device. "
-                      + "Sharing copies this device's tox_save.tox out to the "
-                      + "other devices in your group; using a shared tox-id copies "
-                      + "one back in over tox_save.tox here. Neither happens on its "
-                      + "own, so the save on this device is always the one that runs. "
-                      + "Password protecting the save also protects every .tox "
-                      + "file you export from it. Deleting removes it from this device "
-                      + "only — your messages, contacts and Dwyco account are not "
-                      + "affected, and a copy is saved to disk first."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: secondary_text
-                font.pixelSize: dp(10)
             }
 
             Item {
@@ -1387,20 +1180,21 @@ function doUnshare(row) {
 
     // ---- stop sharing confirmation ----
 
-Dialog {
+    Dialog {
         id: unshareConfirmDlg
         title: "Stop sharing?"
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
             width: parent.width
 
             Label {
-                text: pendingRow
-                      ? "Remove " + rowTitle(pendingRow) + " from your devices' "
+                text: tox_acct.pendingRow
+                      ? "Remove " + tox_acct.rowTitle(tox_acct.pendingRow) + " from your devices' "
                         + "shared list?"
                       : ""
                 wrapMode: Text.WordWrap
@@ -1412,15 +1206,6 @@ Dialog {
                       + "signed out and no one's settings change."
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
-            }
-
-            Label {
-                visible: pendingRow && pendingRow.key === selectedKey
-                text: "This is the save you have selected. Removing it does not "
-                      + "change the save on this device."
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                color: "#a00"
             }
 
             RowLayout {
@@ -1451,13 +1236,14 @@ Dialog {
         closePolicy: Dialog.NoAutoClose
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
             width: parent.width
 
             Label {
-                text: pwEntryIntro
+                text: tox_acct.pwEntryIntro
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -1513,6 +1299,7 @@ Dialog {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
@@ -1604,6 +1391,7 @@ Dialog {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
@@ -1670,6 +1458,7 @@ Dialog {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
@@ -1724,6 +1513,7 @@ Dialog {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
@@ -1774,6 +1564,88 @@ Dialog {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: doDeleteSave()
+                }
+            }
+        }
+    }
+
+    // ---- use a shared tox-id confirmation ----
+
+    Dialog {
+        id: useSaveConfirmDlg
+        title: "Use this tox-id?"
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
+
+        ColumnLayout {
+            spacing: mm(1)
+            width: parent.width
+
+            Label {
+                text: tox_acct.pendingUseRow
+                      ? "Use " + tox_acct.rowTitle(tox_acct.pendingUseRow) + "?"
+                      : ""
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                font.bold: true
+            }
+
+            Label {
+                visible: text.length > 0
+                text: tox_acct.pendingUseRow
+                      ? tox_acct.replaceWarning(tox_acct.pendingUseRow)
+                      : ""
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: amber_dark
+            }
+
+            Label {
+                text: "This copies the shared save over the save on this device. "
+                      + "The current save is backed up first."
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            TextField {
+                id: usePwInput
+                visible: tox_acct.pendingUseRow
+                         && tox_acct.pendingUseRow.encrypted === true
+                echoMode: TextInput.Password
+                placeholderText: "Password"
+                Layout.fillWidth: true
+                onAccepted: confirmUseSave()
+            }
+
+            Label {
+                id: usePwError
+                text: ""
+                color: "#a00"
+                visible: text.length > 0
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Cancel"
+                    onClicked: {
+                        pendingUseRow = null
+                        usePwInput.text = ""
+                        usePwError.text = ""
+                        useSaveConfirmDlg.close()
+                    }
+                }
+
+                Button {
+                    text: "Use this tox-id"
+                    onClicked: confirmUseSave()
                 }
             }
         }

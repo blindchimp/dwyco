@@ -245,6 +245,8 @@ qt_add_qml_module(phoo
         SimpleTrashBrowse.qml
         ToxPage.qml
         ToxAcct.qml
+        ResponsiveRow.qml
+        CollapsibleSection.qml
         PulseLoader.qml
         MsgViewMenu.qml
         MsgViewMenuTrash.qml
