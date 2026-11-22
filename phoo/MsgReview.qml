@@ -41,7 +41,11 @@ Page {
         Button {
             text: "Nope"
             onClicked: {
-                core.simple_send(uid, msg_text.text)
+                // fix: msg_text is a rich text viewer, so msg_text.text
+                // returns the display version wrapped in html. send the
+                // original unadorned text the msg was received with instead.
+                var t = msgviewer.raw_text.length > 0 ? msgviewer.raw_text : core.strip_html(msg_text.text)
+                core.simple_send(uid, t)
                 stack.pop()
                 core.set_tag_message(mid, "_hid")
             }

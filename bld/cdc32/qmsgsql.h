@@ -61,6 +61,11 @@ vc sql_get_tag_payload(vc mid, vc tag);
 vc sql_get_tag_payload_ranked(vc mid, vc tag);
 void sql_remove_tag(vc tag);
 void sql_remove_mid_tag(vc mid, vc tag);
+// drop superseded '_tox_active' claims older than max_age_secs, always keeping
+// the newest live claim for each (mid, payload) pair. the payload is the
+// claiming device, so this only removes a device's old claim history, never
+// its current claim.
+void sql_prune_tox_active_claims(int max_age_secs);
 vc sql_get_tagged_mids(vc tag);
 vc sql_get_tagged_mids2(vc tag);
 vc sql_get_tagged_mids_older_than(vc tag, int days);

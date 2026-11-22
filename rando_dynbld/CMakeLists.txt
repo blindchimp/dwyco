@@ -10,6 +10,7 @@ include(subdirs.cmake)
 
 set(BASELIBS
     cdc32
+    toxd
     vc
     crypto8
     dwcls

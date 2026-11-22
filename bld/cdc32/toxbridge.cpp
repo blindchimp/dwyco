@@ -91,6 +91,10 @@ static DwString Save_file;
 static uint8_t *Active_password;
 static int Active_password_len;
 static int Needs_password;
+// when this device last asserted its '_tox_active' claim (seconds). 0 until a
+// sign-in publishes one. used to keep a latent claim that was already synced
+// in from standing us down before our own claim has had a chance to settle.
+static long long Active_claim_time;
 static const uint64_t TOX_AVATAR_MAX_SIZE = 128 * 1024;
 // the synced tox save rides in a single tag payload, which the sync channel
 // sends as one vc. this bound is well above any realistic identity (the save
@@ -1090,13 +1094,20 @@ tox_bridge_publish_save()
 // hex(pubkey), payload is hex of this device's dwyco uid). the newest row
 // wins, so the last device to sign in with an identity owns it, and every
 // other client running that identity sees a foreign claim and stands down.
+//
+// note: this deliberately uses sql_add_tag rather than safe_add_crdt_tag.
+// every sign-in must assert a *fresh* claim (new time and guid), even when
+// this device already claimed the same identity earlier -- otherwise a stale
+// row from a previous session keeps its old timestamp and a newer claim from
+// another device silently wins.
 static void
 publish_active_claim()
 {
     vc mid = save_tag_mid();
     if(mid.is_nil())
         return;
-    safe_add_crdt_tag(mid, "_tox_active", to_hex(My_UID));
+    sql_add_tag(mid, "_tox_active", to_hex(My_UID));
+    Active_claim_time = (long long)time(0);
 }
 
 // stand down if some other device has signed in with the identity we're
@@ -1106,8 +1117,16 @@ tox_bridge_check_active_conflict()
 {
     if(!Started || !Tox_plugin)
         return;
+    if(Active_claim_time == 0)
+        return; // we never asserted ownership, nothing to defend
     static long long last_check = 0;
     long long now = (long long)time(0);
+    // give our claim a chance to be observed (by us and the group) before
+    // letting a competing claim tear us down. a latent claim that was already
+    // synced in must not supercede the one we just made by signing in.
+    static const long long claim_grace = 5;
+    if(now - Active_claim_time < claim_grace)
+        return;
     if(now - last_check < 1)
         return;
     last_check = now;
@@ -1119,6 +1138,12 @@ tox_bridge_check_active_conflict()
         return; // nobody has claimed it
     if(win[2] == to_hex(My_UID))
         return; // still ours
+    // a claim created at or before the one we just asserted (by signing in) is
+    // latent: it was already sitting in the db or synced in from before. it
+    // must not supercede the claim we made when the user clicked sign in, so
+    // ignore it. only a strictly newer foreign claim takes the identity away.
+    if((long long)win[0] <= Active_claim_time)
+        return;
     GRTLOG("tox bridge: identity claimed by another device, standing down", 0, 0);
     // note: we do not publish on the way out. we lost the race, so our copy
     // is the stale one, and writing it would clobber the winner's.
@@ -1608,15 +1633,15 @@ tox_bridge_init(const char *save_file)
     if(Tox_q)
         Tox_q->recover_inprogress();
     tox_bridge_cleanup_incomplete();
-tox_bridge_rebuild_friend_cache();
-vc self_pseudo = self_tox_pseudo();
-if(!self_pseudo.is_nil())
-{
-    tox_uid_tag_add(self_pseudo);
-    set_settings_value("tox/self_pseudo", self_pseudo);
-    set_settings_value("tox/self_name", tox_bridge_get_name());
-}
-safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
+    tox_bridge_rebuild_friend_cache();
+    vc self_pseudo = self_tox_pseudo();
+    if(!self_pseudo.is_nil())
+    {
+        tox_uid_tag_add(self_pseudo);
+        set_settings_value("tox/self_pseudo", self_pseudo);
+        set_settings_value("tox/self_name", tox_bridge_get_name());
+    }
+    safe_add_crdt_tag(to_hex(My_UID), "_tox_device");
     publish_active_claim();
     // note: the identity is *not* published here. sharing is something the
     // user asks for explicitly (see tox_bridge_publish_save), so signing in
@@ -1666,6 +1691,7 @@ tox_bridge_shutdown()
         Tox_plugin = 0;
     }
     Started = 0;
+    Active_claim_time = 0;
     GRTLOG("tox bridge: shutdown", 0, 0);
 }
 
@@ -2118,6 +2144,19 @@ tox_bridge_poll()
     tox_bridge_check_active_conflict();
     if(!Started || !Tox_plugin)
         return;
+
+    // periodically drop superseded '_tox_active' claims. every sign-in writes
+    // a new row, so a device that signs in repeatedly accumulates rows that
+    // can never win; this keeps only the newest claim per device. once a day
+    // is plenty (and it runs on the first poll after launch).
+    static long long last_claim_prune = 0;
+    static const long long claim_prune_interval = 24 * 3600;
+    long long now = (long long)time(0);
+    if(sql_is_initialized() && now - last_claim_prune >= claim_prune_interval)
+    {
+        sql_prune_tox_active_claims((int)claim_prune_interval);
+        last_claim_prune = now;
+    }
 
     // reset stale in-progress text-only messages so they get retried
     // (handles lost read receipts). file transfers are one-shot and must

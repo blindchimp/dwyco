@@ -118,6 +118,7 @@ public:
         m_auto_away_enabled = false;
         m_auto_away_timeout = 300;
         m_is_auto_away = false;
+        m_user_tox_status = "none";
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -558,7 +559,18 @@ private:
     bool eventFilter(QObject *obj, QEvent *event) override;
     static void DWYCOCALLCONV dwyco_activity_callback(int timeout);
     bool m_is_auto_away;
-    QString m_saved_tox_status;
+    // the status the user explicitly picked for the tox identity that is
+    // currently signed in ("none", "away" or "busy"). this is the only
+    // status that gets remembered across restarts. the auto-away status
+    // is transient and never stored here.
+    QString m_user_tox_status;
+    // settings key holding the remembered status for the identity that is
+    // currently signed in. empty if there is no identity signed in.
+    QString user_tox_status_key();
+    // push the remembered status into tox. this has to happen every time
+    // the tox plugin comes up, because the tox save file carries a status
+    // byte that may be stale (eg. "away" left behind by the auto-away).
+    void apply_user_tox_status();
     void set_user_status_impl(const QString& status);
     void schedule_tox_plink();
     void schedule_tox_saves_changed();
