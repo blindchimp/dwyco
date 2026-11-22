@@ -34,6 +34,17 @@ Page {
     // phone layout. a narrow desktop window takes the same path as a phone.
     readonly property bool compact: width < 600
 
+    // while a modal dialog is up, the page underneath must not react to a
+    // drag that starts on the dialog (android otherwise still flicks it).
+    readonly property bool dialog_open:
+        unshareConfirmDlg.visible
+        || pwEntryDialog.visible
+        || savePwDlg.visible
+        || importConfirmDlg.visible
+        || createNewConfirmDlg.visible
+        || deleteConfirmDlg.visible
+        || useSaveConfirmDlg.visible
+
     // ---- state ----
 
     property var allSavesList: []
@@ -469,6 +480,26 @@ function doUnshare(row) {
         clip: true
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        // ScrollView's contentItem is a Flickable, but typed as an Item here,
+        // so freeze it with a Binding rather than a direct property write.
+        Binding {
+            target: acct_scroll.contentItem
+            property: "interactive"
+            value: !tox_acct.dialog_open
+        }
+        // android otherwise lets the whole page be dragged past its edges
+        // (and sideways) and then snaps it back.
+        Binding {
+            target: acct_scroll.contentItem
+            property: "boundsBehavior"
+            value: Flickable.StopAtBounds
+        }
+        Binding {
+            target: acct_scroll.contentItem
+            property: "flickableDirection"
+            value: Flickable.VerticalFlick
+        }
 
         ColumnLayout {
             width: acct_scroll.availableWidth
