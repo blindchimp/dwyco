@@ -392,11 +392,20 @@ if(APPLE OR IOS)
        Qt6::Widgets
     )
     if(DWYCO_TOXCORE)
-    target_link_libraries(phoo
-        PRIVATE
-       /opt/homebrew/lib/libtoxcore.a
-       /opt/homebrew/lib/libsodium.a
-    )
+    if(IOS)
+        # Built from ../c-toxcore by tox-ios.cmake.
+        target_link_libraries(phoo
+            PRIVATE
+           toxcore_static
+           libsodium::libsodium
+        )
+    else()
+        target_link_libraries(phoo
+            PRIVATE
+           /opt/homebrew/lib/libtoxcore.a
+           /opt/homebrew/lib/libsodium.a
+        )
+    endif()
     endif()
 endif()
 
