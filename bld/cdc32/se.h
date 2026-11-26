@@ -110,6 +110,9 @@ enum dwyco_sys_event {
     SE_MSG_ATTACHMENT_RECEIVE_STATUS,
     SE_MSG_ATTACHMENT_RECEIVE_OK,
     SE_MSG_ATTACHMENT_RECEIVE_FAILED,
+
+    // a tox friend changed their status message
+    SE_TOX_FRIEND_STATUS_MESSAGE,
 };
 
 // at this point, the id can be a uid or a mid

@@ -1327,6 +1327,7 @@ ApplicationWindow {
         closePolicy: Dialog.NoAutoClose
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.NoButton
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)
@@ -1417,6 +1418,7 @@ ApplicationWindow {
         closePolicy: Popup.CloseOnEscape
         standardButtons: Dialog.Cancel | Dialog.Yes
         title: "Ignore Tox contact?"
+        width: Math.min(Math.max(implicitWidth, mm(70)), Overlay.overlay.width - mm(4))
 
         ColumnLayout {
             spacing: mm(1)

@@ -1594,6 +1594,16 @@ toxp_friend_list(ToxPlugin *p)
             Tox_Connection conn = tox_friend_get_connection_status(p->tox, fn, NULL);
             entry.add_kv("status", vc(conn == TOX_CONNECTION_NONE ? "offline" : "online"));
 
+            size_t status_message_len = tox_friend_get_status_message_size(p->tox, fn, NULL);
+            if(status_message_len > 0 && status_message_len <= TOX_MAX_STATUS_MESSAGE_LENGTH)
+            {
+                uint8_t status_message[TOX_MAX_STATUS_MESSAGE_LENGTH];
+                tox_friend_get_status_message(p->tox, fn, status_message, NULL);
+                entry.add_kv("status_message", vc(VC_BSTRING, (const char *)status_message, (long)status_message_len));
+            }
+            else
+                entry.add_kv("status_message", vc(""));
+
             Tox_User_Status us = tox_friend_get_status(p->tox, fn, NULL);
             entry.add_kv("user_status", vc(us == TOX_USER_STATUS_AWAY ? "away" : us == TOX_USER_STATUS_BUSY ? "busy" : "none"));
 

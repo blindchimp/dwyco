@@ -512,6 +512,10 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_MSG_ATTACHMENT_RECEIVE_OK 67
 #define DWYCO_SE_MSG_ATTACHMENT_RECEIVE_FAILED 68
 
+// a tox friend changed their status message.
+// args: uid = friend pseudo uid, name = new status message.
+#define DWYCO_SE_TOX_FRIEND_STATUS_MESSAGE 69
+
 
 // you get this message to indicate a message has content that is now locally accessible
 #define DWYCO_SE_MSG_PULL_OK 36
@@ -2390,6 +2394,7 @@ typedef DWYCO_LIST DWYCO_TOX_FRIENDS_MODEL;
 #define DWYCO_TF_NAME         "002"
 #define DWYCO_TF_STATUS       "003"
 #define DWYCO_TF_USER_STATUS  "004"
+#define DWYCO_TF_STATUS_MESSAGE "005"
 int DWYCOEXPORT dwyco_tox_get_friends_model(DWYCO_TOX_FRIENDS_MODEL *list_out);
 int DWYCOEXPORT dwyco_tox_set_user_status(const char *status);
 int DWYCOEXPORT dwyco_tox_get_user_status(char **out, int *len_out);

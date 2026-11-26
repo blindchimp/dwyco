@@ -745,7 +745,9 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
         reload_conv_list();
         break;
     case DWYCO_SE_TOX_FRIEND_NAME:
-        // tox friend name changed — re-resolve display name
+        // tox friend name changed — refresh the friend list and re-resolve
+        // display names everywhere else
+        emit TheDwycoCore->tox_friend_name_changed(huid);
         emit TheDwycoCore->sys_uid_resolved(huid);
         break;
     case DWYCO_SE_TOX_FRIEND_STATUS:
@@ -781,6 +783,9 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_TOX_FRIEND_USER_STATUS:
         emit TheDwycoCore->sys_uid_resolved(huid);
         emit TheDwycoCore->tox_friend_user_status_changed(huid, QString::fromUtf8(namestr));
+        break;
+    case DWYCO_SE_TOX_FRIEND_STATUS_MESSAGE:
+        emit TheDwycoCore->tox_friend_status_message_changed(huid);
         break;
     case DWYCO_SE_TOX_AVATAR:
         // tox friend avatar received/changed/removed: refresh the

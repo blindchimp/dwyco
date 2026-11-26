@@ -1,6 +1,13 @@
 # note: this is a kluge, hoping that zlib gets created first since it screws
 # around and creates some header files at build time (whoever decided this
 # was a good thing... sheesh)
+
+# toxcore is built from ../c-toxcore on iOS (the homebrew libs are macOS only).
+# This has to happen before toxd so the tox headers are available to it.
+if(IOS AND DWYCO_TOXCORE)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/tox-ios.cmake)
+endif()
+
 if(NOT ANDROID)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto8 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto8)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)

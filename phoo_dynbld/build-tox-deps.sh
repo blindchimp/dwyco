@@ -14,7 +14,7 @@ if [ "$(uname)" = "Darwin" ]; then
 else
     NDK_BASE="$HOME/Android/Sdk/ndk"
 fi
-NDK="$NDK_BASE/28.2.13676358"
+NDK="$NDK_BASE/30.0.16248370"
 API=21
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
