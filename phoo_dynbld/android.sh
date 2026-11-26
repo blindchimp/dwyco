@@ -7,7 +7,7 @@ if [ "$(uname)" = "Darwin" ]; then
 else
     NDK_BASE="$HOME/Android/Sdk/ndk"
 fi
-export NDK="$NDK_BASE/28.2.13676358"
+export NDK="$NDK_BASE/30.0.16248370"
 
 cmake -S . -B /tmp/b \
 	-DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake \
