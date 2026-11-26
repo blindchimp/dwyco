@@ -642,42 +642,76 @@ ApplicationWindow {
 
     }
     property int close_bounce: 0
-    onClosing: (close) => {
-                   if(hard_close) {
-                       close.accepted = true
-                       return
-                   }
+
+    // shared by the desktop window close event and the android back key.
+    // since qt 6.12 a back press is no longer delivered as a close event on
+    // android (it backgrounds the app instead), so the back shortcut below
+    // has to do the same navigation the close handler used to do. pass null
+    // when there is no close event to accept, and quit by hand when the user
+    // confirms the exit.
+    function handle_back(close) {
+        var have_close = close !== null && close !== undefined
+
+        if(hard_close) {
+            if(have_close)
+                close.accepted = true
+            return
+        }
 
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
-            close.accepted = false
+            if(have_close)
+                close.accepted = false
             return
         }
 
         if(!server_account_created && blank_page.visible) {
-            close.accepted = false
+            if(have_close)
+                close.accepted = false
             return
         }
 
         if(stack.depth > 1) {
-            close.accepted = false
+            if(have_close)
+                close.accepted = false
             stack.pop()
+            return
         }
-        else {
-            if(bounce_opacity.running)
-            {
-                if(Qt.platform.os == "android") {
-                    notificationClient.start_background()
-                    notificationClient.set_lastrun()
-                }
-                if(pwdialog.allow_access === 0)
-                    expire_immediate = true
-                return
+
+        if(bounce_opacity.running) {
+            if(Qt.platform.os == "android") {
+                notificationClient.start_background()
+                notificationClient.set_lastrun()
             }
-            close.accepted = false
-            bounce_opacity.start()
+            if(pwdialog.allow_access === 0)
+                expire_immediate = true
+            if(have_close) {
+                close.accepted = true
+            } else {
+                // there is no close event to accept for a back key, so quit
+                // explicitly, the same way the app's other exit paths do.
+                hard_close = true
+                Qt.quit()
+            }
+            return
         }
+
+        if(have_close)
+            close.accepted = false
+        bounce_opacity.start()
+    }
+
+    onClosing: (close) => handle_back(close)
+
+    // qt 6.12: the android back gesture/key is a navigation request, not a
+    // window close, so onClosing no longer fires for it. a window-level
+    // shortcut sees the back key regardless of which item has focus, which
+    // matches how the close handler used to behave.
+    Shortcut {
+        sequences: ["Back"]
+        enabled: Qt.platform.os == "android"
+        onActivated: handle_back(null)
     }
 
     Component.onCompleted: {
