@@ -5,7 +5,7 @@ if [ "$(uname)" = "Darwin" ]; then
 else
     NDK_BASE="$HOME/Android/Sdk/ndk"
 fi
-export NDK="$NDK_BASE/28.2.13676358"
+export NDK="$NDK_BASE/30.0.16248370"
 SRC_DIR=$PWD
 BUILD_DIR=$SRC_DIR/build
 
